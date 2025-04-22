@@ -69,6 +69,7 @@ export class MemStorage implements IStorage {
     const campaign: Campaign = {
       id,
       ...insertCampaign,
+      redirectMethod: insertCampaign.redirectMethod || "direct", // Ensure default value
       createdAt: new Date()
     };
     

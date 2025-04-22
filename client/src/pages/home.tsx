@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCampaign } from "@/lib/types";
-import { RedirectMethod } from "@shared/schema";
+import { RedirectMethod, CampaignWithUrls } from "@shared/schema";
 import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
 import UrlForm from "@/components/urls/url-form";
 import UrlTable from "@/components/urls/url-table";
@@ -23,7 +23,7 @@ export default function Home() {
   const campaignId = match && params?.id ? parseInt(params.id) : undefined;
   
   // Fetch campaign data if we have an ID
-  const { data: campaign, isLoading } = useQuery({
+  const { data: campaign, isLoading } = useQuery<CampaignWithUrls>({
     queryKey: campaignId ? [`/api/campaigns/${campaignId}`] : ['empty-query'],
     enabled: !!campaignId,
   });

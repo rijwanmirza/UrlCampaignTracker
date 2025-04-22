@@ -14,6 +14,7 @@ export const formatCampaign = (campaign: CampaignWithUrls): FormattedCampaign =>
 
   return {
     ...campaign,
+    redirectMethod: campaign.redirectMethod || "direct", // Ensure redirectMethod has a default value
     activeUrlCount,
     totalClicks,
     remainingClicks,
