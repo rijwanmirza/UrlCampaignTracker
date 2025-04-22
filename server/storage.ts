@@ -31,12 +31,28 @@ export class MemStorage implements IStorage {
   private urls: Map<number, Url>;
   private campaignIdCounter: number;
   private urlIdCounter: number;
+  
+  // Cache for active URLs by campaign for faster lookups during redirects
+  private campaignUrlsCache: Map<number, {
+    lastUpdated: number,
+    activeUrls: UrlWithActiveStatus[],
+    weightedDistribution: {
+      url: UrlWithActiveStatus,
+      weight: number,
+      startRange: number,
+      endRange: number
+    }[]
+  }>;
+  
+  // Cache ttl in milliseconds (5 seconds)
+  private cacheTTL = 5000;
 
   constructor() {
     this.campaigns = new Map();
     this.urls = new Map();
     this.campaignIdCounter = 1;
     this.urlIdCounter = 1;
+    this.campaignUrlsCache = new Map();
   }
 
   async getCampaigns(): Promise<CampaignWithUrls[]> {
@@ -112,6 +128,10 @@ export class MemStorage implements IStorage {
     };
     
     this.urls.set(id, url);
+    
+    // Invalidate the campaign cache when adding a new URL
+    this.invalidateCampaignCache(url.campaignId);
+    
     return url;
   }
 
@@ -125,10 +145,20 @@ export class MemStorage implements IStorage {
     };
     
     this.urls.set(id, updatedUrl);
+    
+    // Invalidate the campaign cache when updating a URL
+    this.invalidateCampaignCache(existingUrl.campaignId);
+    
     return updatedUrl;
   }
 
   async deleteUrl(id: number): Promise<boolean> {
+    const url = this.urls.get(id);
+    if (url) {
+      // Invalidate the campaign cache before deleting the URL
+      this.invalidateCampaignCache(url.campaignId);
+    }
+    
     return this.urls.delete(id);
   }
 
@@ -142,7 +172,102 @@ export class MemStorage implements IStorage {
     };
     
     this.urls.set(id, updatedUrl);
+    
+    // Invalidate campaign cache for this URL to ensure weight distribution is recalculated
+    this.invalidateCampaignCache(url.campaignId);
+    
     return updatedUrl;
+  }
+  
+  // Helper method to get weighted URL distribution for a campaign
+  async getWeightedUrlDistribution(campaignId: number) {
+    // Check cache first
+    const cachedData = this.campaignUrlsCache.get(campaignId);
+    const now = Date.now();
+    
+    if (cachedData && (now - cachedData.lastUpdated < this.cacheTTL)) {
+      return {
+        activeUrls: cachedData.activeUrls,
+        weightedDistribution: cachedData.weightedDistribution
+      };
+    }
+    
+    // If not in cache or expired, recalculate
+    const campaign = await this.getCampaign(campaignId);
+    if (!campaign) return { activeUrls: [], weightedDistribution: [] };
+    
+    // Get only active URLs (those that haven't reached their click limit)
+    const activeUrls = campaign.urls.filter(url => url.isActive);
+    
+    // Calculate remaining clicks for each URL as weight
+    const totalWeight = activeUrls.reduce((sum, url) => {
+      const remainingClicks = url.clickLimit - url.clicks;
+      return sum + remainingClicks;
+    }, 0);
+    
+    // Build weighted distribution ranges
+    const weightedDistribution: {
+      url: UrlWithActiveStatus;
+      weight: number;
+      startRange: number;
+      endRange: number;
+    }[] = [];
+    
+    let currentRange = 0;
+    for (const url of activeUrls) {
+      const remainingClicks = url.clickLimit - url.clicks;
+      const weight = remainingClicks / totalWeight;
+      
+      const startRange = currentRange;
+      const endRange = currentRange + weight;
+      
+      weightedDistribution.push({
+        url,
+        weight,
+        startRange,
+        endRange
+      });
+      
+      currentRange = endRange;
+    }
+    
+    // Update cache
+    const cacheEntry = {
+      lastUpdated: now,
+      activeUrls,
+      weightedDistribution
+    };
+    
+    this.campaignUrlsCache.set(campaignId, cacheEntry);
+    
+    return { activeUrls, weightedDistribution };
+  }
+  
+  // Fast method to get a URL based on weighted distribution
+  async getRandomWeightedUrl(campaignId: number): Promise<UrlWithActiveStatus | null> {
+    const { activeUrls, weightedDistribution } = await this.getWeightedUrlDistribution(campaignId);
+    
+    if (activeUrls.length === 0) return null;
+    
+    if (activeUrls.length === 1) return activeUrls[0];
+    
+    // Generate random number between 0 and 1
+    const randomValue = Math.random();
+    
+    // Find the URL whose range contains the random value
+    for (const entry of weightedDistribution) {
+      if (randomValue >= entry.startRange && randomValue < entry.endRange) {
+        return entry.url;
+      }
+    }
+    
+    // Fallback to first URL (should rarely happen)
+    return activeUrls[0];
+  }
+  
+  // Invalidate campaign cache when URLs are modified
+  private invalidateCampaignCache(campaignId: number) {
+    this.campaignUrlsCache.delete(campaignId);
   }
 }
 

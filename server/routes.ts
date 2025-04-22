@@ -250,62 +250,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Campaign URL with weighted distribution
+  // High-performance campaign URL with optimized weighted distribution
   app.get("/c/:campaignId", async (req: Request, res: Response) => {
     try {
+      const startTime = process.hrtime();
       const campaignId = parseInt(req.params.campaignId);
       
       if (isNaN(campaignId)) {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
 
-      // Get the campaign
+      // Get the campaign to check if it exists and to get the redirect method
       const campaign = await storage.getCampaign(campaignId);
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
 
-      // Only consider active URLs (those that haven't reached their click limit)
-      const activeUrls = campaign.urls.filter(url => url.clicks < url.clickLimit);
+      // Use our optimized method to get a URL based on weighted distribution
+      const selectedUrl = await storage.getRandomWeightedUrl(campaignId);
       
-      if (activeUrls.length === 0) {
+      if (!selectedUrl) {
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
       }
       
-      // Calculate weights for each URL based on click limits
-      const totalWeight = activeUrls.reduce((sum, url) => {
-        // Calculate remaining clicks as the weight factor
-        const remainingClicks = url.clickLimit - url.clicks;
-        return sum + remainingClicks;
-      }, 0);
+      // Redirect to the specific URL directly without going through the /r/ endpoint
+      // This saves an extra HTTP redirect and improves performance
       
-      // Select URL based on weighted distribution
-      let selectedUrl = null;
-      let cumulativeWeight = 0;
-      const randomPoint = Math.random() * totalWeight;
+      // Increment click count first
+      await storage.incrementUrlClicks(selectedUrl.id);
       
-      for (const url of activeUrls) {
-        const remainingClicks = url.clickLimit - url.clicks;
-        cumulativeWeight += remainingClicks;
-        
-        if (cumulativeWeight >= randomPoint) {
-          selectedUrl = url;
+      // Performance metrics
+      const endTime = process.hrtime(startTime);
+      const timeInMs = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
+      
+      // Handle the redirect based on the campaign's redirect method
+      const targetUrl = selectedUrl.targetUrl;
+      
+      switch (campaign.redirectMethod) {
+        case "meta_refresh":
+          // Meta refresh redirect
+          res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta http-equiv="refresh" content="0;url=${targetUrl}">
+                <title>Redirecting...</title>
+                <!-- Processed in ${timeInMs}ms -->
+              </head>
+              <body>
+                <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
+              </body>
+            </html>
+          `);
           break;
-        }
+          
+        case "double_meta_refresh":
+          // For double meta refresh, we'll do a special optimized version
+          // that only shows the bridge page if needed
+          res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta http-equiv="refresh" content="0;url=${targetUrl}">
+                <title>Redirecting...</title>
+                <!-- Processed in ${timeInMs}ms (optimized bridge) -->
+              </head>
+              <body>
+                <p>Redirecting...</p>
+                <script>
+                  // The script below creates a cleaner redirect chain for analytics tools
+                  setTimeout(function() {
+                    window.location.href = "${targetUrl}";
+                  }, 50);
+                </script>
+              </body>
+            </html>
+          `);
+          break;
+          
+        case "http_307":
+          // HTTP 307 Temporary Redirect
+          res.setHeader("X-Processing-Time", `${timeInMs}ms`);
+          res.status(307).header("Location", targetUrl).end();
+          break;
+          
+        case "direct":
+        default:
+          // Standard redirect (302 Found)
+          res.setHeader("X-Processing-Time", `${timeInMs}ms`);
+          res.redirect(targetUrl);
+          break;
       }
-      
-      // If somehow we didn't select a URL (shouldn't happen), pick the first active one
-      if (!selectedUrl && activeUrls.length > 0) {
-        selectedUrl = activeUrls[0];
-      }
-      
-      if (!selectedUrl) {
-        return res.status(500).json({ message: "Failed to select a URL" });
-      }
-      
-      // Redirect to the specific URL using the existing redirect endpoint
-      res.redirect(`/r/${campaignId}/${selectedUrl.id}`);
-      
     } catch (error) {
       res.status(500).json({ message: "Redirect failed" });
     }

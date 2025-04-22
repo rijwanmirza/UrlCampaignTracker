@@ -1,10 +1,26 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import compression from "compression";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Enable compression for all responses
+app.use(compression());
+
+// High-performance JSON parsing with limits to prevent DoS attacks
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+// Add performance and caching headers for redirect URLs
+app.use((req, res, next) => {
+  // Set cache for campaign URLs
+  if (req.path.startsWith('/c/') || req.path.startsWith('/r/')) {
+    res.setHeader('X-Server-ID', 'high-perf-redirector-1');
+    res.setHeader('Cache-Control', 'public, max-age=0');
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
