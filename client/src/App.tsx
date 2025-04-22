@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import URLsPage from "@/pages/urls";
 import RedirectPage from "@/pages/redirect";
 
 function Router() {
@@ -11,7 +12,10 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/campaigns/:id" component={Home} />
+      <Route path="/urls" component={URLsPage} />
       <Route path="/r/:campaignId/:urlId" component={RedirectPage} />
+      <Route path="/views/:customPath" component={RedirectPage} />
+      <Route path="/c/:campaignId" component={RedirectPage} />
       <Route component={NotFound} />
     </Switch>
   );
