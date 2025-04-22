@@ -3,11 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Campaign, insertCampaignSchema } from "@shared/schema";
+import { Campaign, insertCampaignSchema, RedirectMethod } from "@shared/schema";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -21,6 +22,14 @@ const formSchema = insertCampaignSchema.extend({
   name: z.string().min(1, "Campaign name is required").max(100, "Campaign name must be 100 characters or less"),
 });
 
+// Mapping for human-readable redirect method descriptions
+const redirectMethodLabels = {
+  [RedirectMethod.DIRECT]: "Direct (Simple Redirect)",
+  [RedirectMethod.META_REFRESH]: "Meta Refresh",
+  [RedirectMethod.DOUBLE_META_REFRESH]: "Double Meta Refresh",
+  [RedirectMethod.HTTP_307]: "HTTP 307 Redirect",
+};
+
 export default function CampaignForm({ open, onOpenChange, onSuccess }: CampaignFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +38,7 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      redirectMethod: RedirectMethod.DIRECT,
     },
   });
 
@@ -70,7 +80,7 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create New Campaign</DialogTitle>
         </DialogHeader>
@@ -86,6 +96,37 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                   <FormControl>
                     <Input placeholder="Enter campaign name" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="redirectMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Redirect Method</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select redirect method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(redirectMethodLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Choose how visitors will be redirected to target URLs
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

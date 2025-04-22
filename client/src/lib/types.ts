@@ -4,6 +4,7 @@ export interface FormattedCampaign extends CampaignWithUrls {
   activeUrlCount: number;
   totalClicks: number;
   remainingClicks: number;
+  redirectMethod: string;
 }
 
 export const formatCampaign = (campaign: CampaignWithUrls): FormattedCampaign => {
@@ -27,4 +28,5 @@ export interface UrlFormValues {
 
 export interface CampaignFormValues {
   name: string;
+  redirectMethod: string;
 }

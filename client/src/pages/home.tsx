@@ -3,9 +3,11 @@ import { useRoute } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clipboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCampaign } from "@/lib/types";
+import { RedirectMethod } from "@shared/schema";
 import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
 import UrlForm from "@/components/urls/url-form";
 import UrlTable from "@/components/urls/url-table";
@@ -22,7 +24,7 @@ export default function Home() {
   
   // Fetch campaign data if we have an ID
   const { data: campaign, isLoading } = useQuery({
-    queryKey: campaignId ? [`/api/campaigns/${campaignId}`] : null,
+    queryKey: campaignId ? [`/api/campaigns/${campaignId}`] : ['empty-query'],
     enabled: !!campaignId,
   });
 
@@ -80,8 +82,28 @@ export default function Home() {
             {/* Campaign header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">{formattedCampaign.name}</h1>
-                <p className="text-sm text-gray-500">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-gray-800">{formattedCampaign.name}</h1>
+                  {formattedCampaign.redirectMethod && (
+                    <Badge variant="outline" className="text-xs font-normal">
+                      {(() => {
+                        switch (formattedCampaign.redirectMethod) {
+                          case RedirectMethod.META_REFRESH:
+                            return "Meta Refresh";
+                          case RedirectMethod.DOUBLE_META_REFRESH:
+                            return "Double Meta Refresh";
+                          case RedirectMethod.HTTP_307:
+                            return "HTTP 307";
+                          case RedirectMethod.DIRECT:
+                            return "Direct";
+                          default:
+                            return formattedCampaign.redirectMethod;
+                        }
+                      })()}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
                   <span>Created: </span>
                   <span>{formatDate(formattedCampaign.createdAt)}</span>
                 </p>
