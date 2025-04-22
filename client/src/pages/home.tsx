@@ -30,15 +30,20 @@ export default function Home() {
 
   const formattedCampaign = campaign ? formatCampaign(campaign) : undefined;
 
+  // Generate the campaign URL for redirection
+  const getCampaignUrl = (id: number) => {
+    return `${window.location.origin}/c/${id}`;
+  };
+
   const handleCopyCampaignUrl = () => {
     if (!campaign) return;
     
-    const campaignUrl = `${window.location.origin}/c/${campaign.id}`;
+    const campaignUrl = getCampaignUrl(campaign.id);
     navigator.clipboard.writeText(campaignUrl)
       .then(() => {
         toast({
           title: "URL Copied",
-          description: "Campaign URL has been copied to clipboard",
+          description: "Campaign rotation URL has been copied to clipboard",
           variant: "success",
         });
       })

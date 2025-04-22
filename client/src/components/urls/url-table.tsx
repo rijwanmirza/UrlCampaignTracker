@@ -59,28 +59,7 @@ export default function UrlTable({ campaign }: UrlTableProps) {
     }
   };
 
-  const handleCopyUrl = (url: UrlWithActiveStatus) => {
-    const redirectUrl = getRedirectUrl(campaign.id, url.id);
-    navigator.clipboard.writeText(redirectUrl)
-      .then(() => {
-        toast({
-          title: "URL Copied",
-          description: "Redirect URL has been copied to clipboard",
-          variant: "success",
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "Copy Failed",
-          description: "Failed to copy URL to clipboard",
-          variant: "destructive",
-        });
-      });
-  };
-
-  const getRedirectUrl = (campaignId: number, urlId: number) => {
-    return `${window.location.origin}/r/${campaignId}/${urlId}`;
-  };
+  // We no longer need individual URL copy functionality as we're using the campaign URL
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -96,7 +75,7 @@ export default function UrlTable({ campaign }: UrlTableProps) {
               <TableHead>Status</TableHead>
               <TableHead>Target URL</TableHead>
               <TableHead>Clicks</TableHead>
-              <TableHead>Redirect URL</TableHead>
+              <TableHead>Click Weight</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -133,19 +112,16 @@ export default function UrlTable({ campaign }: UrlTableProps) {
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-xs">
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-500 truncate">
-                        {getRedirectUrl(campaign.id, url.id)}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm whitespace-nowrap">
+                        {url.clickLimit}
                       </span>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 ml-2"
-                        onClick={() => handleCopyUrl(url)}
-                      >
-                        <Clipboard className="h-4 w-4" />
-                      </Button>
+                      <div className="text-xs text-gray-500">
+                        {url.isActive 
+                          ? `${url.clickLimit - url.clicks} remaining`
+                          : "Limit reached"}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

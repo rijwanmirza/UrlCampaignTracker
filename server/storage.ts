@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "nanoid";
+
 import { 
   Campaign, 
   InsertCampaign, 
@@ -42,7 +42,10 @@ export class MemStorage implements IStorage {
   async getCampaigns(): Promise<CampaignWithUrls[]> {
     const campaignsWithUrls: CampaignWithUrls[] = [];
     
-    for (const campaign of this.campaigns.values()) {
+    // Convert Map to Array to avoid iterator issues
+    const campaignArray = Array.from(this.campaigns.values());
+    
+    for (const campaign of campaignArray) {
       const urls = await this.getUrls(campaign.id);
       campaignsWithUrls.push({
         ...campaign,
@@ -80,7 +83,10 @@ export class MemStorage implements IStorage {
   async getUrls(campaignId: number): Promise<UrlWithActiveStatus[]> {
     const urlsInCampaign: UrlWithActiveStatus[] = [];
     
-    for (const url of this.urls.values()) {
+    // Convert Map to Array to avoid iterator issues
+    const urlArray = Array.from(this.urls.values());
+    
+    for (const url of urlArray) {
       if (url.campaignId === campaignId) {
         urlsInCampaign.push({
           ...url,

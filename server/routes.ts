@@ -249,6 +249,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Redirect failed" });
     }
   });
+  
+  // Campaign URL with weighted distribution
+  app.get("/c/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      // Get the campaign
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      // Only consider active URLs (those that haven't reached their click limit)
+      const activeUrls = campaign.urls.filter(url => url.clicks < url.clickLimit);
+      
+      if (activeUrls.length === 0) {
+        return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
+      }
+      
+      // Calculate weights for each URL based on click limits
+      const totalWeight = activeUrls.reduce((sum, url) => {
+        // Calculate remaining clicks as the weight factor
+        const remainingClicks = url.clickLimit - url.clicks;
+        return sum + remainingClicks;
+      }, 0);
+      
+      // Select URL based on weighted distribution
+      let selectedUrl = null;
+      let cumulativeWeight = 0;
+      const randomPoint = Math.random() * totalWeight;
+      
+      for (const url of activeUrls) {
+        const remainingClicks = url.clickLimit - url.clicks;
+        cumulativeWeight += remainingClicks;
+        
+        if (cumulativeWeight >= randomPoint) {
+          selectedUrl = url;
+          break;
+        }
+      }
+      
+      // If somehow we didn't select a URL (shouldn't happen), pick the first active one
+      if (!selectedUrl && activeUrls.length > 0) {
+        selectedUrl = activeUrls[0];
+      }
+      
+      if (!selectedUrl) {
+        return res.status(500).json({ message: "Failed to select a URL" });
+      }
+      
+      // Redirect to the specific URL using the existing redirect endpoint
+      res.redirect(`/r/${campaignId}/${selectedUrl.id}`);
+      
+    } catch (error) {
+      res.status(500).json({ message: "Redirect failed" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
