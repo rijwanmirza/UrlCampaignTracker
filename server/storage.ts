@@ -1,37 +1,52 @@
 
 import { 
   Campaign, 
-  InsertCampaign, 
+  InsertCampaign,
+  UpdateCampaign,
   Url, 
   InsertUrl, 
   UpdateUrl, 
   CampaignWithUrls,
-  UrlWithActiveStatus
+  UrlWithActiveStatus,
+  campaigns,
+  urls
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
   // Campaign operations
   getCampaigns(): Promise<CampaignWithUrls[]>;
   getCampaign(id: number): Promise<CampaignWithUrls | undefined>;
+  getCampaignByCustomPath(customPath: string): Promise<CampaignWithUrls | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
+  updateCampaign(id: number, campaign: UpdateCampaign): Promise<Campaign | undefined>;
   
   // URL operations
   getUrls(campaignId: number): Promise<UrlWithActiveStatus[]>;
+  getAllUrls(page: number, limit: number, search?: string, status?: string): Promise<{ urls: UrlWithActiveStatus[], total: number }>;
   getUrl(id: number): Promise<Url | undefined>;
   createUrl(url: InsertUrl): Promise<Url>;
   updateUrl(id: number, url: UpdateUrl): Promise<Url | undefined>;
   deleteUrl(id: number): Promise<boolean>;
+  permanentlyDeleteUrl(id: number): Promise<boolean>;
+  bulkUpdateUrls(ids: number[], action: string): Promise<boolean>;
   
   // Redirect operation
   incrementUrlClicks(id: number): Promise<Url | undefined>;
+  getRandomWeightedUrl(campaignId: number): Promise<UrlWithActiveStatus | null>;
+  getWeightedUrlDistribution(campaignId: number): Promise<{
+    activeUrls: UrlWithActiveStatus[],
+    weightedDistribution: {
+      url: UrlWithActiveStatus,
+      weight: number,
+      startRange: number,
+      endRange: number
+    }[]
+  }>;
 }
 
-export class MemStorage implements IStorage {
-  private campaigns: Map<number, Campaign>;
-  private urls: Map<number, Url>;
-  private campaignIdCounter: number;
-  private urlIdCounter: number;
-  
+export class DatabaseStorage implements IStorage {
   // Cache for active URLs by campaign for faster lookups during redirects
   private campaignUrlsCache: Map<number, {
     lastUpdated: number,
@@ -48,20 +63,15 @@ export class MemStorage implements IStorage {
   private cacheTTL = 5000;
 
   constructor() {
-    this.campaigns = new Map();
-    this.urls = new Map();
-    this.campaignIdCounter = 1;
-    this.urlIdCounter = 1;
     this.campaignUrlsCache = new Map();
   }
 
   async getCampaigns(): Promise<CampaignWithUrls[]> {
+    const campaignsResult = await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
+    
     const campaignsWithUrls: CampaignWithUrls[] = [];
     
-    // Convert Map to Array to avoid iterator issues
-    const campaignArray = Array.from(this.campaigns.values());
-    
-    for (const campaign of campaignArray) {
+    for (const campaign of campaignsResult) {
       const urls = await this.getUrls(campaign.id);
       campaignsWithUrls.push({
         ...campaign,
@@ -73,7 +83,7 @@ export class MemStorage implements IStorage {
   }
 
   async getCampaign(id: number): Promise<CampaignWithUrls | undefined> {
-    const campaign = this.campaigns.get(id);
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
     if (!campaign) return undefined;
     
     const urls = await this.getUrls(id);
@@ -83,98 +93,276 @@ export class MemStorage implements IStorage {
     };
   }
 
-  async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
-    const id = this.campaignIdCounter++;
-    const campaign: Campaign = {
-      id,
-      ...insertCampaign,
-      redirectMethod: insertCampaign.redirectMethod || "direct", // Ensure default value
-      createdAt: new Date()
-    };
+  async getCampaignByCustomPath(customPath: string): Promise<CampaignWithUrls | undefined> {
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.customPath, customPath));
+    if (!campaign) return undefined;
     
-    this.campaigns.set(id, campaign);
+    const urls = await this.getUrls(campaign.id);
+    return {
+      ...campaign,
+      urls
+    };
+  }
+
+  async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
+    const now = new Date();
+    const [campaign] = await db
+      .insert(campaigns)
+      .values({
+        ...insertCampaign,
+        redirectMethod: insertCampaign.redirectMethod || "direct",
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
+    
     return campaign;
   }
 
+  async updateCampaign(id: number, updateCampaign: UpdateCampaign): Promise<Campaign | undefined> {
+    const [existing] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    if (!existing) return undefined;
+    
+    const [updated] = await db
+      .update(campaigns)
+      .set({
+        ...updateCampaign,
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, id))
+      .returning();
+    
+    return updated;
+  }
+
   async getUrls(campaignId: number): Promise<UrlWithActiveStatus[]> {
-    const urlsInCampaign: UrlWithActiveStatus[] = [];
+    // Get all URLs for a campaign that are not deleted
+    const urlsResult = await db
+      .select()
+      .from(urls)
+      .where(
+        and(
+          eq(urls.campaignId, campaignId),
+          ne(urls.status, 'deleted')
+        )
+      )
+      .orderBy(desc(urls.createdAt));
     
-    // Convert Map to Array to avoid iterator issues
-    const urlArray = Array.from(this.urls.values());
+    // Add isActive status based on click limit and status
+    return urlsResult.map(url => ({
+      ...url,
+      isActive: url.clicks < url.clickLimit && url.status === 'active'
+    }));
+  }
+
+  async getAllUrls(
+    page: number = 1, 
+    limit: number = 100, 
+    search?: string, 
+    status?: string
+  ): Promise<{ urls: UrlWithActiveStatus[], total: number }> {
+    const offset = (page - 1) * limit;
     
-    for (const url of urlArray) {
-      if (url.campaignId === campaignId) {
-        urlsInCampaign.push({
-          ...url,
-          isActive: url.clicks < url.clickLimit
-        });
-      }
+    let query = db.select().from(urls);
+    
+    // Add search condition if provided
+    if (search) {
+      query = query.where(
+        or(
+          ilike(urls.name, `%${search}%`),
+          ilike(urls.targetUrl, `%${search}%`)
+        )
+      );
     }
     
-    return urlsInCampaign;
+    // Add status filter if provided
+    if (status && status !== 'all') {
+      query = query.where(eq(urls.status, status));
+    }
+    
+    // Count total records
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(urls)
+      .where(query.where);
+    
+    // Get paginated results
+    const urlsResult = await query
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(urls.createdAt));
+    
+    // Add isActive status
+    const urlsWithStatus = urlsResult.map(url => ({
+      ...url,
+      isActive: url.clicks < url.clickLimit && url.status === 'active'
+    }));
+    
+    return { 
+      urls: urlsWithStatus, 
+      total: count
+    };
   }
 
   async getUrl(id: number): Promise<Url | undefined> {
-    return this.urls.get(id);
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    return url;
   }
 
   async createUrl(insertUrl: InsertUrl): Promise<Url> {
-    const id = this.urlIdCounter++;
-    const url: Url = {
-      id,
-      ...insertUrl,
-      clicks: 0,
-      createdAt: new Date()
-    };
-    
-    this.urls.set(id, url);
+    const now = new Date();
+    const [url] = await db
+      .insert(urls)
+      .values({
+        ...insertUrl,
+        clicks: 0,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
     
     // Invalidate the campaign cache when adding a new URL
-    this.invalidateCampaignCache(url.campaignId);
+    if (url.campaignId) {
+      this.invalidateCampaignCache(url.campaignId);
+    }
     
     return url;
   }
 
   async updateUrl(id: number, updateUrl: UpdateUrl): Promise<Url | undefined> {
-    const existingUrl = this.urls.get(id);
+    const [existingUrl] = await db.select().from(urls).where(eq(urls.id, id));
     if (!existingUrl) return undefined;
     
-    const updatedUrl: Url = {
-      ...existingUrl,
-      ...updateUrl
-    };
+    // Check if the URL has completed all clicks
+    if (existingUrl.clicks >= existingUrl.clickLimit && updateUrl.status !== 'completed') {
+      updateUrl.status = 'completed';
+    }
     
-    this.urls.set(id, updatedUrl);
+    const [updatedUrl] = await db
+      .update(urls)
+      .set({
+        ...updateUrl,
+        updatedAt: new Date()
+      })
+      .where(eq(urls.id, id))
+      .returning();
     
     // Invalidate the campaign cache when updating a URL
-    this.invalidateCampaignCache(existingUrl.campaignId);
+    if (existingUrl.campaignId) {
+      this.invalidateCampaignCache(existingUrl.campaignId);
+    }
     
     return updatedUrl;
   }
 
   async deleteUrl(id: number): Promise<boolean> {
-    const url = this.urls.get(id);
-    if (url) {
-      // Invalidate the campaign cache before deleting the URL
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    if (!url) return false;
+    
+    // Soft delete - just update status to 'deleted'
+    await db
+      .update(urls)
+      .set({ 
+        status: 'deleted',
+        updatedAt: new Date() 
+      })
+      .where(eq(urls.id, id));
+    
+    // Invalidate the campaign cache
+    if (url.campaignId) {
       this.invalidateCampaignCache(url.campaignId);
     }
     
-    return this.urls.delete(id);
+    return true;
+  }
+
+  async permanentlyDeleteUrl(id: number): Promise<boolean> {
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    if (!url) return false;
+    
+    // Permanently delete URL
+    await db.delete(urls).where(eq(urls.id, id));
+    
+    // Invalidate the campaign cache
+    if (url.campaignId) {
+      this.invalidateCampaignCache(url.campaignId);
+    }
+    
+    return true;
+  }
+
+  async bulkUpdateUrls(ids: number[], action: string): Promise<boolean> {
+    // Validate that URLs exist
+    const urlsToUpdate = await db.select().from(urls).where(inArray(urls.id, ids));
+    if (urlsToUpdate.length === 0) return false;
+    
+    let newStatus: string | undefined;
+    let shouldDelete = false;
+    
+    switch (action) {
+      case 'pause':
+        newStatus = 'paused';
+        break;
+      case 'activate':
+        newStatus = 'active';
+        break;
+      case 'delete':
+        newStatus = 'deleted';
+        break;
+      case 'permanent_delete':
+        shouldDelete = true;
+        break;
+    }
+    
+    if (shouldDelete) {
+      // Permanently delete URLs
+      await db.delete(urls).where(inArray(urls.id, ids));
+    } else if (newStatus) {
+      // Update status
+      await db
+        .update(urls)
+        .set({ 
+          status: newStatus,
+          updatedAt: new Date() 
+        })
+        .where(inArray(urls.id, ids));
+    }
+    
+    // Invalidate cache for all affected campaigns
+    const campaignIds = new Set<number>();
+    for (const url of urlsToUpdate) {
+      if (url.campaignId) {
+        campaignIds.add(url.campaignId);
+      }
+    }
+    
+    campaignIds.forEach(id => this.invalidateCampaignCache(id));
+    
+    return true;
   }
 
   async incrementUrlClicks(id: number): Promise<Url | undefined> {
-    const url = this.urls.get(id);
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
     if (!url) return undefined;
     
-    const updatedUrl: Url = {
-      ...url,
-      clicks: url.clicks + 1
-    };
+    const newClicks = url.clicks + 1;
+    const isCompleted = newClicks >= url.clickLimit;
     
-    this.urls.set(id, updatedUrl);
+    const [updatedUrl] = await db
+      .update(urls)
+      .set({ 
+        clicks: newClicks,
+        status: isCompleted ? 'completed' : url.status,
+        updatedAt: new Date() 
+      })
+      .where(eq(urls.id, id))
+      .returning();
     
     // Invalidate campaign cache for this URL to ensure weight distribution is recalculated
-    this.invalidateCampaignCache(url.campaignId);
+    if (url.campaignId) {
+      this.invalidateCampaignCache(url.campaignId);
+    }
     
     return updatedUrl;
   }
@@ -271,4 +459,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
