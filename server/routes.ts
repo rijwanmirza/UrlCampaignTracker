@@ -21,6 +21,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch campaigns" });
     }
   });
+  
+  // Get campaign by custom path
+  app.get("/api/campaigns/path/:customPath", async (req: Request, res: Response) => {
+    try {
+      const customPath = req.params.customPath;
+      if (!customPath) {
+        return res.status(400).json({ message: "Invalid custom path" });
+      }
+      
+      const campaign = await storage.getCampaignByCustomPath(customPath);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch campaign" });
+    }
+  });
 
   app.get("/api/campaigns/:id", async (req: Request, res: Response) => {
     try {
@@ -163,6 +182,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete URL" });
     }
   });
+  
+  // Permanently delete a URL (hard delete)
+  app.delete("/api/urls/:id/permanent", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+
+      const success = await storage.permanentlyDeleteUrl(id);
+      if (!success) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to permanently delete URL" });
+    }
+  });
+  
+  // Bulk URL actions (pause, activate, delete, etc.)
+  app.post("/api/urls/bulk", async (req: Request, res: Response) => {
+    try {
+      const result = bulkUrlActionSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      const { urlIds, action } = result.data;
+      
+      if (!urlIds.length) {
+        return res.status(400).json({ message: "No URL IDs provided" });
+      }
+      
+      const success = await storage.bulkUpdateUrls(urlIds, action);
+      if (!success) {
+        return res.status(404).json({ message: "No valid URLs found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to perform bulk action" });
+    }
+  });
+  
+  // Get all URLs with pagination, search and filtering
+  app.get("/api/urls", async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const search = req.query.search as string;
+      const status = req.query.status as string;
+      
+      const result = await storage.getAllUrls(page, limit, search, status);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch URLs" });
+    }
+  });
 
   // Redirect endpoint
   app.get("/r/:campaignId/:urlId", async (req: Request, res: Response) => {
@@ -278,6 +357,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </body>
         </html>
       `);
+    } catch (error) {
+      res.status(500).json({ message: "Redirect failed" });
+    }
+  });
+  
+  // Custom path URL access for campaigns
+  app.get("/views/:customPath", async (req: Request, res: Response) => {
+    try {
+      const startTime = process.hrtime();
+      const customPath = req.params.customPath;
+      
+      if (!customPath) {
+        return res.status(400).json({ message: "Invalid custom path" });
+      }
+      
+      // Get the campaign by custom path
+      const campaign = await storage.getCampaignByCustomPath(customPath);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Use our optimized method to get a URL based on weighted distribution
+      const selectedUrl = await storage.getRandomWeightedUrl(campaign.id);
+      
+      if (!selectedUrl) {
+        return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
+      }
+      
+      // Increment click count
+      await storage.incrementUrlClicks(selectedUrl.id);
+      
+      // Performance metrics
+      const endTime = process.hrtime(startTime);
+      const timeInMs = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
+      
+      // Handle the redirect based on the campaign's redirect method
+      const targetUrl = selectedUrl.targetUrl;
+      
+      switch (campaign.redirectMethod) {
+        case "meta_refresh":
+          // Meta refresh redirect
+          res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta http-equiv="refresh" content="0;url=${targetUrl}">
+                <title>Redirecting...</title>
+                <!-- Processed in ${timeInMs}ms -->
+              </head>
+              <body>
+                <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
+              </body>
+            </html>
+          `);
+          break;
+          
+        case "double_meta_refresh":
+          // For double meta refresh, we'll do a special optimized version
+          res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta http-equiv="refresh" content="0;url=${targetUrl}">
+                <title>Redirecting...</title>
+                <!-- Processed in ${timeInMs}ms (optimized bridge) -->
+              </head>
+              <body>
+                <p>Redirecting...</p>
+                <script>
+                  // The script below creates a cleaner redirect chain for analytics tools
+                  setTimeout(function() {
+                    window.location.href = "${targetUrl}";
+                  }, 50);
+                </script>
+              </body>
+            </html>
+          `);
+          break;
+          
+        case "http_307":
+          // HTTP 307 Temporary Redirect
+          res.setHeader("X-Processing-Time", `${timeInMs}ms`);
+          res.status(307).header("Location", targetUrl).end();
+          break;
+          
+        case "direct":
+        default:
+          // Standard redirect (302 Found)
+          res.setHeader("X-Processing-Time", `${timeInMs}ms`);
+          res.redirect(targetUrl);
+          break;
+      }
     } catch (error) {
       res.status(500).json({ message: "Redirect failed" });
     }
