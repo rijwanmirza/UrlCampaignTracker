@@ -163,11 +163,12 @@ export class DatabaseStorage implements IStorage {
   ): Promise<{ urls: UrlWithActiveStatus[], total: number }> {
     const offset = (page - 1) * limit;
     
-    let query = db.select().from(urls);
+    // Base query conditions
+    let conditions = [];
     
     // Add search condition if provided
     if (search) {
-      query = query.where(
+      conditions.push(
         or(
           ilike(urls.name, `%${search}%`),
           ilike(urls.targetUrl, `%${search}%`)
@@ -177,17 +178,22 @@ export class DatabaseStorage implements IStorage {
     
     // Add status filter if provided
     if (status && status !== 'all') {
-      query = query.where(eq(urls.status, status));
+      conditions.push(eq(urls.status, status));
     }
     
     // Count total records
-    const [{ count }] = await db
+    const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(urls)
-      .where(query.where);
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    
+    const total = Number(countResult[0]?.count || 0);
     
     // Get paginated results
-    const urlsResult = await query
+    const urlsResult = await db
+      .select()
+      .from(urls)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .limit(limit)
       .offset(offset)
       .orderBy(desc(urls.createdAt));
@@ -200,7 +206,7 @@ export class DatabaseStorage implements IStorage {
     
     return { 
       urls: urlsWithStatus, 
-      total: count
+      total
     };
   }
 

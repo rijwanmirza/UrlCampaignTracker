@@ -1,7 +1,14 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCampaignSchema, insertUrlSchema, updateUrlSchema } from "@shared/schema";
+import { 
+  insertCampaignSchema, 
+  updateCampaignSchema,
+  insertUrlSchema, 
+  updateUrlSchema,
+  bulkUrlActionSchema
+} from "@shared/schema";
+import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -45,6 +52,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(campaign);
     } catch (error) {
       res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+  
+  // Update an existing campaign
+  app.put("/api/campaigns/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      const result = updateCampaignSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      const updatedCampaign = await storage.updateCampaign(id, result.data);
+      
+      if (!updatedCampaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      res.json(updatedCampaign);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update campaign" });
     }
   });
 
