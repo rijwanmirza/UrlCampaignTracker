@@ -1,6 +1,4 @@
 declare module 'nodemailer-smtp-transport' {
-  import { TransportOptions } from 'nodemailer';
-  
   interface SmtpOptions {
     host?: string;
     port?: number;
@@ -15,8 +13,6 @@ declare module 'nodemailer-smtp-transport' {
     tls?: any;
     tlsOptions?: any;
   }
-  
-  function smtpTransport(options: SmtpOptions): TransportOptions;
-  
-  export = smtpTransport;
+
+  export default function smtpTransport(options: SmtpOptions): any;
 }

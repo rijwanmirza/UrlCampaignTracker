@@ -4,6 +4,7 @@ import { log } from './vite';
 import { InsertUrl } from '@shared/schema';
 import { storage } from './storage';
 import nodemailer from 'nodemailer';
+// @ts-ignore - Ignore TypeScript errors for this module since we have a declaration file
 import smtpTransport from 'nodemailer-smtp-transport';
 
 interface GmailConfigOptions {
@@ -31,7 +32,8 @@ const defaultGmailConfig: GmailConfigOptions = {
   port: 993,
   tls: true,
   tlsOptions: { rejectUnauthorized: false },
-  whitelistSenders: ['help@donot-reply.in'], // Added the requested email to whitelist
+  // Empty whitelist means accept from any sender - we'll log and filter in code
+  whitelistSenders: [], // Remove restriction to see all incoming emails first
   // Use more general patterns that match any email with numeric values and URLs
   subjectPattern: /.*/,  // Match any subject
   messagePattern: {
@@ -198,24 +200,36 @@ class GmailReader {
             return;
           }
           
-          // Find the first numeric value as quantity (assume any number is a quantity)
-          const quantityRegex = /\b(\d+)\b/g;
-          const allQuantities = emailText.match(quantityRegex) || [];
+          // Extract order ID from email text
+          const orderIdMatch = emailText.match(/Order Id\s*:\s*(\d+)/i);
+          const orderId = orderIdMatch ? orderIdMatch[1] : 
+                         (parsed.subject ? 
+                          parsed.subject.replace(/[^a-zA-Z0-9]/g, '-') : 
+                          `order-${Date.now().toString().slice(-6)}`);
           
-          if (allQuantities.length === 0) {
-            log(`No quantities found in email content`, 'gmail-reader');
+          // Extract quantity from email text - look specifically for quantity label
+          const quantityMatch = emailText.match(/Quantity\s*:\s*(\d+)/i);
+          if (!quantityMatch) {
+            log(`No quantity found in email content with 'Quantity:' label`, 'gmail-reader');
             resolve();
             return;
           }
           
-          // Use subject line or a random ID if needed for order ID
-          const orderId = parsed.subject ? 
-                          parsed.subject.replace(/[^a-zA-Z0-9]/g, '-') : 
-                          `order-${Date.now().toString().slice(-6)}`;
+          // Get URL and quantity found
+          const url = allUrls[0]; // URL is guaranteed to exist by previous checks
           
-          // Get first URL and quantity found (guaranteed to exist by previous checks)
-          const url = allUrls[0] || 'https://example.com'; // Fallback just in case
-          const quantity = parseInt(allQuantities[0], 10);
+          // Parse quantity with sanity checks
+          let extractedQuantity = parseInt(quantityMatch[1], 10);
+          
+          // Apply sanity limits to quantity
+          let quantity = extractedQuantity;
+          if (extractedQuantity > 100000) {
+            log(`Unreasonably large quantity (${extractedQuantity}) found - using 1000 as default.`, 'gmail-reader');
+            quantity = 1000;  // Use a reasonable default
+          } else if (extractedQuantity < 1) {
+            log(`Invalid quantity (${extractedQuantity}) found - using 100 as default.`, 'gmail-reader');
+            quantity = 100;  // Ensure at least some clicks
+          }
           
           log(`Extracted data from email:
             Order ID: ${orderId}
@@ -241,7 +255,7 @@ class GmailReader {
             // Prepare the URL data with both original and calculated values
             const newUrl: InsertUrl = {
               name: orderId,
-              targetUrl: url,
+              targetUrl: url || 'https://example.com', // Provide a fallback
               clickLimit: calculatedClickLimit,   // Multiplied by campaign multiplier
               originalClickLimit: quantity,       // Original value from email
               campaignId: this.config.defaultCampaignId
