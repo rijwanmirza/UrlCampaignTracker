@@ -28,11 +28,7 @@ export default function CampaignDeleteButton({ campaignId, onSuccess }: Campaign
   
   const deleteCampaignMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest({
-        url: `/api/campaigns/${campaignId}`,
-        method: 'DELETE',
-        body: {},
-      });
+      return apiRequest('DELETE', `/api/campaigns/${campaignId}`, undefined);
     },
     onSuccess: () => {
       toast({

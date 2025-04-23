@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Clipboard, ExternalLink, MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
-import { UrlWithActiveStatus } from "@shared/schema";
+import { Clipboard, Edit, ExternalLink, MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
+import { Url, UrlWithActiveStatus } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import UrlEditForm from "@/components/urls/url-edit-form";
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface CampaignUrlsProps {
   campaignId: number;
@@ -45,6 +47,8 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [editingUrl, setEditingUrl] = useState<UrlWithActiveStatus | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   
   // Get only active and paused URLs (not completed or deleted)
   const activeUrls = urls.filter(url => url.status === 'active' || url.status === 'paused');
@@ -242,6 +246,16 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setEditingUrl(url);
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit URL
+                      </DropdownMenuItem>
+
                       {url.status === 'paused' && (
                         <DropdownMenuItem onClick={() => handleActivateUrl(url.id)}>
                           <Play className="h-4 w-4 mr-2" />
@@ -295,6 +309,31 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* URL Edit Dialog */}
+      <Dialog 
+        open={editModalOpen} 
+        onOpenChange={(open) => {
+          setEditModalOpen(open);
+          if (!open) setEditingUrl(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          {editingUrl && (
+            <UrlEditForm 
+              url={editingUrl} 
+              onSuccess={() => {
+                setEditModalOpen(false);
+                setEditingUrl(null);
+                // Refresh the parent component
+                if (onRefresh) {
+                  onRefresh();
+                }
+              }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
