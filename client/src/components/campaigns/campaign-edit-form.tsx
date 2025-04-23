@@ -41,7 +41,7 @@ const campaignEditSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   redirectMethod: z.string(),
   customPath: z.string().optional(),
-  multiplier: z.number().int().min(1, "Multiplier must be at least 1").optional(),
+  multiplier: z.number().min(0.01, "Multiplier must be at least 0.01").optional(),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -63,7 +63,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       name: campaign.name,
       redirectMethod: campaign.redirectMethod,
       customPath: campaign.customPath || "",
-      multiplier: campaign.multiplier || 1,
+      multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     },
   });
   
@@ -216,9 +216,10 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   <FormControl>
                     <Input 
                       type="number" 
-                      min="1"
+                      min="0.01"
+                      step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
                       value={field.value}
                     />
                   </FormControl>
