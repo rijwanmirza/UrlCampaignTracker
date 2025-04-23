@@ -213,11 +213,24 @@ export class DatabaseStorage implements IStorage {
       .offset(offset)
       .orderBy(desc(urls.createdAt));
     
-    // Add isActive status
-    const urlsWithStatus = urlsResult.map(url => ({
-      ...url,
-      isActive: url.clicks < url.clickLimit && url.status === 'active'
-    }));
+    // Add isActive status and check if URLs have reached their click limit
+    const urlsWithStatus = urlsResult.map(url => {
+      // Check if URL should be marked as completed
+      const needsStatusUpdate = url.clicks >= url.clickLimit && url.status !== 'completed';
+      
+      // If we find a URL that has reached its click limit but hasn't been marked as completed,
+      // update its status in the database asynchronously
+      if (needsStatusUpdate) {
+        this.updateUrlStatus(url.id, 'completed');
+      }
+      
+      return {
+        ...url,
+        // If the URL has reached its click limit, it's considered completed regardless of DB status
+        status: url.clicks >= url.clickLimit ? 'completed' : url.status,
+        isActive: url.clicks < url.clickLimit && url.status === 'active'
+      };
+    });
     
     return { 
       urls: urlsWithStatus, 
@@ -477,6 +490,23 @@ export class DatabaseStorage implements IStorage {
   // Invalidate campaign cache when URLs are modified
   private invalidateCampaignCache(campaignId: number) {
     this.campaignUrlsCache.delete(campaignId);
+  }
+  
+  // Helper to update URL status (used for async marking URLs as completed)
+  async updateUrlStatus(id: number, status: string): Promise<void> {
+    await db
+      .update(urls)
+      .set({
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(urls.id, id));
+      
+    // Get the URL to find its campaign ID
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    if (url?.campaignId) {
+      this.invalidateCampaignCache(url.campaignId);
+    }
   }
 }
 
