@@ -10,7 +10,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <NewNavbar />
-      <div className="flex-1 flex flex-col">{children}</div>
+      <div className="flex-1 flex flex-col overflow-y-auto">{children}</div>
     </div>
   );
 }

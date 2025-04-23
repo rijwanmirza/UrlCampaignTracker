@@ -131,7 +131,7 @@ export default function CampaignList() {
 
   return (
     <div className="min-h-screen">
-      <main className="flex-1 overflow-y-auto bg-gray-50">
+      <main className="flex-1 overflow-y-auto bg-gray-50" style={{ paddingBottom: '5rem' }}>
         <div className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
             <div>
