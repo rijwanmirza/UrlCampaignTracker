@@ -107,7 +107,11 @@ class GmailReader {
   
   // Check if an email has been processed before
   private hasBeenProcessed(emailId: string): boolean {
-    return this.processedEmails.has(emailId);
+    const isProcessed = this.processedEmails.has(emailId);
+    if (isProcessed) {
+      log(`Skipping already processed email (ID: ${emailId})`, 'gmail-reader');
+    }
+    return isProcessed;
   }
   
   // Clean up processed emails log by date
@@ -361,10 +365,24 @@ class GmailReader {
           
           // Add URL to the campaign
           try {
-            // Fetch the campaign to check for multiplier
+            // First check if we already have this order ID in the campaign
+            // This is our first defense against duplicates
             const campaign = await storage.getCampaign(this.config.defaultCampaignId);
             if (!campaign) {
               log(`Campaign with ID ${this.config.defaultCampaignId} not found`, 'gmail-reader');
+              resolve();
+              return;
+            }
+            
+            // Check if URL with this name already exists in the campaign
+            const existingUrls = campaign.urls || [];
+            const urlWithSameName = existingUrls.find(u => 
+              u.name === orderId || u.name.startsWith(`${orderId} #`));
+            
+            if (urlWithSameName) {
+              log(`URL with name "${orderId}" already exists in campaign ${this.config.defaultCampaignId}. Skipping.`, 'gmail-reader');
+              // Log this email as processed even though we're skipping it
+              this.logProcessedEmail(msgId);
               resolve();
               return;
             }
@@ -413,6 +431,9 @@ class GmailReader {
     });
   }
 
+  // Track if we've done the initial scan
+  private initialScanComplete = false;
+
   private async checkEmails() {
     if (!this.isRunning) return;
     
@@ -427,7 +448,7 @@ class GmailReader {
           
           // Search for all messages on initial run, then only unseen ones after
           // This ensures we process existing messages too
-          const searchCriteria = ['ALL']; // Get all emails first time
+          const searchCriteria = this.initialScanComplete ? ['UNSEEN'] : ['ALL'];
           log(`Searching for ${searchCriteria.join(', ')} messages in inbox`, 'gmail-reader');
           
           this.imap.search(searchCriteria, async (err, results) => {
@@ -460,6 +481,13 @@ class GmailReader {
             fetch.once('end', async () => {
               await Promise.all(processedEmails);
               log(`Finished processing batch of ${processedEmails.length} emails`, 'gmail-reader');
+              
+              // Mark initial scan as complete if this was the first run
+              if (!this.initialScanComplete) {
+                this.initialScanComplete = true;
+                log('Initial email scan complete. Future scans will only process new emails.', 'gmail-reader');
+              }
+              
               resolve();
             });
           });
@@ -515,6 +543,7 @@ class GmailReader {
     }
     
     this.isRunning = false;
+    this.initialScanComplete = false; // Reset scan state for next start
     
     try {
       this.imap.end();
