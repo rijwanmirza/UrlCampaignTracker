@@ -82,10 +82,9 @@ export const insertUrlSchema = createInsertSchema(urls).omit({
   status: true,
   createdAt: true,
   updatedAt: true,
-  originalClickLimit: true,
 }).extend({
-  // The originalClickLimit will be set to the same as clickLimit initially
   clickLimit: z.number().int().min(1),
+  originalClickLimit: z.number().int().min(1), // Allow explicitly setting the original click limit
 });
 
 export const updateUrlSchema = createInsertSchema(urls).omit({
