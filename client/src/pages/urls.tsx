@@ -58,12 +58,21 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { UrlWithActiveStatus } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
 import UrlEditForm from "@/components/urls/url-edit-form";
 import { apiRequest } from "@/lib/queryClient";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Table pagination component
 function Pagination({ 
