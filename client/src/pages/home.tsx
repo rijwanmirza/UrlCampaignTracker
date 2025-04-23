@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clipboard } from "lucide-react";
+import { Clipboard, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -9,8 +9,8 @@ import { formatCampaign } from "@/lib/types";
 import { CampaignWithUrls } from "@shared/schema";
 import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
 import CampaignDetails from "@/components/campaigns/campaign-details";
+import CampaignUrls from "@/components/campaigns/campaign-urls";
 import UrlForm from "@/components/urls/url-form";
-import UrlTable from "@/components/urls/url-table";
 import StatsCards from "@/components/stats/stats-cards";
 
 export default function Home() {
@@ -114,8 +114,29 @@ export default function Home() {
             {/* Stats summary cards */}
             <StatsCards campaign={formattedCampaign} />
             
-            {/* URLs list */}
-            <UrlTable campaign={formattedCampaign} />
+            {/* Section headers with IDs */}
+            <div className="flex justify-between items-center mt-8 mb-4">
+              <div className="flex items-center">
+                <h2 className="text-xl font-bold">Active URLs</h2>
+                <span className="ml-3 text-sm text-gray-500">Only showing active & paused URLs</span>
+              </div>
+              
+              <Link href="/urls">
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <List className="h-4 w-4" />
+                  View URL History
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Only active URLs list */}
+            <CampaignUrls 
+              campaignId={formattedCampaign.id} 
+              urls={formattedCampaign.urls}
+              onRefresh={() => {
+                queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${formattedCampaign.id}`] });
+              }}
+            />
             
             {/* URL Form Modal */}
             <UrlForm 

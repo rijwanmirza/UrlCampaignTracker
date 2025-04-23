@@ -508,6 +508,7 @@ export default function URLsPage() {
                         aria-label="Select all URLs"
                       />
                     </TableHead>
+                    <TableHead className="w-[60px]">ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Target URL</TableHead>
                     <TableHead>Campaign</TableHead>
@@ -549,6 +550,7 @@ export default function URLsPage() {
                             aria-label={`Select URL ${url.name}`}
                           />
                         </TableCell>
+                        <TableCell className="font-mono text-xs">{url.id}</TableCell>
                         <TableCell className="font-medium">{url.name}</TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           <a 
