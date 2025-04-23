@@ -115,32 +115,45 @@ export default function Navbar() {
         </div>
       )}
       
-      {/* Mobile top tabs (when menu is closed) */}
+      {/* Mobile top tabs (when menu is closed) - Styled like in screenshot */}
       {isMobile && !mobileMenuOpen && (
-        <div className="px-2 pb-1 flex space-x-2 overflow-x-auto">
+        <div className="flex border-b bg-white overflow-x-auto">
           <Link 
             href="/campaigns"
             className={cn(
-              "flex items-center px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap",
+              "flex items-center px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap flex-1 justify-center",
               location.startsWith("/campaigns") 
-                ? "bg-primary text-white" 
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                ? "text-primary border-primary" 
+                : "border-transparent text-gray-600 hover:text-gray-800"
             )}
           >
-            <FaLink className="mr-1.5 h-3.5 w-3.5" />
-            Campaigns
+            <span className="flex gap-1 items-center">
+              <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="7" height="7" x="3" y="3" rx="1" />
+                <rect width="7" height="7" x="14" y="3" rx="1" />
+                <rect width="7" height="7" x="14" y="14" rx="1" />
+                <rect width="7" height="7" x="3" y="14" rx="1" />
+              </svg>
+              Campaigns
+            </span>
           </Link>
+          
           <Link 
             href="/urls"
             className={cn(
-              "flex items-center px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap",
+              "flex items-center px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap flex-1 justify-center",
               location.startsWith("/urls") 
-                ? "bg-primary text-white" 
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                ? "text-primary border-primary" 
+                : "border-transparent text-gray-600 hover:text-gray-800"
             )}
           >
-            <FaHistory className="mr-1.5 h-3.5 w-3.5" />
-            URL History
+            <span className="flex gap-1 items-center">
+              <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              URL History
+            </span>
           </Link>
         </div>
       )}

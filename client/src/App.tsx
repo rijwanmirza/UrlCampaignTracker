@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 function Router() {
   const [location] = useLocation();
+  const isMobile = useIsMobile();
   
   // Check if current location is a redirect route
   const isRedirectRoute = 
@@ -40,7 +41,9 @@ function Router() {
           <Redirect to="/campaigns" />
         </Route>
         <Route path="/campaigns/:id?" component={Home} />
-        <Route path="/urls" component={URLsPage} />
+        <Route path="/urls">
+          {isMobile ? <URLsMobilePage /> : <URLsPage />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

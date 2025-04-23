@@ -670,7 +670,6 @@ export default function URLsPage() {
           <DialogContent className="sm:max-w-[500px]">
             <UrlEditForm 
               url={editingUrl} 
-              onClose={() => setEditingUrl(null)}
               onSuccess={() => {
                 queryClient.invalidateQueries({ queryKey: ['urls'] });
                 setEditingUrl(null);
