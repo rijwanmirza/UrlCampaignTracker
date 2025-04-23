@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mail, Play, Power, Save } from "lucide-react";
+import { Loader2, Mail, Play, Power, Save, Trash, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Campaign } from "@shared/schema";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Define Gmail settings form schema
 const gmailSettingsSchema = z.object({
@@ -36,6 +37,11 @@ type GmailSettingsFormValues = z.infer<typeof gmailSettingsSchema>;
 export default function GmailSettingsPage() {
   const { toast } = useToast();
   const [readerStatus, setReaderStatus] = useState<{ isRunning: boolean, config: any } | null>(null);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [daysToKeep, setDaysToKeep] = useState<string>("30");
+  const [useCustomDateRange, setUseCustomDateRange] = useState(false);
+  const [beforeDate, setBeforeDate] = useState<string>("");
+  const [afterDate, setAfterDate] = useState<string>("");
   
   // Fetch campaigns for the campaign selector
   const { data: campaigns = [] } = useQuery<Campaign[]>({
@@ -262,6 +268,50 @@ export default function GmailSettingsPage() {
     }
   });
   
+  // Cleanup logs mutation
+  const cleanupLogsMutation = useMutation<
+    { message: string, entriesRemoved: number, entriesKept: number },
+    Error,
+    { beforeDate?: string, afterDate?: string, daysToKeep?: string }
+  >({
+    mutationFn: (params) => {
+      return apiRequest<{ message: string, entriesRemoved: number, entriesKept: number }>(
+        'POST', 
+        '/api/gmail-reader/cleanup-logs', 
+        params
+      );
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Logs Cleaned Up",
+        description: `Successfully cleaned up email logs: removed ${data.entriesRemoved}, kept ${data.entriesKept}`,
+      });
+      setCleanupDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Cleanup Failed",
+        description: "Failed to clean up email logs",
+        variant: "destructive",
+      });
+      console.error("Gmail logs cleanup failed:", error);
+    }
+  });
+  
+  // Handle cleanup logs
+  const handleCleanupLogs = () => {
+    const params: { beforeDate?: string, afterDate?: string, daysToKeep?: string } = {};
+    
+    if (useCustomDateRange) {
+      if (beforeDate) params.beforeDate = beforeDate;
+      if (afterDate) params.afterDate = afterDate;
+    } else {
+      if (daysToKeep) params.daysToKeep = daysToKeep;
+    }
+    
+    cleanupLogsMutation.mutate(params);
+  };
+  
   // Form submit handler
   const onSubmit = (values: GmailSettingsFormValues) => {
     configMutation.mutate(values);
@@ -278,6 +328,16 @@ export default function GmailSettingsPage() {
             </div>
             
             <div className="mt-4 md:mt-0 flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-gray-50 text-gray-700 border-gray-200"
+                onClick={() => setCleanupDialogOpen(true)}
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Cleanup Logs
+              </Button>
+              
               {readerStatus?.isRunning ? (
                 <Button 
                   variant="outline" 
@@ -309,6 +369,100 @@ export default function GmailSettingsPage() {
               )}
             </div>
           </div>
+          
+          {/* Cleanup Logs Dialog */}
+          <Dialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Clean Up Processed Email Logs</DialogTitle>
+                <DialogDescription>
+                  Remove processed email IDs from logs to save storage space.
+                  This will not affect the Gmail inbox, only the local tracking of processed emails.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="col-span-4">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Switch
+                        id="use-custom-date"
+                        checked={useCustomDateRange}
+                        onCheckedChange={setUseCustomDateRange}
+                      />
+                      <label
+                        htmlFor="use-custom-date"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Use Custom Date Range
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {useCustomDateRange ? (
+                    <>
+                      <label htmlFor="before-date" className="col-span-1 text-right text-sm">
+                        Before Date
+                      </label>
+                      <Input
+                        id="before-date"
+                        type="date"
+                        className="col-span-3"
+                        value={beforeDate}
+                        onChange={(e) => setBeforeDate(e.target.value)}
+                      />
+                      
+                      <label htmlFor="after-date" className="col-span-1 text-right text-sm">
+                        After Date
+                      </label>
+                      <Input
+                        id="after-date"
+                        type="date"
+                        className="col-span-3"
+                        value={afterDate}
+                        onChange={(e) => setAfterDate(e.target.value)}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label htmlFor="days-to-keep" className="col-span-1 text-right text-sm">
+                        Days to Keep
+                      </label>
+                      <Input
+                        id="days-to-keep"
+                        type="number"
+                        className="col-span-3"
+                        value={daysToKeep}
+                        onChange={(e) => setDaysToKeep(e.target.value)}
+                        min="1"
+                      />
+                      <div className="col-span-4 text-xs text-gray-500">
+                        Emails processed in the last {daysToKeep} days will be kept, older ones will be removed.
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCleanupDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="default" 
+                  onClick={handleCleanupLogs}
+                  disabled={cleanupLogsMutation.isPending}
+                >
+                  {cleanupLogsMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 mr-2" />
+                  )}
+                  Cleanup Logs
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
           {/* Status Card */}
           <Card className="mb-6">
