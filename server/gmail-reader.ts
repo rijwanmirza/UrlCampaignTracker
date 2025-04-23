@@ -3,6 +3,8 @@ import { simpleParser } from 'mailparser';
 import { log } from './vite';
 import { InsertUrl } from '@shared/schema';
 import { storage } from './storage';
+import nodemailer from 'nodemailer';
+import smtpTransport from 'nodemailer-smtp-transport';
 
 interface GmailConfigOptions {
   user: string;
@@ -41,12 +43,16 @@ const defaultGmailConfig: GmailConfigOptions = {
 
 class GmailReader {
   private config: GmailConfigOptions;
-  private imap: Imap;
+  private imap!: Imap; // Using definite assignment assertion
   private isRunning: boolean = false;
   private checkInterval: NodeJS.Timeout | null = null;
 
   constructor(config: Partial<GmailConfigOptions> = {}) {
     this.config = { ...defaultGmailConfig, ...config };
+    this.setupImapConnection();
+  }
+  
+  private setupImapConnection() {
     this.imap = new Imap({
       user: this.config.user,
       password: this.config.password,
@@ -54,6 +60,8 @@ class GmailReader {
       port: this.config.port,
       tls: this.config.tls,
       tlsOptions: this.config.tlsOptions,
+      authTimeout: 30000, // Increase auth timeout to 30 seconds
+      connTimeout: 30000, // Increase connection timeout to 30 seconds
     });
 
     this.imap.once('error', (err: Error) => {
@@ -67,6 +75,40 @@ class GmailReader {
       this.isRunning = false;
       this.reconnect();
     });
+  }
+  
+  // Verify SMTP credentials - an alternative way to test if credentials are valid
+  public async verifyCredentials(): Promise<{ success: boolean, message: string }> {
+    try {
+      // Create a transporter
+      const transporter = nodemailer.createTransport(smtpTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: this.config.user,
+          pass: this.config.password
+        },
+        connectionTimeout: 30000, // 30 seconds connection timeout
+        greetingTimeout: 30000,   // 30 seconds greeting timeout
+        socketTimeout: 30000      // 30 seconds socket timeout
+      }));
+      
+      // Verify the connection
+      await transporter.verify();
+      log('SMTP connection verified successfully', 'gmail-reader');
+      return { 
+        success: true, 
+        message: "Gmail credentials verified successfully via SMTP!" 
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`SMTP verification failed: ${errorMessage}`, 'gmail-reader');
+      return { 
+        success: false, 
+        message: `Gmail credentials verification failed: ${errorMessage}` 
+      };
+    }
   }
 
   private reconnect() {
@@ -86,27 +128,7 @@ class GmailReader {
     }
     
     this.config = { ...this.config, ...newConfig };
-    
-    this.imap = new Imap({
-      user: this.config.user,
-      password: this.config.password,
-      host: this.config.host,
-      port: this.config.port,
-      tls: this.config.tls,
-      tlsOptions: this.config.tlsOptions,
-    });
-
-    this.imap.once('error', (err: Error) => {
-      log(`IMAP Error: ${err.message}`, 'gmail-reader');
-      this.isRunning = false;
-      this.reconnect();
-    });
-
-    this.imap.once('end', () => {
-      log('IMAP connection ended', 'gmail-reader');
-      this.isRunning = false;
-      this.reconnect();
-    });
+    this.setupImapConnection();
     
     if (wasRunning) {
       this.start();
