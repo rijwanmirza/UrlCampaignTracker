@@ -5,8 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import URLsPage from "@/pages/urls";
+import URLsMobilePage from "@/pages/urls-mobile";
 import RedirectPage from "@/pages/redirect";
 import AppLayout from "@/components/layout/app-layout";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function Router() {
   const [location] = useLocation();

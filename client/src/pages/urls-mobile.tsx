@@ -69,7 +69,6 @@ import {
 import { UrlWithActiveStatus } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
 import UrlEditForm from "@/components/urls/url-edit-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -85,9 +84,10 @@ function Pagination({
   onPageChange: (page: number) => void;
 }) {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const isMobile = useIsMobile();
   
   return (
-    <div className="flex items-center justify-center mt-4 gap-1">
+    <div className="flex items-center justify-center mt-4 gap-1 flex-wrap">
       <Button
         variant="outline"
         size="sm"
@@ -97,7 +97,7 @@ function Pagination({
         Previous
       </Button>
       
-      {pages.map(page => (
+      {!isMobile && pages.map(page => (
         <Button
           key={page}
           variant={page === currentPage ? "default" : "outline"}
@@ -108,6 +108,12 @@ function Pagination({
           {page}
         </Button>
       ))}
+      
+      {isMobile && (
+        <span className="px-2 text-sm">
+          Page {currentPage} of {totalPages}
+        </span>
+      )}
       
       <Button
         variant="outline"
@@ -188,6 +194,9 @@ export default function URLsPage() {
       case 'completed':
         variant = "outline";
         break;
+      case 'rejected':
+        variant = "destructive";
+        break;
       case 'deleted':
         variant = "destructive";
         break;
@@ -264,6 +273,7 @@ export default function URLsPage() {
         toast({
           title: "URL Copied",
           description: "URL has been copied to clipboard",
+          variant: "success",
         });
       })
       .catch(() => {
@@ -376,24 +386,26 @@ export default function URLsPage() {
   return (
     <div className="min-h-screen">
       <main className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div className="p-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">URL Management</h1>
-              <p className="text-sm text-gray-500">Manage and track all your redirect URLs</p>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800">URL History</h1>
+              <p className="text-xs md:text-sm text-gray-500">Manage and track all your redirect URLs</p>
             </div>
             
-            <div className="flex space-x-2 mt-4 md:mt-0">
-              <Link href="/">
-                <Button variant="outline">Back to Campaigns</Button>
+            <div className="flex space-x-2 mt-3 md:mt-0 w-full md:w-auto">
+              <Link href="/campaigns" className="w-full md:w-auto">
+                <Button variant="outline" size="sm" className="w-full md:w-auto">
+                  Back to Campaigns
+                </Button>
               </Link>
             </div>
           </div>
           
           {/* Filters and search */}
-          <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
+          <div className="bg-white rounded-lg shadow p-3 mb-4">
+            <div className="flex flex-col gap-3">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search URLs..."
@@ -405,7 +417,7 @@ export default function URLsPage() {
               
               <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -413,12 +425,13 @@ export default function URLsPage() {
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="paused">Paused</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
                     <SelectItem value="deleted">Deleted</SelectItem>
                   </SelectContent>
                 </Select>
                 
                 <Select value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
-                  <SelectTrigger className="w-[100px]">
+                  <SelectTrigger className="w-24">
                     <SelectValue placeholder="Limit" />
                   </SelectTrigger>
                   <SelectContent>
@@ -426,8 +439,6 @@ export default function URLsPage() {
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
-                    <SelectItem value="500">500</SelectItem>
-                    <SelectItem value="1000">1000</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -435,11 +446,11 @@ export default function URLsPage() {
             
             {/* Bulk actions (show only when items are selected) */}
             {selectedUrls.length > 0 && (
-              <div className="mt-4 p-2 bg-gray-50 rounded border flex items-center gap-2">
+              <div className="mt-3 p-2 bg-gray-50 rounded border flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-gray-700">
                   {selectedUrls.length} selected
                 </span>
-                <div className="ml-auto flex gap-2">
+                <div className="ml-auto flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -486,237 +497,188 @@ export default function URLsPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  
-                  <AlertDialog open={permanentDeleteModalOpen} onOpenChange={setPermanentDeleteModalOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1 text-red-600 border-red-300 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Permanent Delete
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Permanently Delete URLs</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to permanently delete {selectedUrls.length} URLs? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBulkPermanentDelete} className="bg-red-600 hover:bg-red-700">
-                          Permanently Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </div>
               </div>
             )}
           </div>
           
-          {/* URLs Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40px]">
-                      <Checkbox 
-                        checked={urls.length > 0 && selectedUrls.length === urls.length}
-                        onCheckedChange={toggleSelectAll}
-                        aria-label="Select all URLs"
-                      />
-                    </TableHead>
-                    <TableHead className="w-[60px]">ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Target URL</TableHead>
-                    <TableHead>Campaign</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Clicks / Limit</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        <div className="flex flex-col items-center">
-                          <div className="h-10 w-10 rounded-full border-4 border-t-primary border-gray-200 animate-spin mb-2" />
-                          <p className="text-gray-500">Loading URLs...</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : isError ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-red-500">
-                        Error loading URLs. Please try again.
-                      </TableCell>
-                    </TableRow>
-                  ) : urls.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                        No URLs found. Try adjusting your filters or search.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    urls.map((url: UrlWithActiveStatus) => (
-                      <TableRow key={url.id} className={url.status === 'deleted' ? 'opacity-60' : ''}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedUrls.includes(url.id)}
-                            onCheckedChange={() => toggleUrlSelection(url.id)}
-                            aria-label={`Select URL ${url.name}`}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{url.id}</TableCell>
-                        <TableCell className="font-medium">{url.name}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          <a 
-                            href={url.targetUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center gap-1"
-                          >
-                            {url.targetUrl}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </TableCell>
-                        <TableCell>
-                          {url.campaignId ? (
-                            <Link href={`/campaigns/${url.campaignId}`}>
-                              <Badge variant="outline" className="cursor-pointer hover:bg-gray-100">
-                                Campaign #{url.campaignId}
-                              </Badge>
-                            </Link>
-                          ) : (
-                            <span className="text-gray-400 text-sm">No campaign</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={url.status} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{url.clicks} / {url.clickLimit} / {url.originalClickLimit}</span>
-                              {url.clicks >= url.clickLimit && (
-                                <Check className="h-4 w-4 text-gray-500 ml-1" />
-                              )}
-                            </div>
-                            <span className="text-xs text-gray-500 mb-1">
-                              received / required / original
-                            </span>
-                            <ProgressBar url={url} />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-500 text-sm">
-                          {formatDate(url.createdAt)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleCopyUrl(url)}>
-                                  <Clipboard className="h-4 w-4 mr-2" />
-                                  Copy URL
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleVisitUrl(url)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Visit Target
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEditUrl(url)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit URL
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                
-                                {url.status !== 'active' && (
-                                  <DropdownMenuItem onClick={() => handleActivateUrl(url.id)}>
-                                    <Play className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                {url.status === 'active' && (
-                                  <DropdownMenuItem onClick={() => handlePauseUrl(url.id)}>
-                                    <Pause className="h-4 w-4 mr-2" />
-                                    Pause
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                <DropdownMenuSeparator />
-                                
-                                {url.status !== 'deleted' && (
-                                  <DropdownMenuItem
-                                    className="text-red-500 focus:text-red-500"
-                                    onClick={() => handleDeleteUrl(url.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                <DropdownMenuItem
-                                  className="text-red-600 focus:text-red-600"
-                                  onClick={() => handlePermanentDeleteUrl(url.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Permanent Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {/* Pagination */}
-            {!isLoading && !isError && urls.length > 0 && (
-              <div className="p-4 border-t">
-                <Pagination 
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                />
+          {/* Mobile card view for URLs */}
+          <div className="space-y-3">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-primary border-gray-200"></div>
               </div>
+            ) : isError ? (
+              <div className="bg-white rounded-lg shadow p-6 text-center text-red-500">
+                Error loading URLs. Please try again.
+              </div>
+            ) : urls.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-6 text-center">
+                <div className="flex flex-col items-center text-gray-500">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-10 w-10 mb-2" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <p>No URLs found</p>
+                </div>
+              </div>
+            ) : (
+              urls.map((url: UrlWithActiveStatus) => (
+                <Card key={url.id} className={url.status === 'deleted' ? 'opacity-60' : ''}>
+                  <CardHeader className="pb-2 pt-3 px-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start gap-2">
+                        <Checkbox 
+                          checked={selectedUrls.includes(url.id)}
+                          onCheckedChange={() => toggleUrlSelection(url.id)}
+                          aria-label={`Select URL ${url.id}`}
+                          className="mt-1"
+                        />
+                        <div>
+                          <CardTitle className="text-base">{url.name}</CardTitle>
+                          <CardDescription className="mt-1 text-xs">ID: {url.id}</CardDescription>
+                        </div>
+                      </div>
+                      <StatusBadge status={url.status} />
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pb-2 pt-0 px-4">
+                    <div className="text-sm mb-2 truncate">
+                      <a 
+                        href={url.targetUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline flex items-center"
+                      >
+                        {url.targetUrl}
+                        <ExternalLink className="h-3 w-3 ml-1 flex-shrink-0" />
+                      </a>
+                    </div>
+                    
+                    {url.campaignId && (
+                      <div className="mb-2">
+                        <Link href={`/campaigns/${url.campaignId}`}>
+                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                            Campaign #{url.campaignId}
+                          </span>
+                        </Link>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="text-gray-500 text-xs">
+                        {formatDate(url.createdAt)}
+                      </span>
+                      <span className="whitespace-nowrap font-medium text-xs">
+                        {url.clicks} / {url.clickLimit} / {url.originalClickLimit}
+                      </span>
+                    </div>
+                    
+                    <ProgressBar url={url} />
+                  </CardContent>
+                  
+                  <CardFooter className="pt-2 px-4 pb-3 flex justify-between gap-2 border-t flex-wrap">
+                    <div className="flex gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleCopyUrl(url)}
+                      >
+                        <Clipboard className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleVisitUrl(url)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleEditUrl(url)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex gap-1">
+                      {url.status === 'active' ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8"
+                          onClick={() => handlePauseUrl(url.id)}
+                        >
+                          <Pause className="h-3 w-3 mr-1" />
+                          Pause
+                        </Button>
+                      ) : url.status !== 'deleted' ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8"
+                          onClick={() => handleActivateUrl(url.id)}
+                        >
+                          <Play className="h-3 w-3 mr-1" />
+                          Activate
+                        </Button>
+                      ) : null}
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-8 text-red-600 border-red-200"
+                        onClick={url.status !== 'deleted' ? 
+                          () => handleDeleteUrl(url.id) : 
+                          () => handlePermanentDeleteUrl(url.id)
+                        }
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        {url.status !== 'deleted' ? 'Delete' : 'Permanent'}
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))
             )}
           </div>
+
+          {/* Pagination */}
+          {urls.length > 0 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       </main>
       
-      {/* URL Edit Dialog */}
-      <Dialog 
-        open={editingUrl !== null} 
-        onOpenChange={(open) => {
-          if (!open) setEditingUrl(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-[500px]">
-          {editingUrl && (
+      {/* URL edit dialog */}
+      {editingUrl && (
+        <Dialog open={!!editingUrl} onOpenChange={(open) => !open && setEditingUrl(null)}>
+          <DialogContent className="sm:max-w-[500px]">
             <UrlEditForm 
               url={editingUrl} 
+              onClose={() => setEditingUrl(null)}
               onSuccess={() => {
-                setEditingUrl(null);
                 queryClient.invalidateQueries({ queryKey: ['urls'] });
-              }} 
+                setEditingUrl(null);
+              }}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
