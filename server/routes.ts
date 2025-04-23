@@ -917,6 +917,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Clean up Gmail reader processed email logs by date
+  app.post("/api/gmail-reader/cleanup-logs", (req: Request, res: Response) => {
+    try {
+      const { beforeDate, afterDate, daysToKeep } = req.body;
+      
+      // Parse dates if provided
+      const options: { before?: Date, after?: Date, daysToKeep?: number } = {};
+      
+      if (beforeDate) {
+        options.before = new Date(beforeDate);
+      }
+      
+      if (afterDate) {
+        options.after = new Date(afterDate);
+      }
+      
+      if (daysToKeep) {
+        options.daysToKeep = parseInt(daysToKeep, 10);
+      }
+      
+      // Perform the cleanup
+      const result = gmailReader.cleanupEmailLogsByDate(options);
+      
+      res.json({
+        message: `Successfully cleaned up email logs: removed ${result.entriesRemoved}, kept ${result.entriesKept}`,
+        ...result
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Failed to clean up Gmail reader logs",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

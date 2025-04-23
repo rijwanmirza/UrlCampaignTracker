@@ -52,7 +52,8 @@ class GmailReader {
   private isRunning: boolean = false;
   private checkInterval: NodeJS.Timeout | null = null;
   private processedEmailsLogFile: string;
-  private processedEmails: Set<string> = new Set();
+  // Store processed emails with their processing dates
+  private processedEmails: Map<string, string> = new Map(); // emailId -> date string
 
   constructor(config: Partial<GmailConfigOptions> = {}) {
     this.config = { ...defaultGmailConfig, ...config };
@@ -66,8 +67,21 @@ class GmailReader {
     try {
       if (fs.existsSync(this.processedEmailsLogFile)) {
         const logContent = fs.readFileSync(this.processedEmailsLogFile, 'utf-8');
-        const emailIds = logContent.split('\n').filter(line => line.trim().length > 0);
-        emailIds.forEach(id => this.processedEmails.add(id));
+        const emailEntries = logContent.split('\n').filter(line => line.trim().length > 0);
+        
+        emailEntries.forEach(entry => {
+          // Format is: emailId,timestamp
+          const parts = entry.split(',');
+          if (parts.length >= 2) {
+            const [emailId, timestamp] = parts;
+            this.processedEmails.set(emailId, timestamp);
+          } else {
+            // Handle old format entries (without date)
+            const currentDate = new Date().toISOString();
+            this.processedEmails.set(entry, currentDate);
+          }
+        });
+        
         log(`Loaded ${this.processedEmails.size} previously processed email IDs`, 'gmail-reader');
       } else {
         log(`No processed emails log file found, creating a new one`, 'gmail-reader');
@@ -78,12 +92,13 @@ class GmailReader {
     }
   }
   
-  // Log a processed email ID to prevent reprocessing
+  // Log a processed email ID with timestamp to prevent reprocessing
   private logProcessedEmail(emailId: string) {
     try {
       if (!this.processedEmails.has(emailId)) {
-        fs.appendFileSync(this.processedEmailsLogFile, `${emailId}\n`, 'utf-8');
-        this.processedEmails.add(emailId);
+        const timestamp = new Date().toISOString();
+        fs.appendFileSync(this.processedEmailsLogFile, `${emailId},${timestamp}\n`, 'utf-8');
+        this.processedEmails.set(emailId, timestamp);
       }
     } catch (error) {
       log(`Error logging processed email: ${error}`, 'gmail-reader');
@@ -93,6 +108,65 @@ class GmailReader {
   // Check if an email has been processed before
   private hasBeenProcessed(emailId: string): boolean {
     return this.processedEmails.has(emailId);
+  }
+  
+  // Clean up processed emails log by date
+  public cleanupEmailLogsByDate(options: { before?: Date, after?: Date, daysToKeep?: number } = {}) {
+    try {
+      let entriesToKeep: [string, string][] = [];
+      let entriesRemoved = 0;
+      
+      // Calculate cutoff date based on daysToKeep if provided
+      let beforeDate = options.before;
+      if (options.daysToKeep && !beforeDate) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - options.daysToKeep);
+        beforeDate = cutoffDate;
+      }
+      
+      // Filter entries based on date criteria
+      this.processedEmails.forEach((dateStr, emailId) => {
+        const entryDate = new Date(dateStr);
+        let keepEntry = true;
+        
+        if (beforeDate && entryDate < beforeDate) {
+          keepEntry = false;
+        }
+        
+        if (options.after && entryDate < options.after) {
+          keepEntry = false;
+        }
+        
+        if (keepEntry) {
+          entriesToKeep.push([emailId, dateStr]);
+        } else {
+          entriesRemoved++;
+        }
+      });
+      
+      // Clear the log file and write back only the entries to keep
+      this.processedEmails.clear();
+      fs.writeFileSync(this.processedEmailsLogFile, '', 'utf-8');
+      
+      entriesToKeep.forEach(([emailId, dateStr]) => {
+        fs.appendFileSync(this.processedEmailsLogFile, `${emailId},${dateStr}\n`, 'utf-8');
+        this.processedEmails.set(emailId, dateStr);
+      });
+      
+      log(`Cleaned up email logs: removed ${entriesRemoved} entries, kept ${entriesToKeep.length} entries`, 'gmail-reader');
+      
+      return {
+        entriesRemoved,
+        entriesKept: entriesToKeep.length
+      };
+    } catch (error) {
+      log(`Error cleaning up email logs: ${error}`, 'gmail-reader');
+      return {
+        entriesRemoved: 0,
+        entriesKept: this.processedEmails.size,
+        error: String(error)
+      };
+    }
   }
   
   private setupImapConnection() {
