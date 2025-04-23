@@ -110,14 +110,22 @@ export class DatabaseStorage implements IStorage {
 
   async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
     const now = new Date();
+    
+    // Prepare data for insert, converting multiplier to string if needed
+    const campaignData = {
+      name: insertCampaign.name,
+      redirectMethod: insertCampaign.redirectMethod || "direct",
+      customPath: insertCampaign.customPath,
+      // Convert multiplier to string for numeric DB field
+      multiplier: insertCampaign.multiplier !== undefined ? 
+        String(insertCampaign.multiplier) : "1",
+      createdAt: now,
+      updatedAt: now
+    };
+    
     const [campaign] = await db
       .insert(campaigns)
-      .values({
-        ...insertCampaign,
-        redirectMethod: insertCampaign.redirectMethod || "direct",
-        createdAt: now,
-        updatedAt: now
-      })
+      .values(campaignData)
       .returning();
     
     return campaign;
@@ -127,12 +135,32 @@ export class DatabaseStorage implements IStorage {
     const [existing] = await db.select().from(campaigns).where(eq(campaigns.id, id));
     if (!existing) return undefined;
     
+    // Prepare data for update, converting multiplier to string if needed
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+    
+    // Copy fields from updateCampaign that are defined
+    if (updateCampaign.name !== undefined) {
+      updateData.name = updateCampaign.name;
+    }
+    
+    if (updateCampaign.redirectMethod !== undefined) {
+      updateData.redirectMethod = updateCampaign.redirectMethod;
+    }
+    
+    if (updateCampaign.customPath !== undefined) {
+      updateData.customPath = updateCampaign.customPath;
+    }
+    
+    // Handle multiplier specially to convert to string for numeric DB field
+    if (updateCampaign.multiplier !== undefined) {
+      updateData.multiplier = String(updateCampaign.multiplier);
+    }
+    
     const [updated] = await db
       .update(campaigns)
-      .set({
-        ...updateCampaign,
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(eq(campaigns.id, id))
       .returning();
     
@@ -384,11 +412,20 @@ export class DatabaseStorage implements IStorage {
     // Ensure these values don't match if we have a valid multiplier applied
     if (insertUrl.campaignId) {
       const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, insertUrl.campaignId));
-      if (campaign && campaign.multiplier > 1) {
-        if (originalClickLimit * campaign.multiplier !== insertUrl.clickLimit) {
-          console.warn('⚠️ WARNING: Calculated click limit does not match expected value!');
-          console.warn(`  - Expected: ${originalClickLimit} × ${campaign.multiplier} = ${originalClickLimit * campaign.multiplier}`);
-          console.warn(`  - Received: ${insertUrl.clickLimit}`);
+      if (campaign) {
+        // Convert multiplier to number if it's a string
+        const multiplierValue = typeof campaign.multiplier === 'string'
+          ? parseFloat(campaign.multiplier)
+          : (campaign.multiplier || 1);
+          
+        if (multiplierValue > 0.01) {
+          const expectedClickLimit = Math.ceil(originalClickLimit * multiplierValue);
+          
+          if (expectedClickLimit !== insertUrl.clickLimit) {
+            console.warn('⚠️ WARNING: Calculated click limit does not match expected value!');
+            console.warn(`  - Expected: ${originalClickLimit} × ${multiplierValue} = ${expectedClickLimit}`);
+            console.warn(`  - Received: ${insertUrl.clickLimit}`);
+          }
         }
       }
     }

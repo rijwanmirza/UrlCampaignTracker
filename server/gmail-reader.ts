@@ -417,10 +417,13 @@ class GmailReader {
               return;
             }
             
-            const multiplier = campaign.multiplier || 1;
+            // Handle multiplier value (could be string or number due to numeric type in DB)
+            const multiplierValue = typeof campaign.multiplier === 'string'
+              ? parseFloat(campaign.multiplier)
+              : (campaign.multiplier || 1);
             
             // Calculate the effective click limit based on the multiplier
-            const calculatedClickLimit = quantity * multiplier;
+            const calculatedClickLimit = Math.ceil(quantity * multiplierValue);
             
             // Prepare the URL data with both original and calculated values
             const newUrl: InsertUrl = {
@@ -436,7 +439,7 @@ class GmailReader {
               Name: ${createdUrl.name}
               Target URL: ${createdUrl.targetUrl}
               Original Click Limit: ${quantity}
-              Applied Multiplier: ${multiplier}x
+              Applied Multiplier: ${multiplierValue}x
               Calculated Click Limit: ${calculatedClickLimit}
               Status: ${createdUrl.status || 'active'}
             `, 'gmail-reader');
