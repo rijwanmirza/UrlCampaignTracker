@@ -110,11 +110,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Update each URL with new clickLimit based on original value * new multiplier
         for (const url of activeOrPausedUrls) {
-          // Include the original click limit in the update
+          // When multiplier changes, only update the clickLimit based on originalClickLimit
+          // The originalClickLimit remains unchanged (it's always the user's original input)
           await storage.updateUrl(url.id, {
-            clickLimit: url.originalClickLimit * multiplier,
-            originalClickLimit: url.originalClickLimit,
-            // Keep other values unchanged
+            clickLimit: url.originalClickLimit * multiplier, // Recalculate the click limit
+            // Keep all other values unchanged
+            originalClickLimit: url.originalClickLimit, // Original always stays the same
             name: url.name,
             targetUrl: url.targetUrl,
             status: url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined
@@ -182,18 +183,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
 
-      // Store original click limit and apply campaign multiplier if set
-      const originalClickLimit = req.body.clickLimit;
+      // Store original click limit - this is the user input value
+      const originalClickLimit = parseInt(req.body.clickLimit, 10);
+      
+      // Calculate click limit (applying multiplier if needed)
+      const calculatedClickLimit = campaign.multiplier && campaign.multiplier > 1 
+        ? originalClickLimit * campaign.multiplier 
+        : originalClickLimit;
+      
       let urlData = { 
         ...req.body, 
         campaignId,
-        originalClickLimit 
+        clickLimit: calculatedClickLimit,
+        originalClickLimit: originalClickLimit // Important: originalClickLimit is ALWAYS the user entered value
       };
-      
-      if (campaign.multiplier && campaign.multiplier > 1 && urlData.clickLimit) {
-        // Multiply the click limit by the campaign multiplier
-        urlData.clickLimit = urlData.clickLimit * campaign.multiplier;
-      }
       
       const result = insertUrlSchema.safeParse(urlData);
       if (!result.success) {

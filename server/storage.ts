@@ -344,18 +344,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async permanentlyDeleteUrl(id: number): Promise<boolean> {
-    const [url] = await db.select().from(urls).where(eq(urls.id, id));
-    if (!url) return false;
-    
-    // Permanently delete URL
-    await db.delete(urls).where(eq(urls.id, id));
-    
-    // Invalidate the campaign cache
-    if (url.campaignId) {
-      this.invalidateCampaignCache(url.campaignId);
+    try {
+      // First get the URL to find its campaign ID (for cache invalidation)
+      const [url] = await db.select().from(urls).where(eq(urls.id, id));
+      if (!url) return false;
+      
+      // Completely remove the URL from the database with no trace
+      await db.delete(urls).where(eq(urls.id, id));
+      
+      // Invalidate campaign cache if this URL was associated with a campaign
+      if (url.campaignId) {
+        this.invalidateCampaignCache(url.campaignId);
+      }
+      
+      // Optimize database storage by running VACUUM periodically (uncommonly)
+      // This helps reclaim space and optimize the database for better performance
+      const shouldVacuum = Math.random() < 0.1; // 10% chance to run VACUUM after permanent deletion
+      if (shouldVacuum) {
+        try {
+          console.log("Running database optimization to reclaim storage...");
+          // We use pool directly to run a raw SQL command
+          await db.run(sql`VACUUM;`);
+        } catch (vacuumError) {
+          console.error("Database optimization failed, but URL was deleted:", vacuumError);
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Failed to permanently delete URL:", error);
+      return false;
     }
-    
-    return true;
   }
 
   async bulkUpdateUrls(ids: number[], action: string): Promise<boolean> {
