@@ -57,8 +57,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <CampaignSidebar />
+    <div className="flex flex-col md:flex-row">
+      <div className="md:w-64 border-r bg-white hidden md:block h-[calc(100vh-4rem)] overflow-y-auto">
+        <CampaignSidebar />
+      </div>
       
       <main className="flex-1 overflow-y-auto bg-gray-50">
         {!campaignId || isLoading ? (
@@ -76,7 +78,7 @@ export default function Home() {
                   </svg>
                   <h2 className="mt-4 text-xl font-semibold text-gray-700">No Campaign Selected</h2>
                   <p className="mt-2 text-gray-500">
-                    Select a campaign from the sidebar or create a new one to get started with URL redirection.
+                    Please select a campaign from the sidebar or create a new one to get started with URL redirection.
                   </p>
                 </>
               )}
