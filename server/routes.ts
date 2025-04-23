@@ -18,7 +18,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaigns = await storage.getCampaigns();
       res.json(campaigns);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch campaigns" });
+      console.error('Error fetching campaigns:', error);
+      res.status(500).json({ message: "Failed to fetch campaigns", error: error instanceof Error ? error.message : String(error) });
     }
   });
   
