@@ -3,12 +3,12 @@ import { useRoute } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clipboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { formatCampaign } from "@/lib/types";
-import { RedirectMethod, CampaignWithUrls } from "@shared/schema";
+import { CampaignWithUrls } from "@shared/schema";
 import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
+import CampaignDetails from "@/components/campaigns/campaign-details";
 import UrlForm from "@/components/urls/url-form";
 import UrlTable from "@/components/urls/url-table";
 import StatsCards from "@/components/stats/stats-cards";
@@ -89,29 +89,7 @@ export default function Home() {
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-gray-800">{formattedCampaign.name}</h1>
-                  {formattedCampaign.redirectMethod && (
-                    <Badge variant="outline" className="text-xs font-normal">
-                      {(() => {
-                        switch (formattedCampaign.redirectMethod) {
-                          case RedirectMethod.META_REFRESH:
-                            return "Meta Refresh";
-                          case RedirectMethod.DOUBLE_META_REFRESH:
-                            return "Double Meta Refresh";
-                          case RedirectMethod.HTTP_307:
-                            return "HTTP 307";
-                          case RedirectMethod.DIRECT:
-                            return "Direct";
-                          default:
-                            return formattedCampaign.redirectMethod;
-                        }
-                      })()}
-                    </Badge>
-                  )}
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  <span>Created: </span>
-                  <span>{formatDate(formattedCampaign.createdAt)}</span>
-                </p>
               </div>
               <div className="mt-4 md:mt-0 flex space-x-3">
                 <Button 
@@ -127,6 +105,9 @@ export default function Home() {
                 </Button>
               </div>
             </div>
+            
+            {/* Campaign details and URLs */}
+            <CampaignDetails campaign={formattedCampaign} />
             
             {/* Stats summary cards */}
             <StatsCards campaign={formattedCampaign} />

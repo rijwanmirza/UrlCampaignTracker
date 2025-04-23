@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUrlSchema } from "@shared/schema";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useMutation } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/components/ui/use-toast";
 import { UrlFormValues } from "@/lib/types";
 
 interface UrlFormProps {
@@ -26,63 +25,53 @@ interface UrlFormProps {
   };
 }
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  targetUrl: z.string().url("Please enter a valid URL"),
-  clickLimit: z.coerce.number().positive("Click limit must be a positive number"),
+const urlFormSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name must be 100 characters or less"),
+  targetUrl: z
+    .string()
+    .min(1, "Target URL is required")
+    .url("Please enter a valid URL (including http:// or https://)"),
+  clickLimit: z
+    .number()
+    .min(1, "Click limit must be at least 1")
+    .max(100000, "Click limit must be 100,000 or less"),
 });
 
-export default function UrlForm({ open, onOpenChange, campaignId, onSuccess, editingUrl }: UrlFormProps) {
+export default function UrlForm({ 
+  open, 
+  onOpenChange, 
+  campaignId, 
+  onSuccess,
+  editingUrl 
+}: UrlFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const isEditing = !!editingUrl;
+  
+  const form = useForm<UrlFormValues>({
+    resolver: zodResolver(urlFormSchema),
     defaultValues: {
-      name: "",
-      targetUrl: "",
-      clickLimit: 100,
+      name: editingUrl?.name || "",
+      targetUrl: editingUrl?.targetUrl || "",
+      clickLimit: editingUrl?.clickLimit || 100,
     },
   });
-
-  // Update form values when editing a URL
-  useEffect(() => {
-    if (editingUrl) {
-      form.reset({
-        name: editingUrl.name,
-        targetUrl: editingUrl.targetUrl,
-        clickLimit: editingUrl.clickLimit,
-      });
-    } else {
-      form.reset({
-        name: "",
-        targetUrl: "",
-        clickLimit: 100,
-      });
-    }
-  }, [form, editingUrl, open]);
-
-  const createUrl = useMutation({
+  
+  // Create or update URL mutation
+  const urlMutation = useMutation({
     mutationFn: async (data: UrlFormValues) => {
-      if (editingUrl) {
-        // Update existing URL
-        const response = await apiRequest("PUT", `/api/urls/${editingUrl.id}`, {
-          ...data,
-          campaignId,
-          clicks: editingUrl.clicks,
-        });
-        return response.json();
+      if (isEditing && editingUrl) {
+        return apiRequest("PUT", `/api/urls/${editingUrl.id}`, data);
       } else {
-        // Create new URL
-        const response = await apiRequest("POST", `/api/campaigns/${campaignId}/urls`, data);
-        return response.json();
+        return apiRequest("POST", `/api/campaigns/${campaignId}/urls`, data);
       }
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
-        title: editingUrl ? "URL Updated" : "URL Added",
-        description: `"${data.name}" has been ${editingUrl ? "updated" : "added to the campaign"}`,
-        variant: "success",
+        title: isEditing ? "URL Updated" : "URL Created",
+        description: isEditing 
+          ? `"${form.getValues("name")}" has been updated successfully`
+          : `"${form.getValues("name")}" has been added to the campaign`,
       });
       
       form.reset();
@@ -92,43 +81,48 @@ export default function UrlForm({ open, onOpenChange, campaignId, onSuccess, edi
     onError: (error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : `Failed to ${editingUrl ? "update" : "add"} URL`,
+        description: error instanceof Error 
+          ? error.message 
+          : `Failed to ${isEditing ? "update" : "create"} URL`,
         variant: "destructive",
       });
     },
     onSettled: () => {
       setIsSubmitting(false);
-    }
+    },
   });
-
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  
+  const onSubmit = (data: UrlFormValues) => {
     setIsSubmitting(true);
-    createUrl.mutate(data);
+    urlMutation.mutate(data);
   };
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>{editingUrl ? "Edit URL" : "Add URL"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit URL" : "Add New URL"}</DialogTitle>
         </DialogHeader>
-
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>URL Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter URL name" {...field} />
+                    <Input placeholder="My URL" {...field} />
                   </FormControl>
+                  <FormDescription>
+                    A descriptive name to identify this URL
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="targetUrl"
@@ -138,11 +132,14 @@ export default function UrlForm({ open, onOpenChange, campaignId, onSuccess, edi
                   <FormControl>
                     <Input placeholder="https://example.com" {...field} />
                   </FormControl>
+                  <FormDescription>
+                    The URL where users will be redirected to
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="clickLimit"
@@ -150,24 +147,53 @@ export default function UrlForm({ open, onOpenChange, campaignId, onSuccess, edi
                 <FormItem>
                   <FormLabel>Click Limit</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" {...field} />
+                    <Input 
+                      type="number" 
+                      min={1}
+                      max={100000}
+                      {...field} 
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        field.onChange(isNaN(value) ? "" : value);
+                      }}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Maximum number of clicks before this URL becomes inactive
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
+            {isEditing && (
+              <div className="bg-gray-50 p-3 rounded-md">
+                <p className="text-sm text-gray-500">Current clicks: <span className="font-medium">{editingUrl?.clicks}</span></p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div 
+                    className="h-2 rounded-full bg-primary"
+                    style={{ 
+                      width: `${Math.min(100, (editingUrl?.clicks || 0) / (editingUrl?.clickLimit || 1) * 100)}%` 
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : editingUrl ? "Save Changes" : "Add URL"}
+                {isSubmitting 
+                  ? (isEditing ? "Updating..." : "Adding...") 
+                  : (isEditing ? "Update URL" : "Add URL")
+                }
               </Button>
             </DialogFooter>
           </form>
