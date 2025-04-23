@@ -1,60 +1,47 @@
 import { Link, useLocation } from "wouter";
 import { Link2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function Navbar() {
   const [location] = useLocation();
 
+  // Which tab is active
+  const campaignsActive = location.startsWith("/campaigns") || location === "/";
+  const urlsActive = location.startsWith("/urls");
+
   return (
-    <header className="w-full bg-white">
-      {/* Top bar with logo */}
-      <div className="flex h-16 items-center justify-between px-4 border-b">
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center">
-            <Link2 className="h-5 w-5 mr-2" />
-            <span className="font-bold text-lg">URL Redirector</span>
-          </Link>
+    <header className="w-full">
+      {/* Top header with logo */}
+      <div className="flex h-14 items-center px-4 border-b bg-white">
+        <div className="flex items-center gap-2">
+          <Link2 className="w-5 h-5" />
+          <span className="font-bold text-lg">URL Redirector</span>
         </div>
       </div>
       
-      {/* Tab Menu Bar - EXACTLY like in screenshot */}
-      <div className="flex border-b overflow-x-auto">
-        <Link 
-          href="/campaigns"
-          className={cn(
-            "flex-1 py-3 border-b-2 text-center font-medium transition-colors",
-            location.startsWith("/campaigns") 
-              ? "border-primary" 
-              : "border-transparent"
-          )}
-        >
-          <div className="flex items-center justify-center">
-            <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="7" height="7" x="3" y="3" rx="1" />
-              <rect width="7" height="7" x="14" y="3" rx="1" />
-              <rect width="7" height="7" x="14" y="14" rx="1" />
-              <rect width="7" height="7" x="3" y="14" rx="1" />
+      {/* Tab navigation - EXACT MATCH to screenshot */}
+      <div className="flex border-b bg-white">
+        <Link href="/campaigns" className="flex-1">
+          <div className="flex justify-center items-center py-3">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="6" height="6" x="4" y="4" rx="1" stroke="currentColor" strokeWidth="2" />
+              <rect width="6" height="6" x="14" y="4" rx="1" stroke="currentColor" strokeWidth="2" />
+              <rect width="6" height="6" x="4" y="14" rx="1" stroke="currentColor" strokeWidth="2" />
+              <rect width="6" height="6" x="14" y="14" rx="1" stroke="currentColor" strokeWidth="2" />
             </svg>
             Campaigns
           </div>
+          {campaignsActive && <div className="h-0.5 bg-primary" />}
         </Link>
         
-        <Link 
-          href="/urls"
-          className={cn(
-            "flex-1 py-3 border-b-2 text-center font-medium transition-colors",
-            location.startsWith("/urls") 
-              ? "border-primary" 
-              : "border-transparent"
-          )}
-        >
-          <div className="flex items-center justify-center">
-            <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        <Link href="/urls" className="flex-1">
+          <div className="flex justify-center items-center py-3">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             URL History
           </div>
+          {urlsActive && <div className="h-0.5 bg-primary" />}
         </Link>
       </div>
     </header>
