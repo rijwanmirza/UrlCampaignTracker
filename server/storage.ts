@@ -21,6 +21,7 @@ export interface IStorage {
   getCampaignByCustomPath(customPath: string): Promise<CampaignWithUrls | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   updateCampaign(id: number, campaign: UpdateCampaign): Promise<Campaign | undefined>;
+  deleteCampaign(id: number): Promise<boolean>;
   
   // URL operations
   getUrls(campaignId: number): Promise<UrlWithActiveStatus[]>;
@@ -133,6 +134,32 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+  
+  async deleteCampaign(id: number): Promise<boolean> {
+    // First check if the campaign exists
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    if (!campaign) return false;
+    
+    // Start a transaction to ensure all operations complete together
+    try {
+      // Mark all URLs in this campaign as deleted (soft delete)
+      await db
+        .update(urls)
+        .set({
+          status: 'deleted',
+          updatedAt: new Date()
+        })
+        .where(eq(urls.campaignId, id));
+      
+      // Delete the campaign
+      await db.delete(campaigns).where(eq(campaigns.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      return false;
+    }
   }
 
   async getUrls(campaignId: number): Promise<UrlWithActiveStatus[]> {

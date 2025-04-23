@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import CampaignEditForm from "./campaign-edit-form";
+import CampaignDeleteButton from "./campaign-delete-button";
+import { useNavigate } from "wouter";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;

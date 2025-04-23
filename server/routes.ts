@@ -99,6 +99,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update campaign" });
     }
   });
+  
+  // Delete a campaign and mark all its URLs as deleted
+  app.delete("/api/campaigns/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      const campaign = await storage.getCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Delete the campaign and all its URLs
+      const deleted = await storage.deleteCampaign(id);
+      
+      if (deleted) {
+        res.status(200).json({ message: "Campaign deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete campaign" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete campaign" });
+    }
+  });
 
   // API routes for URLs
   app.get("/api/campaigns/:campaignId/urls", async (req: Request, res: Response) => {
