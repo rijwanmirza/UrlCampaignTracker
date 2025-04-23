@@ -226,8 +226,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const url = await storage.createUrl(result.data);
+      
+      // If the URL was created but marked as rejected due to duplicate name,
+      // we still return 201 Created but also include a message about the rejection
+      if (url.status === 'rejected') {
+        // Check if it's a numbered rejection (name contains #)
+        if (url.name.includes('#')) {
+          // Return success with warning about duplicate name and auto-numbering
+          return res.status(201).json({ 
+            ...url,
+            __message: `URL "${req.body.name}" was auto-numbered due to duplicate name` 
+          });
+        } else {
+          // First rejection - just return with warning
+          return res.status(201).json({ 
+            ...url,
+            __message: `URL "${req.body.name}" was rejected due to duplicate name` 
+          });
+        }
+      }
+      
+      // Normal case - URL created successfully without duplication
       res.status(201).json(url);
     } catch (error) {
+      console.error('Error creating URL:', error);
       res.status(500).json({ message: "Failed to create URL" });
     }
   });

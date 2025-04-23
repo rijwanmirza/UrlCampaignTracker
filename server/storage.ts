@@ -163,14 +163,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUrls(campaignId: number): Promise<UrlWithActiveStatus[]> {
-    // Get all URLs for a campaign that are not deleted
+    // Get all URLs for a campaign that are not deleted or rejected
+    // This ensures rejected URLs with duplicate names don't appear in campaigns
     const urlsResult = await db
       .select()
       .from(urls)
       .where(
         and(
           eq(urls.campaignId, campaignId),
-          ne(urls.status, 'deleted')
+          notIn(urls.status, ['deleted', 'rejected'])
         )
       )
       .orderBy(desc(urls.createdAt));
@@ -284,6 +285,78 @@ export class DatabaseStorage implements IStorage {
     console.log('  - Click limit (after multiplier):', insertUrl.clickLimit);
     console.log('  - Original click limit (user input):', originalClickLimit);
     
+    // IMPORTANT: Check if a URL with this name already exists
+    // This should apply globally to prevent all duplicate names, not just within the campaign
+    const existingUrls = await db
+      .select()
+      .from(urls)
+      .where(eq(urls.name, insertUrl.name));
+    
+    // If we found any URL with the same name
+    if (existingUrls.length > 0) {
+      console.log(`⚠️ Duplicate URL name detected: "${insertUrl.name}"`);
+      
+      // For the first duplicate, just mark as rejected with the original name
+      if (existingUrls.length === 1 && existingUrls[0].status !== 'rejected') {
+        console.log(`  - First duplicate: marking as rejected`);
+        
+        // Create a new URL entry with "rejected" status
+        const [rejectedUrl] = await db
+          .insert(urls)
+          .values({
+            ...insertUrl,
+            originalClickLimit,
+            clicks: 0,
+            status: 'rejected', // Mark as rejected
+            createdAt: now,
+            updatedAt: now
+          })
+          .returning();
+          
+        return rejectedUrl;
+      } 
+      // For subsequent duplicates, add a number suffix (#2, #3, etc.)
+      else {
+        // Find the highest number suffix
+        let maxNumber = 1;
+        const nameBase = insertUrl.name;
+        
+        // Regex to match "name #N"
+        const regex = new RegExp(`^${nameBase} #(\\d+)$`);
+        
+        for (const existingUrl of existingUrls) {
+          const match = existingUrl.name.match(regex);
+          if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNumber) {
+              maxNumber = num;
+            }
+          }
+        }
+        
+        // Generate a new name with the next number suffix
+        const newNumber = maxNumber + 1;
+        const newName = `${nameBase} #${newNumber}`;
+        console.log(`  - Creating with numbered suffix: "${newName}"`);
+        
+        // Create a new URL with the numbered name and rejected status
+        const [numberedUrl] = await db
+          .insert(urls)
+          .values({
+            ...insertUrl,
+            name: newName, // Use the name with the number suffix
+            originalClickLimit,
+            clicks: 0,
+            status: 'rejected', // Mark as rejected
+            createdAt: now,
+            updatedAt: now
+          })
+          .returning();
+          
+        return numberedUrl;
+      }
+    }
+    
     // Ensure these values don't match if we have a valid multiplier applied
     if (insertUrl.campaignId) {
       const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, insertUrl.campaignId));
@@ -296,6 +369,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    // No duplicates found, proceed with normal URL creation
     const [url] = await db
       .insert(urls)
       .values({
