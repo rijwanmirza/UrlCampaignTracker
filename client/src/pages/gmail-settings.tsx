@@ -109,8 +109,8 @@ export default function GmailSettingsPage() {
   });
   
   // Update configuration mutation
-  const configMutation = useMutation({
-    mutationFn: async (values: GmailSettingsFormValues) => {
+  const configMutation = useMutation<{message: string, config: any}, Error, GmailSettingsFormValues>({
+    mutationFn: (values: GmailSettingsFormValues) => {
       // Split comma-separated whitelist senders into an array
       const whitelistSenders = values.whitelistSenders 
         ? values.whitelistSenders.split(',').map(sender => sender.trim())
@@ -134,7 +134,7 @@ export default function GmailSettingsPage() {
         checkInterval: values.checkInterval
       };
       
-      return apiRequest('POST', '/api/gmail-reader/config', configData);
+      return apiRequest<{message: string, config: any}>('POST', '/api/gmail-reader/config', configData);
     },
     onSuccess: () => {
       toast({
@@ -153,10 +153,23 @@ export default function GmailSettingsPage() {
     }
   });
   
-  // Test connection mutation
-  const testConnectionMutation = useMutation({
-    mutationFn: async (values: { user: string, password: string, host: string, port: number, tls: boolean }) => {
-      return apiRequest('POST', '/api/gmail-reader/test-connection', values);
+  // Define the credential type
+  type CredentialsInput = {
+    user: string;
+    password: string;
+    host: string;
+    port: number;
+    tls: boolean;
+  };
+
+  // Test connection mutation with properly typed parameters
+  const testConnectionMutation = useMutation<
+    { success: boolean; message: string },
+    Error,
+    CredentialsInput
+  >({
+    mutationFn: (credentials: CredentialsInput) => {
+      return apiRequest<{ success: boolean, message: string }>('POST', '/api/gmail-reader/test-connection', credentials);
     },
     onSuccess: (data) => {
       if (data.success) {
@@ -206,9 +219,9 @@ export default function GmailSettingsPage() {
   };
   
   // Start Gmail reader mutation
-  const startMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('POST', '/api/gmail-reader/start');
+  const startMutation = useMutation<{message: string}, Error, void>({
+    mutationFn: () => {
+      return apiRequest<{message: string}>('POST', '/api/gmail-reader/start');
     },
     onSuccess: () => {
       toast({
@@ -228,9 +241,9 @@ export default function GmailSettingsPage() {
   });
   
   // Stop Gmail reader mutation
-  const stopMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('POST', '/api/gmail-reader/stop');
+  const stopMutation = useMutation<{message: string}, Error, void>({
+    mutationFn: () => {
+      return apiRequest<{message: string}>('POST', '/api/gmail-reader/stop');
     },
     onSuccess: () => {
       toast({
