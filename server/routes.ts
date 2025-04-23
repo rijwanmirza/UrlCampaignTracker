@@ -206,9 +206,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate click limit with multiplier
       let calculatedClickLimit = originalClickLimit;
-      if (campaign.multiplier && campaign.multiplier > 1) {
-        calculatedClickLimit = originalClickLimit * campaign.multiplier;
-        console.log('🔍 DEBUG: Calculated click limit after multiplier:', calculatedClickLimit);
+      if (campaign.multiplier) {
+        // Convert multiplier to number if it's a string
+        const multiplierValue = typeof campaign.multiplier === 'string' 
+          ? parseFloat(campaign.multiplier) 
+          : campaign.multiplier;
+        
+        // Apply multiplier if greater than 0.01
+        if (multiplierValue > 0.01) {
+          calculatedClickLimit = Math.ceil(originalClickLimit * multiplierValue);
+          console.log('🔍 DEBUG: Calculated click limit after multiplier:', calculatedClickLimit);
+          console.log(`🔍 DEBUG: Calculation: ${originalClickLimit} × ${multiplierValue} = ${calculatedClickLimit}`);
+        }
       }
       
       // Create the URL data object with both the calculated limit and original input
@@ -278,17 +287,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Get campaign to check for multiplier
         const campaign = await storage.getCampaign(existingUrl.campaignId);
-        if (campaign && campaign.multiplier && campaign.multiplier > 1) {
-          // Save the new originalClickLimit (user input)
-          const newOriginalLimit = parseInt(updateData.clickLimit, 10);
+        if (campaign && campaign.multiplier) {
+          // Convert multiplier to number if it's a string
+          const multiplierValue = typeof campaign.multiplier === 'string'
+            ? parseFloat(campaign.multiplier)
+            : campaign.multiplier;
           
-          // Apply campaign multiplier to get the new required limit
-          updateData.clickLimit = newOriginalLimit * campaign.multiplier;
-          updateData.originalClickLimit = newOriginalLimit;
-          
-          console.log('🔍 DEBUG: URL updated with new limits:');
-          console.log(`  - Original user input: ${newOriginalLimit}`);
-          console.log(`  - After multiplier (${campaign.multiplier}x): ${updateData.clickLimit}`);
+          // Apply multiplier if greater than 0.01
+          if (multiplierValue > 0.01) {
+            // Save the new originalClickLimit (user input)
+            const newOriginalLimit = parseInt(updateData.clickLimit, 10);
+            
+            // Apply campaign multiplier to get the new required limit
+            updateData.clickLimit = Math.ceil(newOriginalLimit * multiplierValue);
+            updateData.originalClickLimit = newOriginalLimit;
+            
+            console.log('🔍 DEBUG: URL updated with new limits:');
+            console.log(`  - Original user input: ${newOriginalLimit}`);
+            console.log(`  - After multiplier (${multiplierValue}x): ${updateData.clickLimit}`);
+            console.log(`  - Calculation: ${newOriginalLimit} × ${multiplierValue} = ${updateData.clickLimit}`);
+          }
         }
       }
 

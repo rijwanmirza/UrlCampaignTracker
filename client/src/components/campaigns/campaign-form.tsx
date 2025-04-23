@@ -223,9 +223,10 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                   <FormControl>
                     <Input 
                       type="number" 
-                      min="1"
+                      min="0.01"
+                      step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
                       value={field.value}
                     />
                   </FormControl>
