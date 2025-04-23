@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import CampaignList from "@/pages/campaign-list";
 import URLsPage from "@/pages/urls";
 import URLsMobilePage from "@/pages/urls-mobile";
 import RedirectPage from "@/pages/redirect";
@@ -40,7 +41,14 @@ function Router() {
         <Route path="/">
           <Redirect to="/campaigns" />
         </Route>
-        <Route path="/campaigns/:id?" component={Home} />
+        <Route path="/campaigns/:id">
+          {params => {
+            if (params.id) {
+              return <Home />;
+            }
+            return <CampaignList />;
+          }}
+        </Route>
         <Route path="/urls">
           {isMobile ? <URLsMobilePage /> : <URLsPage />}
         </Route>
