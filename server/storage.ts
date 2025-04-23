@@ -272,10 +272,15 @@ export class DatabaseStorage implements IStorage {
 
   async createUrl(insertUrl: InsertUrl): Promise<Url> {
     const now = new Date();
+    
+    // Set originalClickLimit to the initial clickLimit value (before multiplier)
+    const originalClickLimit = insertUrl.clickLimit;
+    
     const [url] = await db
       .insert(urls)
       .values({
         ...insertUrl,
+        originalClickLimit,
         clicks: 0,
         status: 'active',
         createdAt: now,
