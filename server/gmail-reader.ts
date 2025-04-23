@@ -6,6 +6,8 @@ import { storage } from './storage';
 import nodemailer from 'nodemailer';
 // @ts-ignore - Ignore TypeScript errors for this module since we have a declaration file
 import smtpTransport from 'nodemailer-smtp-transport';
+import fs from 'fs';
+import path from 'path';
 
 interface GmailConfigOptions {
   user: string;
@@ -49,10 +51,48 @@ class GmailReader {
   private imap!: Imap; // Using definite assignment assertion
   private isRunning: boolean = false;
   private checkInterval: NodeJS.Timeout | null = null;
+  private processedEmailsLogFile: string;
+  private processedEmails: Set<string> = new Set();
 
   constructor(config: Partial<GmailConfigOptions> = {}) {
     this.config = { ...defaultGmailConfig, ...config };
     this.setupImapConnection();
+    this.processedEmailsLogFile = path.join(process.cwd(), 'processed_emails.log');
+    this.loadProcessedEmails();
+  }
+  
+  // Load previously processed emails from log file
+  private loadProcessedEmails() {
+    try {
+      if (fs.existsSync(this.processedEmailsLogFile)) {
+        const logContent = fs.readFileSync(this.processedEmailsLogFile, 'utf-8');
+        const emailIds = logContent.split('\n').filter(line => line.trim().length > 0);
+        emailIds.forEach(id => this.processedEmails.add(id));
+        log(`Loaded ${this.processedEmails.size} previously processed email IDs`, 'gmail-reader');
+      } else {
+        log(`No processed emails log file found, creating a new one`, 'gmail-reader');
+        fs.writeFileSync(this.processedEmailsLogFile, '', 'utf-8');
+      }
+    } catch (error) {
+      log(`Error loading processed emails: ${error}`, 'gmail-reader');
+    }
+  }
+  
+  // Log a processed email ID to prevent reprocessing
+  private logProcessedEmail(emailId: string) {
+    try {
+      if (!this.processedEmails.has(emailId)) {
+        fs.appendFileSync(this.processedEmailsLogFile, `${emailId}\n`, 'utf-8');
+        this.processedEmails.add(emailId);
+      }
+    } catch (error) {
+      log(`Error logging processed email: ${error}`, 'gmail-reader');
+    }
+  }
+  
+  // Check if an email has been processed before
+  private hasBeenProcessed(emailId: string): boolean {
+    return this.processedEmails.has(emailId);
   }
   
   private setupImapConnection() {
@@ -160,6 +200,14 @@ class GmailReader {
         try {
           // Get message ID/UID for tracking
           const msgId = attributes?.uid || 'unknown';
+          
+          // Skip processing if we've already processed this email
+          if (this.hasBeenProcessed(msgId)) {
+            log(`Skipping already processed email (ID: ${msgId})`, 'gmail-reader');
+            resolve();
+            return;
+          }
+          
           log(`Processing email (ID: ${msgId})`, 'gmail-reader');
           
           const parsed = await simpleParser(buffer);
@@ -270,11 +318,20 @@ class GmailReader {
               Calculated Click Limit: ${calculatedClickLimit}
               Status: ${createdUrl.status || 'active'}
             `, 'gmail-reader');
+            
+            // Log this email as processed to prevent duplicate processing
+            this.logProcessedEmail(msgId);
           } catch (error) {
             log(`Error adding URL to campaign: ${error}`, 'gmail-reader');
           }
         } catch (error) {
           log(`Error parsing email: ${error}`, 'gmail-reader');
+        }
+        
+        // Log the email as processed even if there was an error
+        // This prevents endless retries of emails that cause errors
+        if (attributes?.uid && !this.hasBeenProcessed(attributes.uid)) {
+          this.logProcessedEmail(attributes.uid);
         }
         
         resolve();
