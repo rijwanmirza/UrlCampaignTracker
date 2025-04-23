@@ -289,7 +289,7 @@ export default function URLsPage() {
   // URL action handlers
   const handleActivateUrl = (id: number) => {
     // Find the URL in our data to get all its fields
-    const url = urls.find(u => u.id === id);
+    const url = urls.find((u: UrlWithActiveStatus) => u.id === id);
     if (!url) return;
     
     // Include all required fields when updating to fix the validation errors
@@ -307,7 +307,7 @@ export default function URLsPage() {
   
   const handlePauseUrl = (id: number) => {
     // Find the URL in our data to get all its fields
-    const url = urls.find(u => u.id === id);
+    const url = urls.find((u: UrlWithActiveStatus) => u.id === id);
     if (!url) return;
     
     // Include all required fields when updating to fix the validation errors
