@@ -242,15 +242,7 @@ export default function CampaignList() {
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-100"
-                          onClick={() => handleDeleteCampaign(campaign.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
+
                       </div>
                     </CardContent>
                   </Card>
