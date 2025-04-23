@@ -45,12 +45,8 @@ export default function Home() {
 
   const formattedCampaign = campaign ? formatCampaign(campaign) : undefined;
 
-  // Navigate to first campaign if available and none selected
-  useEffect(() => {
-    if (!campaignId && allCampaigns && allCampaigns.length > 0) {
-      setLocation(`/campaigns/${allCampaigns[0].id}`);
-    }
-  }, [campaignId, allCampaigns, setLocation]);
+  // Don't auto-redirect to first campaign
+  // Just display the selected campaign details
 
   // Generate the campaign URL for redirection
   const getCampaignUrl = (id: number) => {
@@ -84,33 +80,9 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row">
-      {/* Desktop sidebar - hidden on mobile */}
-      <div className="md:w-64 border-r bg-white hidden md:block h-[calc(100vh-4rem)] overflow-y-auto">
-        <CampaignSidebar />
-      </div>
-      
+    <div className="flex flex-col">
       <main className="flex-1 overflow-y-auto bg-gray-50">
-        {/* Mobile Campaign Selector */}
-        {isMobile && allCampaigns && allCampaigns.length > 0 && (
-          <div className="bg-white p-3 border-b sticky top-0 z-10">
-            <Select 
-              value={campaignId?.toString()} 
-              onValueChange={handleCampaignChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Campaign" />
-              </SelectTrigger>
-              <SelectContent>
-                {allCampaigns.map(camp => (
-                  <SelectItem key={camp.id} value={camp.id.toString()}>
-                    {camp.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        {/* Campaign header - no dropdown */}
         
         {/* No Campaign or Loading State */}
         {!campaignId || isLoading ? (
@@ -128,7 +100,7 @@ export default function Home() {
                   </svg>
                   <h2 className="mt-4 text-xl font-semibold text-gray-700">No Campaign Selected</h2>
                   <p className="mt-2 text-gray-500">
-                    Please select a campaign from the {isMobile ? "dropdown above" : "sidebar"} or create a new one to get started.
+                    Please select a campaign from the Campaigns page or create a new one to get started.
                   </p>
                 </>
               )}
