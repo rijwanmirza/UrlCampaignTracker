@@ -344,10 +344,9 @@ export default function URLsPage() {
     window.open(url.targetUrl, '_blank');
   };
   
-  // Handle URL edit (rendered via the UrlEditForm component)
+  // Handle URL edit 
   const handleEditUrl = (url: UrlWithActiveStatus) => {
-    // No action needed here, the UrlEditForm handles the edit
-    // This function just satisfies the click handler requirements
+    setEditingUrl(url);
   };
   
   // Progress bar component showing clicks vs limit
@@ -620,20 +619,10 @@ export default function URLsPage() {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Visit Target
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setOpen(true)}>
+                                <DropdownMenuItem onClick={() => handleEditUrl(url)}>
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit URL
                                 </DropdownMenuItem>
-                                {/* URL Edit Form Dialog */}
-                                <Dialog open={open} onOpenChange={setOpen}>
-                                  <DialogContent>
-                                    <UrlEditForm url={url} onSuccess={() => {
-                                      setOpen(false);
-                                      // Refresh data
-                                      queryClient.invalidateQueries({ queryKey: ['urls'] });
-                                    }} />
-                                  </DialogContent>
-                                </Dialog>
                                 <DropdownMenuSeparator />
                                 
                                 {url.status !== 'active' && (
@@ -693,6 +682,26 @@ export default function URLsPage() {
           </div>
         </div>
       </main>
+      
+      {/* URL Edit Dialog */}
+      <Dialog 
+        open={editingUrl !== null} 
+        onOpenChange={(open) => {
+          if (!open) setEditingUrl(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          {editingUrl && (
+            <UrlEditForm 
+              url={editingUrl} 
+              onSuccess={() => {
+                setEditingUrl(null);
+                queryClient.invalidateQueries({ queryKey: ['urls'] });
+              }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
