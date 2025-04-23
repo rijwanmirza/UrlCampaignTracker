@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import CampaignEditForm from "./campaign-edit-form";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
@@ -53,14 +54,21 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            Campaign Details
-            <Badge variant="outline" className="text-xs ml-2">
-              {redirectMethodLabels[campaign.redirectMethod] || campaign.redirectMethod}
-            </Badge>
-          </CardTitle>
-          <CardDescription>Created on {formatDate(campaign.createdAt)}</CardDescription>
+        <CardHeader className="pb-2 flex flex-row items-start justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Campaign Details
+              <Badge variant="outline" className="text-xs ml-2">
+                {redirectMethodLabels[campaign.redirectMethod] || campaign.redirectMethod}
+              </Badge>
+            </CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <span>Created on {formatDate(campaign.createdAt)}</span>
+              <Badge variant="secondary" className="text-xs">ID: {campaign.id}</Badge>
+            </CardDescription>
+          </div>
+          
+          <CampaignEditForm campaign={campaign} />
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
