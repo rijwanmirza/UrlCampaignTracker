@@ -281,17 +281,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       switch (campaign.redirectMethod) {
         case "meta_refresh":
-          // Meta refresh redirect
+          // Meta refresh redirect with no visible content
           res.send(`
             <!DOCTYPE html>
             <html>
               <head>
                 <meta http-equiv="refresh" content="0;url=${targetUrl}">
-                <title>Redirecting...</title>
+                <title></title>
+                <style>body{display:none}</style>
               </head>
-              <body>
-                <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
-              </body>
+              <body></body>
             </html>
           `);
           break;
@@ -304,11 +303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <html>
               <head>
                 <meta http-equiv="refresh" content="0;url=${bridgeUrl}">
-                <title>Redirecting...</title>
+                <title></title>
+                <style>body{display:none}</style>
               </head>
-              <body>
-                <p>Redirecting...</p>
-              </body>
+              <body></body>
             </html>
           `);
           break;
@@ -344,17 +342,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "URL not found" });
       }
 
-      // Second stage of double meta refresh
+      // Second stage of double meta refresh - minimal content for speed
       res.send(`
         <!DOCTYPE html>
         <html>
           <head>
             <meta http-equiv="refresh" content="0;url=${url.targetUrl}">
-            <title>Completing Redirect...</title>
+            <title></title>
+            <style>body{display:none}</style>
           </head>
-          <body>
-            <p>Completing redirect to <a href="${url.targetUrl}">${url.targetUrl}</a>...</p>
-          </body>
+          <body></body>
         </html>
       `);
     } catch (error) {

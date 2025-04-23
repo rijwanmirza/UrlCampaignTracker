@@ -288,11 +288,39 @@ export default function URLsPage() {
   
   // URL action handlers
   const handleActivateUrl = (id: number) => {
-    urlActionMutation.mutate({ id, action: 'update', data: { status: 'active' } });
+    // Find the URL in our data to get all its fields
+    const url = urls.find(u => u.id === id);
+    if (!url) return;
+    
+    // Include all required fields when updating to fix the validation errors
+    urlActionMutation.mutate({ 
+      id, 
+      action: 'update', 
+      data: { 
+        name: url.name,
+        targetUrl: url.targetUrl,
+        clickLimit: url.clickLimit,
+        status: 'active' 
+      } 
+    });
   };
   
   const handlePauseUrl = (id: number) => {
-    urlActionMutation.mutate({ id, action: 'update', data: { status: 'paused' } });
+    // Find the URL in our data to get all its fields
+    const url = urls.find(u => u.id === id);
+    if (!url) return;
+    
+    // Include all required fields when updating to fix the validation errors
+    urlActionMutation.mutate({ 
+      id, 
+      action: 'update', 
+      data: { 
+        name: url.name,
+        targetUrl: url.targetUrl,
+        clickLimit: url.clickLimit,
+        status: 'paused' 
+      } 
+    });
   };
   
   const handleDeleteUrl = (id: number) => {
