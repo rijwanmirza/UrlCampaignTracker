@@ -762,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Test Gmail IMAP connection
+  // Test Gmail connection (using both SMTP and IMAP methods)
   app.post("/api/gmail-reader/test-connection", async (req: Request, res: Response) => {
     try {
       const { user, password, host = 'imap.gmail.com', port = 993, tls = true } = req.body;
@@ -774,6 +774,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // First try SMTP verification (often more reliable with Gmail)
+      // Create a temporary instance with our credentials
+      const tempConfig = {
+        user,
+        password,
+        host,
+        port, 
+        tls,
+        whitelistSenders: ['help@donot-reply.in'] // Include the requested whitelist
+      };
+      
+      // Update the main Gmail reader with the credentials for testing
+      gmailReader.updateConfig(tempConfig);
+      
+      try {
+        // Try to verify using SMTP first (faster and more reliable for Gmail)
+        const smtpResult = await gmailReader.verifyCredentials();
+        if (smtpResult.success) {
+          return res.json(smtpResult);
+        }
+        // If SMTP failed, fall back to IMAP verification
+        console.log('SMTP verification failed, trying IMAP:', smtpResult.message);
+      } catch (smtpError) {
+        console.log('SMTP verification threw an error, trying IMAP:', smtpError);
+      }
+      
+      // Fall back to IMAP connection testing
       // Create a new IMAP connection for testing
       const testImap = new Imap({
         user,
@@ -781,7 +808,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         host,
         port,
         tls,
-        tlsOptions: { rejectUnauthorized: false }
+        tlsOptions: { rejectUnauthorized: false },
+        authTimeout: 30000, // Increase auth timeout
+        connTimeout: 30000  // Increase connection timeout
       });
       
       // Set up a promise to handle the connection test
@@ -795,9 +824,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           resolve({ 
             success: false, 
-            message: "Connection timeout. Please check your credentials and network." 
+            message: "Connection timeout. Please check your credentials and network. Gmail sometimes blocks automated login attempts. Try again later or visit your Google account security settings." 
           });
-        }, 30000); // 30 second timeout - increased for better chance of connection
+        }, 30000); // 30 second timeout
         
         // Handle errors
         testImap.once('error', (err: Error) => {
@@ -808,11 +837,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let friendlyMessage = `Connection failed: ${err.message}`;
           
           if (err.message.includes('Invalid credentials') || err.message.includes('Authentication failed')) {
-            friendlyMessage = 'Authentication failed: Please check your email and app password';
+            friendlyMessage = 'Authentication failed: Please check your email and app password. Make sure you\'re using an App Password if you have 2-factor authentication enabled.';
           } else if (err.message.includes('ENOTFOUND') || err.message.includes('getaddrinfo')) {
             friendlyMessage = 'Could not reach Gmail server: Please check your internet connection and host settings';
           } else if (err.message.includes('ETIMEDOUT')) {
-            friendlyMessage = 'Connection timed out: Gmail server might be blocking the request or there are network issues';
+            friendlyMessage = 'Connection timed out: Gmail server might be blocking the request or there are network issues. Try again later.';
           }
           
           resolve({ 

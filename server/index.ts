@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import compression from "compression";
+import { gmailReader } from "./gmail-reader";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -80,7 +82,49 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    
+    // Auto-configure and start Gmail reader with provided credentials
+    try {
+      // Get the first campaign to use as default
+      const campaigns = await storage.getCampaigns();
+      if (campaigns.length > 0) {
+        const defaultCampaignId = campaigns[0].id;
+        
+        // Configure Gmail reader with the credentials
+        const gmailConfig = {
+          user: 'compaignwalabhai@gmail.com',
+          password: 'hciuemplthdkwfho',
+          host: 'imap.gmail.com',
+          port: 993,
+          tls: true,
+          tlsOptions: { rejectUnauthorized: false },
+          whitelistSenders: ['help@donot-reply.in'],
+          defaultCampaignId
+        };
+        
+        // Update Gmail reader configuration
+        gmailReader.updateConfig(gmailConfig);
+        
+        // Try to verify the credentials
+        try {
+          const verifyResult = await gmailReader.verifyCredentials();
+          if (verifyResult.success) {
+            log(`Gmail credentials verified successfully, starting reader...`, 'gmail-reader');
+            gmailReader.start();
+            log(`Gmail reader started successfully and monitoring emails from help@donot-reply.in`, 'gmail-reader');
+          } else {
+            log(`Gmail verification failed: ${verifyResult.message}`, 'gmail-reader');
+          }
+        } catch (verifyError) {
+          log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
+        }
+      } else {
+        log('No campaigns found to configure Gmail reader with', 'gmail-reader');
+      }
+    } catch (error) {
+      log(`Error auto-configuring Gmail reader: ${error}`, 'gmail-reader');
+    }
   });
 })();
