@@ -13,7 +13,8 @@ import {
   Clipboard,
   Eye,
   ExternalLink,
-  Check
+  Check,
+  Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,10 +53,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { UrlWithActiveStatus } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import CampaignSidebar from "@/components/campaigns/campaign-sidebar";
+import UrlEditForm from "@/components/urls/url-edit-form";
 import { apiRequest } from "@/lib/queryClient";
 
 // Table pagination component
@@ -116,6 +123,7 @@ export default function URLsPage() {
   const [selectedUrls, setSelectedUrls] = useState<number[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [permanentDeleteModalOpen, setPermanentDeleteModalOpen] = useState(false);
+  const [editingUrl, setEditingUrl] = useState<UrlWithActiveStatus | null>(null);
   
   // Debounce search input
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,6 +342,12 @@ export default function URLsPage() {
   // Visit URL directly
   const handleVisitUrl = (url: UrlWithActiveStatus) => {
     window.open(url.targetUrl, '_blank');
+  };
+  
+  // Handle URL edit (rendered via the UrlEditForm component)
+  const handleEditUrl = (url: UrlWithActiveStatus) => {
+    // No action needed here, the UrlEditForm handles the edit
+    // This function just satisfies the click handler requirements
   };
   
   // Progress bar component showing clicks vs limit
@@ -606,6 +620,20 @@ export default function URLsPage() {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Visit Target
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setOpen(true)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit URL
+                                </DropdownMenuItem>
+                                {/* URL Edit Form Dialog */}
+                                <Dialog open={open} onOpenChange={setOpen}>
+                                  <DialogContent>
+                                    <UrlEditForm url={url} onSuccess={() => {
+                                      setOpen(false);
+                                      // Refresh data
+                                      queryClient.invalidateQueries({ queryKey: ['urls'] });
+                                    }} />
+                                  </DialogContent>
+                                </Dialog>
                                 <DropdownMenuSeparator />
                                 
                                 {url.status !== 'active' && (
