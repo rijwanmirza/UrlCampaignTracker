@@ -171,7 +171,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(urls.campaignId, campaignId),
-          notIn(urls.status, ['deleted', 'rejected'])
+          ne(urls.status, 'deleted'),
+          ne(urls.status, 'rejected')
         )
       )
       .orderBy(desc(urls.createdAt));
