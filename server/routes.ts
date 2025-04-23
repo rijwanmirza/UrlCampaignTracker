@@ -127,7 +127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
 
-      const urlData = { ...req.body, campaignId };
+      // Apply campaign multiplier if set
+      let urlData = { ...req.body, campaignId };
+      if (campaign.multiplier && campaign.multiplier > 1 && urlData.clickLimit) {
+        // Multiply the click limit by the campaign multiplier
+        urlData.clickLimit = urlData.clickLimit * campaign.multiplier;
+      }
+      
       const result = insertUrlSchema.safeParse(urlData);
       if (!result.success) {
         const validationError = fromZodError(result.error);

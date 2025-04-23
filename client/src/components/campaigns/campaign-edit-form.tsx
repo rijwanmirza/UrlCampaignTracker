@@ -41,6 +41,7 @@ const campaignEditSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   redirectMethod: z.string(),
   customPath: z.string().optional(),
+  multiplier: z.number().int().min(1, "Multiplier must be at least 1").optional(),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -62,6 +63,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       name: campaign.name,
       redirectMethod: campaign.redirectMethod,
       customPath: campaign.customPath || "",
+      multiplier: campaign.multiplier || 1,
     },
   });
   
@@ -198,6 +200,30 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   </FormControl>
                   <FormDescription>
                     Create a custom URL path that will be used to access this campaign.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Click Multiplier */}
+            <FormField
+              control={form.control}
+              name="multiplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Click Multiplier</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="1"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Multiply all URL click limits in this campaign by this value. When a URL is added with limit 10 and the multiplier is 2, the effective limit will be 20.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
