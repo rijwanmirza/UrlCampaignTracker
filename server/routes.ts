@@ -97,16 +97,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
       
+      console.log('🔍 DEBUG: Campaign update requested: ID', id);
+      const oldMultiplier = existingCampaign.multiplier || 1;
+      console.log(`  - Current multiplier: ${oldMultiplier}`);
+      console.log(`  - Requested multiplier: ${multiplier || 'unchanged'}`);
+      
       // Update campaign first
       const updatedCampaign = await storage.updateCampaign(id, result.data);
       
       // If multiplier changed, update all active/paused URLs in the campaign
       if (multiplier && multiplier !== existingCampaign.multiplier) {
+        console.log(`🔍 DEBUG: Multiplier change detected: ${oldMultiplier} → ${multiplier}`);
+        
         // Get all active/paused URLs
         const campaignUrls = await storage.getUrls(id);
         const activeOrPausedUrls = campaignUrls.filter(
           url => url.status === 'active' || url.status === 'paused'
         );
+        
+        console.log(`  - Found ${activeOrPausedUrls.length} active/paused URLs to update`);
         
         // Update each URL with new clickLimit based on original value * new multiplier
         for (const url of activeOrPausedUrls) {
@@ -183,29 +192,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
 
-      console.log('Received URL creation request:', JSON.stringify(req.body, null, 2));
-      console.log('Campaign multiplier:', campaign.multiplier);
+      console.log('🔍 DEBUG: Received URL creation request:', JSON.stringify(req.body, null, 2));
+      console.log('🔍 DEBUG: Campaign multiplier:', campaign.multiplier);
       
       // Store original click limit - EXACTLY as entered by user
       const originalClickLimit = parseInt(req.body.clickLimit, 10);
-      console.log('Original click limit (user input):', originalClickLimit);
+      if (isNaN(originalClickLimit) || originalClickLimit <= 0) {
+        return res.status(400).json({ message: "Click limit must be a positive number" });
+      }
+      console.log('🔍 DEBUG: Original click limit (user input):', originalClickLimit);
       
       // Calculate click limit with multiplier
       let calculatedClickLimit = originalClickLimit;
       if (campaign.multiplier && campaign.multiplier > 1) {
         calculatedClickLimit = originalClickLimit * campaign.multiplier;
-        console.log('Calculated click limit after multiplier:', calculatedClickLimit);
+        console.log('🔍 DEBUG: Calculated click limit after multiplier:', calculatedClickLimit);
       }
       
-      // Force overwrite the req.body.clickLimit
+      // Create the URL data object with both the calculated limit and original input
       let urlData = { 
         ...req.body, 
         campaignId,
         clickLimit: calculatedClickLimit,
-        originalClickLimit: originalClickLimit // This is ALWAYS the raw user input value
+        originalClickLimit: originalClickLimit // IMPORTANT: This is the raw user input value without multiplier
       };
       
-      console.log('Final URL data to be saved:', JSON.stringify(urlData, null, 2));
+      console.log('🔍 DEBUG: Final URL data to be saved:', JSON.stringify(urlData, null, 2));
       
       const result = insertUrlSchema.safeParse(urlData);
       if (!result.success) {
@@ -227,7 +239,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid URL ID" });
       }
 
-      const result = updateUrlSchema.safeParse(req.body);
+      // Get existing URL to check its campaign multiplier
+      const existingUrl = await storage.getUrl(id);
+      if (!existingUrl) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+
+      // Check if this is a click limit update with new multiplier needed
+      let updateData = { ...req.body };
+
+      // If updating clickLimit and the URL belongs to a campaign
+      if (updateData.clickLimit && existingUrl.campaignId) {
+        console.log('🔍 DEBUG: URL edit - updating click limit');
+        
+        // Get campaign to check for multiplier
+        const campaign = await storage.getCampaign(existingUrl.campaignId);
+        if (campaign && campaign.multiplier && campaign.multiplier > 1) {
+          // Save the new originalClickLimit (user input)
+          const newOriginalLimit = parseInt(updateData.clickLimit, 10);
+          
+          // Apply campaign multiplier to get the new required limit
+          updateData.clickLimit = newOriginalLimit * campaign.multiplier;
+          updateData.originalClickLimit = newOriginalLimit;
+          
+          console.log('🔍 DEBUG: URL updated with new limits:');
+          console.log(`  - Original user input: ${newOriginalLimit}`);
+          console.log(`  - After multiplier (${campaign.multiplier}x): ${updateData.clickLimit}`);
+        }
+      }
+
+      const result = updateUrlSchema.safeParse(updateData);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
@@ -240,6 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(url);
     } catch (error) {
+      console.error('Error updating URL:', error);
       res.status(500).json({ message: "Failed to update URL" });
     }
   });

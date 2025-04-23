@@ -220,9 +220,9 @@ export default function UrlTable({ campaign }: UrlTableProps) {
     
     return (
       <div className="flex flex-col space-y-1">
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>{url.clicks} clicks</span>
-          <span>{url.clickLimit} limit</span>
+        <div className="flex justify-between text-xs text-gray-500 mb-1">
+          <span className="font-medium">{url.clicks} / {url.clickLimit} / {url.originalClickLimit}</span>
+          <span>received / required / original</span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2.5">
           <div 

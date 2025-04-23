@@ -277,9 +277,24 @@ export class DatabaseStorage implements IStorage {
     // However, routes.ts should be sending this correctly!
     const originalClickLimit = insertUrl.originalClickLimit || insertUrl.clickLimit;
     
-    console.log('Storage - Creating URL with:');
-    console.log('  - clickLimit (after multiplier):', insertUrl.clickLimit);
-    console.log('  - originalClickLimit (user input):', originalClickLimit);
+    console.log('🔍 DEBUG: Storage - Creating URL');
+    console.log('  - Name:', insertUrl.name);
+    console.log('  - Target URL:', insertUrl.targetUrl);
+    console.log('  - Campaign ID:', insertUrl.campaignId);
+    console.log('  - Click limit (after multiplier):', insertUrl.clickLimit);
+    console.log('  - Original click limit (user input):', originalClickLimit);
+    
+    // Ensure these values don't match if we have a valid multiplier applied
+    if (insertUrl.campaignId) {
+      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, insertUrl.campaignId));
+      if (campaign && campaign.multiplier > 1) {
+        if (originalClickLimit * campaign.multiplier !== insertUrl.clickLimit) {
+          console.warn('⚠️ WARNING: Calculated click limit does not match expected value!');
+          console.warn(`  - Expected: ${originalClickLimit} × ${campaign.multiplier} = ${originalClickLimit * campaign.multiplier}`);
+          console.warn(`  - Received: ${insertUrl.clickLimit}`);
+        }
+      }
+    }
     
     const [url] = await db
       .insert(urls)
