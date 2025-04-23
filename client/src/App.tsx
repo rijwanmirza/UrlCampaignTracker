@@ -42,17 +42,17 @@ function Router() {
           <Redirect to="/campaigns" />
         </Route>
         <Route path="/campaigns/:id">
-          {params => {
-            if (params.id) {
-              return <Home />;
-            }
-            return <CampaignList />;
-          }}
+          <Home />
+        </Route>
+        <Route path="/campaigns">
+          <CampaignList />
         </Route>
         <Route path="/urls">
           {isMobile ? <URLsMobilePage /> : <URLsPage />}
         </Route>
-        <Route component={NotFound} />
+        <Route>
+          <NotFound />
+        </Route>
       </Switch>
     </AppLayout>
   );
