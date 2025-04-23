@@ -322,15 +322,35 @@ export class DatabaseStorage implements IStorage {
         let maxNumber = 1;
         const nameBase = insertUrl.name;
         
-        // Regex to match "name #N"
-        const regex = new RegExp(`^${nameBase} #(\\d+)$`);
+        // Get all URLs with this base name to find the highest suffix
+        const allDuplicateUrls = await db
+          .select()
+          .from(urls)
+          .where(
+            or(
+              eq(urls.name, nameBase),
+              ilike(urls.name, `${nameBase} #%`)
+            )
+          );
         
-        for (const existingUrl of existingUrls) {
+        console.log(`  - Found ${allDuplicateUrls.length} potential duplicates`);
+        
+        // Regex to match "name #N" 
+        const regex = new RegExp(`^${nameBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} #(\\d+)$`);
+        
+        for (const existingUrl of allDuplicateUrls) {
+          // Skip the base URL itself
+          if (existingUrl.name === nameBase) continue;
+          
           const match = existingUrl.name.match(regex);
+          console.log(`  - Checking: "${existingUrl.name}" against regex`);
+          
           if (match && match[1]) {
             const num = parseInt(match[1], 10);
+            console.log(`    - Found number: ${num}`);
             if (num > maxNumber) {
               maxNumber = num;
+              console.log(`    - New max number: ${maxNumber}`);
             }
           }
         }
