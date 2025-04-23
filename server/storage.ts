@@ -11,7 +11,7 @@ import {
   campaigns,
   urls
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -270,17 +270,22 @@ export class DatabaseStorage implements IStorage {
     return url;
   }
 
-  async createUrl(insertUrl: InsertUrl): Promise<Url> {
+  async createUrl(insertUrl: InsertUrl & { originalClickLimit?: number }): Promise<Url> {
     const now = new Date();
     
-    // Set originalClickLimit to the initial clickLimit value (before multiplier)
-    const originalClickLimit = insertUrl.clickLimit;
+    // If originalClickLimit wasn't provided explicitly, use the clickLimit value
+    // However, routes.ts should be sending this correctly!
+    const originalClickLimit = insertUrl.originalClickLimit || insertUrl.clickLimit;
+    
+    console.log('Storage - Creating URL with:');
+    console.log('  - clickLimit (after multiplier):', insertUrl.clickLimit);
+    console.log('  - originalClickLimit (user input):', originalClickLimit);
     
     const [url] = await db
       .insert(urls)
       .values({
         ...insertUrl,
-        originalClickLimit,
+        originalClickLimit, // This should be the raw user input
         clicks: 0,
         status: 'active',
         createdAt: now,
@@ -357,18 +362,8 @@ export class DatabaseStorage implements IStorage {
         this.invalidateCampaignCache(url.campaignId);
       }
       
-      // Optimize database storage by running VACUUM periodically (uncommonly)
-      // This helps reclaim space and optimize the database for better performance
-      const shouldVacuum = Math.random() < 0.1; // 10% chance to run VACUUM after permanent deletion
-      if (shouldVacuum) {
-        try {
-          console.log("Running database optimization to reclaim storage...");
-          // We use pool directly to run a raw SQL command
-          await db.run(sql`VACUUM;`);
-        } catch (vacuumError) {
-          console.error("Database optimization failed, but URL was deleted:", vacuumError);
-        }
-      }
+      // We've completely removed the URL with no traces left on the server
+      // Database will automatically reclaim space over time through autovacuum
       
       return true;
     } catch (error) {

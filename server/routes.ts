@@ -183,20 +183,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
 
-      // Store original click limit - this is the user input value
+      console.log('Received URL creation request:', JSON.stringify(req.body, null, 2));
+      console.log('Campaign multiplier:', campaign.multiplier);
+      
+      // Store original click limit - EXACTLY as entered by user
       const originalClickLimit = parseInt(req.body.clickLimit, 10);
+      console.log('Original click limit (user input):', originalClickLimit);
       
-      // Calculate click limit (applying multiplier if needed)
-      const calculatedClickLimit = campaign.multiplier && campaign.multiplier > 1 
-        ? originalClickLimit * campaign.multiplier 
-        : originalClickLimit;
+      // Calculate click limit with multiplier
+      let calculatedClickLimit = originalClickLimit;
+      if (campaign.multiplier && campaign.multiplier > 1) {
+        calculatedClickLimit = originalClickLimit * campaign.multiplier;
+        console.log('Calculated click limit after multiplier:', calculatedClickLimit);
+      }
       
+      // Force overwrite the req.body.clickLimit
       let urlData = { 
         ...req.body, 
         campaignId,
         clickLimit: calculatedClickLimit,
-        originalClickLimit: originalClickLimit // Important: originalClickLimit is ALWAYS the user entered value
+        originalClickLimit: originalClickLimit // This is ALWAYS the raw user input value
       };
+      
+      console.log('Final URL data to be saved:', JSON.stringify(urlData, null, 2));
       
       const result = insertUrlSchema.safeParse(urlData);
       if (!result.success) {
