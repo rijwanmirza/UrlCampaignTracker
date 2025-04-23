@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useState, useEffect } from "react";
+import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clipboard, List } from "lucide-react";
+import { Clipboard, List, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatCampaign } from "@/lib/types";
 import { CampaignWithUrls } from "@shared/schema";
@@ -12,15 +11,31 @@ import CampaignDetails from "@/components/campaigns/campaign-details";
 import CampaignUrls from "@/components/campaigns/campaign-urls";
 import UrlForm from "@/components/urls/url-form";
 import StatsCards from "@/components/stats/stats-cards";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showUrlModal, setShowUrlModal] = useState(false);
+  const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
   
   // Match the campaign ID from the URL
   const [match, params] = useRoute<{ id?: string }>("/campaigns/:id");
   const campaignId = match && params?.id ? parseInt(params.id) : undefined;
+  
+  // Fetch all campaigns for mobile dropdown
+  const { data: allCampaigns } = useQuery<CampaignWithUrls[]>({
+    queryKey: ['/api/campaigns'],
+  });
   
   // Fetch campaign data if we have an ID
   const { data: campaign, isLoading } = useQuery<CampaignWithUrls>({
@@ -29,6 +44,13 @@ export default function Home() {
   });
 
   const formattedCampaign = campaign ? formatCampaign(campaign) : undefined;
+
+  // Navigate to first campaign if available and none selected
+  useEffect(() => {
+    if (!campaignId && allCampaigns && allCampaigns.length > 0) {
+      setLocation(`/campaigns/${allCampaigns[0].id}`);
+    }
+  }, [campaignId, allCampaigns, setLocation]);
 
   // Generate the campaign URL for redirection
   const getCampaignUrl = (id: number) => {
@@ -55,16 +77,44 @@ export default function Home() {
         });
       });
   };
+  
+  // Handler for mobile campaign selector
+  const handleCampaignChange = (value: string) => {
+    setLocation(`/campaigns/${value}`);
+  };
 
   return (
     <div className="flex flex-col md:flex-row">
+      {/* Desktop sidebar - hidden on mobile */}
       <div className="md:w-64 border-r bg-white hidden md:block h-[calc(100vh-4rem)] overflow-y-auto">
         <CampaignSidebar />
       </div>
       
       <main className="flex-1 overflow-y-auto bg-gray-50">
+        {/* Mobile Campaign Selector */}
+        {isMobile && allCampaigns && allCampaigns.length > 0 && (
+          <div className="bg-white p-3 border-b sticky top-0 z-10">
+            <Select 
+              value={campaignId?.toString()} 
+              onValueChange={handleCampaignChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Campaign" />
+              </SelectTrigger>
+              <SelectContent>
+                {allCampaigns.map(camp => (
+                  <SelectItem key={camp.id} value={camp.id.toString()}>
+                    {camp.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* No Campaign or Loading State */}
         {!campaignId || isLoading ? (
-          <div className="h-full flex items-center justify-center flex-col p-8">
+          <div className="h-full flex items-center justify-center flex-col p-6">
             <div className="text-center max-w-md">
               {isLoading ? (
                 <div className="flex flex-col items-center">
@@ -78,31 +128,36 @@ export default function Home() {
                   </svg>
                   <h2 className="mt-4 text-xl font-semibold text-gray-700">No Campaign Selected</h2>
                   <p className="mt-2 text-gray-500">
-                    Please select a campaign from the sidebar or create a new one to get started with URL redirection.
+                    Please select a campaign from the {isMobile ? "dropdown above" : "sidebar"} or create a new one to get started.
                   </p>
                 </>
               )}
             </div>
           </div>
         ) : formattedCampaign ? (
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {/* Campaign header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-gray-800">{formattedCampaign.name}</h1>
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-800">{formattedCampaign.name}</h1>
                 </div>
               </div>
-              <div className="mt-4 md:mt-0 flex space-x-3">
+              <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
                 <Button 
                   variant="outline"
                   onClick={handleCopyCampaignUrl}
-                  className="gap-1.5"
+                  className="gap-1.5 flex-1 md:flex-none"
+                  size={isMobile ? "sm" : "default"}
                 >
                   <Clipboard className="h-4 w-4" />
                   Copy URL
                 </Button>
-                <Button onClick={() => setShowUrlModal(true)}>
+                <Button 
+                  onClick={() => setShowUrlModal(true)}
+                  className="flex-1 md:flex-none"
+                  size={isMobile ? "sm" : "default"}
+                >
                   Add URL
                 </Button>
               </div>
@@ -115,14 +170,14 @@ export default function Home() {
             <StatsCards campaign={formattedCampaign} />
             
             {/* Section headers with IDs */}
-            <div className="flex justify-between items-center mt-8 mb-4">
-              <div className="flex items-center">
-                <h2 className="text-xl font-bold">Active URLs</h2>
-                <span className="ml-3 text-sm text-gray-500">Only showing active & paused URLs</span>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mt-8 mb-4 gap-3">
+              <div className="flex flex-col md:flex-row md:items-center">
+                <h2 className="text-lg md:text-xl font-bold">Active URLs</h2>
+                <span className="md:ml-3 text-xs md:text-sm text-gray-500">Only showing active & paused URLs</span>
               </div>
               
               <Link href="/urls">
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" className="gap-1.5 w-full md:w-auto">
                   <List className="h-4 w-4" />
                   View URL History
                 </Button>
