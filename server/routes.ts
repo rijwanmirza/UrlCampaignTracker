@@ -952,6 +952,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Full system cleanup endpoint
+  app.post("/api/system/full-cleanup", async (req: Request, res: Response) => {
+    try {
+      // Stop Gmail reader first if it's running
+      if (gmailReader.getStatus().isRunning) {
+        gmailReader.stop();
+      }
+      
+      // Clear email processing logs
+      const emailLogsResult = gmailReader.clearAllEmailLogs();
+      
+      // Clear database (delete all campaigns and URLs)
+      const dbResult = await storage.fullSystemCleanup();
+      
+      res.json({ 
+        message: "Full system cleanup completed successfully", 
+        result: {
+          campaignsDeleted: dbResult.campaignsDeleted,
+          urlsDeleted: dbResult.urlsDeleted,
+          emailLogsCleared: emailLogsResult.success,
+          emailLogsRemoved: emailLogsResult.entriesRemoved
+        }
+      });
+    } catch (error) {
+      console.error("Error performing full system cleanup:", error);
+      res.status(500).json({ 
+        message: "Failed to perform full system cleanup",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

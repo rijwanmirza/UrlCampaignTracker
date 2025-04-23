@@ -173,6 +173,36 @@ class GmailReader {
     }
   }
   
+  // Clear all email logs completely
+  public clearAllEmailLogs() {
+    try {
+      const totalEntries = this.processedEmails.size;
+      
+      // Clear the in-memory Map
+      this.processedEmails.clear();
+      
+      // Clear the log file
+      fs.writeFileSync(this.processedEmailsLogFile, '', 'utf-8');
+      
+      log(`Cleared all email logs: removed ${totalEntries} entries`, 'gmail-reader');
+      
+      // Reset initial scan status
+      this.initialScanComplete = false;
+      
+      return {
+        success: true,
+        entriesRemoved: totalEntries
+      };
+    } catch (error) {
+      log(`Error clearing all email logs: ${error}`, 'gmail-reader');
+      return {
+        success: false,
+        entriesRemoved: 0,
+        error: String(error)
+      };
+    }
+  }
+  
   private setupImapConnection() {
     this.imap = new Imap({
       user: this.config.user,
