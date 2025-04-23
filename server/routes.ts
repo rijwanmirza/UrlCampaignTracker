@@ -8,8 +8,9 @@ import {
   updateUrlSchema,
   bulkUrlActionSchema
 } from "@shared/schema";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { gmailReader } from "./gmail-reader";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API route for campaigns
@@ -674,6 +675,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: "Redirect failed" });
+    }
+  });
+
+  // Gmail Reader API endpoints
+  const gmailConfigSchema = z.object({
+    user: z.string().email(),
+    password: z.string().min(1),
+    host: z.string().default('imap.gmail.com'),
+    port: z.number().int().positive().default(993),
+    tls: z.boolean().default(true),
+    tlsOptions: z.object({
+      rejectUnauthorized: z.boolean()
+    }).optional().default({ rejectUnauthorized: false }),
+    whitelistSenders: z.array(z.string()).default([]),
+    subjectPattern: z.string(),
+    messagePattern: z.object({
+      orderIdRegex: z.string(),
+      urlRegex: z.string(),
+      quantityRegex: z.string()
+    }),
+    defaultCampaignId: z.number().int().positive(),
+    checkInterval: z.number().int().positive().default(60000)
+  });
+
+  // Get Gmail reader status
+  app.get("/api/gmail-reader/status", (_req: Request, res: Response) => {
+    try {
+      const status = gmailReader.getStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Failed to get Gmail reader status",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Configure Gmail reader
+  app.post("/api/gmail-reader/config", async (req: Request, res: Response) => {
+    try {
+      // Convert string regex to RegExp objects
+      const rawConfig = req.body;
+      
+      // Parse the input with basic validation
+      const result = gmailConfigSchema.safeParse(rawConfig);
+      
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      // Convert string patterns to RegExp objects
+      const config = {
+        ...result.data,
+        subjectPattern: new RegExp(result.data.subjectPattern),
+        messagePattern: {
+          orderIdRegex: new RegExp(result.data.messagePattern.orderIdRegex),
+          urlRegex: new RegExp(result.data.messagePattern.urlRegex),
+          quantityRegex: new RegExp(result.data.messagePattern.quantityRegex)
+        }
+      };
+      
+      // Check if the campaign exists
+      const campaign = await storage.getCampaign(config.defaultCampaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found for defaultCampaignId" });
+      }
+      
+      // Update the Gmail reader configuration
+      const updatedConfig = gmailReader.updateConfig(config);
+      
+      res.json({
+        message: "Gmail reader configuration updated successfully",
+        config: {
+          ...updatedConfig,
+          password: "******" // Hide password in response
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Failed to configure Gmail reader",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Start Gmail reader
+  app.post("/api/gmail-reader/start", (_req: Request, res: Response) => {
+    try {
+      gmailReader.start();
+      res.json({ message: "Gmail reader started successfully" });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Failed to start Gmail reader",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Stop Gmail reader
+  app.post("/api/gmail-reader/stop", (_req: Request, res: Response) => {
+    try {
+      gmailReader.stop();
+      res.json({ message: "Gmail reader stopped successfully" });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Failed to stop Gmail reader",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

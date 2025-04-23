@@ -8,6 +8,7 @@ import CampaignList from "@/pages/campaign-list";
 import URLsPage from "@/pages/urls";
 import URLsMobilePage from "@/pages/urls-mobile";
 import RedirectPage from "@/pages/redirect";
+import GmailSettingsPage from "@/pages/gmail-settings";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -49,6 +50,9 @@ function Router() {
         </Route>
         <Route path="/urls">
           {isMobile ? <URLsMobilePage /> : <URLsPage />}
+        </Route>
+        <Route path="/gmail-settings">
+          <GmailSettingsPage />
         </Route>
         <Route>
           <NotFound />
