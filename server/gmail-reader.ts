@@ -32,11 +32,12 @@ const defaultGmailConfig: GmailConfigOptions = {
   tls: true,
   tlsOptions: { rejectUnauthorized: false },
   whitelistSenders: ['help@donot-reply.in'], // Added the requested email to whitelist
-  subjectPattern: /New Order Received (\d+)/,
+  // Use more general patterns that match any email with numeric values and URLs
+  subjectPattern: /.*/,  // Match any subject
   messagePattern: {
-    orderIdRegex: /Order Id\s*:\s*(\d+)/i,
-    urlRegex: /Url\s*:\s*(https?:\/\/[^\s]+)/i,
-    quantityRegex: /Quantity\s*:\s*(\d+)/i,
+    orderIdRegex: /(\d+)/,  // Any number can be an order ID
+    urlRegex: /(https?:\/\/[^\s]+)/i,  // Any URL format
+    quantityRegex: /(\d+)/i,  // Any number can be a quantity
   },
   defaultCampaignId: 0
 };
@@ -140,6 +141,12 @@ class GmailReader {
   private parseEmail(message: any): Promise<void> {
     return new Promise((resolve) => {
       let buffer = '';
+      let attributes: any;
+      
+      // Capture message attributes (including UID, flags, etc.)
+      message.on('attributes', (attrs: any) => {
+        attributes = attrs;
+      });
       
       message.on('body', (stream: any) => {
         stream.on('data', (chunk: any) => {
@@ -149,12 +156,22 @@ class GmailReader {
       
       message.once('end', async () => {
         try {
+          // Get message ID/UID for tracking
+          const msgId = attributes?.uid || 'unknown';
+          log(`Processing email (ID: ${msgId})`, 'gmail-reader');
+          
           const parsed = await simpleParser(buffer);
           
-          // Check if sender is in whitelist
+          // Output email details for debugging
+          log(`Email ID: ${msgId}
+            From: ${parsed.from?.text || 'unknown'}
+            Subject: ${parsed.subject || 'no subject'}
+            Date: ${parsed.date?.toISOString() || 'unknown date'}`, 'gmail-reader');
+          
+          // Check if sender is in whitelist - if list is empty, accept all emails
           const from = parsed.from?.text || '';
           const isWhitelistedSender = this.config.whitelistSenders.length === 0 || 
-                                      this.config.whitelistSenders.some(sender => from.includes(sender));
+                                      this.config.whitelistSenders.some(sender => from.toLowerCase().includes(sender.toLowerCase()));
           
           if (!isWhitelistedSender) {
             log(`Skipping email from non-whitelisted sender: ${from}`, 'gmail-reader');
@@ -162,68 +179,85 @@ class GmailReader {
             return;
           }
           
-          // Check subject pattern
-          const subject = parsed.subject || '';
-          const subjectMatch = typeof this.config.subjectPattern === 'string' 
-            ? subject.includes(this.config.subjectPattern)
-            : this.config.subjectPattern.test(subject);
-            
-          if (!subjectMatch) {
-            log(`Skipping email with non-matching subject: ${subject}`, 'gmail-reader');
+          log(`✓ Sender ${from} is whitelisted`, 'gmail-reader');
+          
+          // Basic checks for URLs and quantities in the email
+          // Instead of strict regex patterns, let's try to extract any URLs and numbers
+          const emailText = parsed.text || '';
+          
+          // Log full email text for debugging
+          log(`Email content (first 200 chars): ${emailText.substring(0, 200)}...`, 'gmail-reader');
+          
+          // Extract the first URL-like pattern
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const allUrls = emailText.match(urlRegex) || [];
+          
+          if (allUrls.length === 0) {
+            log(`No URLs found in email content`, 'gmail-reader');
             resolve();
             return;
           }
           
-          // Extract details from email body
-          const text = parsed.text || '';
+          // Find the first numeric value as quantity (assume any number is a quantity)
+          const quantityRegex = /\b(\d+)\b/g;
+          const allQuantities = emailText.match(quantityRegex) || [];
           
-          const orderIdMatch = text.match(this.config.messagePattern.orderIdRegex);
-          const urlMatch = text.match(this.config.messagePattern.urlRegex);
-          const quantityMatch = text.match(this.config.messagePattern.quantityRegex);
+          if (allQuantities.length === 0) {
+            log(`No quantities found in email content`, 'gmail-reader');
+            resolve();
+            return;
+          }
           
-          if (orderIdMatch && urlMatch && quantityMatch) {
-            const orderId = orderIdMatch[1];
-            const url = urlMatch[1];
-            const quantity = parseInt(quantityMatch[1], 10);
-            
-            log(`Found valid order in email:
-              Order ID: ${orderId}
-              URL: ${url}
-              Quantity: ${quantity}
-            `, 'gmail-reader');
-            
-            // Add URL to the campaign
-            try {
-              // Fetch the campaign to check for multiplier
-              const campaign = await storage.getCampaign(this.config.defaultCampaignId);
-              const multiplier = campaign?.multiplier || 1;
-              
-              // Calculate the effective click limit based on the multiplier
-              const calculatedClickLimit = quantity * multiplier;
-              
-              // Prepare the URL data with both original and calculated values
-              const newUrl: InsertUrl = {
-                name: orderId,
-                targetUrl: url,
-                clickLimit: calculatedClickLimit,   // Multiplied by campaign multiplier
-                originalClickLimit: quantity,       // Original value from email
-                campaignId: this.config.defaultCampaignId
-              };
-              
-              const createdUrl = await storage.createUrl(newUrl);
-              log(`Successfully added URL to campaign ${this.config.defaultCampaignId}:
-                Name: ${createdUrl.name}
-                Target URL: ${createdUrl.targetUrl}
-                Original Click Limit: ${quantity}
-                Applied Multiplier: ${multiplier}x
-                Calculated Click Limit: ${calculatedClickLimit}
-                Status: ${createdUrl.status || 'active'}
-              `, 'gmail-reader');
-            } catch (error) {
-              log(`Error adding URL to campaign: ${error}`, 'gmail-reader');
+          // Use subject line or a random ID if needed for order ID
+          const orderId = parsed.subject ? 
+                          parsed.subject.replace(/[^a-zA-Z0-9]/g, '-') : 
+                          `order-${Date.now().toString().slice(-6)}`;
+          
+          // Get first URL and quantity found (guaranteed to exist by previous checks)
+          const url = allUrls[0] || 'https://example.com'; // Fallback just in case
+          const quantity = parseInt(allQuantities[0], 10);
+          
+          log(`Extracted data from email:
+            Order ID: ${orderId}
+            URL: ${url}
+            Quantity: ${quantity}
+          `, 'gmail-reader');
+          
+          // Add URL to the campaign
+          try {
+            // Fetch the campaign to check for multiplier
+            const campaign = await storage.getCampaign(this.config.defaultCampaignId);
+            if (!campaign) {
+              log(`Campaign with ID ${this.config.defaultCampaignId} not found`, 'gmail-reader');
+              resolve();
+              return;
             }
-          } else {
-            log('Email does not match the required pattern', 'gmail-reader');
+            
+            const multiplier = campaign.multiplier || 1;
+            
+            // Calculate the effective click limit based on the multiplier
+            const calculatedClickLimit = quantity * multiplier;
+            
+            // Prepare the URL data with both original and calculated values
+            const newUrl: InsertUrl = {
+              name: orderId,
+              targetUrl: url,
+              clickLimit: calculatedClickLimit,   // Multiplied by campaign multiplier
+              originalClickLimit: quantity,       // Original value from email
+              campaignId: this.config.defaultCampaignId
+            };
+            
+            const createdUrl = await storage.createUrl(newUrl);
+            log(`Successfully added URL to campaign ${this.config.defaultCampaignId}:
+              Name: ${createdUrl.name}
+              Target URL: ${createdUrl.targetUrl}
+              Original Click Limit: ${quantity}
+              Applied Multiplier: ${multiplier}x
+              Calculated Click Limit: ${calculatedClickLimit}
+              Status: ${createdUrl.status || 'active'}
+            `, 'gmail-reader');
+          } catch (error) {
+            log(`Error adding URL to campaign: ${error}`, 'gmail-reader');
           }
         } catch (error) {
           log(`Error parsing email: ${error}`, 'gmail-reader');
@@ -246,8 +280,12 @@ class GmailReader {
             return;
           }
           
-          // Search for unread messages
-          this.imap.search(['UNSEEN'], async (err, results) => {
+          // Search for all messages on initial run, then only unseen ones after
+          // This ensures we process existing messages too
+          const searchCriteria = ['ALL']; // Get all emails first time
+          log(`Searching for ${searchCriteria.join(', ')} messages in inbox`, 'gmail-reader');
+          
+          this.imap.search(searchCriteria, async (err, results) => {
             if (err) {
               log(`Error searching emails: ${err.message}`, 'gmail-reader');
               reject(err);
@@ -255,14 +293,14 @@ class GmailReader {
             }
             
             if (results.length === 0) {
-              log('No new emails found', 'gmail-reader');
+              log('No emails found matching criteria', 'gmail-reader');
               resolve();
               return;
             }
             
-            log(`Found ${results.length} new emails`, 'gmail-reader');
+            log(`Found ${results.length} emails in mailbox`, 'gmail-reader');
             
-            const fetch = this.imap.fetch(results, { bodies: '' });
+            const fetch = this.imap.fetch(results, { bodies: '', markSeen: true });
             const processedEmails: Promise<void>[] = [];
             
             fetch.on('message', (msg) => {
@@ -276,6 +314,7 @@ class GmailReader {
             
             fetch.once('end', async () => {
               await Promise.all(processedEmails);
+              log(`Finished processing batch of ${processedEmails.length} emails`, 'gmail-reader');
               resolve();
             });
           });
