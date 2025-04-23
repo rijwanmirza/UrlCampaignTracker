@@ -46,6 +46,8 @@ export default function GmailSettingsPage() {
   const { data: statusData, isLoading: isStatusLoading, refetch: refetchStatus } = useQuery<{ isRunning: boolean, config: any }>({
     queryKey: ['/api/gmail-reader/status'],
     refetchOnWindowFocus: false,
+    retry: 1,
+    staleTime: 5000,
   });
   
   // Update config when status data is loaded
@@ -84,7 +86,8 @@ export default function GmailSettingsPage() {
         });
       }
     }
-  }, [statusData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusData, campaigns.length]);
   
   // Form definition
   const form = useForm<GmailSettingsFormValues>({
