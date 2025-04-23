@@ -26,6 +26,7 @@ export const campaigns = pgTable("campaigns", {
   name: text("name").notNull(),
   redirectMethod: text("redirect_method").default(RedirectMethod.DIRECT).notNull(),
   customPath: text("custom_path").unique(), // Custom path for campaign URLs
+  multiplier: integer("multiplier").default(1).notNull(), // Multiplier for URL click limits
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -42,6 +43,7 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
     RedirectMethod.HTTP_307
   ]).default(RedirectMethod.DIRECT),
   customPath: z.string().optional(),
+  multiplier: z.number().int().min(1).default(1),
 });
 
 export const updateCampaignSchema = createInsertSchema(campaigns).omit({
@@ -56,6 +58,7 @@ export const updateCampaignSchema = createInsertSchema(campaigns).omit({
     RedirectMethod.HTTP_307
   ]).optional(),
   customPath: z.string().optional(),
+  multiplier: z.number().int().min(1).optional(),
 });
 
 // URL schema

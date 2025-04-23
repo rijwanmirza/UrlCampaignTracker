@@ -64,6 +64,7 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
       name: "",
       redirectMethod: RedirectMethod.DIRECT,
       customPath: "",
+      multiplier: 1,
     },
   });
 
@@ -192,6 +193,44 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                   </FormControl>
                   <FormDescription>
                     Optional. Use lowercase letters, numbers, and hyphens only.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="multiplier"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormLabel>Click Multiplier</FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InfoIcon className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="w-[220px] text-xs">
+                            Automatically multiply click limits for all URLs in this campaign.
+                            For example, if set to 2 and a URL has a limit of 10, the effective limit will be 20.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="1"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Multiply all URL click limits in this campaign by this value.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
