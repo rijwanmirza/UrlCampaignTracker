@@ -1,122 +1,161 @@
 import { useState } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CampaignWithUrls } from "@shared/schema";
+import { Plus, Search, Filter, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Grid, BarChart, Link as LinkIcon } from "lucide-react";
-import { formatCampaign } from "@/lib/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { Campaign, RedirectMethod } from "@shared/schema";
 import CampaignForm from "./campaign-form";
 
 export default function CampaignSidebar() {
-  const [, setLocation] = useLocation();
+  const [_, setLocation] = useLocation();
+  const [match, params] = useRoute<{ id?: string }>("/campaigns/:id");
   const queryClient = useQueryClient();
-  const [showNewCampaignForm, setShowNewCampaignForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   
-  const { data: campaigns = [], isLoading } = useQuery<CampaignWithUrls[]>({
+  // Fetch campaigns
+  const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns'],
   });
-
-  const handleSelectCampaign = (campaignId: number) => {
+  
+  // Get active campaign ID
+  const activeCampaignId = match && params?.id ? parseInt(params.id) : undefined;
+  
+  // Filter campaigns by search term
+  const filteredCampaigns = campaigns.filter((campaign) => 
+    campaign.name.toLowerCase().includes(search.toLowerCase())
+  );
+  
+  // Navigate to campaign
+  const handleNavigateToCampaign = (campaignId: number) => {
     setLocation(`/campaigns/${campaignId}`);
   };
-
-  const getTotalActiveUrls = () => {
-    return campaigns.reduce((total, campaign) => {
-      return total + campaign.urls.filter(url => url.clicks < url.clickLimit).length;
-    }, 0);
+  
+  // Format redirect method for display
+  const getRedirectMethodBadge = (method: string) => {
+    switch (method) {
+      case RedirectMethod.DIRECT:
+        return "Direct";
+      case RedirectMethod.META_REFRESH:
+        return "Meta";
+      case RedirectMethod.DOUBLE_META_REFRESH:
+        return "Double Meta";
+      case RedirectMethod.HTTP_307:
+        return "HTTP 307";
+      default:
+        return method;
+    }
   };
-
+  
   return (
-    <aside className="bg-white border-r border-gray-200 w-full md:w-64 md:flex-shrink-0 md:overflow-y-auto flex flex-col h-full">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">URL Redirector</h1>
-        <p className="text-sm text-gray-500">Campaign Management</p>
-      </div>
-      
-      <div className="px-4 py-2 flex justify-between items-center">
-        <h2 className="text-sm font-semibold text-gray-600">CAMPAIGNS</h2>
+    <div className="w-full md:w-64 border-r flex flex-col bg-white h-screen">
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold flex items-center">
+            <LayoutGrid className="h-5 w-5 mr-2 text-primary" />
+            Campaigns
+          </h2>
+        </div>
+        
+        <div className="relative mb-4">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="search"
+            placeholder="Search campaigns..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        
         <Button 
-          variant="ghost" 
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={() => setShowNewCampaignForm(true)}
-          aria-label="Add new campaign"
+          className="w-full" 
+          onClick={() => setShowNewCampaignModal(true)}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-2" />
+          New Campaign
         </Button>
       </div>
       
-      <nav className="mt-2 flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1 p-2">
         {isLoading ? (
-          <div className="px-4 py-8 text-center text-gray-500">
-            Loading campaigns...
+          <div className="space-y-2 p-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="p-2">
+                <Skeleton className="h-5 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
           </div>
-        ) : campaigns.length === 0 ? (
-          <div className="px-4 py-8 text-center text-gray-500 text-sm">
-            No campaigns yet.<br />
-            Click the + button to add one.
+        ) : filteredCampaigns.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            {search ? (
+              <>
+                <p>No campaigns match your search</p>
+                <Button 
+                  variant="link" 
+                  className="mt-1 h-auto p-0"
+                  onClick={() => setSearch("")}
+                >
+                  Clear search
+                </Button>
+              </>
+            ) : (
+              <p>No campaigns yet</p>
+            )}
           </div>
         ) : (
-          <ul className="space-y-1 px-2">
-            {campaigns.map((campaign) => {
-              const formattedCampaign = formatCampaign(campaign);
-              return (
-                <li key={campaign.id}>
-                  <Button 
-                    variant="ghost"
-                    className="w-full justify-between px-3 py-2 h-auto"
-                    onClick={() => handleSelectCampaign(campaign.id)}
-                  >
-                    <span className="truncate text-left">{campaign.name}</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
-                      {formattedCampaign.activeUrlCount}/{campaign.urls.length}
-                    </span>
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-1">
+            {filteredCampaigns.map((campaign) => (
+              <div
+                key={campaign.id}
+                className={cn(
+                  "p-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors relative group",
+                  activeCampaignId === campaign.id && "bg-gray-100"
+                )}
+                onClick={() => handleNavigateToCampaign(campaign.id)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="truncate flex-1">
+                    <p className={cn(
+                      "font-medium truncate",
+                      activeCampaignId === campaign.id && "text-primary"
+                    )}>
+                      {campaign.name}
+                    </p>
+                    <div className="flex items-center mt-1 text-xs text-gray-500">
+                      <Badge variant="outline" className="text-xs font-normal h-5">
+                        {getRedirectMethodBadge(campaign.redirectMethod)}
+                      </Badge>
+                      {campaign.customPath && (
+                        <span className="ml-2 truncate max-w-[100px]">
+                          /{campaign.customPath}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
-      </nav>
+      </ScrollArea>
       
-      <div className="px-2 py-4 border-t border-gray-200">
-        <div className="text-xs font-semibold text-gray-500 px-2 mb-2">NAVIGATION</div>
-        <ul className="space-y-1">
-          <li>
-            <Link href="/">
-              <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 cursor-pointer">
-                <Grid className="h-4 w-4 text-gray-500" />
-                <span>Campaigns</span>
-              </div>
-            </Link>
-          </li>
-          <li>
-            <Link href="/urls">
-              <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 cursor-pointer">
-                <LinkIcon className="h-4 w-4 text-gray-500" />
-                <span>URL Management</span>
-              </div>
-            </Link>
-          </li>
-        </ul>
-      </div>
-      
-      <div className="px-4 py-3 border-t border-gray-200">
-        <div className="flex items-center text-sm text-gray-500">
-          <span className="font-medium mr-2">Total Active URLs:</span>
-          <span>{getTotalActiveUrls()}</span>
-        </div>
-      </div>
-
-      <CampaignForm 
-        open={showNewCampaignForm} 
-        onOpenChange={setShowNewCampaignForm}
-        onSuccess={(newCampaign) => {
-          queryClient.invalidateQueries({queryKey: ['/api/campaigns']});
-          setLocation(`/campaigns/${newCampaign.id}`);
+      {/* Campaign Form Modal */}
+      <CampaignForm
+        open={showNewCampaignModal}
+        onOpenChange={setShowNewCampaignModal}
+        onSuccess={(campaign) => {
+          queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+          handleNavigateToCampaign(campaign.id);
         }}
       />
-    </aside>
+    </div>
   );
 }
