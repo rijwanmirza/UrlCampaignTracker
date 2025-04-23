@@ -88,14 +88,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
+      // Check if multiplier is being updated
+      const { multiplier } = result.data;
+      const existingCampaign = await storage.getCampaign(id);
+      
+      if (!existingCampaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Update campaign first
       const updatedCampaign = await storage.updateCampaign(id, result.data);
       
-      if (!updatedCampaign) {
-        return res.status(404).json({ message: "Campaign not found" });
+      // If multiplier changed, update all active/paused URLs in the campaign
+      if (multiplier && multiplier !== existingCampaign.multiplier) {
+        // Get all active/paused URLs
+        const campaignUrls = await storage.getUrls(id);
+        const activeOrPausedUrls = campaignUrls.filter(
+          url => url.status === 'active' || url.status === 'paused'
+        );
+        
+        // Update each URL with new clickLimit based on original value * new multiplier
+        for (const url of activeOrPausedUrls) {
+          // Cast the status to the correct type
+          const status = url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined;
+          
+          await storage.updateUrl(url.id, {
+            clickLimit: url.originalClickLimit * multiplier,
+            // Keep other values unchanged
+            name: url.name,
+            targetUrl: url.targetUrl,
+            status: status
+          });
+        }
       }
       
       res.json(updatedCampaign);
     } catch (error) {
+      console.error('Failed to update campaign:', error);
       res.status(500).json({ message: "Failed to update campaign" });
     }
   });
@@ -153,8 +182,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
 
-      // Apply campaign multiplier if set
-      let urlData = { ...req.body, campaignId };
+      // Store original click limit and apply campaign multiplier if set
+      const originalClickLimit = req.body.clickLimit;
+      let urlData = { 
+        ...req.body, 
+        campaignId,
+        originalClickLimit 
+      };
+      
       if (campaign.multiplier && campaign.multiplier > 1 && urlData.clickLimit) {
         // Multiply the click limit by the campaign multiplier
         urlData.clickLimit = urlData.clickLimit * campaign.multiplier;

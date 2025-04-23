@@ -591,13 +591,18 @@ export default function URLsPage() {
                           <StatusBadge status={url.status} />
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">{url.clicks} / {url.clickLimit}</span>
-                            {url.clicks >= url.clickLimit && (
-                              <Check className="h-4 w-4 text-gray-500 ml-1" />
-                            )}
+                          <div className="flex flex-col">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{url.clicks} / {url.clickLimit} / {url.originalClickLimit}</span>
+                              {url.clicks >= url.clickLimit && (
+                                <Check className="h-4 w-4 text-gray-500 ml-1" />
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 mb-1">
+                              received / required / original
+                            </span>
+                            <ProgressBar url={url} />
                           </div>
-                          <ProgressBar url={url} />
                         </TableCell>
                         <TableCell className="text-gray-500 text-sm">
                           {formatDate(url.createdAt)}

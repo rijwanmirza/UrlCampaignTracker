@@ -223,7 +223,10 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
               <TableCell>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">
-                    {url.clicks} / {url.clickLimit}
+                    {url.clicks} / {url.clickLimit} / {url.originalClickLimit}
+                  </span>
+                  <span className="text-xs text-gray-500 mb-1">
+                    received / required / original
                   </span>
                   <ProgressBar url={url} />
                 </div>
