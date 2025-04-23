@@ -69,7 +69,7 @@ export const urls = pgTable("urls", {
   name: text("name").notNull(),
   targetUrl: text("target_url").notNull(),
   clickLimit: integer("click_limit").notNull(),
-  originalClickLimit: integer("original_click_limit").notNull(), // The original click limit entered by user
+  originalClickLimit: integer("original_click_limit").default(0).notNull(), // The original click limit entered by user
   clicks: integer("clicks").default(0).notNull(),
   status: text("status").default('active').notNull(), // Using text for now as pgEnum causes issues with drizzle-kit
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -93,6 +93,12 @@ export const updateUrlSchema = createInsertSchema(urls).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
+  campaignId: z.number().int().optional(),
+  name: z.string().optional(),
+  targetUrl: z.string().url().optional(),
+  clickLimit: z.number().int().min(1).optional(),
+  originalClickLimit: z.number().int().min(1).optional(),
+  clicks: z.number().int().min(0).optional(),
   status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected']).optional(),
 });
 

@@ -109,15 +109,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Update each URL with new clickLimit based on original value * new multiplier
         for (const url of activeOrPausedUrls) {
-          // Cast the status to the correct type
-          const status = url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined;
-          
+          // Include the original click limit in the update
           await storage.updateUrl(url.id, {
             clickLimit: url.originalClickLimit * multiplier,
+            originalClickLimit: url.originalClickLimit,
             // Keep other values unchanged
             name: url.name,
             targetUrl: url.targetUrl,
-            status: status
+            status: url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined
           });
         }
       }
