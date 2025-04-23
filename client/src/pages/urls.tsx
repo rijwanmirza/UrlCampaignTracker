@@ -640,7 +640,7 @@ export default function URLsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 
-                                {url.status !== 'active' && (
+                                {(url.status === 'paused' || url.status === 'completed') && (
                                   <DropdownMenuItem onClick={() => handleActivateUrl(url.id)}>
                                     <Play className="h-4 w-4 mr-2" />
                                     Activate

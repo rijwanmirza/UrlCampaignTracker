@@ -622,7 +622,7 @@ export default function URLsPage() {
                           <Pause className="h-3 w-3 mr-1" />
                           Pause
                         </Button>
-                      ) : url.status !== 'deleted' ? (
+                      ) : (url.status === 'paused' || url.status === 'completed') ? (
                         <Button 
                           size="sm" 
                           variant="outline" 
