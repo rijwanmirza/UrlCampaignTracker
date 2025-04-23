@@ -32,8 +32,8 @@ const defaultGmailConfig: GmailConfigOptions = {
   port: 993,
   tls: true,
   tlsOptions: { rejectUnauthorized: false },
-  // Empty whitelist means accept from any sender - we'll log and filter in code
-  whitelistSenders: [], // Remove restriction to see all incoming emails first
+  // Add the specific whitelisted email address
+  whitelistSenders: ['help@donot-reply.in'], // The requested email address to whitelist
   // Use more general patterns that match any email with numeric values and URLs
   subjectPattern: /.*/,  // Match any subject
   messagePattern: {
