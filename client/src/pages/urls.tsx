@@ -513,7 +513,7 @@ export default function URLsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    urls.map(url => (
+                    urls.map((url: UrlWithActiveStatus) => (
                       <TableRow key={url.id} className={url.status === 'deleted' ? 'opacity-60' : ''}>
                         <TableCell>
                           <Checkbox

@@ -4,6 +4,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Campaign, insertCampaignSchema, RedirectMethod } from "@shared/schema";
+import { InfoIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,9 @@ interface CampaignFormProps {
 
 const formSchema = insertCampaignSchema.extend({
   name: z.string().min(1, "Campaign name is required").max(100, "Campaign name must be 100 characters or less"),
+  customPath: z.string().max(50, "Custom path must be 50 characters or less")
+    .regex(/^[a-z0-9-]*$/, "Only lowercase letters, numbers, and hyphens are allowed")
+    .optional(),
 });
 
 // Mapping for human-readable redirect method descriptions
@@ -39,6 +44,7 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
     defaultValues: {
       name: "",
       redirectMethod: RedirectMethod.DIRECT,
+      customPath: "",
     },
   });
 
@@ -126,6 +132,47 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                   </Select>
                   <FormDescription>
                     Choose how visitors will be redirected to target URLs
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="customPath"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormLabel>Custom Path</FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InfoIcon className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="w-[220px] text-xs">
+                            Create a custom keyword path for your campaign URLs.
+                            Example: "summer-promo" would create a URL like: mydomain.com/views/summer-promo
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <FormControl>
+                    <div className="flex items-center">
+                      <div className="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 rounded-l-md text-sm">
+                        {window.location.origin}/views/
+                      </div>
+                      <Input 
+                        placeholder="custom-path" 
+                        {...field} 
+                        className="rounded-l-none"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Optional. Use lowercase letters, numbers, and hyphens only.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

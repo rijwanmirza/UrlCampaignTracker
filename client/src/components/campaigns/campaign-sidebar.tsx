@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CampaignWithUrls } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus } from "lucide-react";
+import { Plus, Grid, BarChart, Link as LinkIcon } from "lucide-react";
 import { formatCampaign } from "@/lib/types";
 import CampaignForm from "./campaign-form";
 
@@ -80,7 +80,29 @@ export default function CampaignSidebar() {
         )}
       </nav>
       
-      <div className="mt-auto p-4 border-t border-gray-200">
+      <div className="px-2 py-4 border-t border-gray-200">
+        <div className="text-xs font-semibold text-gray-500 px-2 mb-2">NAVIGATION</div>
+        <ul className="space-y-1">
+          <li>
+            <Link href="/">
+              <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 cursor-pointer">
+                <Grid className="h-4 w-4 text-gray-500" />
+                <span>Campaigns</span>
+              </div>
+            </Link>
+          </li>
+          <li>
+            <Link href="/urls">
+              <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 cursor-pointer">
+                <LinkIcon className="h-4 w-4 text-gray-500" />
+                <span>URL Management</span>
+              </div>
+            </Link>
+          </li>
+        </ul>
+      </div>
+      
+      <div className="px-4 py-3 border-t border-gray-200">
         <div className="flex items-center text-sm text-gray-500">
           <span className="font-medium mr-2">Total Active URLs:</span>
           <span>{getTotalActiveUrls()}</span>
