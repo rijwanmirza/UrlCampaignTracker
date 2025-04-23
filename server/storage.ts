@@ -149,10 +149,25 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(urls.createdAt));
     
     // Add isActive status based on click limit and status
-    return urlsResult.map(url => ({
-      ...url,
-      isActive: url.clicks < url.clickLimit && url.status === 'active'
-    }));
+    return urlsResult.map(url => {
+      // Check if URL should be marked as completed
+      const needsStatusUpdate = url.clicks >= url.clickLimit && url.status !== 'completed';
+      
+      // If we find a URL that has reached its click limit but hasn't been marked as completed,
+      // update its status in the database asynchronously
+      if (needsStatusUpdate) {
+        this.updateUrlStatus(url.id, 'completed');
+      }
+      
+      // Return URL with isActive flag (URLs are active only if they haven't reached their click limit
+      // and are explicitly marked as active)
+      return {
+        ...url,
+        // If the URL has reached its click limit, it's considered completed regardless of DB status
+        status: url.clicks >= url.clickLimit ? 'completed' : url.status,
+        isActive: url.clicks < url.clickLimit && url.status === 'active'
+      };
+    });
   }
 
   async getAllUrls(

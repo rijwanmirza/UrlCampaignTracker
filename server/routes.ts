@@ -394,41 +394,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       switch (campaign.redirectMethod) {
         case "meta_refresh":
-          // Meta refresh redirect
+          // Meta refresh redirect - completely invisible
           res.send(`
             <!DOCTYPE html>
             <html>
               <head>
                 <meta http-equiv="refresh" content="0;url=${targetUrl}">
-                <title>Redirecting...</title>
-                <!-- Processed in ${timeInMs}ms -->
+                <title></title>
+                <style>body{display:none}</style>
               </head>
-              <body>
-                <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
-              </body>
+              <body></body>
             </html>
           `);
           break;
           
         case "double_meta_refresh":
-          // For double meta refresh, we'll do a special optimized version
+          // For double meta refresh - completely invisible
           res.send(`
             <!DOCTYPE html>
             <html>
               <head>
                 <meta http-equiv="refresh" content="0;url=${targetUrl}">
-                <title>Redirecting...</title>
-                <!-- Processed in ${timeInMs}ms (optimized bridge) -->
-              </head>
-              <body>
-                <p>Redirecting...</p>
+                <title></title>
+                <style>body{display:none}</style>
                 <script>
-                  // The script below creates a cleaner redirect chain for analytics tools
-                  setTimeout(function() {
-                    window.location.href = "${targetUrl}";
-                  }, 50);
+                  // Immediate redirect without any visible elements
+                  window.location.href = "${targetUrl}";
                 </script>
-              </body>
+              </head>
+              <body></body>
             </html>
           `);
           break;
@@ -489,42 +483,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       switch (campaign.redirectMethod) {
         case "meta_refresh":
-          // Meta refresh redirect
+          // Meta refresh redirect - completely invisible
           res.send(`
             <!DOCTYPE html>
             <html>
               <head>
                 <meta http-equiv="refresh" content="0;url=${targetUrl}">
-                <title>Redirecting...</title>
-                <!-- Processed in ${timeInMs}ms -->
+                <title></title>
+                <style>body{display:none}</style>
               </head>
-              <body>
-                <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
-              </body>
+              <body></body>
             </html>
           `);
           break;
           
         case "double_meta_refresh":
-          // For double meta refresh, we'll do a special optimized version
-          // that only shows the bridge page if needed
+          // For double meta refresh - completely invisible
           res.send(`
             <!DOCTYPE html>
             <html>
               <head>
                 <meta http-equiv="refresh" content="0;url=${targetUrl}">
-                <title>Redirecting...</title>
-                <!-- Processed in ${timeInMs}ms (optimized bridge) -->
-              </head>
-              <body>
-                <p>Redirecting...</p>
+                <title></title>
+                <style>body{display:none}</style>
                 <script>
-                  // The script below creates a cleaner redirect chain for analytics tools
-                  setTimeout(function() {
-                    window.location.href = "${targetUrl}";
-                  }, 50);
+                  // Immediate redirect without any visible elements
+                  window.location.href = "${targetUrl}";
                 </script>
-              </body>
+              </head>
+              <body></body>
             </html>
           `);
           break;
