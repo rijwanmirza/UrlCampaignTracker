@@ -172,11 +172,19 @@ class GmailReader {
             
             // Add URL to the campaign
             try {
+              // Fetch the campaign to check for multiplier
+              const campaign = await storage.getCampaign(this.config.defaultCampaignId);
+              const multiplier = campaign?.multiplier || 1;
+              
+              // Calculate the effective click limit based on the multiplier
+              const calculatedClickLimit = quantity * multiplier;
+              
+              // Prepare the URL data with both original and calculated values
               const newUrl: InsertUrl = {
                 name: orderId,
                 targetUrl: url,
-                clickLimit: quantity,
-                originalClickLimit: quantity,
+                clickLimit: calculatedClickLimit,   // Multiplied by campaign multiplier
+                originalClickLimit: quantity,       // Original value from email
                 campaignId: this.config.defaultCampaignId
               };
               
@@ -184,7 +192,10 @@ class GmailReader {
               log(`Successfully added URL to campaign ${this.config.defaultCampaignId}:
                 Name: ${createdUrl.name}
                 Target URL: ${createdUrl.targetUrl}
-                Click Limit: ${createdUrl.clickLimit}
+                Original Click Limit: ${quantity}
+                Applied Multiplier: ${multiplier}x
+                Calculated Click Limit: ${calculatedClickLimit}
+                Status: ${createdUrl.status || 'active'}
               `, 'gmail-reader');
             } catch (error) {
               log(`Error adding URL to campaign: ${error}`, 'gmail-reader');
