@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface CampaignDeleteButtonProps {
@@ -31,6 +31,7 @@ export default function CampaignDeleteButton({ campaignId, onSuccess }: Campaign
       return apiRequest({
         url: `/api/campaigns/${campaignId}`,
         method: 'DELETE',
+        body: {},
       });
     },
     onSuccess: () => {

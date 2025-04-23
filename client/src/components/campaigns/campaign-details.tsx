@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import CampaignEditForm from "./campaign-edit-form";
 import CampaignDeleteButton from "./campaign-delete-button";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
@@ -18,6 +18,7 @@ interface CampaignDetailsProps {
 export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [, navigate] = useLocation();
 
   const redirectMethodLabels: Record<string, string> = {
     [RedirectMethod.DIRECT]: "Direct Redirect",
@@ -100,6 +101,13 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                 )}
               </p>
             </div>
+          </div>
+          
+          <div className="mt-6">
+            <CampaignDeleteButton 
+              campaignId={campaign.id} 
+              onSuccess={() => navigate('/')} 
+            />
           </div>
         </CardContent>
       </Card>
