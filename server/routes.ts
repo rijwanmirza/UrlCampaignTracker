@@ -956,6 +956,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Full system cleanup endpoint
   app.post("/api/system/full-cleanup", async (req: Request, res: Response) => {
     try {
+      const { confirmText } = req.body;
+      
+      // Safety check - require explicit confirmation
+      if (confirmText !== "DELETE ALL DATA") {
+        return res.status(400).json({
+          message: "Confirmation failed. Please provide the correct confirmation text."
+        });
+      }
+      
       // Stop Gmail reader first if it's running
       if (gmailReader.getStatus().isRunning) {
         gmailReader.stop();
