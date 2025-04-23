@@ -29,7 +29,7 @@ const defaultGmailConfig: GmailConfigOptions = {
   port: 993,
   tls: true,
   tlsOptions: { rejectUnauthorized: false },
-  whitelistSenders: [],
+  whitelistSenders: ['help@donot-reply.in'], // Added the requested email to whitelist
   subjectPattern: /New Order Received (\d+)/,
   messagePattern: {
     orderIdRegex: /Order Id\s*:\s*(\d+)/i,
@@ -74,7 +74,7 @@ class GmailReader {
       setTimeout(() => {
         log('Attempting to reconnect to IMAP server...', 'gmail-reader');
         this.start();
-      }, 30000); // Retry every 30 seconds
+      }, 60000); // Retry every 60 seconds - increased to reduce connection attempts
     }
   }
 
@@ -296,7 +296,7 @@ class GmailReader {
         this.checkEmails().catch(err => {
           log(`Error in periodic email check: ${err}`, 'gmail-reader');
         });
-      }, 60000); // Check every minute
+      }, 300000); // Check every 5 minutes to reduce connection frequency
     });
   }
 

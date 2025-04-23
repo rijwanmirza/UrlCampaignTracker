@@ -797,14 +797,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             success: false, 
             message: "Connection timeout. Please check your credentials and network." 
           });
-        }, 10000); // 10 second timeout
+        }, 30000); // 30 second timeout - increased for better chance of connection
         
         // Handle errors
         testImap.once('error', (err: Error) => {
           clearTimeout(timeout);
+          console.log('IMAP connection error:', err.message);
+          
+          // Parse the error message to provide more helpful feedback
+          let friendlyMessage = `Connection failed: ${err.message}`;
+          
+          if (err.message.includes('Invalid credentials') || err.message.includes('Authentication failed')) {
+            friendlyMessage = 'Authentication failed: Please check your email and app password';
+          } else if (err.message.includes('ENOTFOUND') || err.message.includes('getaddrinfo')) {
+            friendlyMessage = 'Could not reach Gmail server: Please check your internet connection and host settings';
+          } else if (err.message.includes('ETIMEDOUT')) {
+            friendlyMessage = 'Connection timed out: Gmail server might be blocking the request or there are network issues';
+          }
+          
           resolve({ 
             success: false, 
-            message: `Connection failed: ${err.message}` 
+            message: friendlyMessage
           });
         });
         
