@@ -17,7 +17,8 @@ export const urlStatusEnum = pgEnum('url_status', [
   'active',    // URL is active and receiving traffic
   'paused',    // URL is paused by user
   'completed', // URL has reached its click limit
-  'deleted'    // URL is soft-deleted
+  'deleted',   // URL is soft-deleted
+  'rejected'   // URL was rejected due to duplicate name
 ]);
 
 // Campaign schema
@@ -87,7 +88,7 @@ export const updateUrlSchema = createInsertSchema(urls).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  status: z.enum(['active', 'paused', 'completed', 'deleted']).optional(),
+  status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected']).optional(),
 });
 
 // Schema for bulk actions
