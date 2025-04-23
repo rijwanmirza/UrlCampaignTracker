@@ -11,6 +11,7 @@ import {
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
+import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API route for campaigns
@@ -757,6 +758,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Failed to configure Gmail reader",
         error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Test Gmail IMAP connection
+  app.post("/api/gmail-reader/test-connection", async (req: Request, res: Response) => {
+    try {
+      const { user, password, host = 'imap.gmail.com', port = 993, tls = true } = req.body;
+      
+      if (!user || !password) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Missing credentials. Please provide user and password."
+        });
+      }
+      
+      // Create a new IMAP connection for testing
+      const testImap = new Imap({
+        user,
+        password,
+        host,
+        port,
+        tls,
+        tlsOptions: { rejectUnauthorized: false }
+      });
+      
+      // Set up a promise to handle the connection test
+      const connectionTest = new Promise<{success: boolean, message: string}>((resolve, reject) => {
+        // Set a timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          try {
+            testImap.end();
+          } catch (e) {
+            // Ignore errors when ending the connection
+          }
+          resolve({ 
+            success: false, 
+            message: "Connection timeout. Please check your credentials and network." 
+          });
+        }, 10000); // 10 second timeout
+        
+        // Handle errors
+        testImap.once('error', (err: Error) => {
+          clearTimeout(timeout);
+          resolve({ 
+            success: false, 
+            message: `Connection failed: ${err.message}` 
+          });
+        });
+        
+        // Handle successful connection
+        testImap.once('ready', () => {
+          clearTimeout(timeout);
+          testImap.getBoxes((err, boxes) => {
+            if (err) {
+              resolve({ 
+                success: true, 
+                message: "Connected successfully, but couldn't list mailboxes." 
+              });
+            } else {
+              resolve({ 
+                success: true, 
+                message: "Connected successfully! Gmail credentials are working." 
+              });
+            }
+            
+            // Close the connection
+            try {
+              testImap.end();
+            } catch (e) {
+              // Ignore errors when ending the connection
+            }
+          });
+        });
+        
+        // Start the connection
+        testImap.connect();
+      });
+      
+      // Wait for the connection test to complete
+      const result = await connectionTest;
+      
+      // Send the result
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ 
+        success: false,
+        message: `Failed to test connection: ${error instanceof Error ? error.message : String(error)}`
       });
     }
   });

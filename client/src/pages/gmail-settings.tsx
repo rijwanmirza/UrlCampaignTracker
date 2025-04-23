@@ -153,6 +153,58 @@ export default function GmailSettingsPage() {
     }
   });
   
+  // Test connection mutation
+  const testConnectionMutation = useMutation({
+    mutationFn: async (values: { user: string, password: string, host: string, port: number, tls: boolean }) => {
+      return apiRequest('POST', '/api/gmail-reader/test-connection', values);
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "Connection Successful",
+          description: data.message,
+          variant: "success",
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Connection Test Failed",
+        description: "Failed to test Gmail connection",
+        variant: "destructive",
+      });
+      console.error("Gmail connection test failed:", error);
+    }
+  });
+  
+  // Handler for test connection button
+  const handleTestConnection = () => {
+    const values = form.getValues();
+    
+    if (!values.user || !values.password) {
+      toast({
+        title: "Missing Credentials",
+        description: "Please provide both email and password to test the connection",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    testConnectionMutation.mutate({
+      user: values.user,
+      password: values.password,
+      host: values.host,
+      port: values.port,
+      tls: values.tls
+    });
+  };
+  
   // Start Gmail reader mutation
   const startMutation = useMutation({
     mutationFn: async () => {
@@ -543,7 +595,22 @@ export default function GmailSettingsPage() {
                     />
                   </div>
                   
-                  <CardFooter className="px-0">
+                  <CardFooter className="px-0 flex justify-between">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      className="mr-2"
+                      onClick={handleTestConnection}
+                      disabled={testConnectionMutation.isPending}
+                    >
+                      {testConnectionMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="mr-2 h-4 w-4" />
+                      )}
+                      Check Configuration
+                    </Button>
+                    
                     <Button 
                       type="submit" 
                       className="w-full md:w-auto"
