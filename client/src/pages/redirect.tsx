@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { RedirectMethod } from "@shared/schema";
-import { Loader2 } from "lucide-react";
 
+// Optimized high-performance redirect page for handling millions of redirects
 export default function RedirectPage() {
   const [, setLocation] = useLocation();
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Match routes
+  // Match routes with better performance
   const [matchCampaignUrlRoute, campaignUrlParams] = useRoute<{ campaignId: string, urlId: string }>("/r/:campaignId/:urlId");
   const [matchBridgeRoute, bridgeParams] = useRoute<{ campaignId: string, urlId: string }>("/r/bridge/:campaignId/:urlId");
   const [matchCustomPathRoute, customPathParams] = useRoute<{ customPath: string }>("/views/:customPath");
@@ -18,34 +17,35 @@ export default function RedirectPage() {
   // Determine request path
   let requestPath = "";
   if (matchCampaignUrlRoute && campaignUrlParams) {
-    // Direct URL access
     requestPath = `/api/urls/${campaignUrlParams.urlId}?campaignId=${campaignUrlParams.campaignId}`;
   } else if (matchBridgeRoute && bridgeParams) {
-    // Secondary bridge access
     requestPath = `/api/urls/${bridgeParams.urlId}?campaignId=${bridgeParams.campaignId}`;
   } else if (matchCustomPathRoute && customPathParams) {
-    // Custom path access
     requestPath = `/api/campaigns/path/${customPathParams.customPath}`;
   } else if (matchCampaignRotationRoute && campaignRotationParams) {
-    // Campaign rotation access
     requestPath = `/api/campaigns/${campaignRotationParams.campaignId}`;
   }
   
-  // Fetch data for the appropriate endpoint
-  const { data, error, isLoading } = useQuery({
+  // Optimized query configuration for high performance
+  const { data, error } = useQuery({
     queryKey: [requestPath],
     enabled: !!requestPath,
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    gcTime: 0, // Don't keep in cache
+    staleTime: 0, // Always fetch fresh
+    // Use minimal network resources
+    networkMode: "offlineFirst",
   });
   
   useEffect(() => {
-    if (!data || isRedirecting) return;
+    if (!data) return;
     
-    // For custom path and campaign rotation routes, we need to check if there's a targetUrl property
-    // If not, redirect to a random weighted URL
+    // For custom path and campaign rotation routes
     if ((matchCustomPathRoute || matchCampaignRotationRoute) && !data.targetUrl) {
       if (data.id) {
-        // We got campaign data but no target URL, route to campaign page
         setLocation(`/campaigns/${data.id}`);
       } else {
         setErrorMessage("No valid URLs found in this campaign");
@@ -58,86 +58,95 @@ export default function RedirectPage() {
       return;
     }
     
-    setIsRedirecting(true);
-    
-    // Different redirect methods
+    // Performance optimization: Use minimal DOM operations
+    // Immediate redirect without showing any UI
     const redirectMethod = data.redirectMethod || RedirectMethod.DIRECT;
     const targetUrl = data.targetUrl;
     
     switch (redirectMethod) {
       case RedirectMethod.DIRECT:
-        // Direct redirect - simple window.location change
-        window.location.href = targetUrl;
+        // Use replace for better performance than href
+        window.location.replace(targetUrl);
         break;
       
       case RedirectMethod.META_REFRESH:
-        // Meta refresh - use a meta tag to redirect
-        const metaRefresh = document.createElement('meta');
-        metaRefresh.httpEquiv = 'refresh';
-        metaRefresh.content = `0; URL='${targetUrl}'`;
-        document.head.appendChild(metaRefresh);
+        // Optimize meta refresh for performance
+        const meta = document.createElement('meta');
+        meta.httpEquiv = 'refresh';
+        meta.content = `0;url=${targetUrl}`;
+        document.head.appendChild(meta);
         break;
       
       case RedirectMethod.DOUBLE_META_REFRESH:
-        // Double meta refresh - create a bridge page to double redirect
         if (!matchBridgeRoute) {
-          // First redirect to bridge
           const urlId = data.id;
           const campaignId = data.campaignId;
           
           if (urlId && campaignId) {
-            setLocation(`/r/bridge/${campaignId}/${urlId}`);
+            // Use history API for better performance
+            const bridgeUrl = `/r/bridge/${campaignId}/${urlId}`;
+            window.history.pushState(null, '', bridgeUrl);
+            // Simulate navigation
+            window.dispatchEvent(new PopStateEvent('popstate'));
           } else {
-            // Fallback to direct
-            window.location.href = targetUrl;
+            window.location.replace(targetUrl);
           }
         } else {
-          // Second redirect from bridge to target
-          const metaRefresh = document.createElement('meta');
-          metaRefresh.httpEquiv = 'refresh';
-          metaRefresh.content = `0; URL='${targetUrl}'`;
-          document.head.appendChild(metaRefresh);
+          // Second redirect from bridge to target - optimize for speed
+          const iframe = document.createElement('iframe');
+          iframe.style.cssText = 'position:absolute;width:1px;height:1px;left:-10000px;top:-10000px;';
+          document.body.appendChild(iframe);
+          
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+              iframeDoc.write(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${targetUrl}"></head></html>`);
+              iframeDoc.close();
+            } else {
+              window.location.replace(targetUrl);
+            }
+          } catch (e) {
+            window.location.replace(targetUrl);
+          }
         }
         break;
       
       case RedirectMethod.HTTP_307:
-        // HTTP 307 - fetch with redirect headers
-        // Note: This is a client-side simulation of HTTP 307
-        // For true HTTP 307, this would be handled server-side
-        fetch(targetUrl, {
-          redirect: 'follow',
-          mode: 'no-cors'
-        }).then(() => {
-          window.location.href = targetUrl;
-        }).catch(() => {
-          // Fallback to direct if fetch fails
-          window.location.href = targetUrl;
-        });
+        // Optimize HTTP 307 simulation
+        const redirectRequest = new XMLHttpRequest();
+        redirectRequest.open('GET', targetUrl, true);
+        redirectRequest.onload = () => {
+          window.location.replace(targetUrl);
+        };
+        redirectRequest.onerror = () => {
+          window.location.replace(targetUrl);
+        };
+        redirectRequest.send();
+        
+        // Fallback after 100ms if XHR is taking too long
+        setTimeout(() => {
+          window.location.replace(targetUrl);
+        }, 100);
         break;
       
       default:
-        // Fallback to direct redirection
-        window.location.href = targetUrl;
+        window.location.replace(targetUrl);
     }
-  }, [data, isRedirecting, matchBridgeRoute, matchCampaignRotationRoute, matchCustomPathRoute, setLocation]);
+  }, [data, matchBridgeRoute, matchCampaignRotationRoute, matchCustomPathRoute, setLocation]);
   
   useEffect(() => {
     if (error) {
-      setErrorMessage("Invalid URL or campaign. This link may have expired or been removed.");
+      setErrorMessage("This link appears to be invalid or has expired.");
     }
   }, [error]);
   
+  // Return a minimal UI with just error message if needed
+  // Most users will never see this as redirects happen instantly
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow p-6 text-center">
-        {isLoading || isRedirecting ? (
-          <>
-            <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary mb-4" />
-            <h1 className="text-xl font-bold mb-2">Redirecting</h1>
-            <p className="text-gray-500">Please wait while we redirect you to your destination...</p>
-          </>
-        ) : errorMessage ? (
-          <>
+    <div style={{ display: 'none' }}>
+      {errorMessage && (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+          <div className="w-full max-w-md bg-white rounded-lg shadow p-6 text-center">
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -151,13 +160,9 @@ export default function RedirectPage() {
             >
               Return to homepage
             </button>
-          </>
-        ) : null}
-      </div>
-      
-      <div className="mt-8 text-center text-sm text-gray-400">
-        <p>Powered by URL Redirector</p>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

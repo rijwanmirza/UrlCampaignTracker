@@ -19,6 +19,7 @@ function Router() {
   
   // Render different route sets based on the current location
   if (isRedirectRoute) {
+    // Standalone routes without layout/navbar
     return (
       <Switch>
         <Route path="/r/:campaignId/:urlId" component={RedirectPage} />

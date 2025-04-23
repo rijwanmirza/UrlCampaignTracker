@@ -98,7 +98,12 @@ export default function UrlTable({ campaign }: UrlTableProps) {
     urlActionMutation.mutate({
       urlId: url.id,
       action: 'update',
-      data: { status: newStatus }
+      data: { 
+        name: url.name,
+        targetUrl: url.targetUrl,
+        clickLimit: url.clickLimit,
+        status: newStatus 
+      }
     });
   };
   
