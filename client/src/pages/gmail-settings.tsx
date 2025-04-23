@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Campaign } from "@shared/schema";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -38,6 +38,7 @@ export default function GmailSettingsPage() {
   const { toast } = useToast();
   const [readerStatus, setReaderStatus] = useState<{ isRunning: boolean, config: any } | null>(null);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [fullCleanupDialogOpen, setFullCleanupDialogOpen] = useState(false);
   const [daysToKeep, setDaysToKeep] = useState<string>("30");
   const [useCustomDateRange, setUseCustomDateRange] = useState(false);
   const [beforeDate, setBeforeDate] = useState<string>("");
@@ -298,6 +299,39 @@ export default function GmailSettingsPage() {
     }
   });
   
+  // Full system cleanup mutation
+  const fullSystemCleanupMutation = useMutation<
+    { message: string, campaignsDeleted: number, urlsDeleted: number },
+    Error,
+    { confirmText: string }
+  >({
+    mutationFn: (params) => {
+      return apiRequest<{ message: string, campaignsDeleted: number, urlsDeleted: number }>(
+        'POST', 
+        '/api/system/full-cleanup', 
+        params
+      );
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "System Cleanup Complete",
+        description: `Successfully deleted ${data.campaignsDeleted} campaigns and ${data.urlsDeleted} URLs.`,
+      });
+      setFullCleanupDialogOpen(false);
+      
+      // Refresh the campaigns list and other data
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "System Cleanup Failed",
+        description: "Failed to perform system cleanup. Please try again.",
+        variant: "destructive",
+      });
+      console.error("System cleanup failed:", error);
+    }
+  });
+  
   // Handle cleanup logs
   const handleCleanupLogs = () => {
     const params: { beforeDate?: string, afterDate?: string, daysToKeep?: string } = {};
@@ -310,6 +344,22 @@ export default function GmailSettingsPage() {
     }
     
     cleanupLogsMutation.mutate(params);
+  };
+  
+  // Handle full system cleanup
+  const [confirmText, setConfirmText] = useState("");
+  
+  const handleFullSystemCleanup = () => {
+    if (confirmText !== "DELETE ALL DATA") {
+      toast({
+        title: "Confirmation Failed",
+        description: "Please type 'DELETE ALL DATA' to confirm this destructive action.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    fullSystemCleanupMutation.mutate({ confirmText });
   };
   
   // Form submit handler
@@ -331,11 +381,21 @@ export default function GmailSettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-gray-50 text-gray-700 border-gray-200"
+                className="bg-gray-50 text-gray-700 border-gray-200 mr-2"
                 onClick={() => setCleanupDialogOpen(true)}
               >
                 <Trash className="h-4 w-4 mr-2" />
                 Cleanup Logs
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-red-50 text-red-700 border-red-200"
+                onClick={() => setFullCleanupDialogOpen(true)}
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Full System Cleanup
               </Button>
               
               {readerStatus?.isRunning ? (
@@ -459,6 +519,61 @@ export default function GmailSettingsPage() {
                     <Trash className="h-4 w-4 mr-2" />
                   )}
                   Cleanup Logs
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Full System Cleanup Dialog */}
+          <Dialog open={fullCleanupDialogOpen} onOpenChange={setFullCleanupDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="text-red-600">⚠️ Full System Cleanup</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete ALL campaigns, URLs, and reset email logs. 
+                  This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="border border-red-200 bg-red-50 p-3 rounded-md text-red-800 text-sm">
+                  <p className="font-semibold mb-2">WARNING: Destructive Action</p>
+                  <p>All campaigns and URLs will be permanently deleted. The system will be reset to its initial state.</p>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4 mt-2">
+                  <label htmlFor="confirm-text" className="col-span-4 text-sm font-medium">
+                    Type "DELETE ALL DATA" to confirm:
+                  </label>
+                  <Input
+                    id="confirm-text"
+                    type="text"
+                    className="col-span-4"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="DELETE ALL DATA"
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => {
+                  setFullCleanupDialogOpen(false);
+                  setConfirmText("");
+                }}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleFullSystemCleanup}
+                  disabled={fullSystemCleanupMutation.isPending || confirmText !== "DELETE ALL DATA"}
+                >
+                  {fullSystemCleanupMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 mr-2" />
+                  )}
+                  Delete All Data
                 </Button>
               </DialogFooter>
             </DialogContent>

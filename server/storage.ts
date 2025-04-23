@@ -45,6 +45,9 @@ export interface IStorage {
       endRange: number
     }[]
   }>;
+  
+  // System operations
+  fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -662,6 +665,38 @@ export class DatabaseStorage implements IStorage {
     const [url] = await db.select().from(urls).where(eq(urls.id, id));
     if (url?.campaignId) {
       this.invalidateCampaignCache(url.campaignId);
+    }
+  }
+  
+  // Full system cleanup - deletes all campaigns and URLs
+  async fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number }> {
+    try {
+      // First, count how many items we'll delete
+      const allCampaigns = await this.getCampaigns();
+      let totalUrls = 0;
+      
+      for (const campaign of allCampaigns) {
+        totalUrls += campaign.urls.length;
+      }
+      
+      // Delete all URLs first (to handle foreign key constraints)
+      await db.delete(urls);
+      
+      // Then delete all campaigns
+      await db.delete(campaigns);
+      
+      // Invalidate any cache
+      this.campaignUrlsCache.clear();
+      
+      console.log(`Full system cleanup completed: deleted ${allCampaigns.length} campaigns and ${totalUrls} URLs`);
+      
+      return {
+        campaignsDeleted: allCampaigns.length,
+        urlsDeleted: totalUrls
+      };
+    } catch (error) {
+      console.error("Error during full system cleanup:", error);
+      throw error;
     }
   }
 }
