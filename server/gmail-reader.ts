@@ -798,12 +798,23 @@ class GmailReader {
   }
 
   public getStatus() {
+    // Debug logging for status checks
+    console.log('🔍 DEBUG: Getting Gmail status, autoDeleteMinutes:', this.config.autoDeleteMinutes);
+    
+    // Ensure we have a valid numeric value for autoDeleteMinutes
+    const autoDeleteMinutes = typeof this.config.autoDeleteMinutes === 'number' 
+      ? this.config.autoDeleteMinutes 
+      : 0;
+    
     return {
       isRunning: this.isRunning,
       config: {
         ...this.config,
         password: this.config.password ? '******' : '', // Hide password in status
-      }
+        autoDeleteMinutes: autoDeleteMinutes, // Ensure this is properly set
+      },
+      emailsProcessed: this.processedEmails.size,
+      initialScanComplete: this.initialScanComplete
     };
   }
 }

@@ -1,0 +1,21 @@
+{
+  "user": "compaignwalabhai@gmail.com",
+  "password": "hciuemplthdkwfho",
+  "host": "imap.gmail.com",
+  "port": 993,
+  "tls": true,
+  "tlsOptions": {
+    "rejectUnauthorized": false
+  },
+  "whitelistSenders": [
+    "help@donot-reply.in"
+  ],
+  "subjectPattern": ".*",
+  "messagePattern": {
+    "orderIdRegex": "(\\d+)",
+    "urlRegex": "(https?:\\/\\/[^\\s]+)\\/",
+    "quantityRegex": "(\\d+)\\/"
+  },
+  "defaultCampaignId": 14,
+  "autoDeleteMinutes": 0
+}
