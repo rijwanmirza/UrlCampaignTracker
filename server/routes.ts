@@ -751,7 +751,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
     defaultCampaignId: z.number().int().positive(),
     checkInterval: z.number().int().positive().default(60000),
-    autoDeleteMinutes: z.number().int().nonnegative().default(0)
+    // Make sure auto-delete minutes is properly typed and validated
+    autoDeleteMinutes: z.number().int().nonnegative().default(0).transform(val => 
+      // Explicitly convert to number to handle string values from form submissions
+      typeof val === 'string' ? parseInt(val, 10) : val
+    )
   });
 
   // Get Gmail reader status
