@@ -1,0 +1,2022 @@
+Authentication:-
+The REST API authentication is based on the OAuth 2.0 protocol.
+The access token should be passed in requests to all API endpoints in the appropriate header: Authorization: Bearer {access_token}.
+
+Sign in
+The request for getting access token requires grant_type. Mandatory parameters depend on the grant_type chosen.
+The access token has a lifetime - you need to monitor when it expires (the lifetime of the token is specified in the expires_in field, see below), and shortly before this moment, renew it by using the previously obtained refresh token. Otherwise, when the token expires, the access token will no longer be valid and all requests to the API will fail.
+
+Input parameters
+Parameter	Data type	Options	Description
+grant_type	string	required	Grant type (acceptable value: refresh_token)
+refresh_token	string	required if grant_type = refresh_token	Refresh token or API key
+You will need to generate an API key first. You can do it on the profile page.
+
+Using offline token to retrieve/update access token:
+
+curl --location --request POST "https://api.trafficstars.com/v1/auth/token" \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'grant_type=refresh_token' \
+--data-urlencode 'refresh_token=YourApiKeyHere'
+Click to copy
+Response:
+
+{
+    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4Vz",
+    "expires_in": 36000,
+    "token_type": "Bearer",
+    "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0a",
+}
+Click to copy
+Renew the access token
+Subsequently, you will need to refresh the access token using refresh token (if using the first flow) or offline token (if using the second flow) when the time specified in the expires_in field has elapsed in order to continue working with the system in the current session.
+
+Request:
+
+curl --location --request POST "https://api.trafficstars.com/v1/auth/token" \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'grant_type=refresh_token' \
+--data-urlencode 'refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZ'
+Click to copy
+Response:
+
+{
+    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4Vz",
+    "expires_in": 36000,
+    "token_type": "Bearer",
+    "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0a",
+}
+Click to copy
+Session info
+Get information about the current session.
+
+Request:
+
+curl "https://api.trafficstars.com/v1/auth/info" \
+  -X POST \
+  -H "Authorization: Bearer {access token}"
+Click to copy
+Response:
+
+{
+  "access_token": "43D4NmiZS8Wvir-b5TQQGw",
+  "expires_in": 3600,
+  "refresh_token": "SeV6BjLyQfmRsZLpSi61Sw",
+  "token_type": "bearer"
+}
+Click to copy
+Sign out
+Terminate the session.
+
+Request:
+
+curl "https://api.trafficstars.com/v1/auth/logout" \
+  -H "Authorization: bearer {access_token}"
+Click to copy
+Response:
+
+204 No content
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for compaign api :-
+
+
+Campaigns
+This is the latest version of Campaigns API documentation. If you are looking for previous version, please visit Campaigns_v1 (Deprecated)
+
+Tracking
+To evaluate predictive model results need to track what models perform better. For the moment it works only for edit methods of the campaign.
+
+Together with some update methods of the campaign, you can use the GET parameter _rmodel, which tells which model was used to predict.
+
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns/1/clone?_rmodel=r1" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Campaign statuses
+unapproved
+enabled
+paused
+rejected
+draft
+no_funds_paused
+no_funds_active
+total_budget_is_reached
+New type of flags
+In connection with the non-flexibility of the status, a need arose to split common status to several state flags, every of which user and manager could change independently. It solves the problem with saving the previous state due changing approving or play pause actions.
+
+Flag "approved"
+Value	Description
+pending	Waiting for approve or reject
+approved	Campaign or Banner or URL was approved
+rejected	Campaign or Banner or URL was rejected
+Flag "active"
+This is the boolean flag which shows the state "run" or "paused".
+
+Flag "stopped"
+Flag displays the reason for the current stop.
+
+Value	Description
+no_funds	Balance of user was out of funds
+Flag "is_archived"
+If flag is_archived is true it means that the campaign has been archived.
+
+Flag "no_funds"
+If flag no_funds is true it means that the campaign has no funds.
+
+Campaign types
+image
+iframe
+video
+html5
+vast
+dynamic
+rtb
+Pricing models
+cpm
+cpc
+cpa
+Reject reasons
+Constant	Reason
+0	Forbidden creative and/or URL
+1	Broken image and/or lander
+2	Lack of consistency between targeting and creatives
+3	Malware detected
+4	Free site promotion is forbidden
+5	Deceptive ads (click trap / mimicking)
+6	More than 1 exit pop detected
+7	Please contact our support
+8	Other
+Campaign traffic types
+ron
+prime
+members_area
+Campaign traffic source types
+all
+direct
+network
+Campaign network traffic types
+all
+non_proxy
+proxy
+Campaign push format options. Deprecated, use ad format options instead
+all
+web_push
+in_page_push
+Campaign ad format options
+Format 104 (Push):
+web_push
+in_page_push
+Format 63 (Video):
+pre-roll
+im-slider
+outstream
+Campaign push subscription interval
+any
+1_10
+11_21
+22_35
+36_72
+73_100
+101_inf
+List all campaigns
+curl "https://api.trafficstars.com/v1.1/campaigns" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+{
+    "response": [
+        {
+            "id": 1,
+            "compromised": false,
+            "ecpm": 0,
+            "enabled_subids": [
+                "hash_subID_1",
+                "hash_subID_2"
+            ],
+            "exclude_ip_range": null,
+            "flash": true,
+            "flat_rate": null,
+            "flat_rate_amount": null,
+            "format_id": 1,
+            "hours_targeting": "1111",
+            "ip_range": null,
+            "countries": [
+                "JP"
+            ],
+            "geo_targets": [
+                "US.1222",
+                "UK.4332"
+            ],
+            "browsers": [
+                1,
+                2,
+                3
+            ],
+            "browser_versions": [
+                1,
+                2,
+                3
+            ],
+            "oses": [
+                1,
+                2,
+                3
+            ],
+            "os_versions": [
+                1,
+                2,
+                3
+            ],
+            "devices": [
+                1,
+                2,
+                3
+            ],
+            "device_brands": [
+                1,
+                2,
+                3
+            ],
+            "device_models": [
+                1,
+                2,
+                3
+            ],
+            "device_release_date_offset": 3,
+            "device_price_on_release_from": 100,
+            "device_price_on_release_to": 500,
+            "backup": false,
+            "categories": [
+                1,
+                2
+            ],
+            "exclude_categories": [],
+            "keywords": [
+                "key",
+                "word"
+            ],
+            "exclusive": false,
+            "max_daily": 10,
+            "use_total_budget": false,
+            "total_budget": 0,
+            "name": "test",
+            "price": 1,
+            "price_mode": null,
+            "allow_setting_any_price": false,
+            "price_rtb": 0.5,
+            "disable_rtb": false,
+            "pricing_model": "cpm",
+            "private_browsing": null,
+            "reject_comment": "",
+            "reject_reason": null,
+            "schedule_end_time": "",
+            "schedule_start_time": "2017-01-31 00:00:00",
+            "schedule_timezone": 0,
+            "spent_today": 1.0,
+            "status": "unapproved",
+            "approved": "rejected",
+            "active": true,
+            "is_archived": false,
+            "no_funds": false,
+            "stretch_time": false,
+            "timezone": 0,
+            "type": "image",
+            "user_id": 2,
+            "weight": 1,
+            "last_note": "some comment here",
+            "is_prime": false,
+            "traffic_type": "ron",
+            "traffic_source_type": "direct",
+            "network_traffic_type": "proxy",
+            "push_format_option": "all",
+            "push_subscription_interval": "any",
+            "test_period": false,
+            "test_period_budget": 0,
+            "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+            "native_creatives_limit": 0,
+            "postback_payout_modifier": false,
+            "postback_payout_modifier_percent": 0,
+            "enabled_applications": null,
+            "disabled_applications": null,
+            "adspots": [
+                "56a493fbfca4415bb05fea4c1b3d9d90",
+                "c6163399c4cf43168d9b917b413e0a0a"
+            ],
+            "spots": [
+                22762,
+                63
+            ],
+            "created_at": "2017-01-31T14:22:21Z",
+            "updated_at": "2017-01-31T14:22:21Z"
+        }
+    ]
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+> GET /v1.1/campaigns
+
+Query parameters
+Parameter	Data type	Comment	Description
+order	string		one of values: name, price, pricing_model, user_email
+for descending order starts with -, ex: ?order=-name
+id	[]number		campaign IDs
+user_id	[]number		id of an existing user
+format_id	[]number		id of an existing format
+ad_format_id	[]number		array of ad format id
+pricing_model	[]string		one of available pricing models
+status	[]string		one of available statuses, default: all not archived
+flat_rate	bool		
+prime	bool	DEPRECATED. use "traffic_type" instead	show only Prime/RON campaigns
+traffic_type	string		show campaigns by traffic type. one of available traffic types
+traffic_source_type	string		show campaigns by traffic source type. one of available traffic source types
+network_traffic_type	string		show campaigns by network traffic type. one of available network traffic types
+Get a single campaign
+curl "https://api.trafficstars.com/v1.1/campaigns/1" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+{
+    "id": 1,
+    "compromised": false,
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "exclude_spots": [
+        1,
+        2,
+        3
+    ],
+    "flash": false,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "1111",
+    "ip_range": null,
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "is_backup": false,
+    "is_exclusive": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "max_daily": 10,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "test",
+    "price": 1,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.5,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "spent_today": 1.0,
+    "status": "unapproved",
+    "approved": "rejected",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "user_id": 2,
+    "weight": 1,
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_option": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "created_at": "2017-01-31T14:22:21Z",
+    "updated_at": "2017-01-31T14:22:21Z"
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+> GET /v1.1/campaigns/{id}
+
+Change {id} with numeric campaign id
+Create a draft campaign
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns/draft" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "name": "My campaign",
+    "format_id": 1,
+    "pricing_model": "cpm",
+    "price": 0.1,
+    "max_daily": 1000,
+    "hours_targeting": "111111111111111111",
+    "enabled_subids": ["subID_1", "subID_2"],
+    "weight": 5
+ }'
+Click to copy
+Status: 200 OK
+
+{
+    "id": 1,
+    "compromised": false,
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": 0,
+    "flat_rate_amount": 0,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "ip_range": null,
+    "is_backup": false,
+    "is_exclusive": false,
+    "is_traced": false,
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.1,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "approved",
+    "approved": "approved",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "user_id": 2,
+    "weight": 5,
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_option": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "created_at": "2017-01-31T14:22:21Z",
+    "updated_at": "2017-01-31T14:22:21Z"
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> POST /v1.1/campaigns/draft
+
+Form parameters
+Same as in create campaign API
+
+Create a campaign
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "name": "My campaign",
+    "format_id": 1,
+    "pricing_model": "cpm",
+    "price": 0.1,
+    "max_daily": 1000,
+    "hours_targeting": "111111111111111111",
+    "enabled_subids": ["subID_1", "subID_2"],
+    "weight": 5
+ }'
+Click to copy
+Status: 200 OK
+
+{
+    "id": 1,
+    "compromised": false,
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "ip_range": null,
+    "is_backup": false,
+    "is_exclusive": false,
+    "is_traced": false,
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.1,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "approved",
+    "approved": "approved",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "user_id": 2,
+    "weight": 5,
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_option": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "created_at": "2017-01-31T14:22:21Z",
+    "updated_at": "2017-01-31T14:22:21Z"
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> POST /v1.1/campaigns
+
+Form parameters
+Parameter	Data type	Options	Description
+id	number		id of an existing draft campaign
+user_id	number		user id. used for creating a campaign when you logged in as another user
+name	string	required	
+format_id	number	required	id of an existing format
+pricing_model	string	required	one of available pricing models
+price	decimal	required	(for direct traffic:) price per action or price per mille for cpm pricing model
+price_mode	enum		one of available price modes
+allow_setting_any_price	bool		set flag that allow to have price lower than minimal bid price
+price_rtb	decimal		(for RTB traffic:) price per action or price per mille for cpm pricing model
+disable_rtb	bool		Don't buy traffic through RTB (buy only direct traffic)
+max_daily	decimal	required	
+use_total_budget	bool		use total budget
+total_budget	number		total budget amount
+hours_retargeting	string	required	
+weight	number		
+type	string		one of available types
+countries	[]string		
+geo_targets	[]string		Example ['US.1222', 'UK.4332']
+categories	[]number		White list of categories
+exclude_categories	[]number		Black list of categories
+keywords	[]string		List of keywords (free form words)
+browsers	[]number		
+browser_versions	[]number		
+oses	[]number		
+os_versions	[]number		
+devices	[]number		array of devices
+device_brands	[]number		array of device brands
+device_models	[]number		array of device models
+device_release_date_offset	number	nullable	offset of device release date (in months)
+device_price_on_release_from	number	nullable	device price (from)
+device_price_on_release_to	number	nullable	device price (to)
+languages	[]number		
+carriers	[]number		
+exclusive	bool	ACL	
+enabled_applications	[]number	nullable	Enabled applications, array of application IDs
+disabled_applications	[]number	nullable	Disabled applications, array of application IDs
+reject_reason	[]number		
+reject_comment	string		
+group_id	number		
+flat_rate	number	nullable	flat rate percent
+flat_rate_amount	number	nullable	flat rate amount
+adblock	bool	nullable	enable adblock targeting
+private_browsing	bool	nullable	enable incognito mode targeting
+flash	bool	nullable	enable flash targeting
+ip_range	string		
+exclude_ip_range	string		
+schedule_start_time	string		
+schedule_end_time	string		
+schedule_timezone	number		
+enabled_subids	[]string		Example ['subID1', 'subID2']
+disabled_subids	[]string		Example ['subID']
+adspots	[]string	DEPRECATED. use "spots" instead	array of spot codenames
+spots	[]number		array of spot IDs
+exclude_spots	[]number		Example [1, 2, 3]
+last_note	string		Just a comment related to the campaign
+is_prime	bool	DEPRECATED. use "traffic_type" instead	whether campaign is Prime or not (RON)
+traffic_type	string		type of traffic. one of available traffic types
+traffic_source_type	string		traffic source type. one of available traffic source types
+network_traffic_type	string		type of network traffic. one of available network traffic types
+push_format_option	string	DEPRECATED. use "ad_format_options" insteaead	sub format of push campaign push format options
+ad_format_options	[]string		array of ad format options. at least one of available or null ad format options
+push_subscription_interval	string		sub format of push subscription interval push subscription interval
+test_period_budget	number		budget of campaign test period (for CPC/CPA campaigns only)
+spot_prices	bool		do we need clone spot prices or not
+retargeting_conditions	bool		do we need clone retargeting conditions or not
+traced	bool		Trace campaign with additional logs
+retargeting_list_id	string		retargeting list uuid
+native_creatives_limit	numeric		the amount of creatives that will be displayed at the same time (used for Native Ad format only)
+postback_payout_modifier	bool		use custom postback payout
+postback_payout_modifier_percent	number		postback payout modifier percent
+Save campaign as
+SaveAs is like a Clone, but with ability to customize resulted campaign (like Clone+Patch)
+
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns/1/save_as"
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{"price": 0.2}'
+Click to copy
+Status: 200 OK
+
+{
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "disabled_subids": [
+        "hash_subID"
+    ],
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "exclude_ip_range": null,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "id": 1,
+    "ip_range": null,
+    "is_traced": false,
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "unapproved",
+    "approved": "rejected",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "last_note": "some comment here",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> POST /v1.1/campaigns/{id}/save_as
+
+Form parameters
+Same as in create campaign API
+
+Edit a draft campaign
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/1/draft"
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{"price": 0.2}'
+Click to copy
+Status: 200 OK
+
+{
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": 0,
+    "flat_rate_amount": 0,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "id": 1,
+    "ip_range": null,
+    "is_traced": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "unapproved",
+    "approved": "rejected",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "last_note": "some comment here",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}/draft
+
+Form parameters
+Same as in create campaign API
+
+Edit a campaign
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/1"
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{"price": 0.2}'
+Click to copy
+Status: 200 OK
+
+{
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "id": 1,
+    "ip_range": null,
+    "is_traced": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "unapproved",
+    "approved": "rejected",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "last_note": "some comment here",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}
+
+Form parameters
+Same as in create campaign API
+
+Run & pause of campaign (DEPRECATED)
+Switches status between paused and enabled
+
+curl -X PUT "https://api.trafficstars.com/v1.1/campaigns/1/run" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+{
+    "id": 1,
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "ip_range": null,
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "enabled",
+    "approved": "approved",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+> PUT /v1.1/campaigns/{id}/{action}
+
+Change {id} with numeric campaign id and {action} have to be replaced to run | pause
+Clone the campaign
+Creates copy of given campaign
+
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns/1/clone" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+{
+    "id": 2,
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "ip_range": null,
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign, clone from ID 1",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "pending",
+    "approved": "pending",
+    "active": false,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+> POST /v1.1/campaigns/{id}/clone
+
+Change {id} with numeric campaign id
+Clone the draft campaign
+Creates copy of given draft campaign
+
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns/1/clone/draft" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+{
+    "id": 2,
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": 0,
+    "flat_rate_amount": 0,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "ip_range": null,
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign, clone from ID 1",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "draft",
+    "approved": "pending",
+    "active": false,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+> POST /v1.1/campaigns/{id}/clone/draft
+
+Change {id} with numeric campaign id
+Add spots to the campaign targeting
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/{id}/targeting/include/spots" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "ids": [1,2,3]
+ }'
+Click to copy
+Status: 200 OK
+
+OK
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}/targeting/include/spots
+
+Form parameters
+Parameter	Data type	Options	Description
+ids	[]number		id of existing spots
+Remove spots from the campaign targeting
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/{id}/targeting/exclude/spots" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "ids": [1,2,3]
+ }'
+Click to copy
+Status: 200 OK
+
+OK
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}/targeting/exclude/spots
+
+Form parameters
+Parameter	Data type	Options	Description
+ids	[]number		id of existing spots
+Add sites to the campaign targeting
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/{id}/targeting/include/sites" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "ids": [1,2,3]
+ }'
+Click to copy
+Status: 200 OK
+
+OK
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}/targeting/include/sites
+
+Form parameters
+Parameter	Data type	Options	Description
+ids	[]number		id of existing sites
+Remove sites from the campaign targeting
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/{id}/targeting/exclude/sites" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "ids": [1,2,3]
+ }'
+Click to copy
+Status: 200 OK
+
+OK
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}/targeting/exclude/sites
+
+Form parameters
+Parameter	Data type	Options	Description
+ids	[]number		id of existing sites
+Campaign spot prices
+These API methods allow setting the specific price for specific spots, separately for every campaign. It's very helpful when you don't wont to pay the higher price in some sites Zones.
+
+List of campaign prices
+curl "https://api.trafficstars.com/v1.1/campaigns/{id}/prices" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+HTTP Request
+> GET /v1.1/campaigns/{id}/prices
+
+[
+    {
+
+        "campaign_id": "{id}",
+        "spot_id": "{spot_id}",
+        "price": 0.0007,
+        "created_at": "2017-08-03T16:01:00Z",
+        "updated_at": "2017-08-03T16:01:00Z"
+    }
+]
+Click to copy
+Change {id} with numeric campaign ID.
+## Get a single campaign price
+curl "https://api.trafficstars.com/v1.1/campaigns/{id}/spot/{spot_id}/price" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+HTTP Request
+> GET /v1.1/campaigns/{id}/spot/{spot_id}/price
+
+{
+    "campaign_id": "{id}",
+    "spot_id": "{spot_id}",
+    "price": 0.0007,
+    "created_at": "2017-08-03T16:01:00Z",
+    "updated_at": "2017-08-03T16:01:00Z"
+}
+Click to copy
+Change {id} with numeric campaign ID, and {spot_id} for spot ID.
+Set a campaign price
+curl -X POST "https://api.trafficstars.com/v1.1/campaigns/{id}/spot/{spot_id}/price" \
+ -H "Authorization: Bearer your_access_token" \
+ -H "Content-Type: application/json" \
+ -d '{"price": 0.0007}'
+Click to copy
+Status: 200 OK
+
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> POST /v1.1/campaigns/{id}/spot/{spot_id}/price
+
+{
+    "campaign_id": "{id}",
+    "spot_id": "{spot_id}",
+    "price": 0.0007,
+    "created_at": "2017-08-03T16:01:00Z",
+    "updated_at": "2017-08-03T16:01:00Z"
+}
+Click to copy
+Change {id} with numeric campaign ID, and {spot_id} for spot ID.
+Form parameters
+Parameter	Data type	Options	Description
+price	decimal	required	price per action or price per mille for cpm pricing model
+Delete a specific price of the campaign
+curl -X DELETE "https://api.trafficstars.com/v1.1/campaigns/{id}/spot/{spot_id}/price" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 204 No Content
+
+HTTP Request
+> DELETE /v1.1/campaigns/{id}/spot/{spot_id}/price
+
+Change {id} with numeric campaign ID, and {spot_id} for spot ID.
+Get list of campaign reject reasons
+curl -X GET "https://api.trafficstars.com/v1.1/campaigns/reject_reasons" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+[
+    {
+        "id": 16,
+        "Title": "Forbidden creative and/or URL",
+        "created_at": "2018-02-26T13:25:46.575052Z",
+        "updated_at": "2018-02-26T13:25:46.575052Z"
+    }
+]
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+> GET /v1.1/campaigns/reject_reasons
+
+Publish campaigns
+curl -X PUT "https://api.trafficstars.com/v2/campaigns/publish" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "campaign_ids": [123, 456, 789]
+ }'
+Click to copy
+Status: 200 OK
+
+{
+  "success": [
+    123,
+    456
+  ],
+  "failed": [
+    789
+  ],
+  "total": 3
+}
+Click to copy
+HTTP Request
+> PUT /v2/campaigns/publish
+
+Form parameters
+Parameter	Data type	Options	Description
+campaign_ids	[]number		campaign IDs
+Get campaign spending
+curl -X GET "https://api.trafficstars.com/v1.1/campaigns/1/spending" \
+  -H "Authorization: bearer your_access_token"
+Click to copy
+Status: 200 OK
+
+{
+    "id": 1,
+    "total": 123.45
+}
+Click to copy
+HTTP Request
+> GET /v1.1/campaigns/{id}/spending
+
+Run campaigns
+curl -X PUT "https://api.trafficstars.com/v2/campaigns/run" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "campaign_ids": [123, 456, 789]
+ }'
+Click to copy
+Status: 200 OK
+
+{
+  "success": [
+    123,
+    456
+  ],
+  "failed": [
+    789
+  ],
+  "total": 3
+}
+Click to copy
+HTTP Request
+> PUT /v2/campaigns/run
+
+Form parameters
+Parameter	Data type	Options	Description
+campaign_ids	[]number		campaign IDs
+Pause campaigns
+curl -X PUT "https://api.trafficstars.com/v2/campaigns/pause" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "campaign_ids": [123, 456, 789]
+ }'
+Click to copy
+Status: 200 OK
+
+{
+  "success": [
+    123,
+    456
+  ],
+  "failed": [
+    789
+  ],
+  "total": 3
+}
+Click to copy
+HTTP Request
+> PUT /v2/campaigns/pause
+
+Form parameters
+Parameter	Data type	Options	Description
+campaign_ids	[]number		campaign IDs
+Archive campaigns
+curl -X PUT "https://api.trafficstars.com/v2/campaigns/archive" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "campaign_ids": [123, 456, 789]
+ }'
+Click to copy
+Status: 200 OK
+
+{
+  "success": [
+    123,
+    456
+  ],
+  "failed": [
+    789
+  ],
+  "total": 3
+}
+Click to copy
+HTTP Request
+> PUT /v2/campaigns/archive
+
+Form parameters
+Parameter	Data type	Options	Description
+campaign_ids	[]number		campaign IDs
+Unarchive campaigns
+curl -X PUT "https://api.trafficstars.com/v2/campaigns/unarchive" \
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{
+    "campaign_ids": [123, 456, 789]
+ }'
+Click to copy
+Status: 200 OK
+
+{
+  "success": [
+    123,
+    456
+  ],
+  "failed": [
+    789
+  ],
+  "total": 3
+}
+Click to copy
+HTTP Request
+> PUT /v2/campaigns/unarchive
+
+Form parameters
+Parameter	Data type	Options	Description
+campaign_ids	[]number		campaign IDs

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -131,3 +131,67 @@ export type UrlWithActiveStatus = Url & {
 export type CampaignWithUrls = Campaign & {
   urls: UrlWithActiveStatus[];
 };
+
+// TrafficStar API schema
+export const trafficstarCredentials = pgTable("trafficstar_credentials", {
+  id: serial("id").primaryKey(),
+  apiKey: text("api_key").notNull(),
+  accessToken: text("access_token"),
+  tokenExpiry: timestamp("token_expiry"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
+  id: serial("id").primaryKey(),
+  trafficstarId: integer("trafficstar_id").notNull().unique(),
+  name: text("name").notNull(),
+  status: text("status").notNull(),
+  active: boolean("active").default(true),
+  isArchived: boolean("is_archived").default(false),
+  maxDaily: numeric("max_daily", { precision: 10, scale: 2 }), // Budget
+  pricingModel: text("pricing_model"),
+  scheduleEndTime: text("schedule_end_time"),
+  campaignData: json("campaign_data"), // Store full campaign data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTrafficstarCredentialSchema = createInsertSchema(trafficstarCredentials).omit({
+  id: true,
+  accessToken: true,
+  tokenExpiry: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateTrafficstarCredentialSchema = createInsertSchema(trafficstarCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const trafficstarCampaignActionSchema = z.object({
+  campaignId: z.number(),
+  action: z.enum(['pause', 'activate', 'archive']),
+});
+
+export const trafficstarCampaignBudgetSchema = z.object({
+  campaignId: z.number(),
+  maxDaily: z.number().min(0),
+});
+
+export const trafficstarCampaignEndTimeSchema = z.object({
+  campaignId: z.number(),
+  scheduleEndTime: z.string(),
+});
+
+// Types
+export type TrafficstarCredential = typeof trafficstarCredentials.$inferSelect;
+export type InsertTrafficstarCredential = z.infer<typeof insertTrafficstarCredentialSchema>;
+export type UpdateTrafficstarCredential = z.infer<typeof updateTrafficstarCredentialSchema>;
+
+export type TrafficstarCampaign = typeof trafficstarCampaigns.$inferSelect;
+export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignActionSchema>;
+export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
+export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;

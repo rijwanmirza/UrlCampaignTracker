@@ -8,11 +8,16 @@ import {
   updateCampaignSchema,
   insertUrlSchema, 
   updateUrlSchema,
-  bulkUrlActionSchema
+  bulkUrlActionSchema,
+  insertTrafficstarCredentialSchema,
+  trafficstarCampaignActionSchema,
+  trafficstarCampaignBudgetSchema,
+  trafficstarCampaignEndTimeSchema
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
+import { trafficStarService } from "./trafficstar-service";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {

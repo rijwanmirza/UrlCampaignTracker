@@ -48,6 +48,7 @@
     "@types/mailparser": "^3.4.5",
     "@types/nodemailer": "^6.4.17",
     "@types/spdy": "^3.4.9",
+    "axios": "^1.8.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
