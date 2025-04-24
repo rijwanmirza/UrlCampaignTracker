@@ -929,10 +929,13 @@ export default function GmailSettingsPage() {
                               type="number" 
                               {...field} 
                               onChange={(e) => field.onChange(Number(e.target.value))}
+                              min="0"
+                              max="10080"
                             />
                           </FormControl>
                           <FormDescription>
                             Minutes after processing when emails will be automatically deleted. 
+                            Recommended values: 60 (1 hour), 1440 (1 day), 10080 (1 week).
                             Set to 0 to disable auto-deletion.
                           </FormDescription>
                           <FormMessage />

@@ -45,7 +45,7 @@ const defaultGmailConfig: GmailConfigOptions = {
     quantityRegex: /(\d+)/i,  // Any number can be a quantity
   },
   defaultCampaignId: 0,
-  autoDeleteMinutes: 0 // Default is 0 (disabled)
+  autoDeleteMinutes: 60 // Default is 60 minutes (1 hour)
 };
 
 class GmailReader {
@@ -658,6 +658,7 @@ class GmailReader {
             `, 'gmail-reader');
             
             // Log this email as successfully processed - making it eligible for auto-deletion
+            // Will be deleted after the configured time interval (autoDeleteMinutes)
             this.logProcessedEmail(msgId, 'success');
           } catch (error) {
             log(`Error adding URL to campaign: ${error}`, 'gmail-reader');
