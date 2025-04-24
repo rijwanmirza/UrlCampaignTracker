@@ -144,7 +144,7 @@ export const trafficstarCredentials = pgTable("trafficstar_credentials", {
 
 export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   id: serial("id").primaryKey(),
-  trafficstarId: integer("trafficstar_id").notNull().unique(),
+  trafficstarId: text("trafficstar_id").notNull().unique(), // Store as text for compatibility
   name: text("name").notNull(),
   status: text("status").notNull(),
   active: boolean("active").default(true),

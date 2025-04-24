@@ -149,7 +149,7 @@ class TrafficStarService {
       // Update local record
       await db.update(trafficstarCampaigns)
         .set({ active: false, updatedAt: new Date() })
-        .where(eq(trafficstarCampaigns.trafficstarId, id));
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
     } catch (error) {
       console.error(`Error pausing TrafficStar campaign ${id}:`, error);
       throw new Error(`Failed to pause campaign ${id}`);
@@ -171,7 +171,7 @@ class TrafficStarService {
       // Update local record
       await db.update(trafficstarCampaigns)
         .set({ active: true, updatedAt: new Date() })
-        .where(eq(trafficstarCampaigns.trafficstarId, id));
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
     } catch (error) {
       console.error(`Error activating TrafficStar campaign ${id}:`, error);
       throw new Error(`Failed to activate campaign ${id}`);
@@ -199,7 +199,7 @@ class TrafficStarService {
           maxDaily: maxDaily.toString(),
           updatedAt: new Date() 
         })
-        .where(eq(trafficstarCampaigns.trafficstarId, id));
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
     } catch (error) {
       console.error(`Error updating TrafficStar campaign ${id} budget:`, error);
       throw new Error(`Failed to update campaign ${id} budget`);
@@ -224,7 +224,7 @@ class TrafficStarService {
       // Update local record
       await db.update(trafficstarCampaigns)
         .set({ scheduleEndTime, updatedAt: new Date() })
-        .where(eq(trafficstarCampaigns.trafficstarId, id));
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
     } catch (error) {
       console.error(`Error updating TrafficStar campaign ${id} end time:`, error);
       throw new Error(`Failed to update campaign ${id} end time`);
@@ -299,7 +299,7 @@ class TrafficStarService {
         const [existingCampaign] = await db
           .select()
           .from(trafficstarCampaigns)
-          .where(eq(trafficstarCampaigns.trafficstarId, campaign.id));
+          .where(eq(trafficstarCampaigns.trafficstarId, campaign.id.toString()));
 
         if (existingCampaign) {
           // Update existing campaign
