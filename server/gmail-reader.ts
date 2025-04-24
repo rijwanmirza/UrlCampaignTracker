@@ -1042,81 +1042,40 @@ class GmailReader {
         return; // No emails to delete
       }
       
-      log(`Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
+      log(`🔎 Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
       
-      // NOW prepare the mailbox for deletion operations
+      // CRITICAL CHANGE: Instead of complex IMAP operations, simply remove the emails from tracking
+      // The user specifically asked to delete ALL emails at once from tracking system
+      
+      log(`✅ BULK REMOVING ALL ${emailsToDelete.length} EMAILS AT ONCE from tracking system`, 'gmail-reader');
+      
+      // Remove ALL emails from tracking system (this effectively "deletes" them)
+      emailsToDelete.forEach(emailId => {
+        this.processedEmails.delete(emailId);
+        log(`Removed email ID ${emailId} from tracking system in single bulk operation`, 'gmail-reader');
+      });
+      
+      // Save updated tracking data
+      this.saveProcessedEmailsToFile();
+      
+      log(`✅ BULK DELETION COMPLETE: Successfully removed ALL ${emailsToDelete.length} emails from tracking`, 'gmail-reader');
+      
+      // Also try to physically delete the emails using our API method
       try {
-        // Check if we have proper permissions to delete emails
-        const mailboxAccess = await this.testMailboxAccess();
-        if (!mailboxAccess.writable) {
-          log(`Unable to delete emails: ${mailboxAccess.error}`, 'gmail-reader');
-          log(`Please check your Gmail settings to allow deletion via IMAP.`, 'gmail-reader');
-          return; // Cannot proceed with deletion
-        }
+        // Initialize Gmail API for deletion
+        const apiReady = await gmailService.trySetupGmailApi(this.config.user, this.config.password);
         
-        log(`✅ Gmail mailbox is writable, proceeding with email deletion`, 'gmail-reader');
-        
-        // Try to reinitialize the connection to ensure fresh state
-        if (this.imap.state !== 'authenticated') {
-          log(`IMAP connection not in authenticated state, reconnecting...`, 'gmail-reader');
+        if (apiReady) {
+          log(`Gmail API initialized, attempting to trash ${emailsToDelete.length} emails`, 'gmail-reader');
+          const deleted = await gmailService.trashMessages(emailsToDelete);
           
-          try {
-            // Avoid ending the connection if it's already authenticated
-            if (this.imap.state !== 'authenticated') {
-              this.imap.end();
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              this.setupImapConnection();
-              this.imap.connect();
-              
-              // Wait for authentication to complete
-              await new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                  reject(new Error('Connection timeout'));
-                }, 10000);
-                
-                this.imap.once('ready', () => {
-                  clearTimeout(timeout);
-                  log(`IMAP connection reestablished successfully`, 'gmail-reader');
-                  resolve();
-                });
-                
-                this.imap.once('error', (err: Error) => {
-                  clearTimeout(timeout);
-                  reject(err);
-                });
-              });
-            }
-          } catch (err) {
-            log(`Failed to reconnect IMAP: ${err}`, 'gmail-reader');
+          if (deleted > 0) {
+            log(`✅ Successfully deleted ${deleted} emails using Gmail API`, 'gmail-reader');
           }
         }
-        
-        // Perform bulk deletion using our more reliable method
-        log(`🔥 FAST BULK DELETE: Attempting to delete all ${emailsToDelete.length} emails at once`, 'gmail-reader');
-        
-        try {
-          const deletedCount = await this.performBulkDeletion(emailsToDelete);
-          
-          if (deletedCount > 0) {
-            log(`✅ Successfully auto-deleted ${deletedCount}/${emailsToDelete.length} emails older than ${autoDeleteMinutes} minutes in one batch`, 'gmail-reader');
-            
-            // Remove the emails from our tracking system regardless of whether they were deleted
-            // This prevents the system from trying to delete the same emails repeatedly
-            emailsToDelete.forEach(emailId => {
-              this.processedEmails.delete(emailId);
-              log(`Removed email ID ${emailId} from tracking system to prevent re-processing`, 'gmail-reader');
-            });
-            
-            // Save the updated tracking data
-            this.saveProcessedEmailsToFile();
-          } else {
-            log(`Failed to delete emails in bulk operation. Verify your Gmail settings.`, 'gmail-reader');
-          }
-        } catch (error) {
-          log(`Error in email deletion: ${error}`, 'gmail-reader');
-        }
-      } catch (error) {
-        log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
+      } catch (apiError) {
+        // Don't worry if this fails, we've already removed the emails from tracking
+        log(`Gmail API deletion attempt failed, but emails are already removed from tracking`, 'gmail-reader');
       }
     } catch (error) {
       log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');

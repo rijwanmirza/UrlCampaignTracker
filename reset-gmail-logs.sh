@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Reset Gmail tracking logs to fix the email deletion issue
-echo "Clearing processed_emails.log file..."
-> processed_emails.log
-echo "Processed emails log has been reset."
+# This script fully resets the Gmail logs to prevent duplicate tracking issues
+# Usage: ./reset-gmail-logs.sh
 
-echo "Now restart the application to apply changes."
+echo "" > processed_emails.log
+echo "Gmail logs have been reset successfully!"
