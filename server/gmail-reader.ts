@@ -537,8 +537,8 @@ class GmailReader {
             
             if (urlWithSameName) {
               log(`URL with name "${orderId}" already exists in campaign ${this.config.defaultCampaignId}. Skipping.`, 'gmail-reader');
-              // Log this email as processed even though we're skipping it
-              this.logProcessedEmail(msgId);
+              // Log this email as a duplicate - it's also eligible for auto-delete
+              this.logProcessedEmail(msgId, 'duplicate');
               resolve();
               return;
             }
@@ -570,8 +570,8 @@ class GmailReader {
               Status: ${createdUrl.status || 'active'}
             `, 'gmail-reader');
             
-            // Log this email as processed to prevent duplicate processing
-            this.logProcessedEmail(msgId);
+            // Log this email as successfully processed - making it eligible for auto-deletion
+            this.logProcessedEmail(msgId, 'success');
           } catch (error) {
             log(`Error adding URL to campaign: ${error}`, 'gmail-reader');
           }
@@ -579,10 +579,11 @@ class GmailReader {
           log(`Error parsing email: ${error}`, 'gmail-reader');
         }
         
-        // Log the email as processed even if there was an error
+        // Log the email as processed with error status if it wasn't otherwise logged
         // This prevents endless retries of emails that cause errors
+        // Error-processed emails won't be eligible for auto-deletion
         if (attributes?.uid && !this.hasBeenProcessed(attributes.uid)) {
-          this.logProcessedEmail(attributes.uid);
+          this.logProcessedEmail(attributes.uid, 'error');
         }
         
         resolve();
