@@ -1,0 +1,1763 @@
+<?php
+header("Expires: Tue, 01 Jan 2000 00:00:00 GMT");
+header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+// Execute this every minute (via cron job) but perform the task every second
+ini_set('log_errors', '1');  // Enable error logging
+ini_set('error_log', './log.txt');  // Set the log file path
+
+// Include Composer's autoload file
+require 'vendor/autoload.php';
+
+define('BINOM_URL', 'https://viralplayer.xyz');
+define('BINOM_API', '5b0ed872714bc96238734eff98f5178000b2d76849e8c87d4fba75450653387f');
+define('TRAFFIC_STAR_URL', 'https://api.trafficstars.com');
+define('BINOM_CAMP_ID', 47);
+
+define('HOST', 'localhost');
+define('DB_NAME', 'u591450338_traffic_camp');
+define('DB_USER', 'u591450338_ovais');
+define('DB_PASSWORD', '+3Dj#]tfx');
+// define('DB_NAME', 'traffic_camp_api');
+// define('DB_USER', 'root');
+// define('DB_PASSWORD', '');
+
+//Function to insert Sites that are not in XYZ Players
+function insertSitesCurrentCampaign()
+{
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT sites.* FROM sites WHERE including_current_campaign = 0");
+    $stmt->execute();
+    $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($sites)) {
+        foreach ($sites as $site) {
+            try {
+                //Insert Landing and get Landing ID
+                $landingID = null;
+                if(!empty($site['landing_id'])){
+                    $landingID = $site['landing_id'];
+                }else{
+                    $client = new GuzzleHttp\Client([
+                        'timeout' => 10,  // Wait max 10 seconds
+                        'connect_timeout' => 5, // Wait max 5 seconds for connection
+                    ]);
+                    // POST request to refresh the token
+                    $insertLanding = $client->post(BINOM_URL .  '/public/api/v1/landing/not_integrated', [
+                        'headers' => [
+                            'Api-Key' => BINOM_API,
+                        ],
+                        'json' => [
+                            "name" => $site['name'],
+                            "url" => $site['url'],
+                        ]
+                    ]);
+                    $insertResponseBody = $insertLanding->getBody()->getContents();
+                    $insertResponseData = json_decode($insertResponseBody, true);
+                    $landingID = $insertResponseData['id'];
+
+                    //Update landing id
+                    $stmt = $pdo->prepare("UPDATE sites SET landing_id = :landing_id WHERE id = :id");
+                    $site_id =  $site['id'];
+                    $stmt->bindParam(':id', $site_id);
+                    $stmt->bindParam(':landing_id', $landingID);
+                    $stmt->execute();
+                }
+
+                $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                $getResponse = $client->get(BINOM_URL . '/public/api/v1/campaign/' . $site['campaign_id'], [
+                    'headers' => [
+                        'accept' => 'application/json',
+                        'Api-Key' => BINOM_API,
+                    ],
+                ]);
+                $getResponseBody = $getResponse->getBody()->getContents();
+                $getResponseData = json_decode($getResponseBody, true);
+
+              //commented error log//error_log("Landing Campaign Got: " . (!empty($getResponseData['id']) ? $getResponseData['id'] : "N/A"));
+                if (!empty($getResponseData) && !empty($landingID)) {
+                    unset($getResponseData['id']);
+                    $getResponseData['costModel'] = $getResponseData['cost']['model'];
+                    $getResponseData['currency'] = $getResponseData['cost']['money']['currency'];
+                    $getResponseData['hideReferrerType'] = $getResponseData['hideReferrer']['type'];
+                    $getResponseData['customRotation']['defaultPaths'][0]['landings'][] = [
+                        "id" => $landingID,
+                        "weight" => $site['quantity'], //100
+                        "enabled" => true,
+                        "name" => $site['name'],
+                        "languageCode" => "",
+                        "isDomainBanned" => false
+                    ];
+
+                    $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $getResponse = $client->put(BINOM_URL . '/public/api/v1/campaign/' . $site['campaign_id'], [
+                        'headers' => [
+                            'Api-Key' => BINOM_API,
+                        ],
+                        'json' => $getResponseData
+                    ]);
+
+                    if ($getResponse->getStatusCode() == 200) {
+                        $stmt = $pdo->prepare("UPDATE sites SET landing_id = :landing_id, including_current_campaign = :including_current_campaign WHERE id = :id");
+                        $site_id =  $site['id'];
+                        $stmt->bindParam(':id', $site_id);
+                        $stmt->bindParam(':landing_id', $landingID);
+                        $stmt->bindParam(':including_current_campaign', 1);
+                        $stmt->execute();
+                    }
+                }
+            } catch (Exception $e) {
+            //   error_log("Landing Error Latest: " . $e->getMessage());
+            }
+        }
+    }
+}
+
+// Function to get sites with status "inprogress" from the database
+function getSites()
+{
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT sites.*, campaigns.campaign_id_1, campaigns.campaign_id_2 FROM sites 
+    LEFT JOIN campaigns 
+    ON campaigns.id = sites.campaign_id
+    WHERE status = 'inprogress' AND including_current_campaign = 1");
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function checkDailyBudget()
+{
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT budget_check_date, campaigns.id, campaign_id_2 FROM campaigns");
+    $stmt->execute();
+    $row = $stmt->fetchAll();
+
+    //Check For Budget From Traffic Star if condition true and Update Database
+    if (empty($row[0]['budget_check_date']) || (!empty($row[0]['budget_check_date']) && Date("Y-m-d", strtotime($row[0]['budget_check_date'])) != gmdate("Y-m-d"))) {
+        // insertSitesCurrentCampaign();
+
+        //Hit Traffic Start API to Check Daily Budget
+        $trafficstars_accesstoken = getAndRefreshAccessToken();
+        $trafficstars_client = new GuzzleHttp\Client();
+        if (!empty($row[0]['campaign_id_2'])) {
+            try {
+                $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d") . " 23:59:59"));
+                $trafficstars_response = $trafficstars_client->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $row[0]['campaign_id_2'], [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                    ],
+                    'json' => [
+                        "max_daily" => 10.15,
+                        "schedule_end_time" => $campaign_end_time
+                    ]
+                ]);
+                
+              //commented error log//error_log("Max Daily Budget Updated Daily ". $trafficstars_response->getStatusCode());
+                // $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+                // error_log("Traffic Response: " . ($trafficstars_response_body['max_daily'] ?? "N/A"));
+                // if (!empty($trafficstars_response_body['max_daily']) && $trafficstars_response_body['max_daily'] >= 10) {
+                //Update Daily Budget to Database
+                
+                // updateCurrentSpent($row[0]['id'], $row[0]['campaign_id_2']);
+                
+                $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+                $stmt = $pdo->prepare("UPDATE campaigns SET budget_check_date = :budget_check_date WHERE id = :id");
+
+                // $current_budget = $trafficstars_response_body['max_daily'];
+                $budget_check_date = gmdate("Y-m-d");
+                $campaign_active = 1;
+                $campaign_id = $row[0]['id'];
+                $stmt->bindParam(':budget_check_date', $budget_check_date);
+                $stmt->bindParam(':id', $campaign_id);
+                $stmt->execute();
+
+                // error_log("Daily Budget Updated!");
+                // return [
+                //     // "status" => true,
+                //     "id" => $row[0]['id'],
+                //     "daily_budget" => $trafficstars_response_body['max_daily'],
+                //     "campaign_id_2" => $row[0]['campaign_id_2'],
+                //     "campaign_active" => 1,
+                // ];
+                // }
+            } catch (Exception $e) {
+                error_log("Daily Budget Error: " . $e->getMessage());
+            }
+        }
+    }
+
+    // return [
+    //     // "status" => false,
+    //     "id" => $row[0]["id"],
+    //     "current_budget" => ($row[0]['current_budget'] ?? 0),
+    //     "campaign_id_2" => ($row[0]['campaign_id_2'] ?? ''),
+    //     "campaign_active" => $row[0]['campaign_active'],
+    // ];
+}
+
+function checkForCampTenMinute(){
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT current_running_camp_time, id, campaign_id_2, campaign_id_1, is_ten_minute_waiting, is_sixteen_minute_waiting FROM campaigns");
+    $stmt->execute();
+    $row = $stmt->fetchAll();
+    
+   /*if((empty($row[0]['current_running_camp_time']) || (!empty($row[0]['current_running_camp_time']) && gmdate("Y-m-d H:i:s") >= gmdate("Y-m-d H:i:s", strtotime($row[0]['current_running_camp_time']." +10 minutes")))) && $row[0]['is_ten_minute_waiting']){
+        //Pause Campaign  
+        //Add Site to current running campaign
+        //Update Weight
+        
+        /-*"wait_start_time" => gmdate("Y-m-d H:i:s"),
+        "is_waiting" => 1,*-/
+        try {
+            $trafficstars_accesstoken = getAndRefreshAccessToken();
+            $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+            $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/pause', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                ],
+                'json' => [
+                    'campaign_ids' => [intval($row[0]['campaign_id_2'])]
+                ]
+            ]);
+            
+            try {
+                $trafficstars_client2 = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime("+2 minutes"));
+                $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $row[0]['campaign_id_2'], [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                    ],
+                    'json' => [
+                        "schedule_end_time" => $campaign_end_time
+                    ]
+                ]);
+
+                error_log("Updated After Pause Traffic Star on Site 10 Minute Check Camp " . $trafficstars_response2->getStatusCode());
+            } catch (Exception $e) {
+                error_log("Updated Error After Pause Traffic Star on Site Site 10 Minute Check Camp " . $e->getMessage());
+            }
+
+            // updateSecondConditionRunning($conditionData[0]['id'], 0);
+            error_log("Camp 10 Minute Check");        
+        } catch (Exception $e) {
+            error_log("Camp 10 Minute Check Error " . $e->getMessage());
+        }
+        
+        $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+        $stmt = $pdo->prepare("UPDATE campaigns SET is_waiting= :is_waiting, wait_start_time= :wait_start_time, is_ten_minute_waiting = :is_ten_minute_waiting WHERE id= :id");
+        
+        $is_waiting = 1;
+        $wait_start_time = gmdate("Y-m-d H:i:s");
+        $is_ten_minute_waiting = 0;
+        
+        $stmt->bindParam(':is_waiting', $is_waiting);
+        $stmt->bindParam(':wait_start_time', $wait_start_time);
+        $stmt->bindParam(':is_ten_minute_waiting', $is_ten_minute_waiting);
+        $stmt->bindParam(':id', $row[0]['id']);
+        $stmt->execute();
+
+        error_log("10 Minute Conditions Updated!");        
+    }*/
+    
+    // if((empty($row[0]['current_running_camp_time']) || (!empty($row[0]['current_running_camp_time']) && gmdate("Y-m-d H:i:s") >= gmdate("Y-m-d H:i:s", strtotime($row[0]['current_running_camp_time']." +16 minutes")))) && $row[0]['is_sixteen_minute_waiting']){
+        //Get Sites Which is not added to current campaign
+        $stmt = $pdo->prepare("SELECT * FROM sites WHERE including_current_campaign=0");
+        $stmt->execute();
+        $siteRows = $stmt->fetchAll();
+        
+        $new_landings_data = []; //COLLECT LANDING IDs TO Add to XYZ PLAYERS CAMPAIGN
+        $new_sites = [];
+        $added_landed = [];
+        if(!empty($siteRows)){
+            foreach ($siteRows as $siteRow){
+                //Add SITES to Landing to XYZ PLAYER AND GET ID PUSH TO ABOVE $new_landings_data ARRAY AND UPDATE TO SITES in DATABASE
+                try {
+                    $landingID = null;
+                    $siteID = $siteRow['id'];
+                    if(!empty($siteRow['landing_id'])){
+                        $landingID = $siteRow['landing_id'];
+                    }else{
+                        //Insert Landing and get Landing ID
+                        $client = new GuzzleHttp\Client([
+                            'headers' => [
+                                'Api-Key' => BINOM_API
+                            ]
+                        ]);
+            
+                        $insertLanding = $client->post(BINOM_URL . '/public/api/v1/landing/not_integrated', [
+                            'json' => [
+                                "name" => $siteRow['name'],
+                                "url" => $siteRow['location'],
+                            ]
+                        ]);
+                        $insertResponseBody = $insertLanding->getBody()->getContents();
+                        $insertResponseData = json_decode($insertResponseBody, true);
+                        $landingID = $insertResponseData['id'];
+
+                        //
+                        $stmt = $pdo->prepare("UPDATE sites SET landing_id= :landing_id WHERE id = :id");
+                        $stmt->bindParam(':landing_id', $landingID);
+                        $stmt->bindParam(':id', $siteID);
+                        $stmt->execute();
+                    }
+                    
+                    if(!in_array($landingID, $added_landed)){ //Prevent From Duplicate Insert
+                        $new_landings_data[] = [
+                            "id" => intval($landingID),//$insertResponseData['id'],
+                            "weight" => intval($siteRow['quantity']), // $request->quantity
+                            "enabled" => true,
+                            "name" => $siteRow['name'],
+                            "languageCode" => "",
+                            "isDomainBanned" => false
+                        ];
+                        $new_sites[] = $siteID;
+                        $added_landed[] = $landingID;
+                    }
+                } catch (Exception $e) {
+                //   commented error log
+                    // error_log("Landing Error Latest 1: " . $e->getMessage());
+                    // return redirect()->back()->with("error", "Url Adding failed!");
+                }
+                
+                /*$stmt = $pdo->prepare("UPDATE sites SET including_current_campaign= :including_current_campaign WHERE including_current_campaign= :flag");
+                $include_current_campaign = 1;
+                $flag = 0;
+                $stmt->bindParam(':including_current_campaign', $include_current_campaign);
+                $stmt->bindParam(':flag', $flag);
+                $stmt->execute();*/
+            }
+        }
+        
+        $getResponseData = [];
+        // error_log("Size of New Landings DAta: " . sizeof($new_landings_data));
+        if(!empty($new_landings_data)){
+            try {
+                $client = new GuzzleHttp\Client([
+                    'headers' => [
+                        'Api-Key' => BINOM_API
+                    ]
+                ]);
+                $getResponse = $client->get(BINOM_URL . '/public/api/v1/campaign/' . intval($row[0]['campaign_id_1']), []);
+                $getResponseBody = $getResponse->getBody()->getContents();
+                $getResponseData = json_decode($getResponseBody, true);
+            } catch (Exception $e) {
+            //   error_log("Campaign Data Get Error: " . $e->getMessage());
+                // return redirect()->back()->with("error", "Campaign not found!");
+            }
+            
+            // error_log("101 Should Worksss");
+            if (!empty($getResponseData)) {
+                try {
+                    unset($getResponseData['id']);
+                    $getResponseData['costModel'] = $getResponseData['cost']['model'];
+                    $getResponseData['currency'] = $getResponseData['cost']['money']['currency'];
+                    $getResponseData['hideReferrerType'] = $getResponseData['hideReferrer']['type'];
+                    
+                    // if (!empty($getResponseData['customRotation']['defaultPaths'][0]['landings'])) {
+                        $filterLandings = [];
+                        if(!empty($new_landings_data)){
+                            foreach($new_landings_data as $landing_data){
+                                $isIdMatched = false;
+                                foreach($getResponseData['customRotation']['defaultPaths'][0]['landings'] as $aLanding){
+                                    if($landing_data['id'] == $aLanding['id']){
+                                        $isIdMatched = true;
+                                    }
+                                }
+
+                                if(!$isIdMatched){
+                                    $filterLandings[] = $landing_data;
+                                }
+                            }
+                        }
+        
+                        // error_log(json_encode($filterLandings));
+                        if(!empty($filterLandings)){
+                            $getResponseData['customRotation']['defaultPaths'][0]['landings'] = [...$getResponseData['customRotation']['defaultPaths'][0]['landings'] , ...$filterLandings];
+                            // error_log(" Test ".json_encode($getResponseData));
+                        }
+                    // }
+                                    
+                    $client = new GuzzleHttp\Client([
+                        'headers' => [
+                            'Api-Key' => BINOM_API
+                        ]
+                    ]);
+                    
+                    $response = $client->put(BINOM_URL . '/public/api/v1/campaign/' . intval($row[0]['campaign_id_1']), [
+                        //public/api/v1/rotation/{id}
+                        'json' => $getResponseData
+                    ]);
+                    
+                    //New Site
+                    // error_log("New Sites Size ". $new_sites);
+                    // Make sure to use your own database connection logic
+                    if (!empty($new_sites)) {
+                        $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+                        $placeholders = implode(',', array_fill(0, count($new_sites), '?')); // Create "?, ?, ?" for binding
+                        $stmt = $pdo->prepare("UPDATE sites SET including_current_campaign = ? WHERE id IN ($placeholders)");
+                        $params = array_merge([1], $new_sites); // Merge the value to update with IDs list
+                        $stmt->execute($params);
+                    }
+                    /*$stmt = $pdo->prepare("UPDATE sites SET including_current_campaign=:including_current_campaign WHERE including_current_campaign=");
+                    $including_current_campaign = 1;
+                    $stmt->bindParam(':including_current_campaign', $including_current_campaign);
+                    $stmt->execute();*/
+    
+                  //commented error log//error_log("Update Campaign Landings ". $response->getStatusCode());
+                }   catch (Exception $e) {
+                //   error_log("Update Campaign Landings Error: " . $e->getMessage());
+                    // return redirect()->back()->with("error", "Campaign not found!");
+                }
+            }
+        }
+        
+        // $is_sixteen_minute_waiting = 0;
+        // $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+        // $stmt = $pdo->prepare("UPDATE campaigns SET is_sixteen_minute_waiting = :is_sixteen_minute_waiting WHERE id= :id");
+        // $stmt->bindParam(':is_sixteen_minute_waiting', $is_sixteen_minute_waiting);
+        // $stmt->bindParam(':id', $row[0]['id']);
+        // $stmt->execute();
+    // }
+    $pdo = null;
+}
+
+function updateCurrentRunningTime($id){
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE campaigns SET current_running_camp_time = :current_running_camp_time WHERE id = :id");
+    $current_running_time = gmdate("Y-m-d H:i:s"); 
+    $stmt->bindParam(':current_running_camp_time', $current_running_time);
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+}
+
+function getConditionData()
+{
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT campaigns.id, campaigns.campaign_id_2  FROM campaigns");
+    $stmt->execute();
+    $row = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    updateCurrentSpent($row[0]['id'], $row[0]['campaign_id_2']);    
+    
+    $stmt = $pdo->prepare("SELECT campaigns.* FROM campaigns");
+    $stmt->execute();
+    $row = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $row;
+}
+
+function updateCondition($campaign_id)
+{
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    // $stmt = $pdo->prepare("UPDATE campaigns SET wait_start_time = ". gmdate("Y-m-d H:i:s"). " WHERE id = $campaign_id");
+    // $stmt->execute();
+    
+    $query = "UPDATE campaigns SET wait_start_time = :wait_start_time WHERE id = :campaign_id";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([
+        ':wait_start_time' => gmdate("Y-m-d H:i:s"),
+        ':campaign_id' => $campaign_id
+    ]);
+}
+
+// Function to update the site status in the database
+function updateSiteStatus($siteId, $data, $xyzplayer_id, $trafficstar_id, $camp_id, $landing_id)
+{
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE sites SET status = :status, click_count = :click_count WHERE id = :id");
+    $status = $data['status'];//Update Status to Complete
+    try {
+        $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+        $getResponse = $client->get(BINOM_URL . '/public/api/v1/campaign/' .  $xyzplayer_id, [
+            'headers' => [
+                'accept' => 'application/json',
+                'Api-Key' => BINOM_API,
+            ]
+        ]);
+        $getResponseBody = $getResponse->getBody()->getContents();
+        $getResponseData = json_decode($getResponseBody, true);
+
+        if (!empty($getResponseData)) {
+            unset($getResponseData['id']);
+            $getResponseData['costModel'] = $getResponseData['cost']['model'];
+            $getResponseData['currency'] = $getResponseData['cost']['money']['currency'];
+            $getResponseData['hideReferrerType'] = $getResponseData['hideReferrer']['type'];
+            $landings = [];
+            if (!empty($getResponseData['customRotation']['defaultPaths'][0]['landings'])) {
+                foreach ($getResponseData['customRotation']['defaultPaths'][0]['landings'] as $landing) {
+                    // if($landing['id'] != $site_data[0]['landing_id']){
+                    if ($landing['id'] != $landing_id) {
+                        array_push($landings, $landing);
+                    }
+                }
+                $getResponseData['customRotation']['defaultPaths'][0]['landings'] = $landings;
+            }
+
+            $response = $client->put(BINOM_URL . '/public/api/v1/campaign/' . $xyzplayer_id, [
+                'headers' => [
+                    'Api-Key' => BINOM_API,
+                ],
+                //public/api/v1/rotation/{id}
+                'json' => $getResponseData
+            ]);
+
+            // Get the response body (optional)
+            $response_status = $response->getStatusCode();
+            if ($response_status == 200) {
+              //commented error log//error_log("Traffic Stars Landing Removed");
+                //Success
+                //Pause Campaign
+                $trafficstars_accesstoken = getAndRefreshAccessToken();
+                $sites_count = countSites($camp_id);
+                // error_log("Site Count inside Update Status");
+                if ($sites_count <= 0) {//&& strpos($trafficstars_accesstoken, "Error:") === false
+                    $trafficstars_client = new GuzzleHttp\Client();
+                    $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/pause', [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ],
+                        'json' => [
+                            'campaign_ids' => [intval($trafficstar_id)]
+                        ]
+                    ]);
+                    updateSecondConditionRunning($camp_id, 0);
+                  //commented error log//error_log("Traffic Stars Campaign Paused From Update Sites " . $trafficstars_response->getStatusCode());
+                }
+            }else{
+                $status = 'inprogress';//Set Status to inprogress if not deleted from lander
+            }
+        }
+    } catch (Exception $e) {
+      //commented error log//error_log("Traffic Stars Landing Removed Error: " . $e->getMessage());
+      $status = 'inprogress';//Set Status to inprogress if not deleted from lander
+    }
+    
+    $click_count = $data['click_count'];
+    $stmt->bindParam(':status', $status);
+    $stmt->bindParam(':click_count', $click_count);
+    $stmt->bindParam(':id', $siteId);
+    $stmt->execute();
+}
+
+
+// Function to update the Click Count in the database
+function updateClickCount($siteId, $click_count)
+{
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE sites SET click_count = :click_count WHERE id = :id");
+    $stmt->bindParam(':click_count', $click_count);
+    $stmt->bindParam(':id', $siteId);
+    $stmt->execute();
+}
+
+//Function to count site
+function countSites($campaign_id)
+{
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM sites WHERE campaign_id = :campaign_id AND status = :status AND including_current_campaign = :including_current_campaign");
+    $stmt->bindParam(':campaign_id', $campaign_id);
+    $status = 'inprogress';
+    $including_current_campaign = 1;
+    $stmt->bindParam(':status', $status);
+    $stmt->bindParam(':including_current_campaign', $including_current_campaign);
+    $stmt->execute();
+    $sites_count = $stmt->fetchColumn();
+    return $sites_count;
+}
+
+// Function to update the Click Count in the database
+function setCampaignDeactive($id, $is_active)
+{
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE campaigns SET campaign_active = :campaign_active, campaign_run_time = :campaign_run_time WHERE id = :id");
+    $stmt->bindParam(':campaign_active', $is_active);
+    $stmt->bindParam(':id', $id);
+    $campaign_run_date = gmdate("Y-m-d H:i:s");
+    $stmt->bindParam(":campaign_run_time", $campaign_run_date);
+    $stmt->execute();
+}
+
+function updatePendingClicks($id, $pendingClicks)
+{
+    // Make sure to use your own database connection logic
+    /*$pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT campaigns.pending_clicks FROM campaigns WHERE id = :id");
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+    $row = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $pendingClicksUpdated = 0;
+    if (!empty($row[0]['pending_clicks'])) {
+        // $pendingClicksUpdated = $pendingClicks + intval($row[0]['pending_clicks']);
+        $pendingClicksUpdated = $pendingClicks;
+    }*/
+
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE campaigns SET pending_clicks = :pending_clicks WHERE id = :id");
+    $stmt->bindParam(':pending_clicks', $pendingClicks);
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+}
+
+function updateTotalAndPendingClicks($id, $totalClicks, $pendingClicks)
+{
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE campaigns SET total_clicks = :total_clicks, pending_clicks = :pending_clicks, second_condition_running = :second_condition_running WHERE id = :id");
+    $stmt->bindParam(':total_clicks', $totalClicks);
+    $stmt->bindParam(':pending_clicks', $pendingClicks);
+    $send_condition_running = 1;
+    $stmt->bindParam(':second_condition_running', $send_condition_running);
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+}
+
+function updateSecondConditionRunning($id, $is_running){
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("UPDATE campaigns SET second_condition_running = :second_condition_running WHERE id = :id");
+    $stmt->bindParam(':second_condition_running', $is_running);
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+}
+
+function getTotalAndPendingClicksPercent($id)
+{
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT campaigns.total_clicks, campaigns.pending_clicks FROM campaigns WHERE id = :id");
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+    $row = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $percent_completed = 0;
+    if (!empty($row[0]['total_clicks']) && !empty($row[0]['pending_clicks'])) {
+        $percent_completed = ($row[0]['pending_clicks'] / $row[0]['total_clicks']) * 100;
+    }
+
+    return $percent_completed;
+}
+
+function updateCurrentSpent($id, $trafficStar_id){
+    $trafficstars_access_token = getAndRefreshAccessToken();
+    $trafficstars_client = new GuzzleHttp\Client();//
+    $trafficstars_response = $trafficstars_client->get(TRAFFIC_STAR_URL . '/v1.1/advertiser/custom/report/by-day', [
+        'headers' => [
+            'Authorization' => 'Bearer ' . $trafficstars_access_token,
+        ],
+        'json' => [
+            'campaign_id' => [intval($trafficStar_id)],
+            'date_from' => gmdate("Y-m-d"),
+            'date_to' => gmdate("Y-m-d")
+        ]
+    ]);
+
+    // Log::info("Body Get");
+    $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+
+    // error_log("HERE " . $trafficstars_response_body[0]['amount']. " " . $trafficstars_response->getStatusCode());
+    // if (!empty($trafficstars_response_body[0]['amount'])) {
+        $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+        $stmt = $pdo->prepare("UPDATE campaigns SET current_spent = :current_spent WHERE id = :id");
+        $current_spent = (!empty($trafficstars_response_body[0]['amount']) ? $trafficstars_response_body[0]['amount'] : 0.00);
+        $stmt->bindParam(':current_spent', $current_spent);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+    // }
+    
+    // error_log("Pata nahi");
+    // error_log(empty($trafficstars_response_body[0]['amount']) || (!empty($trafficstars_response_body[0]['amount']) && $trafficstars_response_body[0]['amount'] == 0));
+    // error_log($trafficstars_response_body[0]['amount'] ?? "N/A");
+    // error_log("Pata nahi Yawr");
+            // checkDailyBudget();
+
+    if(empty($trafficstars_response_body[0]['amount']) || (!empty($trafficstars_response_body[0]['amount']) && $trafficstars_response_body[0]['amount'] == 0)){
+        checkDailyBudget();
+    }
+    
+    $stmt2 = $pdo->prepare("SELECT campaign_active FROM campaigns WHERE id = :id");
+    $stmt2->bindParam(':id', $id);
+    $stmt2->execute();
+    $active_data = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($trafficstars_response_body[0]['amount']) && $trafficstars_response_body[0]['amount'] >= 10 && $active_data[0]['campaign_active'] === 0) {
+        setCampaignDeactive($id, 1);
+    }
+}
+
+//Check for site that are private, deleted, unlisted, age restricted etc
+function updateRemovedSites($removedData, $removedLandings){
+ //video_comment//error_log("Inside Update Removed Site");
+    // return true;
+    
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    $stmt = $pdo->prepare("SELECT campaign_id_1 FROM campaigns");
+    $stmt->execute();
+    $row = $stmt->fetchAll();
+    
+    if(!empty($row[0]['campaign_id_1'])){
+        try {
+            $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+            $getResponse = $client->get(BINOM_URL . '/public/api/v1/campaign/' . $row[0]['campaign_id_1'], [
+                'headers' => [
+                    'accept' => 'application/json',
+                    'Api-Key' => BINOM_API,
+                ]
+            ]);
+            $getResponseBody = $getResponse->getBody()->getContents();
+            $getResponseData = json_decode($getResponseBody, true);
+        
+            if (!empty($getResponseData)) {
+                unset($getResponseData['id']);
+                $getResponseData['costModel'] = $getResponseData['cost']['model'];
+                $getResponseData['currency'] = $getResponseData['cost']['money']['currency'];
+                $getResponseData['hideReferrerType'] = $getResponseData['hideReferrer']['type'];
+                $landings = [];
+                if (!empty($getResponseData['customRotation']['defaultPaths'][0]['landings'])) {
+                    foreach ($getResponseData['customRotation']['defaultPaths'][0]['landings'] as $landing) {
+                        // if($landing['id'] != $site_data[0]['landing_id']){
+                        if (!in_array($landing['id'], $removedLandings)) {
+                            array_push($landings, $landing);
+                        }
+                    }
+                    $getResponseData['customRotation']['defaultPaths'][0]['landings'] = $landings;
+                }
+    
+                $response = $client->put(BINOM_URL . '/public/api/v1/campaign/' . $row[0]['campaign_id_1'], [
+                    'headers' => [
+                        'Api-Key' => BINOM_API,
+                    ],
+                    //public/api/v1/rotation/{id}
+                    'json' => $getResponseData
+                ]);
+    
+                // Get the response body (optional)
+                $response_status = $response->getStatusCode();
+                if ($response_status == 200) {
+                    //Success
+               //video_comment//error_log("Landig Removed Success From XYZ Players");
+                    //Updating Sites
+                    foreach ($removedData as $data){
+                        $stmt2 = $pdo->prepare("UPDATE sites set status = :status WHERE id = :id");// AND including_current_campaign = 1
+                        $status = "completed";
+                        $site_id = $data['site_id'];
+                        $stmt2->bindParam(':status', $status);
+                        $stmt2->bindParam(':id', $site_id);
+                        $stmt2->execute();
+                        
+                        $stmt3 = $pdo->prepare("INSERT INTO removed_sites (url, reason) VALUES (:url, :reason)");
+                        $url = $data['url'];
+                        $reason = $data['reason'];
+                        $stmt3->bindParam(':url', $url);
+                        $stmt3->bindParam(':reason', $reason);
+                        $stmt3->execute();
+                    }
+                }
+            }
+        } catch (Exception $e) {
+       //video_comment//error_log("Landing Removed From Check Video Error: " . $e->getMessage());
+        }
+    }
+}
+
+function checkYoutubeVideos($videoIds, $apiKey, $sitesData)
+{
+  //commented error log//error_log("Inside Check Youtube Videos");
+    $results = [];
+    try{
+        for($i=0; $i< ceil(sizeof($videoIds) / 50); $i++){//Break for 50 ids
+            // $videoIdsString = implode(",", $videoIds);   
+            $chunk = array_slice($videoIds, $i * 50, 50);
+            // Implode the current chunk
+            $videoIdsString = implode(",", $chunk);
+
+            $url = "https://www.googleapis.com/youtube/v3/videos?part=status,contentDetails&id=$videoIdsString&key=$apiKey";
+
+            $response = file_get_contents($url);
+            $data = json_decode($response, true);
+
+
+            // If the API returns an error
+            if (isset($data["error"])) {
+                return [
+                    'error_status' => 'api_key_error',
+                    'error_reason' => $data["error"]
+                ];
+            }
+
+
+            // Process each video
+            foreach ($chunk as $k=>$videoId) {
+                $videoStatus = [
+                    "id" => $videoId,
+                    "status" => "Not Found", // Default status (in case video is invalid)
+                    "site_data" => $sitesData[$k]
+                ];
+
+            //video_comment//error_log("itemss " . json_encode($data["items"]));
+                if(!empty($data["items"])){
+                    foreach ($data["items"] as $video) {
+                    //video_comment//error_log(json_encode($video) . " ". $video['id']);
+                        // error_log($video['id'] . " ". $videoId . " Check " . ($video["id"] === $videoId));
+                        if($video["id"] == "3zFJC2STU_Q"){
+                            error_log("ID: " . $video['id'] . " Previous Video Id " . $videoId. " Equals " . ($video["id"] === $videoId));
+                        }
+
+                        if ($video["id"] === $videoId) {
+                            $videoStatus["status"] = $video["status"]["privacyStatus"]; // public, private, unlisted
+
+                            // Check if it's age-restricted
+                            if (
+                                isset($video["contentDetails"]["contentRating"]["ytRating"]) &&
+                                $video["contentDetails"]["contentRating"]["ytRating"] === "ytAgeRestricted"
+                            ) {
+                                $videoStatus["age_restricted"] = true;
+                            } else {
+                                $videoStatus["age_restricted"] = false;
+                            }
+
+                            // Check if it's country-restricted
+                            if (isset($video["contentDetails"]["regionRestriction"]["blocked"])) {
+                                $videoStatus["blocked_countries"] = implode(", ", $video["contentDetails"]["regionRestriction"]["blocked"]);
+                            } else {
+                                $videoStatus["blocked_countries"] = "None";
+                            }
+                            
+                            $videoStatus["site_data"] = $sitesData[$k];
+                            break;
+                        }
+  
+                    }
+                }
+
+                if($video["id"] == "3zFJC2STU_Q"){
+                    error_log("Video Status". json_encode($videoStatus));
+                } 
+                $results[] = $videoStatus;
+            }
+        }
+    }catch(Exception $e){
+        error_log("Check Youtube Videos Error: ". $e->getMessage());
+    }
+    return $results;
+}
+
+function removedYoutubeSites(){
+    // Make sure to use your own database connection logic
+    $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+    
+    $stmt = $pdo->prepare("SELECT youtube_api, video_checking_hour, last_video_checked FROM api_configurations");// AND including_current_campaign = 1
+    $stmt->execute();
+    $config = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $current_date = gmdate("Y-m-d H:i:s");
+    if(!empty($config[0]['youtube_api']) && !empty($config[0]['video_checking_hour']) && (empty($config[0]['last_video_checked']) || (!empty($config[0]['last_video_checked'] && strtotime($current_date) >= strtotime(Date("Y-m-d H:i:s", strtotime($config[0]['last_video_checked']. " +". $config[0]['video_checking_hour'] ." hour"))))))){
+     //video_comment//error_log("Inside Video Checked Hourly");
+        //Update Last Video Checked
+        $stmt2 = $pdo->prepare("UPDATE api_configurations set last_video_checked = :last_video_checked");// AND including_current_campaign = 1
+        $stmt2->execute([
+            ":last_video_checked" => $current_date
+        ]);
+        
+        
+        $stmt3 = $pdo->prepare("SELECT * FROM sites WHERE status = 'inprogress' AND created_at <= NOW() - INTERVAL 1 HOUR");// AND including_current_campaign = 1
+        $stmt3->execute();
+        $videoDatas = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+        
+     //video_comment//error_log((is_array($videoDatas) ? sizeof($videoDatas) : "") . " Site for youtube check");
+        
+        $videoIds = [];
+        $sitesData = [];
+        if(!empty($videoDatas)){
+            foreach ($videoDatas as $videoData){
+                $exploded_video_id = explode("?v=",$videoData['location'])[1];
+                if(!empty($exploded_video_id)){
+                    $videoIds[] = $exploded_video_id;
+                    $sitesData[] = $videoData;
+                }
+            }
+        }
+        
+     //video_comment//error_log(sizeof($videoIds) . " Video IDS to Check");
+        
+        $removedData = [];
+        $removedLandings = [];
+        if(!empty($videoIds)){
+            $results = checkYoutubeVideos($videoIds, $config[0]['youtube_api'], $sitesData);
+            if(!empty($results['error_status'])){
+           //video_comment//error_log("API ERROR CHECK " . $results['error_reason']);
+            }else{
+                if(!empty($results)){
+                    foreach($results as $result){
+                        if(!empty($result['status']) && ($result['status'] == "Not Found" || $result['status'] == "private")){// || $result['status'] == "unlisted"
+                            $removedData[] = [
+                                "site_id" => $result['site_data']['id'],
+                                "url" => $result['site_data']['location'],
+                                "reason" => "Video is " .$result['status'],
+                                // "quantity" => "",
+                                // "pending_clicks" => "",
+                            ];
+                            $removedLandings[] = $result['site_data']['landing_id'];
+                       //video_comment//error_log("Site got with status " .  $result['site_data']['id']);
+                        }else if($result['age_restricted'] === true){
+                            $removedData[] = [
+                                "site_id" => $result['site_data']['id'],
+                                "url" => $result['site_data']['location'],
+                                "reason" => "Video is Age Restricted",
+                                // "quantity" => "",
+                                // "pending_clicks" => "",
+                            ];
+                            $removedLandings[] = $result['site_data']['landing_id'];
+                       //video_comment//error_log("Site got with Age Restricted " .  $result['site_data']['id']);
+                        }else if(!empty($result['blocked_countries']) && $result['blocked_countries'] != "None" && str_contains($result['blocked_countries'], "IN")){
+                            $removedData[] = [
+                                "site_id" => $result['site_data']['id'],
+                                "url" => $result['site_data']['location'],
+                                "reason" => "Video is Blocked In " .  $result['blocked_countries'],
+                                // "quantity" => "",
+                                // "pending_clicks" => "",
+                            ];
+                            $removedLandings[] = $result['site_data']['landing_id'];
+                       //video_comment//error_log("Site got with Blocked Countries " .  $result['blocked_countries'] . " With ID " .  $result['site_data']['id']);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(!empty($removedData)){
+            updateRemovedSites($removedData, $removedLandings);
+        }
+    }
+
+}
+
+function getAndRefreshAccessToken()
+{
+    // Database connection parameters (replace with your actual credentials)
+    // $dbname = 'u591450338_traffic_camp';
+    // $username = 'u591450338_ovais';
+    // $password = '+3Dj#]tfx';
+
+    try {
+        // Create PDO connection
+        $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Get API configuration (replace with your actual query to fetch configuration)
+        $stmt = $pdo->query("SELECT * FROM api_configurations LIMIT 1");
+        $api_config = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (empty($api_config['trafficstart_api_key'])) {
+            return "Error: Traffic Stars API Key not found!";
+        }
+
+        // Date comparison logic
+        if (!empty($api_config['trafficstar_access_token_date']) && !empty($api_config['traffic_start_access_token_expiry'])) {
+            // $date1 = new DateTime($api_config['trafficstar_access_token_date']);
+            // $date2 = new DateTime("Y-m-d H:i:s");
+            // $date2 = new DateTime($api_config['traffic_start_access_token_expiry']);
+            // $interval = $date1->diff($date2);
+
+            // if ($interval->h >= 1 || ($interval->d > 0 || ($interval->d == 0 && $interval->i > 0))) {
+            // error_log(strtotime($date2));
+            // error_log(Date('Y-m-d H:i:s'));
+            if (Date('Y-m-d H:i:s') > Date("Y-m-d H:i:s", strtotime($api_config['traffic_start_access_token_expiry']))) {
+                // Refresh Access Token
+                $client = new GuzzleHttp\Client();
+
+                try {
+                    // POST request to refresh the token
+                    $response = $client->post(TRAFFIC_STAR_URL . '/v1/auth/token', [
+                        'headers' => [
+                            'Content-Type' => 'application/x-www-form-urlencoded',
+                        ],
+                        'form_params' => [
+                            'grant_type' => 'refresh_token',
+                            'refresh_token' => $api_config['trafficstar_refresh_token'],
+                        ],
+                    ]);
+
+                    // Get the response body and decode it
+                    $responseBody = json_decode($response->getBody()->getContents(), true);
+
+                    if (!empty($responseBody['access_token'])) {
+                        // Update the tokens in your database
+                        $updateStmt = $pdo->prepare("UPDATE api_configurations SET trafficstar_access_token = :access_token, trafficstar_refresh_token = :refresh_token, trafficstar_access_token_date = :date, traffic_start_access_token_expiry = :date2 WHERE id = :id");
+                        $updateStmt->execute([
+                            ':access_token' => $responseBody['access_token'],
+                            ':refresh_token' => $responseBody['refresh_token'],
+                            ':date' => date("Y-m-d H:i:s"),
+                            ':date2' => date("Y-m-d H:i:s", strtotime("+" .  $responseBody['expires_in'] . " seconds")),
+                            ':id' => $api_config['id']
+                        ]);
+                        return $responseBody['access_token'];
+                    } else {
+                      //commented error log//error_log("Error: Failed to create Traffic Stars Access Token. 1");
+                        return "Error: Failed to create Traffic Stars Access Token.";
+                    }
+                } catch (Exception $e) {
+                  //commented error log//error_log("Error: Failed to create Traffic Stars Access Token. 2" . $e->getMessage());
+                    return "Error: Failed to create Traffic Stars Access Token.";
+                }
+            } else {
+                return $api_config['trafficstar_access_token'];
+            }
+        }
+
+        // Generate access token if it doesn't exist
+        if (empty($api_config['trafficstar_access_token_date']) || empty($api_config['traffic_start_access_token_expiry'])) {
+            $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+
+            try {
+                // POST request to generate the token
+                $response = $client->post('https://api.trafficstars.com/v1/auth/token', [
+                    'headers' => [
+                        'Content-Type' => 'application/x-www-form-urlencoded',
+                    ],
+                    'form_params' => [
+                        'grant_type' => 'refresh_token',
+                        'refresh_token' => $api_config['trafficstart_api_key'],  // Replace with the correct refresh token
+                    ],
+                ]);
+
+                // Get the response body and decode it
+                $responseBody = json_decode($response->getBody()->getContents(), true);
+
+                if (!empty($responseBody['access_token'])) {
+                    // Update the tokens in your database
+                    $updateStmt = $pdo->prepare("UPDATE api_configurations SET trafficstar_access_token = :access_token, trafficstar_refresh_token = :refresh_token, trafficstar_access_token_date = :date, traffic_start_access_token_expiry = :date2 WHERE id = :id");
+                    $updateStmt->execute([
+                        ':access_token' => $responseBody['access_token'],
+                        ':refresh_token' => $responseBody['refresh_token'],
+                        ':date' => date("Y-m-d H:i:s"),
+                        ':date2' => date("Y-m-d H:i:s", strtotime("+" .  $responseBody['expires_in'] . " seconds")),
+                        ':id' => $api_config['id']
+                    ]);
+                    return $responseBody['access_token'];
+                } else {
+                  //commented error log//error_log("Error: Failed to create Traffic Stars Access Token.");
+                    return "Error: Failed to create Traffic Stars Access Token.";
+                }
+            } catch (Exception $e) {
+              //commented error log//error_log("Error: Failed to create Traffic Stars Access Token. 2" . $e->getMessage());
+                return "Error: Failed to create Traffic Stars Access Token.";
+            }
+        }
+    } catch (PDOException $e) {
+        // var_dump($e);
+        // die;
+        return "Error: Database connection failed: " . $e->getMessage();
+    }
+}
+
+// $trafficstars_accesstoken = getAndRefreshAccessToken();
+// $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+// $trafficstars_response = $trafficstars_client->get(TRAFFIC_STAR_URL . '/v1.1/advertiser/custom/report/by-day', [
+//     'headers' => [
+//         'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+//     ],
+//     'json' => [
+//         'campaign_id' => [884036],
+//         'date_from' => gmdate("Y-m-d"),
+//         'date_to' => gmdate("Y-m-d")
+//     ]
+// ]);
+// $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+// error_log("Check ". json_encode($trafficstars_response_body));
+// die;
+
+// var_dump(checkDailyBudget());
+// die;
+
+$endTime = time() + 60;  // Run for 60 seconds
+// error_log($endTime);
+while (time() < $endTime) {
+    // error_log("Runnging Cron");
+    
+    // checkDailyBudget();
+    // error_log("After Check Daily Budget");
+    
+    //Check For 10 Minute Pause to Update
+    checkForCampTenMinute();
+    // error_log("After Check Ten Mint");
+    
+    //Removed Youtube Sites 
+    removedYoutubeSites();
+    //Removed Youtube Sites End
+
+    $conditionData = getConditionData();
+    
+  //commented error log//error_log("After Condition");
+    /*if (empty($conditionData[0]['wait_start_time'])) {
+        return false;
+    } else if ($conditionData[0]['is_waiting'] && strtotime(gmdate("Y-m-d H:i:s")) < strtotime(gmdate("Y-m-d H:i:s", strtotime($conditionData[0]['wait_start_time']. " +6 minutes")))) {
+        return false;
+    }*/
+
+    // Your task logic here
+    // file_put_contents('log.txt', 'Task ran at: ' . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
+    // Sleep for 5 second
+    // Assuming you have set up the required constants for BINOM_URL and BINOM_API
+    $sites = getSites();
+    $removeSites = [];
+
+    //Set Campagin Running False after work for condition greater than 10
+    $pendingClicks = 0;
+    $totalClicks = 0;
+    $weight_landings = [];
+
+
+    // error_log(json_encode($sites));
+    if (!empty($sites)) {
+        foreach ($sites as $site) {
+            // error_log(json_encode($site) . " Sitess");
+            if (!empty($site['landing_id'])) {
+                try {
+                    // error_log("Before GuzzleHttp");
+                    $client = new GuzzleHttp\Client([ 'timeout' => 30, 'connect_timeout' => 10,
+                                                        'headers' => [
+                                                            'Connection' => 'close',
+                                                            'Cache-Control' => 'no-cache'
+                                                        ]]);
+                    $response = $client->get(BINOM_URL . '/public/api/v1/info/landing', [
+                        'query' => [
+                            'name' => $site['landing_id'],
+                            'datePreset' => 'custom_time',
+                            'dateFrom' => Date("Y-m-d H:i:s", strtotime($site['created_at'])),
+                            'dateTo' => Date("Y-m-d H:i:s", strtotime(Date("Y-m-d"). " 23:59:59")),
+                            'timezone' => 'UTC',
+                            'sortColumn' => 'clicks',
+                            'sortType' => 'asc'
+                        ],
+                        'headers' => [
+                            'accept' => 'application/json',
+                            'Api-Key' => BINOM_API
+                        ]
+                    ]);
+                    
+                    // error_log("After GuzzleHttp");
+
+                    // Get the response body
+                    $responseBody = $response->getBody()->getContents();
+
+                    // Decode JSON response
+                    $responseData = json_decode($responseBody, true);
+
+                    // error_log("Befoer Update " . $responseBody);
+                    
+                    /*if($site['name'] == "63131106"){
+                        error_log($responseData[0]['id'] ?? "");
+                    }*/
+
+                    foreach($responseData as $info){
+                        if (!empty($info['id']) && $info['id'] == $site['landing_id']) {
+                            $clickCount = intval($info['clicks']);
+                            $totalClicks += $site['quantity'];
+                            $remainingClick = $site['quantity'] - $clickCount;
+                            $pendingClicks += intval($remainingClick);
+                            $updateData = [];
+
+                            /*if($site['name'] == "63131106"){
+                                error_log("Remaining Clicks" . $remainingClick);
+                            }*/
+
+                            if ($remainingClick <= 0) {
+                                $updateData["status"] = "completed";
+                                $updateData["click_count"] = $clickCount;
+                                // array_push($removeSites, $site['landing_id']);
+                                /*$removeSites[$site['campaign_id']]['landing_ids'][] = $site['landing_id'];
+
+                                if (empty($removeSites[$site['campaign_id']]['campaign_id_1'])) {
+                                    $removeSites[$site['campaign_id']]['campaign_id_1'] = $site['campaign_id_1'];
+                                }
+
+                                if (empty($removeSites[$site['campaign_id']]['campaign_id_2'])) {
+                                    $removeSites[$site['campaign_id']]['campaign_id_2'] = $site['campaign_id_2'];
+                                }*/
+                                updateSiteStatus($site['id'], $updateData, $site['campaign_id_1'], $site['campaign_id_2'], $site['campaign_id'], $site['landing_id']);
+                            } else {
+                                $weight_landings[$site['campaign_id_1']][$site['landing_id']] = intval($remainingClick);
+                                updateClickCount($site['id'], $clickCount);
+                            }
+                        }
+                    }
+                    
+                    // error_log("After Update " . $responseBody);
+                } catch (Exception $e) {
+                  error_log("Error: " . $e->getMessage());
+                }
+
+                //Update Weight of Site
+            }
+        }
+    }
+    // error_log("aaaa");
+
+    // error_log($conditionData[0]['wait_start_time']);
+    // error_log(gmdate("Y-m-d H:i:s", strtotime($conditionData[0]['wait_start_time']. " +20 seconds")));
+    if (empty($conditionData[0]['wait_start_time']) || (!empty($conditionData[0]['wait_start_time']) && gmdate("Y-m-d H:i:s") > gmdate("Y-m-d H:i:s", strtotime($conditionData[0]['wait_start_time']. " +20 seconds")))) {
+        //Update Wieght Condition to false
+      //commented error log//error_log("Wait Start Time ". ($conditionData[0]['wait_start_time'] ?? "N/A"));
+        updateCondition($conditionData[0]['id']);
+
+        //Update Weight of Landings
+        if (!empty($weight_landings)) {
+            foreach ($weight_landings as $camp_id => $landings) {
+                try {
+                    $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $getResponse = $client->get(BINOM_URL . '/public/api/v1/campaign/' . $camp_id, [
+                        'headers' => [
+                            'accept' => 'application/json',
+                            'Api-Key' => BINOM_API,
+                        ],
+                    ]);
+                    $getResponseBody = $getResponse->getBody()->getContents();
+                    $getResponseData = json_decode($getResponseBody, true);
+                    
+                    unset($getResponseData['id']);
+                    $getResponseData['costModel'] = $getResponseData['cost']['model'];
+                    $getResponseData['currency'] = $getResponseData['cost']['money']['currency'];
+                    $getResponseData['hideReferrerType'] = $getResponseData['hideReferrer']['type'];
+                    /*if (!empty($getResponseData['customRotation']['defaultPaths'][0]['landings'])) {
+                        foreach ($getResponseData['customRotation']['defaultPaths'][0]['landings'] as $landingKey => $landing) {
+                            // $landing['id']
+                            $getResponseData['customRotation']['defaultPaths'][0]['landings'][$landingKey]['weight'] = $weight_landings[$landing['id']];
+                        }
+                    }*/
+                    // Loop through defaultPaths -> landings and update weight
+                    foreach ($getResponseData['customRotation']['defaultPaths'] as &$path) {
+                        foreach ($path['landings'] as &$landing) {
+                            if (isset($weight_landings[$camp_id][$landing['id']])) {
+                                $landing['weight'] = intval($weight_landings[$camp_id][$landing['id']]);
+                            }
+                        }
+                    }
+
+                    $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $response = $client->put(BINOM_URL . '/public/api/v1/campaign/' . $camp_id, [
+                        'headers' => [
+                            'Api-Key' => BINOM_API,
+                        ],
+                        //public/api/v1/rotation/{id}
+                        'json' => $getResponseData
+                    ]);
+
+                    // Get the response body (optional)
+                    $response_status = $response->getStatusCode();
+                  //commented error log//error_log("Wieght Update Response Status " . $response->getStatusCode());
+                } catch (Exception $e) {
+                  error_log("Weight Update Error: " . $e->getMessage());
+                }
+            }
+        }
+    }
+
+    $trafficStarStatus = null;
+    $daily_increment = null;
+    try {
+        $trafficstars_accesstoken = getAndRefreshAccessToken();
+        $trafficstars_client = new GuzzleHttp\Client();
+        $trafficstars_response = $trafficstars_client->get(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $conditionData[0]['campaign_id_2'], [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+            ]
+        ]);
+        $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+      //commented error log//error_log(($trafficstars_response_body['max_daily'] ?? "N/A"). " Check");
+        if (!empty($trafficstars_response_body['max_daily'])) {
+            //Left Amount from daily Budget
+            $left_amount = $trafficstars_response_body['max_daily'] - $conditionData[0]['current_spent'];
+            
+            //Check Budget Set or Empty
+            $pdo = new PDO('mysql:host=' . HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+            $stmt = $pdo->prepare("SELECT budget FROM api_configurations");
+            $stmt->execute();
+            $budget_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $budget = (!empty($budget_data[0]['budget']) ? ($budget_data[0]['budget'] / 1000) : (0.10 / 1000));
+            $required_amount = ($budget * $pendingClicks) - $left_amount;
+            //(10 - 9.90) =  0.50 - 0.10  = 0.40 
+            //(10 - 10) = 0.50 - 0 = 0.50
+            //(10 - 9) = 0.50 - 1 = -0.50
+            $daily_increment = $trafficstars_response_body['max_daily'] + ($required_amount > 0 ? $required_amount : 0);
+            // $daily_increment = $trafficstars_response_body['max_daily'] + (0.0001 * $pendingClicks);
+          //commented error log//error_log("Max Daily Budget Increased Working " . $daily_increment);
+        }
+
+        //Update Daily Increment And Update Time
+        // $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d") . " 23:59:00"));
+
+        if (!empty($trafficstars_response_body['status'])) {
+            $trafficStarStatus = $trafficstars_response_body['status'];
+        }
+    } catch (Exception $e) {
+      //commented error log//error_log("Max Daily Budget Increased Error " . $e->getMessage());
+    }
+
+    // error_log((!empty($conditionData[0]['current_spent'])) . " --- " . ($conditionData[0]['current_spent'] >= 10) . "---" . ($conditionData[0]['campaign_active']));
+    // error_log($conditionData[0]['current_spent']);
+  //commented error log//error_log(($conditionData[0]['current_spent'] < 10). "ssss");
+    
+    if (!empty($conditionData[0]['current_spent']) && $conditionData[0]['current_spent'] >= 10 && $conditionData[0]['campaign_active'] && sizeof($sites) > 0) {
+        //
+        $trafficstars_accesstoken = getAndRefreshAccessToken();
+        if (!empty($daily_increment)) {
+            try {
+                $trafficstars_client2 = new GuzzleHttp\Client();
+                $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $conditionData[0]['campaign_id_2'], [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                    ],
+                    'json' => [
+                        "max_daily" => $daily_increment,
+                        // "schedule_end_time" => $campaign_end_time
+                    ]
+                ]);
+
+              //commented error log//error_log("Updated Successfull " . $trafficstars_response2->getStatusCode());
+            } catch (Exception $e) {
+              //commented error log//error_log("Max Daily Budget Updated Error " . $e->getMessage());
+            }
+        }
+        if (!empty($trafficStarStatus) && $trafficStarStatus == "paused") {
+            try {
+                $trafficstars_client = new GuzzleHttp\Client();
+                $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/run', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'campaign_ids' => [intval($conditionData[0]['campaign_id_2'])]
+                    ]
+                ]);
+                setCampaignDeactive($conditionData[0]["id"], 0);
+                updateCurrentRunningTime($conditionData[0]["id"]);
+                    
+                try {
+                    $trafficstars_client2 = new GuzzleHttp\Client();
+                    $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d") . " 23:59:59"));
+                    $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $conditionData[0]['campaign_id_2'], [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ],
+                        'json' => [
+                            "schedule_end_time" => $campaign_end_time
+                        ]
+                    ]);
+                  //commented error log//error_log("Updated After Pause Traffic Star on Site 10 Minute Check Camp " . $trafficstars_response2->getStatusCode());
+                } catch (Exception $e) {
+                  //commented error log//error_log("Updated Error After Pause Traffic Star on Site Site 10 Minute Check Camp " . $e->getMessage());
+                }
+                
+              //commented error log//error_log("Traffic Stars Campaign Run " . $trafficstars_response->getStatusCode());
+            } catch (Exception $e) {
+              //commented error log//error_log("Traffic Stars Campaign Run Error " . $e->getMessage());
+            }
+        }
+    } elseif (!empty($conditionData[0]['current_spent']) && ($conditionData[0]['current_spent'] == 0.00 || $conditionData[0]['current_spent'] < 10) && $conditionData[0]['campaign_active'] && sizeof($sites) > 0) {
+        // error_log("Inside Second Condition");
+        error_log("Pending Clicks ". $pendingClicks);
+        // error_log("Traffic Star ". $trafficStarStatus);
+        updateTotalAndPendingClicks($conditionData[0]['id'], $totalClicks, $pendingClicks);
+        if ($pendingClicks >= 15000 && $trafficStarStatus == "paused") { //Run Campaign
+            //update pending clicks and total Quantity
+            try {
+                $trafficstars_accesstoken = getAndRefreshAccessToken();
+                $trafficstars_client = new GuzzleHttp\Client();
+                $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/run', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'campaign_ids' => [intval($conditionData[0]['campaign_id_2'])]
+                    ]
+                ]);
+                // error_log("Traffic Stars Campaign Run " . $trafficstars_response->getStatusCode());
+                // setCampaignDeactive($conditionData[0]["id"], 0);
+                updateCurrentRunningTime($conditionData[0]["id"]);
+                                
+                try {
+                    $trafficstars_client2 = new GuzzleHttp\Client();
+                    $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d") . " 23:59:59"));
+                    $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $conditionData[0]['campaign_id_2'], [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ],
+                        'json' => [
+                            "schedule_end_time" => $campaign_end_time
+                        ]
+                    ]);
+                  //commented error log//error_log("Updated After Pause Traffic Star on 15000 Check" . $trafficstars_response2->getStatusCode());
+                } catch (Exception $e) {
+                  //commented error log//error_log("Updated Error After Pause Traffic Star on 15000 Check" . $e->getMessage());
+                }
+                
+              //commented error log//error_log("Traffic Star Running For 15000 Greater");
+            } catch (Exception $e) {
+              //commented error log//error_log("Traffic Stars Campaign Run Error in 15000 condition " . $e->getMessage());
+            }
+        } else if ($pendingClicks < 15000 && $trafficStarStatus == "enabled") { //Check for 80% Count and pause
+            // updatePendingClicks($conditionData[0]['id'], $pendingClicks);
+          //commented error log//error_log("Pending Check For 80% Running ". $pendingClicks);
+            $total_pending_click_percent = getTotalAndPendingClicksPercent($conditionData[0]['id']);
+            error_log("Total Pending Click Percent Test ". $total_pending_click_percent. "  " . ($total_pending_click_percent >= 80));
+            if ($total_pending_click_percent <= 20) { //Pause the Campaign
+                //Pause The Campaign
+                try {
+                    $trafficstars_accesstoken = getAndRefreshAccessToken();
+                    $trafficstars_client = new GuzzleHttp\Client();
+                    $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/pause', [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ],
+                        'json' => [
+                            'campaign_ids' => [intval($conditionData[0]['campaign_id_2'])]
+                        ]
+                    ]);
+
+                    updateSecondConditionRunning($conditionData[0]['id'], 0);
+                    
+                    try {
+                        $trafficstars_client2 = new GuzzleHttp\Client();
+                        $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime("+2 minutes"));
+                        $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $conditionData[0]['campaign_id_2'], [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                            ],
+                            'json' => [
+                                "schedule_end_time" => $campaign_end_time
+                            ]
+                        ]);
+                      //commented error log//error_log("Updated After Pause Traffic Star on 15000 80% complete" . $trafficstars_response2->getStatusCode());
+                    } catch (Exception $e) {
+                      //commented error log//error_log("Updated Error After Pause Traffic Star on 15000 80% complete" . $e->getMessage());
+                    }
+                    
+                    
+                  //commented error log//error_log("Traffic Star Paused For 80% completed of 15000");
+                } catch (Exception $e) {
+                  //commented error log//error_log("Traffic Star Paused For 80% completed Error " . $e->getMessage());
+                }
+            }
+          //commented error log//error_log("Pending Check For 80% Running ". $pendingClicks);
+            // updateCurrentSpent($conditionData[0]['id'], $conditionData[0]['campaign_id_2']);
+        }  
+        // updateCurrentSpent($conditionData[0]['id'], $conditionData[0]['campaign_id_2']);
+    } else if(sizeof($sites) <= 0 && $trafficStarStatus == "enabled"){ //pause the campaign
+        try {
+            $trafficstars_accesstoken = getAndRefreshAccessToken();
+            $trafficstars_client = new GuzzleHttp\Client();
+            $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/pause', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                ],
+                'json' => [
+                    'campaign_ids' => [intval($conditionData[0]['campaign_id_2'])]
+                ]
+            ]);
+
+            updateSecondConditionRunning($conditionData[0]['id'], 0);
+          //commented error log//error_log("Traffic Star Paused For No Sites");
+        } catch (Exception $e) {
+          //commented error log//error_log("Traffic Star Paused For No Sites Error " . $e->getMessage());
+        }
+    }
+
+
+    //Check daily budget check date from our database if empty or current date is not equal to check date then recheck
+    /*$dailyBudgetCheck = checkDailyBudget();
+    if (!empty($dailyBudgetCheck['campaign_id_2']) && !empty($dailyBudgetCheck['current_budget'])) {
+        if ($dailyBudgetCheck['current_budget'] >= 10 && $dailyBudgetCheck["campaign_active"]) {
+            //Set Campaign Activated False in our database
+            //Increase Budget according to Pending Clicks for every 1000 pending click increase 0.10
+            //Run Traffic Start Campaign If Paused and also set end time to 23:59 of current Date UTC
+            setCampaignDeactive($dailyBudgetCheck["id"], 0);
+            $trafficstars_accesstoken = getAndRefreshAccessToken();
+            $daily_increment = null;
+            $campaign_end_time = null;
+            $trafficStarStatus = null;
+            $daily_spent = null;
+
+            try {
+                $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                error_log($dailyBudgetCheck['campaign_id_2'] . " IDs Check!");
+                $trafficstars_response = $trafficstars_client->get(TRAFFIC_STAR_URL . '/v1.1/advertiser/custom/report/by-day', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                    ],
+                    'json' => [
+                        'campaign_id' => [intval($dailyBudgetCheck['campaign_id_2'])],
+                        'date_from' => gmdate("Y-m-d"),
+                        'date_to' => gmdate("Y-m-d")
+                    ]
+                ]);
+
+                error_log("Body Get");
+                $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+                if (!empty($trafficstars_response_body[0]['amount'])) {
+                    error_log("Max Daily Spent Success " . $trafficstars_response_body[0]['amount']);
+                    $daily_spent = $trafficstars_response_body[0]['amount'];
+                }
+            } catch (Exception $e) {
+                error_log("Max Daily Spent Error" . $e->getMessage());
+            }
+
+            if (!empty($daily_spent)) {
+                try {
+                    $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $trafficstars_response = $trafficstars_client->get(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $dailyBudgetCheck['campaign_id_2'], [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ]
+                    ]);
+                    $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+                    if (!empty($trafficstars_response_body['max_daily'])) {
+                        //Left Amount from daily Budget
+                        $left_amount = $trafficstars_response_body['max_daily'] - $daily_spent;
+                        $required_amount = (0.0001 * $pendingClicks) - $left_amount;
+                        //(10 - 9.90) =  0.50 - 0.10  = 0.40 
+                        //(10 - 10) = 0.50 - 0 = 0.50
+                        //(10 - 9) = 0.50 - 1 = -0.50
+                        $daily_increment = $trafficstars_response_body['max_daily'] + ($required_amount > 0 ? $required_amount : 0);
+                        // $daily_increment = $trafficstars_response_body['max_daily'] + (0.0001 * $pendingClicks);
+                        error_log("Max Daily Budget Increased Working " . $daily_increment);
+                    }
+
+                    //Update Daily Increment And Update Time
+                    $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d") . " 23:59:00"));
+
+                    if (!empty($trafficstars_response_body['status'])) {
+                        $trafficStarStatus = $trafficstars_response_body['status'];
+                    }
+                } catch (Exception $e) {
+                    error_log("Max Daily Budget Increased Error " . $e->getMessage());
+                }
+            }
+
+            if (!empty($daily_increment) && !empty($campaign_end_time)) {
+                try {
+                    $trafficstars_client2 = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $dailyBudgetCheck['campaign_id_2'], [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ],
+                        'json' => [
+                            "max_daily" => $daily_increment,
+                            "schedule_end_time" => $campaign_end_time
+                        ]
+                    ]);
+
+                    error_log("Updated Successfull " . $trafficstars_response2->getStatusCode());
+                } catch (Exception $e) {
+                    error_log("Max Daily Budget Updated Error " . $e->getMessage());
+                }
+            }
+
+            if (!empty($trafficStarStatus) && $trafficStarStatus == "paused" && $pendingClicks > 0) {
+                try {
+                    $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/run', [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken,
+                            'Content-Type' => 'application/json',
+                        ],
+                        'json' => [
+                            'campaign_ids' => [$dailyBudgetCheck['campaign_id_2']]
+                        ]
+                    ]);
+                    error_log("Traffic Stars Campaign Run " . $trafficstars_response->getStatusCode());
+                } catch (Exception $e) {
+                    error_log("Traffic Stars Campaign Run Error " . $e->getMessage());
+                }
+            }
+        } else if ($dailyBudgetCheck['current_budget'] < 10 && $dailyBudgetCheck["campaign_active"]) {
+
+            // try {
+            //     //Pause Traffic Start Campaign and run second condition to wait for 10000 Pending Clicks
+            //     $trafficstars_accesstoken = getAndRefreshAccessToken();
+            //     $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+            //     $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/pause', [
+            //         'headers' => [
+            //             'Content-Type' => 'application/json',
+            //             'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+            //         ],
+            //         'json' => [
+            //             'campaign_ids' => [$dailyBudgetCheck['campaign_id_2']]
+            //         ]
+            //     ]);
+            // } catch (Exception $e) {
+            // }    
+            if ($pendingClicks >= 15000) {
+                //If Pending Click >= 15000 Run Campaign If Paused 
+                //Set Campaign Activated False in our database if >= 15000 
+                setCampaignDeactive($dailyBudgetCheck["id"], 0);
+                $trafficstars_accesstoken = getAndRefreshAccessToken();
+                $campaign_end_time = null;
+                $trafficStarStatus = null;
+
+                try {
+                    $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                    $trafficstars_response = $trafficstars_client->get(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $dailyBudgetCheck['campaign_id_2'], [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                        ]
+                    ]);
+                    $trafficstars_response_body = json_decode($trafficstars_response->getBody()->getContents(), true);
+
+                    //Update Daily Increment And Update Time
+                    $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime(gmdate("Y-m-d") . " 23:59:00"));
+                    if (!empty($trafficstars_response_body['status'])) {
+                        $trafficStarStatus = $trafficstars_response_body['status'];
+                    }
+                } catch (Exception $e) {
+                    error_log("Getting Campaign Data Error Less Ten " . $e->getMessage());
+                }
+
+
+                if (!empty($campaign_end_time)) {
+                    try {
+                        $trafficstars_client2 = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                        $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $dailyBudgetCheck['campaign_id_2'], [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                            ],
+                            'json' => [
+                                "schedule_end_time" => $campaign_end_time
+                            ]
+                        ]);
+
+                        error_log("Updated Successfull  Less Ten " . $trafficstars_response2->getStatusCode());
+                    } catch (Exception $e) {
+                        error_log("Max Daily Budget Updated Error Less Ten " . $e->getMessage());
+                    }
+                }
+
+                if (!empty($trafficStarStatus) && $trafficStarStatus == "paused") {
+                    try {
+                        $trafficstars_client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                        $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/run', [
+                            'headers' => [
+                                'Authorization' => 'Bearer ' . $trafficstars_accesstoken,
+                                'Content-Type' => 'application/json',
+                            ],
+                            'json' => [
+                                'campaign_ids' => [$dailyBudgetCheck['campaign_id_2']]
+                            ]
+                        ]);
+                        error_log("Traffic Stars Campaign Run Less Ten " . $trafficstars_response->getStatusCode());
+                    } catch (Exception $e) {
+                        error_log("Traffic Stars Campaign Run Error Less Ten" . $e->getMessage());
+                    }
+                }
+            }
+        }
+    }  else {
+        error_log((!empty($dailyBudgetCheck['campaign_id_2']) && !empty($dailyBudgetCheck['current_budget'])) . "daily budget");
+    }*/
+
+    //Remove Landings From Campaign
+    // Update site status if necessary
+    if (!empty($removeSites)) {
+        //Remove From Campaign
+        foreach ($removeSites as $camp_id => $removeSite) {
+            try {
+                $client = new GuzzleHttp\Client([ 'timeout' => 10, 'connect_timeout' => 5]);
+                $getResponse = $client->get(BINOM_URL . '/public/api/v1/campaign/' . $removeSite['campaign_id_1'], [
+                    'headers' => [
+                        'accept' => 'application/json',
+                        'Api-Key' => BINOM_API,
+                    ]
+                ]);
+                $getResponseBody = $getResponse->getBody()->getContents();
+                $getResponseData = json_decode($getResponseBody, true);
+
+                if (!empty($getResponseData)) {
+                    unset($getResponseData['id']);
+                    $getResponseData['costModel'] = $getResponseData['cost']['model'];
+                    $getResponseData['currency'] = $getResponseData['cost']['money']['currency'];
+                    $getResponseData['hideReferrerType'] = $getResponseData['hideReferrer']['type'];
+                    $landings = [];
+                    if (!empty($getResponseData['customRotation']['defaultPaths'][0]['landings'])) {
+                        foreach ($getResponseData['customRotation']['defaultPaths'][0]['landings'] as $landing) {
+                            // if($landing['id'] != $site_data[0]['landing_id']){
+                            if (!in_array($landing['id'], $removeSite['landing_ids'])) {
+                                array_push($landings, $landing);
+                            }
+                        }
+                        $getResponseData['customRotation']['defaultPaths'][0]['landings'] = $landings;
+                    }
+
+                    $response = $client->put(BINOM_URL . '/public/api/v1/campaign/' . $removeSite['campaign_id_1'], [
+                        'headers' => [
+                            'Api-Key' => BINOM_API,
+                        ],
+                        //public/api/v1/rotation/{id}
+                        'json' => $getResponseData
+                    ]);
+
+                    // Get the response body (optional)
+                    $response_status = $response->getStatusCode();
+                    if ($response_status == 200) {
+                        //Success
+
+                        //Pause Campaign
+                        $trafficstars_accesstoken = getAndRefreshAccessToken();
+                        $sites_count = countSites($camp_id);
+                      error_log("Site Count InProgress ". $sites_count);
+                        if ($sites_count <= 0) {//&& strpos($trafficstars_accesstoken, "Error:") === false
+                            $trafficstars_client = new GuzzleHttp\Client();
+                            $trafficstars_response = $trafficstars_client->put(TRAFFIC_STAR_URL . '/v2/campaigns/pause', [
+                                'headers' => [
+                                    'Content-Type' => 'application/json',
+                                    'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                                ],
+                                'json' => [
+                                    'campaign_ids' => [intval($removeSite['campaign_id_2'])]
+                                ]
+                            ]);
+
+                            updateSecondConditionRunning($camp_id, 0);
+                            try {
+                                $trafficstars_client2 = new GuzzleHttp\Client();
+                                $campaign_end_time = gmdate("Y-m-d H:i:s", strtotime("+2 minutes"));
+                                $trafficstars_response2 = $trafficstars_client2->patch(TRAFFIC_STAR_URL . '/v1.1/campaigns/' . $removeSite['campaign_id_2'], [
+                                    'headers' => [
+                                        'Content-Type' => 'application/json',
+                                        'Authorization' => 'Bearer ' . $trafficstars_accesstoken
+                                    ],
+                                    'json' => [
+                                        "schedule_end_time" => $campaign_end_time
+                                    ]
+                                ]);
+                              //commented error log//error_log("Updated After Pause Traffic Star on No Site Left" . $trafficstars_response2->getStatusCode());
+                            } catch (Exception $e) {
+                              //commented error log//error_log("Updated Error After Pause Traffic Star on No Site Left" . $e->getMessage());
+                            }
+                          //commented error log//error_log("Traffic Stars Campaign Paused From Remove Sites " . $trafficstars_response->getStatusCode());
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+              //commented error log//error_log("Campaign Update Error: " . $e->getMessage());
+            }
+        }
+    }
+    sleep(10);
+}
