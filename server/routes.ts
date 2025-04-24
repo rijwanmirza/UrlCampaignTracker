@@ -758,6 +758,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/gmail-reader/status", (_req: Request, res: Response) => {
     try {
       const status = gmailReader.getStatus();
+      
+      // Make sure autoDeleteMinutes is explicitly included (in case it's undefined or not set)
+      if (status.config && typeof status.config.autoDeleteMinutes !== 'number') {
+        status.config.autoDeleteMinutes = 0; // Default value if not set
+      }
+      
+      console.log('🔍 DEBUG: Returning Gmail status with autoDeleteMinutes:', 
+                  status.config?.autoDeleteMinutes);
+      
       res.json(status);
     } catch (error) {
       res.status(500).json({ 
@@ -789,8 +798,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderIdRegex: new RegExp(result.data.messagePattern.orderIdRegex),
           urlRegex: new RegExp(result.data.messagePattern.urlRegex),
           quantityRegex: new RegExp(result.data.messagePattern.quantityRegex)
-        }
+        },
+        // Ensure autoDeleteMinutes is explicitly set (and default to 0 if undefined)
+        autoDeleteMinutes: typeof result.data.autoDeleteMinutes === 'number' 
+          ? result.data.autoDeleteMinutes 
+          : 0
       };
+      
+      console.log('🔍 DEBUG: Updating Gmail config with autoDeleteMinutes:', config.autoDeleteMinutes);
       
       // Check if the campaign exists
       const campaign = await storage.getCampaign(config.defaultCampaignId);
@@ -829,14 +844,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // First try SMTP verification (often more reliable with Gmail)
-      // Create a temporary instance with our credentials
+      // Get the current config to preserve important settings like autoDeleteMinutes
+      const currentConfig = gmailReader.getStatus().config;
+      
+      // Create a temporary config that preserves important settings
       const tempConfig = {
         user,
         password,
         host,
         port, 
         tls,
-        whitelistSenders: ['help@donot-reply.in'] // Include the requested whitelist
+        whitelistSenders: ['help@donot-reply.in'], // Include the requested whitelist
+        autoDeleteMinutes: currentConfig?.autoDeleteMinutes || 0 // Preserve auto-delete setting
       };
       
       // Update the main Gmail reader with the credentials for testing
