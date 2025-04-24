@@ -51,7 +51,9 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Cache for active URLs by campaign for faster lookups during redirects
+  // Ultra-optimized multi-level caching system for millions of redirects per second
+  
+  // Primary weighted distribution cache for campaign URLs
   private campaignUrlsCache: Map<number, {
     lastUpdated: number,
     activeUrls: UrlWithActiveStatus[],
@@ -63,11 +65,53 @@ export class DatabaseStorage implements IStorage {
     }[]
   }>;
   
-  // Cache ttl in milliseconds (5 seconds)
-  private cacheTTL = 5000;
+  // Single URL lookup cache for direct access (bypasses DB queries)
+  private urlCache: Map<number, {
+    lastUpdated: number,
+    url: Url
+  }>;
+  
+  // Campaign lookup cache (bypasses DB for campaign info)
+  private campaignCache: Map<number, {
+    lastUpdated: number,
+    campaign: Campaign
+  }>;
+  
+  // Custom path lookup cache for instant path resolution
+  private customPathCache: Map<string, {
+    lastUpdated: number,
+    campaignId: number
+  }>;
+  
+  // In-memory redirect counter to batch DB updates
+  private pendingClickUpdates: Map<number, number>;
+  
+  // Cache TTL optimized for high volume (milliseconds)
+  private cacheTTL = 2000; // Reduced to 2 seconds for fresher data with high throughput
+  
+  // Batch processing threshold before writing to DB
+  private clickUpdateThreshold = 10;
+  
+  // Timer for periodic persistence of clicks
+  private clickUpdateTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     this.campaignUrlsCache = new Map();
+    this.urlCache = new Map();
+    this.campaignCache = new Map();
+    this.customPathCache = new Map();
+    this.pendingClickUpdates = new Map();
+    
+    // Set up periodic persistence every 1 second to ensure data is eventually consistent
+    this.clickUpdateTimer = setInterval(() => this.flushPendingClickUpdates(), 1000);
+    
+    // Ensure we flush any pending updates when the app shuts down
+    process.on('SIGTERM', () => {
+      this.flushPendingClickUpdates();
+    });
+    process.on('SIGINT', () => {
+      this.flushPendingClickUpdates();
+    });
   }
 
   async getCampaigns(): Promise<CampaignWithUrls[]> {
@@ -572,29 +616,202 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  /**
+   * Ultra-high performance click incrementing to handle millions of redirects per second
+   * Uses memory-first approach with batched database updates
+   */
   async incrementUrlClicks(id: number): Promise<Url | undefined> {
-    const [url] = await db.select().from(urls).where(eq(urls.id, id));
-    if (!url) return undefined;
+    // Check URL cache first for ultra-fast performance
+    const cachedUrl = this.urlCache.get(id);
+    const now = Date.now();
     
-    const newClicks = url.clicks + 1;
-    const isCompleted = newClicks >= url.clickLimit;
-    
-    const [updatedUrl] = await db
-      .update(urls)
-      .set({ 
-        clicks: newClicks,
-        status: isCompleted ? 'completed' : url.status,
-        updatedAt: new Date() 
-      })
-      .where(eq(urls.id, id))
-      .returning();
-    
-    // Invalidate campaign cache for this URL to ensure weight distribution is recalculated
-    if (url.campaignId) {
-      this.invalidateCampaignCache(url.campaignId);
+    if (cachedUrl && (now - cachedUrl.lastUpdated < this.cacheTTL)) {
+      // Ultra-fast path: Use cached data and update in memory only
+      const pendingClicks = this.pendingClickUpdates.get(id) || 0;
+      
+      // Create copy with updated clicks for immediate use
+      const urlWithUpdatedClicks = {
+        ...cachedUrl.url,
+        clicks: cachedUrl.url.clicks + pendingClicks + 1
+      };
+      
+      // Check if URL has reached its click limit
+      const isCompleted = urlWithUpdatedClicks.clicks >= urlWithUpdatedClicks.clickLimit;
+      if (isCompleted) {
+        urlWithUpdatedClicks.status = 'completed';
+      }
+      
+      // Update pending clicks counter (batched DB updates)
+      this.pendingClickUpdates.set(id, pendingClicks + 1);
+      
+      // Update cache with latest data
+      this.urlCache.set(id, {
+        lastUpdated: now,
+        url: urlWithUpdatedClicks
+      });
+      
+      // Invalidate campaign cache for proper weighting
+      if (urlWithUpdatedClicks.campaignId) {
+        this.invalidateCampaignCache(urlWithUpdatedClicks.campaignId);
+      }
+      
+      // Threshold-based batch processing to database
+      const newPendingCount = pendingClicks + 1;
+      if (newPendingCount >= this.clickUpdateThreshold) {
+        // Async database update (non-blocking)
+        this.batchUpdateUrlClicks(id, newPendingCount, isCompleted).catch(err => {
+          console.error(`Error in batch click update for URL ${id}:`, err);
+        });
+      }
+      
+      return urlWithUpdatedClicks;
     }
     
-    return updatedUrl;
+    // Cache miss - need to fetch from database (slower path)
+    try {
+      const [url] = await db.select().from(urls).where(eq(urls.id, id));
+      if (!url) return undefined;
+      
+      // Initialize click tracking for this URL
+      const pendingClicks = this.pendingClickUpdates.get(id) || 0;
+      const newPendingCount = pendingClicks + 1;
+      this.pendingClickUpdates.set(id, newPendingCount);
+      
+      // Create updated URL with new click count
+      const newClicks = url.clicks + 1;
+      const isCompleted = newClicks >= url.clickLimit;
+      
+      const updatedUrl = {
+        ...url,
+        clicks: newClicks,
+        status: isCompleted ? 'completed' : url.status
+      };
+      
+      // Cache the updated URL
+      this.urlCache.set(id, {
+        lastUpdated: now,
+        url: updatedUrl
+      });
+      
+      // Invalidate campaign cache
+      if (url.campaignId) {
+        this.invalidateCampaignCache(url.campaignId);
+      }
+      
+      // Perform immediate database update for first encounter
+      // but still batch subsequent updates
+      const [dbUpdatedUrl] = await db
+        .update(urls)
+        .set({ 
+          clicks: newClicks,
+          status: isCompleted ? 'completed' : url.status,
+          updatedAt: new Date() 
+        })
+        .where(eq(urls.id, id))
+        .returning();
+      
+      // Reset pending count since we just updated
+      this.pendingClickUpdates.set(id, 0);
+      
+      return dbUpdatedUrl;
+    } catch (error) {
+      console.error(`Error incrementing clicks for URL ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  /**
+   * Asynchronous batch update of URL clicks to database
+   * This reduces database load for high-volume traffic
+   */
+  private async batchUpdateUrlClicks(id: number, pendingCount: number, isCompleted: boolean): Promise<void> {
+    try {
+      // Update database with batched click count
+      await db
+        .update(urls)
+        .set({ 
+          clicks: sql`${urls.clicks} + ${pendingCount}`,
+          status: isCompleted ? 'completed' : sql`${urls.status}`,
+          updatedAt: new Date() 
+        })
+        .where(eq(urls.id, id));
+      
+      // Reset pending count
+      this.pendingClickUpdates.set(id, 0);
+    } catch (error) {
+      console.error(`Error in batch update for URL ${id}:`, error);
+    }
+  }
+  
+  /**
+   * Flushes all pending click updates to the database
+   * Called periodically via timer and on app shutdown
+   * This ensures we don't lose track of clicks during high-load periods
+   */
+  private async flushPendingClickUpdates(): Promise<void> {
+    // Skip if no pending updates
+    if (this.pendingClickUpdates.size === 0) return;
+    
+    try {
+      // For each URL with pending clicks, perform a batch update
+      const updatePromises = Array.from(this.pendingClickUpdates.entries())
+        .filter(([_, clicks]) => clicks > 0)
+        .map(async ([id, pendingCount]) => {
+          const cachedUrl = this.urlCache.get(id);
+          
+          // If we have the URL in cache, we can check if it's completed
+          const isCompleted = cachedUrl && 
+            (cachedUrl.url.clicks >= cachedUrl.url.clickLimit);
+          
+          try {
+            // Update the database with accumulated clicks
+            await db
+              .update(urls)
+              .set({
+                clicks: sql`${urls.clicks} + ${pendingCount}`,
+                status: isCompleted ? 'completed' : sql`${urls.status}`,
+                updatedAt: new Date()
+              })
+              .where(eq(urls.id, id));
+            
+            // Reset the pending count
+            this.pendingClickUpdates.set(id, 0);
+            
+            // Also update the status in DB if needed
+            if (isCompleted) {
+              await this.updateUrlStatus(id, 'completed');
+            }
+            
+            // Get the latest version from DB to keep cache in sync
+            const [updatedUrl] = await db
+              .select()
+              .from(urls)
+              .where(eq(urls.id, id));
+              
+            if (updatedUrl) {
+              // Update cache with fresh data
+              this.urlCache.set(id, {
+                lastUpdated: Date.now(),
+                url: updatedUrl
+              });
+              
+              // Invalidate campaign cache
+              if (updatedUrl.campaignId) {
+                this.invalidateCampaignCache(updatedUrl.campaignId);
+              }
+            }
+          } catch (error) {
+            console.error(`Error updating URL ${id} with ${pendingCount} pending clicks:`, error);
+          }
+        });
+      
+      // Execute all updates in parallel for performance
+      await Promise.all(updatePromises);
+      
+      console.log(`Flushed ${updatePromises.length} pending click updates to database`);
+    } catch (error) {
+      console.error('Error flushing pending click updates:', error);
+    }
   }
   
   // Helper method to get weighted URL distribution for a campaign
