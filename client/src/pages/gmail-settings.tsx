@@ -879,6 +879,28 @@ export default function GmailSettingsPage() {
                         </FormItem>
                       )}
                     />
+                    
+                    <FormField
+                      control={form.control}
+                      name="autoDeleteMinutes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Auto-Delete Processed Emails (minutes)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Minutes after processing when emails will be automatically deleted. 
+                            Set to 0 to disable auto-deletion.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                   
                   <CardFooter className="px-0 flex justify-between">
