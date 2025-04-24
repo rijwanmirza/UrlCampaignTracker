@@ -89,7 +89,7 @@ export default function GmailSettingsPage() {
           orderIdRegex: messagePattern.orderIdRegex ? messagePattern.orderIdRegex.toString().slice(1, -1) : 'Order Id\\s*:\\s*(\\d+)',
           urlRegex: messagePattern.urlRegex ? messagePattern.urlRegex.toString().slice(1, -1) : 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
           quantityRegex: messagePattern.quantityRegex ? messagePattern.quantityRegex.toString().slice(1, -1) : 'Quantity\\s*:\\s*(\\d+)',
-          defaultCampaignId: config.defaultCampaignId || (campaigns.length > 0 ? campaigns[0].id : 0),
+          defaultCampaignId: config.defaultCampaignId !== undefined && config.defaultCampaignId !== null ? config.defaultCampaignId : (campaigns.length > 0 ? campaigns[0].id : 0),
           checkInterval: config.checkInterval || 60000,
           autoDeleteMinutes: config.autoDeleteMinutes || 0
         });
@@ -112,7 +112,7 @@ export default function GmailSettingsPage() {
       orderIdRegex: 'Order Id\\s*:\\s*(\\d+)',
       urlRegex: 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
       quantityRegex: 'Quantity\\s*:\\s*(\\d+)',
-      defaultCampaignId: campaigns.length > 0 ? campaigns[0].id : 0,
+      defaultCampaignId: 0, // Initially set to 0, will be properly set from config when loaded
       checkInterval: 60000,
       autoDeleteMinutes: 0
     }
