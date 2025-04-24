@@ -1160,6 +1160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
+  // Use SPDY to create an HTTP/2 capable server
+  const httpServer = spdy.createServer(spdyOptions, app);
   return httpServer;
 }
