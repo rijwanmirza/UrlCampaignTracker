@@ -594,7 +594,111 @@ class GmailReader {
   // Track if we've done the initial scan
   private initialScanComplete = false;
   
-  // Delete multiple emails at once - improved approach
+  // Clean up our processed emails log - keep only the IDs that actually exist in Gmail
+  public async synchronizeProcessedEmailLog(): Promise<void> {
+    if (!this.isRunning || this.imap.state !== 'authenticated') {
+      log(`Cannot synchronize email log: IMAP connection not ready`, 'gmail-reader');
+      return;
+    }
+    
+    try {
+      // Get actual emails in the Gmail inbox
+      const actualEmails = await new Promise<string[]>((resolve) => {
+        this.imap.openBox('INBOX', true, (err, box) => {
+          if (err) {
+            log(`Error opening inbox for log sync: ${err.message}`, 'gmail-reader');
+            resolve([]);
+            return;
+          }
+          
+          this.imap.search(['ALL'], (err, results) => {
+            if (err) {
+              log(`Error searching emails for log sync: ${err.message}`, 'gmail-reader');
+              resolve([]);
+              return;
+            }
+            
+            resolve(results.map(r => r.toString()));
+          });
+        });
+      });
+      
+      if (actualEmails.length === 0) {
+        log(`No emails found in Gmail inbox, cannot synchronize log`, 'gmail-reader');
+        return;
+      }
+      
+      log(`Found ${actualEmails.length} actual emails in Gmail inbox for log synchronization`, 'gmail-reader');
+      
+      // Check each email ID in our processed log against actual Gmail inbox
+      const removedIds: string[] = [];
+      
+      // Convert keys() iterator to array to avoid TypeScript error
+      const emailIds = Array.from(this.processedEmails.keys());
+      
+      for (const emailId of emailIds) {
+        if (!actualEmails.includes(emailId)) {
+          // This email doesn't exist in Gmail, so remove it from our log
+          this.processedEmails.delete(emailId);
+          removedIds.push(emailId);
+        }
+      }
+      
+      // Save the updated log to the file system
+      this.saveProcessedEmailsToFile();
+      
+      log(`Email log sync complete. Removed ${removedIds.length} non-existent email IDs from our log.`, 'gmail-reader');
+    } catch (error) {
+      log(`Error synchronizing email log: ${error}`, 'gmail-reader');
+    }
+  }
+  
+  // Get actual emails from Gmail inbox
+  private async getActualGmailEmails(): Promise<string[]> {
+    if (!this.isRunning || this.imap.state !== 'authenticated') {
+      return [];
+    }
+    
+    return new Promise<string[]>((resolve) => {
+      this.imap.openBox('INBOX', true, (err, box) => {
+        if (err) {
+          log(`Error opening inbox: ${err.message}`, 'gmail-reader');
+          resolve([]);
+          return;
+        }
+        
+        this.imap.search(['ALL'], (err, results) => {
+          if (err) {
+            log(`Error searching emails: ${err.message}`, 'gmail-reader');
+            resolve([]);
+            return;
+          }
+          
+          resolve(results.map(r => r.toString()));
+        });
+      });
+    });
+  }
+  
+  // Validate which emails actually exist in Gmail
+  private async validateEmailsExist(emailIds: string[]): Promise<string[]> {
+    // Get the actual emails in Gmail
+    const actualEmails = await this.getActualGmailEmails();
+    
+    if (actualEmails.length === 0) {
+      log(`Could not retrieve actual emails from Gmail to validate`, 'gmail-reader');
+      return [];
+    }
+    
+    // Filter the email IDs to only those that exist in Gmail
+    const validEmailIds = emailIds.filter(id => actualEmails.includes(id));
+    
+    log(`Out of ${emailIds.length} emails to delete, found ${validEmailIds.length} that actually exist in Gmail`, 'gmail-reader');
+    
+    return validEmailIds;
+  }
+  
+  // Delete multiple emails at once - improved approach with validation
   private async performBulkDeletion(emailIds: string[]): Promise<number> {
     if (!this.isRunning || this.imap.state !== 'authenticated') {
       log(`Cannot delete emails: IMAP connection not ready`, 'gmail-reader');
@@ -606,7 +710,19 @@ class GmailReader {
     }
     
     try {
-      // Use a stronger approach for bulk deletion
+      // First validate which emails actually exist
+      const validEmailIds = await this.validateEmailsExist(emailIds);
+      
+      if (validEmailIds.length === 0) {
+        log(`None of the ${emailIds.length} emails to delete actually exist in Gmail. Cleaning up our processed emails log.`, 'gmail-reader');
+        
+        // If no emails exist, we should clean up our processed emails log
+        await this.synchronizeProcessedEmailLog();
+        
+        return 0;
+      }
+      
+      // Use a stronger approach for bulk deletion with validated IDs
       return new Promise<number>((resolve) => {
         // Re-create the connection - fresh connection helps improve reliability
         this.imap.closeBox((err) => {
@@ -622,18 +738,18 @@ class GmailReader {
               return;
             }
             
-            log(`Marking ${emailIds.length} emails for deletion...`, 'gmail-reader');
+            log(`Marking ${validEmailIds.length} valid emails for deletion...`, 'gmail-reader');
             
             try {
               // Use a more efficient approach - mark all in one command
-              this.imap.addFlags(emailIds.join(','), '\\Deleted', (err) => {
+              this.imap.addFlags(validEmailIds.join(','), '\\Deleted', (err) => {
                 if (err) {
                   log(`Error marking emails for deletion: ${err.message}`, 'gmail-reader');
                   resolve(0);
                   return;
                 }
                 
-                log(`Successfully marked ${emailIds.length} emails for deletion, expunging...`, 'gmail-reader');
+                log(`Successfully marked ${validEmailIds.length} emails for deletion, expunging...`, 'gmail-reader');
                 
                 // Expunge to actually remove the messages
                 this.imap.expunge((err) => {
@@ -643,8 +759,8 @@ class GmailReader {
                     return;
                   }
                   
-                  log(`🧹 Successfully deleted ${emailIds.length} emails in bulk operation`, 'gmail-reader');
-                  resolve(emailIds.length);
+                  log(`🧹 Successfully deleted ${validEmailIds.length} emails in bulk operation`, 'gmail-reader');
+                  resolve(validEmailIds.length);
                 });
               });
             } catch (error) {
