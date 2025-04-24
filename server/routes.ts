@@ -520,16 +520,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case "http2_307_temporary":
-          // HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
-          // Force HTTP/2.0 protocol in the response
-          res.setHeader("HTTP-Version", "HTTP/2.0");
-          res.setHeader("X-HTTP-Version", "HTTP/2.0");
-          res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
-          res.setHeader("Upgrade", "h2,h2c");
-          res.setHeader("Connection", "Upgrade, keep-alive");
+          // Ultra-fast HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
+          // Clear any existing headers that might slow down the response
+          res.removeHeader('X-Powered-By');
+          res.removeHeader('Connection');
+          res.removeHeader('Transfer-Encoding');
           
-          // Simply send a 307 status - HTTP/2 is handled at the server protocol level
-          res.status(307).header("Location", targetUrl).end();
+          // Set minimal headers for the fastest possible HTTP/2 redirect
+          res.setHeader("content-length", "0");
+          res.setHeader("location", targetUrl);
+          res.setHeader("alt-svc", "h3=\":443\"; ma=86400");
+          
+          // Send immediate response without any processing delay
+          res.writeHead(307);
+          res.end();
           break;
           
         case "direct":
