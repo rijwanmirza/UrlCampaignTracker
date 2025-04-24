@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import compression from "compression";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
+import { initializeTrafficStar } from "./init-trafficstar";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -122,8 +123,16 @@ app.use((req, res, next) => {
       } catch (verifyError) {
         log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
       }
+      
+      // Initialize TrafficStar with API key from environment variable
+      try {
+        await initializeTrafficStar();
+        log('TrafficStar API initialized successfully');
+      } catch (trafficstarError) {
+        log(`Error initializing TrafficStar API: ${trafficstarError}`);
+      }
     } catch (error) {
-      log(`Error auto-configuring Gmail reader: ${error}`, 'gmail-reader');
+      log(`Error auto-configuring integrations: ${error}`, 'startup');
     }
   });
 })();

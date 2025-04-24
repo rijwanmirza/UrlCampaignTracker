@@ -266,7 +266,7 @@ export default function TrafficstarPage() {
     <div className="container py-10">
       <h1 className="text-3xl font-bold mb-6">TrafficStar API Integration</h1>
       
-      {!isConfigured ? (
+      {false && !isConfigured ? ( // Hide API key form completely - API key is now stored in env variable
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>API Configuration</CardTitle>
