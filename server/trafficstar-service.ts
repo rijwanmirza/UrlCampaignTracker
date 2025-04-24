@@ -136,16 +136,127 @@ class TrafficStarService {
   async getCampaigns(): Promise<Campaign[]> {
     try {
       const token = await this.ensureToken();
-      const response = await axios.get<CampaignsResponse>(`${API_BASE_URL}/campaigns`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      
+      let campaigns: Campaign[] = [];
+      let success = false;
+      let lastError = null;
+      
+      // Try different endpoint patterns
+      for (const baseUrl of API_BASE_URLS) {
+        try {
+          console.log(`Trying to get campaigns using endpoint: ${baseUrl}/campaigns`);
+          const response = await axios.get<CampaignsResponse>(`${baseUrl}/campaigns`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+          });
+          
+          // Check the response structure to ensure it's what we expect
+          if (response.data && response.data.response && Array.isArray(response.data.response)) {
+            console.log(`Successfully retrieved ${response.data.response.length} campaigns from ${baseUrl}/campaigns`);
+            campaigns = response.data.response;
+            success = true;
+            
+            // Sync campaigns to database
+            await this.syncCampaignsToDatabase(campaigns);
+            
+            break;
+          } else {
+            console.log(`Received unexpected response format from ${baseUrl}/campaigns`);
+            console.log(`Response structure: ${JSON.stringify(Object.keys(response.data))}`);
+          }
+        } catch (error) {
+          console.log(`Failed to get campaigns using endpoint: ${baseUrl}/campaigns`);
+          lastError = error;
+          // Continue to next attempt
+        }
+        
+        // Some API implementations use a different response format
+        try {
+          console.log(`Trying alternate format to get campaigns using endpoint: ${baseUrl}/campaigns`);
+          const response = await axios.get(`${baseUrl}/campaigns`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+          });
+          
+          // If the response has data but not in the expected format, try to parse it
+          if (response.data) {
+            let extractedCampaigns: Campaign[] = [];
+            
+            // Check if response is directly an array of campaigns
+            if (Array.isArray(response.data)) {
+              extractedCampaigns = response.data;
+            } 
+            // Check if response has a 'data' or 'items' field with an array
+            else if (response.data.data && Array.isArray(response.data.data)) {
+              extractedCampaigns = response.data.data;
+            } 
+            else if (response.data.items && Array.isArray(response.data.items)) {
+              extractedCampaigns = response.data.items;
+            }
+            // Check if response has a 'campaigns' field with an array
+            else if (response.data.campaigns && Array.isArray(response.data.campaigns)) {
+              extractedCampaigns = response.data.campaigns;
+            }
+            
+            if (extractedCampaigns.length > 0) {
+              console.log(`Successfully retrieved ${extractedCampaigns.length} campaigns from ${baseUrl}/campaigns (alternate format)`);
+              campaigns = extractedCampaigns;
+              success = true;
+              
+              // Sync campaigns to database
+              await this.syncCampaignsToDatabase(campaigns);
+              
+              break;
+            }
+          }
+        } catch (error) {
+          console.log(`Failed to get campaigns using alternate format from endpoint: ${baseUrl}/campaigns`);
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        // If we get here, all attempts failed, try to return any saved campaigns from DB
+        const savedCampaigns = await this.getSavedCampaigns();
+        
+        if (savedCampaigns && savedCampaigns.length > 0) {
+          console.log(`Returning ${savedCampaigns.length} saved campaigns from database as API calls failed`);
+          
+          // Get an array of campaigns from the database and convert to Campaign objects
+          const campaignArray: Campaign[] = [];
+          
+          for (const dbCampaign of savedCampaigns) {
+            // If we have full campaign data stored, use it
+            if (dbCampaign.campaignData) {
+              campaignArray.push(dbCampaign.campaignData as Campaign);
+            } else {
+              // Otherwise construct a basic Campaign object from DB fields
+              campaignArray.push({
+                id: parseInt(dbCampaign.trafficstarId),
+                name: dbCampaign.name || '',
+                status: dbCampaign.status || '',
+                approved: dbCampaign.status || '',
+                active: !!dbCampaign.active,
+                is_archived: !!dbCampaign.isArchived,
+                max_daily: dbCampaign.maxDaily ? parseFloat(dbCampaign.maxDaily) : 0,
+                pricing_model: dbCampaign.pricingModel || '',
+                schedule_end_time: dbCampaign.scheduleEndTime || ''
+              });
+            }
+          }
+          
+          return campaignArray;
+        }
+        
+        // If no saved campaigns, throw error
+        throw new Error(`All API endpoints failed and no saved campaigns available. Last error: ${lastError}`);
+      }
 
-      // Sync campaigns to database
-      await this.syncCampaignsToDatabase(response.data.response);
-
-      return response.data.response;
+      return campaigns;
     } catch (error) {
       console.error('Error getting TrafficStar campaigns:', error);
       throw new Error('Failed to get campaigns from TrafficStar API');
@@ -158,13 +269,96 @@ class TrafficStarService {
   async getCampaign(id: number): Promise<Campaign> {
     try {
       const token = await this.ensureToken();
-      const response = await axios.get<Campaign>(`${API_BASE_URL}/campaigns/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      
+      let campaign: Campaign | null = null;
+      let success = false;
+      let lastError = null;
+      
+      // Try different endpoint patterns
+      for (const baseUrl of API_BASE_URLS) {
+        try {
+          console.log(`Trying to get campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          const response = await axios.get(`${baseUrl}/campaigns/${id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+          });
+          
+          if (response.data) {
+            // Check if response has the expected format (direct Campaign object)
+            if (response.data.id && (
+                response.data.name || 
+                response.data.status || 
+                typeof response.data.active !== 'undefined'
+            )) {
+              console.log(`Successfully retrieved campaign ${id} from ${baseUrl}/campaigns/${id}`);
+              campaign = response.data;
+              success = true;
+              break;
+            } 
+            // Check if response has a 'response' wrapper (common in some APIs)
+            else if (response.data.response && (
+                response.data.response.id || 
+                response.data.response.name || 
+                typeof response.data.response.active !== 'undefined'
+            )) {
+              console.log(`Successfully retrieved campaign ${id} from ${baseUrl}/campaigns/${id} (wrapped in 'response' field)`);
+              campaign = response.data.response;
+              success = true;
+              break;
+            }
+            // Check if response has a 'data' wrapper (common in some APIs)
+            else if (response.data.data && (
+                response.data.data.id || 
+                response.data.data.name || 
+                typeof response.data.data.active !== 'undefined'
+            )) {
+              console.log(`Successfully retrieved campaign ${id} from ${baseUrl}/campaigns/${id} (wrapped in 'data' field)`);
+              campaign = response.data.data;
+              success = true;
+              break;
+            }
+            
+            console.log(`Received response from ${baseUrl}/campaigns/${id} but campaign data not found`);
+            console.log(`Response structure: ${JSON.stringify(Object.keys(response.data))}`);
+          }
+        } catch (error) {
+          console.log(`Failed to get campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          lastError = error;
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        // If we get here, all attempts failed, try to find the campaign in the database
+        const [savedCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        if (savedCampaign) {
+          console.log(`Returning saved campaign ${id} from database as API calls failed`);
+          
+          // Convert database record to Campaign format
+          return savedCampaign.campaignData || {
+            id: parseInt(savedCampaign.trafficstarId),
+            name: savedCampaign.name || '',
+            status: savedCampaign.status || '',
+            approved: savedCampaign.status || '',
+            active: !!savedCampaign.active,
+            is_archived: !!savedCampaign.isArchived,
+            max_daily: savedCampaign.maxDaily ? parseFloat(savedCampaign.maxDaily) : 0,
+            pricing_model: savedCampaign.pricingModel || '',
+            schedule_end_time: savedCampaign.scheduleEndTime || ''
+          } as Campaign;
+        }
+        
+        // If no saved campaign found, throw error
+        throw new Error(`All API endpoints failed and campaign ${id} not found in database. Last error: ${lastError}`);
+      }
 
-      return response.data;
+      return campaign as Campaign;
     } catch (error) {
       console.error(`Error getting TrafficStar campaign ${id}:`, error);
       throw new Error(`Failed to get campaign ${id} from TrafficStar API`);
@@ -178,32 +372,108 @@ class TrafficStarService {
     try {
       const token = await this.ensureToken();
       
-      // Try updated API format - API v2 style
+      // Try all possible API endpoint formats until one works
+      let success = false;
+      let lastError = null;
+      
+      // Get detailed information about this campaign first to understand its current state
       try {
-        await axios.post(`${API_BASE_URL}/campaigns/${id}/pause`, {}, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        });
-      } catch (apiV1Error) {
-        console.log(`API v1 endpoint failed, trying alternate format for campaign ${id}`);
+        console.log(`Getting campaign details for ID ${id} before attempting to pause`);
+        const campaign = await this.getCampaign(id);
+        console.log(`Campaign ${id} current status: ${JSON.stringify({
+          name: campaign.name,
+          active: campaign.active,
+          status: campaign.status
+        })}`);
+      } catch (infoError) {
+        console.log(`Could not get campaign ${id} details: ${infoError}`);
+      }
+      
+      // Try different endpoint patterns
+      for (const baseUrl of API_BASE_URLS) {
+        // Format 1: POST /campaigns/{id}/pause
+        try {
+          console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
+          await axios.post(`${baseUrl}/campaigns/${id}/pause`, {}, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
+          success = true;
+          break;
+        } catch (error) {
+          console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
+          lastError = error;
+          // Continue to next attempt
+        }
         
-        // Try alternate API format if the first one fails
-        await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
-          active: false
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        });
+        // Format 2: PUT /campaigns/{id} with active=false
+        try {
+          console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
+          await axios.put(`${baseUrl}/campaigns/${id}`, {
+            active: false
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
+          success = true;
+          break;
+        } catch (error) {
+          console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
+          lastError = error;
+          // Continue to next attempt
+        }
+        
+        // Format 3: POST /campaigns/{id}/status with status=paused
+        try {
+          console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
+          await axios.post(`${baseUrl}/campaigns/${id}/status`, {
+            status: 'paused'
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
+          success = true;
+          break;
+        } catch (error) {
+          console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
+          lastError = error;
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        // If we're here, all attempts failed
+        console.error(`All attempts to pause campaign ${id} failed. Last error:`, lastError);
+        throw new Error(`Could not pause campaign. All API endpoints failed.`);
       }
 
       // Update local record
       await db.update(trafficstarCampaigns)
         .set({ active: false, updatedAt: new Date() })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+      // Verify the campaign was actually paused
+      try {
+        console.log(`Verifying campaign ${id} was successfully paused`);
+        const campaign = await this.getCampaign(id);
+        console.log(`Campaign ${id} updated status: ${JSON.stringify({
+          name: campaign.name,
+          active: campaign.active,
+          status: campaign.status
+        })}`);
+      } catch (verifyError) {
+        console.log(`Could not verify pause status for campaign ${id}: ${verifyError}`);
+      }
+      
     } catch (error) {
       console.error(`Error pausing TrafficStar campaign ${id}:`, error);
       throw new Error(`Failed to pause campaign ${id}`);
@@ -217,32 +487,108 @@ class TrafficStarService {
     try {
       const token = await this.ensureToken();
       
-      // Try updated API format - API v2 style
+      // Try all possible API endpoint formats until one works
+      let success = false;
+      let lastError = null;
+      
+      // Get detailed information about this campaign first to understand its current state
       try {
-        await axios.post(`${API_BASE_URL}/campaigns/${id}/enable`, {}, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        });
-      } catch (apiV1Error) {
-        console.log(`API v1 endpoint failed, trying alternate format for campaign ${id}`);
+        console.log(`Getting campaign details for ID ${id} before attempting to activate`);
+        const campaign = await this.getCampaign(id);
+        console.log(`Campaign ${id} current status: ${JSON.stringify({
+          name: campaign.name,
+          active: campaign.active,
+          status: campaign.status
+        })}`);
+      } catch (infoError) {
+        console.log(`Could not get campaign ${id} details: ${infoError}`);
+      }
+      
+      // Try different endpoint patterns
+      for (const baseUrl of API_BASE_URLS) {
+        // Format 1: POST /campaigns/{id}/enable
+        try {
+          console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
+          await axios.post(`${baseUrl}/campaigns/${id}/enable`, {}, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
+          success = true;
+          break;
+        } catch (error) {
+          console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
+          lastError = error;
+          // Continue to next attempt
+        }
         
-        // Try alternate API format if the first one fails
-        await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
-          active: true
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        });
+        // Format 2: PUT /campaigns/{id} with active=true
+        try {
+          console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=true`);
+          await axios.put(`${baseUrl}/campaigns/${id}`, {
+            active: true
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=true`);
+          success = true;
+          break;
+        } catch (error) {
+          console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=true`);
+          lastError = error;
+          // Continue to next attempt
+        }
+        
+        // Format 3: POST /campaigns/{id}/status with status=active
+        try {
+          console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
+          await axios.post(`${baseUrl}/campaigns/${id}/status`, {
+            status: 'active'
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
+          success = true;
+          break;
+        } catch (error) {
+          console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
+          lastError = error;
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        // If we're here, all attempts failed
+        console.error(`All attempts to activate campaign ${id} failed. Last error:`, lastError);
+        throw new Error(`Could not activate campaign. All API endpoints failed.`);
       }
 
       // Update local record
       await db.update(trafficstarCampaigns)
         .set({ active: true, updatedAt: new Date() })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+      // Verify the campaign was actually activated
+      try {
+        console.log(`Verifying campaign ${id} was successfully activated`);
+        const campaign = await this.getCampaign(id);
+        console.log(`Campaign ${id} updated status: ${JSON.stringify({
+          name: campaign.name,
+          active: campaign.active,
+          status: campaign.status
+        })}`);
+      } catch (verifyError) {
+        console.log(`Could not verify activate status for campaign ${id}: ${verifyError}`);
+      }
+      
     } catch (error) {
       console.error(`Error activating TrafficStar campaign ${id}:`, error);
       throw new Error(`Failed to activate campaign ${id}`);
