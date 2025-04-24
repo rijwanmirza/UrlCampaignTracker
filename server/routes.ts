@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import * as spdy from 'spdy';
+import spdy from 'spdy';
 import { storage } from "./storage";
 import { 
   insertCampaignSchema, 
