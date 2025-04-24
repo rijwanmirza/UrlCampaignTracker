@@ -68,6 +68,7 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
       redirectMethod: RedirectMethod.DIRECT,
       customPath: "",
       multiplier: 1,
+      pricePerThousand: 0,
     },
   });
 
@@ -246,6 +247,63 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                   </FormControl>
                   <FormDescription>
                     Multiply all URL click limits in this campaign by this value.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="pricePerThousand"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormLabel>Price Per 1000 Clicks</FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InfoIcon className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="w-[220px] text-xs">
+                            Set the price per 1000 clicks for this campaign.
+                            This will be used to calculate the total price based on required clicks.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <FormControl>
+                    <div className="flex items-center">
+                      <div className="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 rounded-l-md text-sm">
+                        $
+                      </div>
+                      <Input 
+                        type="number" 
+                        min="0"
+                        max="10000"
+                        step="0.0001"
+                        {...field}
+                        className="rounded-l-none"
+                        onChange={(e) => {
+                          // Handle empty/invalid input cases
+                          const value = e.target.value === '' ? '' : e.target.value;
+                          // Only update field if value is valid
+                          const parsedValue = parseFloat(value);
+                          if (!isNaN(parsedValue)) {
+                            field.onChange(parsedValue);
+                          } else {
+                            // For empty input, set field to empty string to allow user typing
+                            field.onChange(value);
+                          }
+                        }}
+                        value={field.value}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Price per 1000 clicks (e.g., $5.50 = $5.50 per 1000 clicks, or $0.0055 per click)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

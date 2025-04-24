@@ -93,14 +93,14 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
             
             <div>
               <span className="text-sm font-medium text-gray-500">Click Multiplier:</span>
-              <p className="text-gray-900 flex items-center gap-1">
+              <div className="text-gray-900 flex items-center gap-1">
                 {campaign.multiplier || 1}
                 {Number(campaign.multiplier) > 1 && (
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                     Active
                   </Badge>
                 )}
-              </p>
+              </div>
             </div>
 
             <div>
