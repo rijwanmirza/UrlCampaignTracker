@@ -5,12 +5,28 @@ export interface FormattedCampaign extends CampaignWithUrls {
   totalClicks: number;
   remainingClicks: number;
   redirectMethod: string;
+  // Price related fields
+  totalPrice: number;          // Total price based on all required clicks
+  remainingPrice: number;      // Remaining price for remaining clicks
+  pricePerClick: number;       // Price per individual click
+  priceFormatted: string;      // Formatted as "$0.50/$1.00" (remaining/total)
 }
 
 export const formatCampaign = (campaign: CampaignWithUrls): FormattedCampaign => {
   const activeUrlCount = campaign.urls.filter(url => url.isActive).length;
   const totalClicks = campaign.urls.reduce((sum, url) => sum + url.clicks, 0);
+  const totalRequiredClicks = campaign.urls.reduce((sum, url) => sum + url.clickLimit, 0);
   const remainingClicks = campaign.urls.reduce((sum, url) => sum + Math.max(0, url.clickLimit - url.clicks), 0);
+  
+  // Calculate price related fields (price per 1000 = pricePerThousand)
+  const pricePerThousand = typeof campaign.pricePerThousand === 'string' 
+    ? parseFloat(campaign.pricePerThousand) 
+    : (campaign.pricePerThousand || 0);
+  
+  const pricePerClick = pricePerThousand / 1000;
+  const totalPrice = (totalRequiredClicks * pricePerClick);
+  const remainingPrice = (remainingClicks * pricePerClick);
+  const priceFormatted = `$${remainingPrice.toFixed(2)}/$${totalPrice.toFixed(2)}`;
 
   return {
     ...campaign,
@@ -18,6 +34,11 @@ export const formatCampaign = (campaign: CampaignWithUrls): FormattedCampaign =>
     activeUrlCount,
     totalClicks,
     remainingClicks,
+    // Price fields
+    totalPrice,
+    remainingPrice,
+    pricePerClick,
+    priceFormatted,
   };
 };
 

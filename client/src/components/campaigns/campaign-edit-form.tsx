@@ -42,6 +42,7 @@ const campaignEditSchema = z.object({
   redirectMethod: z.string(),
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01, "Multiplier must be at least 0.01").optional(),
+  pricePerThousand: z.number().min(0, "Price must be at least 0").max(10000, "Price can't exceed $10,000").optional(),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -64,6 +65,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       redirectMethod: campaign.redirectMethod,
       customPath: campaign.customPath || "",
       multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
+      pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     },
   });
   

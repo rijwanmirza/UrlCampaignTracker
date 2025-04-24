@@ -30,6 +30,7 @@ export const campaigns = pgTable("campaigns", {
   redirectMethod: text("redirect_method").default(RedirectMethod.DIRECT).notNull(),
   customPath: text("custom_path").unique(), // Custom path for campaign URLs
   multiplier: numeric("multiplier", { precision: 10, scale: 2 }).default("1").notNull(), // Multiplier for URL click limits (supports decimals)
+  pricePerThousand: numeric("price_per_thousand", { precision: 10, scale: 4 }).default("0").notNull(), // Price per 1000 clicks in dollars (supports 4 decimal places)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -49,6 +50,7 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   ]).default(RedirectMethod.DIRECT),
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01).default(1),
+  pricePerThousand: z.number().min(0).max(10000).default(0),
 });
 
 export const updateCampaignSchema = createInsertSchema(campaigns).omit({
@@ -66,6 +68,7 @@ export const updateCampaignSchema = createInsertSchema(campaigns).omit({
   ]).optional(),
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01).optional(),
+  pricePerThousand: z.number().min(0).max(10000).optional(),
 });
 
 // URL schema
