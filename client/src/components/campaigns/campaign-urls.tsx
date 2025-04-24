@@ -100,9 +100,9 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
   // Sort URLs by ID descending (newest first)
   const sortedUrls = [...filteredUrls].sort((a, b) => b.id - a.id);
   
-  // For mobile view, we ensure that display limit can be much higher than 100
-  // On mobile, we'll add a special selector to see all URLs on one page
-  const effectiveDisplayLimit = isMobile ? Math.max(1000, displayLimit) : displayLimit;
+  // FORCE all users to have higher limits by default, regardless of device
+  // This ensures everyone can see more URLs regardless of device detection
+  const effectiveDisplayLimit = Math.max(9999, displayLimit);
   
   // Apply limit to the displayed URLs
   const displayedUrls = sortedUrls.slice(0, effectiveDisplayLimit);
@@ -325,13 +325,12 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
                 <SelectItem value="200">200</SelectItem>
                 <SelectItem value="500">500</SelectItem>
                 <SelectItem value="1000">1000</SelectItem>
-                {isMobile && (
-                  <>
-                    <SelectItem value="2000">2000</SelectItem>
-                    <SelectItem value="5000">5000</SelectItem>
-                    <SelectItem value="9999">All URLs</SelectItem>
-                  </>
-                )}
+                {/* Show higher URL limits for everyone */}
+                <>
+                  <SelectItem value="2000">2000</SelectItem>
+                  <SelectItem value="5000">5000</SelectItem>
+                  <SelectItem value="9999">All URLs</SelectItem>
+                </>
               </SelectContent>
             </Select>
           </div>
@@ -391,20 +390,19 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
               <SelectItem value="200">200</SelectItem>
               <SelectItem value="500">500</SelectItem>
               <SelectItem value="1000">1000</SelectItem>
-              {isMobile && (
-                <>
-                  <SelectItem value="2000">2000</SelectItem>
-                  <SelectItem value="5000">5000</SelectItem>
-                  <SelectItem value="9999">All URLs</SelectItem>
-                </>
-              )}
+              {/* Show higher URL limits for everyone */}
+              <>
+                <SelectItem value="2000">2000</SelectItem>
+                <SelectItem value="5000">5000</SelectItem>
+                <SelectItem value="9999">All URLs</SelectItem>
+              </>
             </SelectContent>
           </Select>
         </div>
       </div>
       
-      {/* Mobile-friendly "Select All" action for small screens */}
-      {isMobile && displayedUrls.length > 0 && selectedUrls.length === 0 && (
+      {/* Select All action - visible for all users */}
+      {displayedUrls.length > 0 && selectedUrls.length === 0 && (
         <div className="p-2 bg-blue-50 rounded border border-blue-200 mb-2">
           <Button
             size="sm"
@@ -425,8 +423,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
             {selectedUrls.length} selected
           </span>
           <div className="ml-auto flex flex-wrap gap-2">
-            {/* Select/Deselect All button - Mobile-friendly */}
-            {isMobile && (
+            {/* Select/Deselect All button - Visible for everyone */}
               <Button
                 size="sm"
                 variant="outline"
@@ -445,7 +442,6 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
                   </>
                 )}
               </Button>
-            )}
             
             <Button
               size="sm"
