@@ -100,8 +100,12 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
   // Sort URLs by ID descending (newest first)
   const sortedUrls = [...filteredUrls].sort((a, b) => b.id - a.id);
   
+  // For mobile view, we ensure that display limit can be much higher than 100
+  // On mobile, we'll add a special selector to see all URLs on one page
+  const effectiveDisplayLimit = isMobile ? Math.max(1000, displayLimit) : displayLimit;
+  
   // Apply limit to the displayed URLs
-  const displayedUrls = sortedUrls.slice(0, displayLimit);
+  const displayedUrls = sortedUrls.slice(0, effectiveDisplayLimit);
   
   // URL action mutation
   const urlActionMutation = useMutation({
@@ -311,7 +315,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
             </Select>
             
             <Select value={displayLimit.toString()} onValueChange={(value) => setDisplayLimit(parseInt(value))}>
-              <SelectTrigger className="w-[70px]">
+              <SelectTrigger className="w-[80px]">
                 <SelectValue placeholder="Limit" />
               </SelectTrigger>
               <SelectContent>
@@ -321,6 +325,13 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
                 <SelectItem value="200">200</SelectItem>
                 <SelectItem value="500">500</SelectItem>
                 <SelectItem value="1000">1000</SelectItem>
+                {isMobile && (
+                  <>
+                    <SelectItem value="2000">2000</SelectItem>
+                    <SelectItem value="5000">5000</SelectItem>
+                    <SelectItem value="9999">All URLs</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -370,7 +381,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
           </Select>
           
           <Select value={displayLimit.toString()} onValueChange={(value) => setDisplayLimit(parseInt(value))}>
-            <SelectTrigger className="w-[70px]">
+            <SelectTrigger className="w-[80px]">
               <SelectValue placeholder="Limit" />
             </SelectTrigger>
             <SelectContent>
@@ -380,10 +391,32 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
               <SelectItem value="200">200</SelectItem>
               <SelectItem value="500">500</SelectItem>
               <SelectItem value="1000">1000</SelectItem>
+              {isMobile && (
+                <>
+                  <SelectItem value="2000">2000</SelectItem>
+                  <SelectItem value="5000">5000</SelectItem>
+                  <SelectItem value="9999">All URLs</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
       </div>
+      
+      {/* Mobile-friendly "Select All" action for small screens */}
+      {isMobile && displayedUrls.length > 0 && selectedUrls.length === 0 && (
+        <div className="p-2 bg-blue-50 rounded border border-blue-200 mb-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full gap-1 border-blue-300 text-blue-700"
+            onClick={toggleSelectAll}
+          >
+            <Check className="h-3 w-3" />
+            Select All URLs on This Page ({displayedUrls.length})
+          </Button>
+        </div>
+      )}
       
       {/* Bulk actions (show only when items are selected) */}
       {selectedUrls.length > 0 && (
@@ -392,6 +425,28 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
             {selectedUrls.length} selected
           </span>
           <div className="ml-auto flex flex-wrap gap-2">
+            {/* Select/Deselect All button - Mobile-friendly */}
+            {isMobile && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={toggleSelectAll}
+                className="gap-1"
+              >
+                {selectedUrls.length === displayedUrls.length ? (
+                  <>
+                    <Trash2 className="h-3 w-3" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Select All
+                  </>
+                )}
+              </Button>
+            )}
+            
             <Button
               size="sm"
               variant="outline"
