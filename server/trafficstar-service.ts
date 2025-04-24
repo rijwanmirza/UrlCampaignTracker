@@ -616,7 +616,12 @@ class TrafficStarService {
           try {
             console.log(`Activating campaign ${id} using direct v1.1 API endpoint`);
             await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
-              active: true
+              active: true,
+              // Format date as YYYY-MM-DD HH:MM:SS as required by the API
+              schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
+                .toISOString()
+                .replace('T', ' ')
+                .replace(/\.\d+Z$/, '')
             }, {
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -635,7 +640,12 @@ class TrafficStarService {
               try {
                 console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
                 await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                  active: true
+                  active: true,
+                  // Format date as YYYY-MM-DD HH:MM:SS as required by the API
+                  schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
+                    .toISOString()
+                    .replace('T', ' ')
+                    .replace(/\.\d+Z$/, '')
                 }, {
                   headers: {
                     'Authorization': `Bearer ${token}`,
@@ -743,8 +753,11 @@ class TrafficStarService {
           console.log(`Activating campaign ${id} using direct v1.1 API endpoint (real mode)`);
           await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
             active: true,
-            // Set end time to end of today in GMT for good measure
-            schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString()
+            // Format date as YYYY-MM-DD HH:MM:SS as required by the API
+            schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
+              .toISOString()
+              .replace('T', ' ')
+              .replace(/\.\d+Z$/, '')
           }, {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -952,14 +965,25 @@ class TrafficStarService {
   async updateCampaignEndTime(id: number, scheduleEndTime: string): Promise<void> {
     try {
       const token = await this.ensureToken();
-      await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
-        schedule_end_time: scheduleEndTime
+      
+      // Format the date as required by the API (YYYY-MM-DD HH:MM:SS)
+      // If the scheduleEndTime already has the format we need, use it directly
+      const formattedEndTime = scheduleEndTime.includes('T') 
+        ? scheduleEndTime.replace('T', ' ').replace(/\.\d+Z$/, '')
+        : scheduleEndTime;
+      
+      // Use the v1.1 API endpoint directly
+      await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+        schedule_end_time: formattedEndTime
       }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        timeout: 30000 // 30 second timeout
       });
+      
+      console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime}`);
 
       // Update local record
       await db.update(trafficstarCampaigns)
