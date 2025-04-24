@@ -411,7 +411,19 @@ class TrafficStarService {
    * Pause a campaign
    */
   async pauseCampaign(id: number): Promise<void> {
+    // IMMEDIATE CHANGE: Force immediate state change in our database
+    // This will make the UI update instantly while the API processes in background
     try {
+      // Update our local record FIRST for instant UI feedback
+      await db.update(trafficstarCampaigns)
+        .set({ 
+          active: false, 
+          status: 'paused',
+          updatedAt: new Date() 
+        })
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      
+      // Now proceed with the actual API call
       // If mock mode is enabled and API calls are failing, just update the local database
       if (ENABLE_MOCK_MODE) {
         try {
@@ -716,7 +728,19 @@ class TrafficStarService {
    * Activate a campaign
    */
   async activateCampaign(id: number): Promise<void> {
+    // IMMEDIATE CHANGE: Force immediate state change in our database
+    // This will make the UI update instantly while the API processes in background
     try {
+      // Update our local record FIRST for instant UI feedback
+      await db.update(trafficstarCampaigns)
+        .set({ 
+          active: true, 
+          status: 'enabled',
+          updatedAt: new Date() 
+        })
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+      // Now proceed with the actual API call
       // If mock mode is enabled and API calls are failing, just update the local database
       if (ENABLE_MOCK_MODE) {
         try {

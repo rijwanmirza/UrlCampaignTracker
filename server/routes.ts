@@ -1389,21 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { campaignId, action } = result.data;
 
-      // Get the current campaign status before we try to change it
-      let currentStatus;
-      try {
-        const campaign = await trafficStarService.getCampaign(campaignId);
-        currentStatus = {
-          active: campaign.active,
-          status: campaign.status,
-          syncStatus: campaign.syncStatus
-        };
-      } catch (statusError) {
-        console.log(`Couldn't get current status: ${statusError}`);
-        // Non-fatal, continue
-      }
-
-      // Execute the requested action
+      // Execute the requested action - database will be updated FIRST for immediate UI response
       if (action === 'pause') {
         await trafficStarService.pauseCampaign(campaignId);
       } else if (action === 'activate') {
@@ -1412,62 +1398,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: `Unsupported action: ${action}` });
       }
       
-      // Get the campaign record *after* our action, which may include
-      // pending status flags
+      // Get the campaign record *after* our action
       let campaign;
-      let statusChanged = false;
       try {
-        // This will get the latest data from the API
-        campaign = await trafficStarService.getCampaign(campaignId);
-        
-        // Check if the status actually changed
-        if (currentStatus && 
-            ((action === 'activate' && campaign.active === true) || 
-             (action === 'pause' && campaign.active === false))) {
-          statusChanged = true;
-        }
-      } catch (refreshError) {
-        console.log(`Error refreshing campaign after action: ${refreshError}`);
-        // Non-fatal, continue
+        campaign = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()))
+          .limit(1);
+      } catch (dbError) {
+        console.log(`Error getting campaign from database: ${dbError}`);
+        // Non-fatal, continue without campaign data
       }
-
-      // Now check if we need to store a pending/async flag in the database
-      if (!statusChanged && campaign) {
-        // Status didn't immediately change but API reported success
-        const pendingStatus = action === 'activate' ? 'pending_activation' : 'pending_pause';
-        const targetActive = action === 'activate';
-        const targetStatus = action === 'activate' ? 'enabled' : 'paused';
-        
-        try {
-          // Update DB to reflect that we're expecting a change
-          await db.update(trafficstarCampaigns)
-            .set({ 
-              syncStatus: pendingStatus,
-              lastRequestedAction: action,
-              lastRequestedActionAt: new Date(),
-              lastRequestedActionSuccess: true,
-              active: targetActive, // Set desired state
-              status: targetStatus, // Set desired state
-              updatedAt: new Date() 
-            })
-            .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
-            
-          console.log(`Updated campaign ${campaignId} with pending state: ${pendingStatus}`);
-        } catch (dbError) {
-          console.log(`Error updating campaign with pending state: ${dbError}`);
-          // Non-fatal
-        }
-      }
-
-      // Return a more detailed response with helpful state 
+      
+      // Always return immediate success with statusChanged=true
+      // We've already updated the database with the target state
       res.json({ 
         success: true, 
         message: `Campaign ${campaignId} ${action === 'pause' ? 'paused' : 'activated'} successfully`,
-        statusChanged: statusChanged,
-        pendingSync: !statusChanged, // Indicate to frontend that it should keep refreshing
-        syncStatus: campaign?.syncStatus || 'unknown',
-        lastRequestedAction: campaign?.lastRequestedAction || action,
-        lastRequestedActionAt: campaign?.lastRequestedActionAt || new Date().toISOString(),
+        statusChanged: true, // Always true since we updated DB first
+        pendingSync: false, // Don't show pending status in UI
+        syncStatus: campaign?.[0]?.syncStatus || 'unknown',
+        lastRequestedAction: action,
+        lastRequestedActionAt: new Date().toISOString(),
         // Include a timestamp to help frontend know this is a fresh response
         timestamp: new Date().toISOString()
       });
