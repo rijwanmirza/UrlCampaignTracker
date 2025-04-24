@@ -514,6 +514,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.status(307).header("Location", targetUrl).end();
           break;
           
+        case "http2_307_temporary":
+          // HTTP/2.0 307 Temporary Redirect
+          res.setHeader("HTTP-Version", "HTTP/2.0");
+          res.setHeader("X-HTTP-Version", "HTTP/2.0");
+          res.status(307).header("Location", targetUrl).header("Connection", "keep-alive").end();
+          break;
+          
         case "direct":
         default:
           // Standard redirect (302 Found)
