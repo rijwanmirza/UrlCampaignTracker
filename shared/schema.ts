@@ -8,6 +8,7 @@ export const RedirectMethod = {
   META_REFRESH: "meta_refresh",
   DOUBLE_META_REFRESH: "double_meta_refresh",
   HTTP_307: "http_307",
+  HTTP2_307_TEMPORARY: "http2_307_temporary",
 } as const;
 
 export type RedirectMethodType = typeof RedirectMethod[keyof typeof RedirectMethod];
@@ -41,7 +42,8 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
     RedirectMethod.DIRECT,
     RedirectMethod.META_REFRESH,
     RedirectMethod.DOUBLE_META_REFRESH,
-    RedirectMethod.HTTP_307
+    RedirectMethod.HTTP_307,
+    RedirectMethod.HTTP2_307_TEMPORARY
   ]).default(RedirectMethod.DIRECT),
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01).default(1),
@@ -56,7 +58,8 @@ export const updateCampaignSchema = createInsertSchema(campaigns).omit({
     RedirectMethod.DIRECT,
     RedirectMethod.META_REFRESH,
     RedirectMethod.DOUBLE_META_REFRESH,
-    RedirectMethod.HTTP_307
+    RedirectMethod.HTTP_307,
+    RedirectMethod.HTTP2_307_TEMPORARY
   ]).optional(),
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01).optional(),
