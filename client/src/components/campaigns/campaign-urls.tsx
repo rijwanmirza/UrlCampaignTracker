@@ -1,7 +1,18 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Clipboard, Edit, ExternalLink, MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
+import { 
+  Clipboard, 
+  Edit, 
+  ExternalLink, 
+  MoreHorizontal, 
+  Pause, 
+  Play, 
+  Trash2,
+  Search,
+  Filter,
+  Check
+} from "lucide-react";
 import { Url, UrlWithActiveStatus } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,11 +27,14 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -35,6 +49,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CampaignUrlsProps {
   campaignId: number;
@@ -45,13 +67,41 @@ interface CampaignUrlsProps {
 export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUrlsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [editingUrl, setEditingUrl] = useState<UrlWithActiveStatus | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [displayLimit, setDisplayLimit] = useState(10);
+  const [selectedUrls, setSelectedUrls] = useState<number[]>([]);
   
-  // Get only active and paused URLs (not completed or deleted)
-  const activeUrls = urls.filter(url => url.status === 'active' || url.status === 'paused');
+  // Filter URLs based on search term and status
+  const filteredUrls = urls.filter(url => {
+    // Apply search filter
+    const matchesSearch = search === "" || 
+      url.name.toLowerCase().includes(search.toLowerCase()) ||
+      url.targetUrl.toLowerCase().includes(search.toLowerCase());
+    
+    // Apply status filter
+    let matchesStatus = true;
+    if (statusFilter !== "all") {
+      matchesStatus = url.status === statusFilter;
+    } else {
+      // When on "all" status, still filter out deleted URLs
+      matchesStatus = url.status !== "deleted";
+    }
+    
+    return matchesSearch && matchesStatus;
+  });
+  
+  // Sort URLs by ID descending (newest first)
+  const sortedUrls = [...filteredUrls].sort((a, b) => b.id - a.id);
+  
+  // Apply limit to the displayed URLs
+  const displayedUrls = sortedUrls.slice(0, displayLimit);
   
   // URL action mutation
   const urlActionMutation = useMutation({
@@ -172,127 +222,333 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
     );
   };
   
-  if (activeUrls.length === 0) {
+  // Handle bulk selection
+  const toggleSelectAll = () => {
+    if (selectedUrls.length === displayedUrls.length) {
+      setSelectedUrls([]);
+    } else {
+      setSelectedUrls(displayedUrls.map(url => url.id));
+    }
+  };
+
+  const toggleUrlSelection = (id: number) => {
+    if (selectedUrls.includes(id)) {
+      setSelectedUrls(selectedUrls.filter(urlId => urlId !== id));
+    } else {
+      setSelectedUrls([...selectedUrls, id]);
+    }
+  };
+  
+  // Bulk action mutation
+  const bulkActionMutation = useMutation({
+    mutationFn: async ({ urlIds, action }: { urlIds: number[], action: string }) => {
+      return apiRequest('POST', '/api/urls/bulk', { urlIds, action });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
+      setSelectedUrls([]);
+      setBulkDeleteModalOpen(false);
+      
+      // Refresh the parent component
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+      toast({
+        title: "Success",
+        description: "Bulk action completed successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to perform bulk action",
+        variant: "destructive",
+      });
+      console.error("Bulk action failed:", error);
+    }
+  });
+  
+  // Handlers for bulk actions
+  const handleBulkActivate = () => {
+    bulkActionMutation.mutate({ urlIds: selectedUrls, action: 'activate' });
+  };
+
+  const handleBulkPause = () => {
+    bulkActionMutation.mutate({ urlIds: selectedUrls, action: 'pause' });
+  };
+
+  const handleBulkDelete = () => {
+    bulkActionMutation.mutate({ urlIds: selectedUrls, action: 'delete' });
+  };
+  
+  if (filteredUrls.length === 0) {
     return (
-      <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <p className="text-gray-500 mb-4">No active URLs in this campaign.</p>
-        <Link href={`/urls`}>
-          <Button variant="outline" size="sm">View All URLs</Button>
-        </Link>
+      <div className="space-y-4">
+        {/* Search and filter controls */}
+        <div className="flex flex-col md:flex-row gap-3 mb-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search URLs..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={displayLimit.toString()} onValueChange={(value) => setDisplayLimit(parseInt(value))}>
+              <SelectTrigger className="w-[70px]">
+                <SelectValue placeholder="Limit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+                <SelectItem value="500">500</SelectItem>
+                <SelectItem value="1000">1000</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="bg-gray-50 rounded-lg p-6 text-center">
+          <p className="text-gray-500 mb-4">No URLs found matching your filters.</p>
+          <div className="flex justify-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              setSearch("");
+              setStatusFilter("all");
+            }}>Clear Filters</Button>
+            <Link href={`/urls`}>
+              <Button variant="outline" size="sm">View All URLs</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[40px]">ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Target URL</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Clicks</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {activeUrls.map((url) => (
-            <TableRow key={url.id}>
-              <TableCell className="font-mono text-xs">{url.id}</TableCell>
-              <TableCell className="font-medium">{url.name}</TableCell>
-              <TableCell className="max-w-[200px] truncate">
-                <a 
-                  href={url.targetUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline flex items-center gap-1"
-                >
-                  {url.targetUrl}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant={url.status === 'active' ? 'default' : 'secondary'}
-                  className="capitalize"
-                >
-                  {url.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    {url.clicks} / {url.clickLimit} / {url.originalClickLimit}
-                  </span>
-                  <span className="text-xs text-gray-500 mb-1">
-                    received / required / original
-                  </span>
-                  <ProgressBar url={url} />
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleCopyUrl(url)}
-                    title="Copy URL"
-                  >
-                    <Clipboard className="h-4 w-4" />
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          setEditingUrl(url);
-                          setEditModalOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit URL
-                      </DropdownMenuItem>
-
-                      {url.status === 'paused' && (
-                        <DropdownMenuItem onClick={() => handleActivateUrl(url.id)}>
-                          <Play className="h-4 w-4 mr-2" />
-                          Activate
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {url.status === 'active' && (
-                        <DropdownMenuItem onClick={() => handlePauseUrl(url.id)}>
-                          <Pause className="h-4 w-4 mr-2" />
-                          Pause
-                        </DropdownMenuItem>
-                      )}
-                      
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => {
-                          setDeleteId(url.id);
-                          setDeleteModalOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      {/* Search and filter controls */}
+      <div className="flex flex-col md:flex-row gap-3 mb-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search URLs..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={displayLimit.toString()} onValueChange={(value) => setDisplayLimit(parseInt(value))}>
+            <SelectTrigger className="w-[70px]">
+              <SelectValue placeholder="Limit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+              <SelectItem value="200">200</SelectItem>
+              <SelectItem value="500">500</SelectItem>
+              <SelectItem value="1000">1000</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       
-      {/* Delete confirmation dialog */}
+      {/* Bulk actions (show only when items are selected) */}
+      {selectedUrls.length > 0 && (
+        <div className="p-2 bg-gray-50 rounded border flex flex-wrap items-center gap-2 mb-2">
+          <span className="text-sm font-medium text-gray-700">
+            {selectedUrls.length} selected
+          </span>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBulkActivate}
+              className="gap-1"
+            >
+              <Play className="h-3 w-3" />
+              Activate
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBulkPause}
+              className="gap-1"
+            >
+              <Pause className="h-3 w-3" />
+              Pause
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 text-red-500 border-red-200 hover:bg-red-50"
+              onClick={() => setBulkDeleteModalOpen(true)}
+            >
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      <div className="overflow-hidden rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox 
+                  checked={selectedUrls.length > 0 && selectedUrls.length === displayedUrls.length}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all"
+                />
+              </TableHead>
+              <TableHead className="w-[40px]">ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Target URL</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Clicks</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayedUrls.map((url) => (
+              <TableRow key={url.id}>
+                <TableCell className="px-2">
+                  <Checkbox 
+                    checked={selectedUrls.includes(url.id)}
+                    onCheckedChange={() => toggleUrlSelection(url.id)}
+                    aria-label={`Select URL ${url.id}`}
+                  />
+                </TableCell>
+                <TableCell className="font-mono text-xs">{url.id}</TableCell>
+                <TableCell className="font-medium">{url.name}</TableCell>
+                <TableCell className="max-w-[200px] truncate">
+                  <a 
+                    href={url.targetUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    {url.targetUrl}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={url.status === 'active' ? 'default' : 'secondary'}
+                    className="capitalize"
+                  >
+                    {url.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">
+                      {url.clicks} / {url.clickLimit} / {url.originalClickLimit}
+                    </span>
+                    <span className="text-xs text-gray-500 mb-1">
+                      received / required / original
+                    </span>
+                    <ProgressBar url={url} />
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopyUrl(url)}
+                      title="Copy URL"
+                    >
+                      <Clipboard className="h-4 w-4" />
+                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setEditingUrl(url);
+                            setEditModalOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit URL
+                        </DropdownMenuItem>
+
+                        {url.status === 'paused' && (
+                          <DropdownMenuItem onClick={() => handleActivateUrl(url.id)}>
+                            <Play className="h-4 w-4 mr-2" />
+                            Activate
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {url.status === 'active' && (
+                          <DropdownMenuItem onClick={() => handlePauseUrl(url.id)}>
+                            <Pause className="h-4 w-4 mr-2" />
+                            Pause
+                          </DropdownMenuItem>
+                        )}
+                        
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => {
+                            setDeleteId(url.id);
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Single URL delete confirmation dialog */}
       <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -306,6 +562,28 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
             <AlertDialogAction 
               onClick={handleDeleteUrl}
               className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Bulk delete confirmation dialog */}
+      <AlertDialog open={bulkDeleteModalOpen} onOpenChange={setBulkDeleteModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedUrls.length} URLs?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedUrls.length} URLs? They will be marked as deleted 
+              and will no longer receive traffic.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               Delete
             </AlertDialogAction>
