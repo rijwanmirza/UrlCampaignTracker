@@ -90,41 +90,37 @@ app.use((req, res, next) => {
     
     // Auto-configure and start Gmail reader with provided credentials
     try {
-      // Get the first campaign to use as default
+      // Check if there are campaigns but DON'T override defaultCampaignId
+      // This prevents setting first campaign as default which could change user settings
       const campaigns = await storage.getCampaigns();
-      if (campaigns.length > 0) {
-        const defaultCampaignId = campaigns[0].id;
-        
-        // Configure Gmail reader with the credentials
-        const gmailConfig = {
-          user: 'compaignwalabhai@gmail.com',
-          password: 'hciuemplthdkwfho',
-          host: 'imap.gmail.com',
-          port: 993,
-          tls: true,
-          tlsOptions: { rejectUnauthorized: false },
-          whitelistSenders: ['help@donot-reply.in'],
-          defaultCampaignId
-        };
-        
-        // Update Gmail reader configuration
-        gmailReader.updateConfig(gmailConfig);
-        
-        // Try to verify the credentials
-        try {
-          const verifyResult = await gmailReader.verifyCredentials();
-          if (verifyResult.success) {
-            log(`Gmail credentials verified successfully, starting reader...`, 'gmail-reader');
-            gmailReader.start();
-            log(`Gmail reader started successfully and monitoring emails from help@donot-reply.in`, 'gmail-reader');
-          } else {
-            log(`Gmail verification failed: ${verifyResult.message}`, 'gmail-reader');
-          }
-        } catch (verifyError) {
-          log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
+      
+      // Configure Gmail reader with the credentials
+      const gmailConfig = {
+        user: 'compaignwalabhai@gmail.com',
+        password: 'hciuemplthdkwfho',
+        host: 'imap.gmail.com',
+        port: 993,
+        tls: true,
+        tlsOptions: { rejectUnauthorized: false },
+        whitelistSenders: ['help@donot-reply.in']
+        // DO NOT set defaultCampaignId here - use existing config value instead
+      };
+      
+      // Update Gmail reader configuration
+      gmailReader.updateConfig(gmailConfig);
+      
+      // Try to verify the credentials
+      try {
+        const verifyResult = await gmailReader.verifyCredentials();
+        if (verifyResult.success) {
+          log(`Gmail credentials verified successfully, starting reader...`, 'gmail-reader');
+          gmailReader.start();
+          log(`Gmail reader started successfully and monitoring emails from help@donot-reply.in`, 'gmail-reader');
+        } else {
+          log(`Gmail verification failed: ${verifyResult.message}`, 'gmail-reader');
         }
-      } else {
-        log('No campaigns found to configure Gmail reader with', 'gmail-reader');
+      } catch (verifyError) {
+        log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
       }
     } catch (error) {
       log(`Error auto-configuring Gmail reader: ${error}`, 'gmail-reader');
