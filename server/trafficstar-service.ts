@@ -412,7 +412,7 @@ class TrafficStarService {
    */
   async pauseCampaign(id: number): Promise<void> {
     try {
-      console.log(`NEW IMPLEMENTATION: Pausing campaign ${id}...`);
+      console.log(`USING V2 API: Pausing campaign ${id}...`);
       
       // Update our local record FIRST for instant UI feedback
       await db.update(trafficstarCampaigns)
@@ -425,57 +425,53 @@ class TrafficStarService {
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
       
-      // Make a direct API call using parameters from our test script
+      // Make a direct API call using the CORRECT v2 endpoint from documentation
       try {
         // Get token
         const token = await this.ensureToken();
-        console.log(`Making simplified API call to pause campaign ${id}`);
+        console.log(`Making V2 API call to pause campaign ${id}`);
         
-        // First try the standard API endpoint with both params
-        try {
-          const response = await axios.patch(
-            `https://api.trafficstars.com/v1.1/campaigns/${id}`, 
-            { 
-              status: 'paused',
-              active: false
+        // Using the documented V2 endpoint for pausing multiple campaigns
+        const response = await axios.put(
+          `https://api.trafficstars.com/v2/campaigns/pause`, 
+          { 
+            campaign_ids: [id]
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          
-          console.log(`✅ Campaign pause API call made. Response:`, response.data);
-        } catch (error) {
-          console.log(`First attempt failed, trying alternate approach...`);
-          
-          // Try an alternate endpoint with status change only
-          const altResponse = await axios.post(
-            `https://api.trafficstars.com/v1.1/campaigns/${id}/pause`, 
-            {},
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          
-          console.log(`✅ Alternate pause API call made. Response:`, altResponse.data);
-        }
+            timeout: 10000
+          }
+        );
         
-        // Update database with success status
-        await db.update(trafficstarCampaigns)
-          .set({ 
-            lastRequestedActionSuccess: true,
-            updatedAt: new Date() 
-          })
-          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        console.log(`✅ V2 Campaign pause API call made. Response:`, response.data);
           
+        // Check if pause was successful
+        if (response.data && response.data.success && response.data.success.includes(id)) {
+          console.log(`Campaign ${id} paused successfully via V2 API`);
+          
+          // Update database with success status
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: true,
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        } else {
+          // Campaign pause failed according to API response
+          console.error(`⚠️ Campaign ${id} pause failed according to API response`);
+          
+          // Record error in database
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: false,
+              lastRequestedActionError: 'Campaign pause failed according to API response',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        }
       } catch (error) {
         console.error(`⚠️ Error pausing campaign ${id}:`, error);
         
@@ -517,7 +513,7 @@ class TrafficStarService {
    */
   async activateCampaign(id: number): Promise<void> {
     try {
-      console.log(`NEW IMPLEMENTATION: Activating campaign ${id}...`);
+      console.log(`USING V2 API: Activating campaign ${id}...`);
       
       // Update our local record FIRST for instant UI feedback
       await db.update(trafficstarCampaigns)
@@ -529,58 +525,54 @@ class TrafficStarService {
           lastRequestedActionAt: new Date() 
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-        
-      // Make a direct API call using parameters from our test script
+      
+      // Make a direct API call using the CORRECT v2 endpoint from documentation
       try {
         // Get token
         const token = await this.ensureToken();
-        console.log(`Making simplified API call to activate campaign ${id}`);
+        console.log(`Making V2 API call to activate campaign ${id}`);
         
-        // First try the standard API endpoint with both params
-        try {
-          const response = await axios.patch(
-            `https://api.trafficstars.com/v1.1/campaigns/${id}`, 
-            { 
-              status: 'enabled',
-              active: true
+        // Using the documented V2 endpoint for activating multiple campaigns
+        const response = await axios.put(
+          `https://api.trafficstars.com/v2/campaigns/run`, 
+          { 
+            campaign_ids: [id]
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          
-          console.log(`✅ Campaign activate API call made. Response:`, response.data);
-        } catch (error) {
-          console.log(`First attempt failed, trying alternate approach...`);
-          
-          // Try an alternate endpoint with specific activate action
-          const altResponse = await axios.post(
-            `https://api.trafficstars.com/v1.1/campaigns/${id}/activate`, 
-            {},
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          
-          console.log(`✅ Alternate activate API call made. Response:`, altResponse.data);
-        }
+            timeout: 10000
+          }
+        );
         
-        // Update database with success status
-        await db.update(trafficstarCampaigns)
-          .set({ 
-            lastRequestedActionSuccess: true,
-            updatedAt: new Date() 
-          })
-          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        console.log(`✅ V2 Campaign activation API call made. Response:`, response.data);
           
+        // Check if activation was successful
+        if (response.data && response.data.success && response.data.success.includes(id)) {
+          console.log(`Campaign ${id} activated successfully via V2 API`);
+          
+          // Update database with success status
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: true,
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        } else {
+          // Campaign activation failed according to API response
+          console.error(`⚠️ Campaign ${id} activation failed according to API response`);
+          
+          // Record error in database
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: false,
+              lastRequestedActionError: 'Campaign activation failed according to API response',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        }
       } catch (error) {
         console.error(`⚠️ Error activating campaign ${id}:`, error);
         
