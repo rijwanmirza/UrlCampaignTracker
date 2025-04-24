@@ -676,6 +676,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.status(307).header("Location", targetUrl).end();
           break;
           
+        case "http2_forced_307":
+          // Forced HTTP/2.0 307 Temporary Redirect - Specific implementation for HTTP/2.0
+          res.setHeader("X-Processing-Time", `${timeInMs}ms`);
+          
+          // Force HTTP/2.0 version in headers
+          res.setHeader("X-HTTP2-Version", "HTTP/2.0");
+          res.setHeader("HTTP-Version", "HTTP/2.0"); 
+          
+          // HTTP/2 required headers and compatibility
+          res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
+          res.setHeader("X-Protocol-Version", "h2");
+          res.setHeader("Upgrade-Insecure-Requests", "1");
+          res.setHeader("X-HTTP2-Only", "true");
+          
+          // Advanced HTTP/2 specific settings
+          res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+          res.setHeader("Cache-Control", "no-store, must-revalidate, no-cache");
+          res.setHeader("Pragma", "no-cache");
+          
+          // Add extra identification for this special mode
+          res.setHeader("X-Powered-By", "ViralEngine/2.0-HTTP2-Forced");
+          res.setHeader("Server", "HTTP/2.0-Specialized-Server");
+          
+          // Force HTTP/2.0 content and connection settings
+          res.setHeader("Connection", "Upgrade, close");
+          res.setHeader("Upgrade", "h2c, h2");
+          
+          // Send 307 redirect with enforced HTTP/2 settings
+          res.status(307).header("Location", targetUrl).end();
+          break;
+          
         case "direct":
         default:
           // Standard redirect (302 Found)
