@@ -157,6 +157,13 @@ export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   lastRequestedActionSuccess: boolean("last_requested_action_success"), // Whether API reported success
   lastVerifiedStatus: text("last_verified_status"), // Last status we verified directly from the API
   syncStatus: text("sync_status").default('synced'), // 'synced', 'pending_activation', 'pending_pause'
+  
+  // New tracking fields for immediate updates
+  lastBudgetUpdate: timestamp("last_budget_update"), // When budget was last updated
+  lastBudgetUpdateValue: numeric("last_budget_update_value", { precision: 10, scale: 2 }), // The value set
+  lastEndTimeUpdate: timestamp("last_end_time_update"), // When end time was last updated
+  lastEndTimeUpdateValue: text("last_end_time_update_value"), // The value set
+  
   campaignData: json("campaign_data"), // Store full campaign data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

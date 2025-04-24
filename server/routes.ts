@@ -1462,6 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ 
             maxDaily: maxDaily,
             lastBudgetUpdate: new Date(),
+            lastBudgetUpdateValue: maxDaily.toString(), // Store the exact value we're setting
             updatedAt: new Date() 
           })
           .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
@@ -1517,6 +1518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ 
             scheduleEndTime: scheduleEndTime,
             lastEndTimeUpdate: new Date(),
+            lastEndTimeUpdateValue: scheduleEndTime, // Store the exact value we're setting
             updatedAt: new Date() 
           })
           .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
