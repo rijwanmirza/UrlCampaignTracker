@@ -977,6 +977,7 @@ class GmailReader {
   }
   
   // Check for emails that need to be deleted based on the autoDeleteMinutes setting
+  // This implementation uses the approach from the working code
   private async checkEmailsForDeletion() {
     try {
       // Ensure autoDeleteMinutes is a number and validate it
@@ -999,7 +1000,7 @@ class GmailReader {
         return;
       }
       
-      // Get all the emails that need to be deleted FIRST, before interacting with mailbox
+      // Get all the emails that need to be deleted
       const now = new Date();
       const cutoffTime = new Date(now.getTime() - (autoDeleteMinutes * 60 * 1000));
       const emailsToDelete: string[] = [];
@@ -1042,40 +1043,69 @@ class GmailReader {
         return; // No emails to delete
       }
       
-      log(`🔎 Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
+      log(`[Email Auto-Delete] Found ${emailsToDelete.length} emails that qualify for deletion (older than ${autoDeleteMinutes} minutes)`, 'gmail-reader');
       
-      // CRITICAL CHANGE: Instead of complex IMAP operations, simply remove the emails from tracking
-      // The user specifically asked to delete ALL emails at once from tracking system
-      
-      log(`✅ BULK REMOVING ALL ${emailsToDelete.length} EMAILS AT ONCE from tracking system`, 'gmail-reader');
-      
-      // Remove ALL emails from tracking system (this effectively "deletes" them)
+      // Remove from tracking system first
       emailsToDelete.forEach(emailId => {
         this.processedEmails.delete(emailId);
-        log(`Removed email ID ${emailId} from tracking system in single bulk operation`, 'gmail-reader');
       });
-      
-      // Save updated tracking data
       this.saveProcessedEmailsToFile();
+      log(`[Email Auto-Delete] Removed ${emailsToDelete.length} emails from tracking system`, 'gmail-reader');
       
-      log(`✅ BULK DELETION COMPLETE: Successfully removed ALL ${emailsToDelete.length} emails from tracking`, 'gmail-reader');
-      
-      // Also try to physically delete the emails using our API method
+      // Attempt physical deletion - this follows the pattern from the working code
       try {
-        // Initialize Gmail API for deletion
-        const apiReady = await gmailService.trySetupGmailApi(this.config.user, this.config.password);
+        // Open inbox before deleting
+        await new Promise<void>((resolve, reject) => {
+          this.imap.openBox('INBOX', false, (err) => {
+            if (err) {
+              log(`Error opening inbox for deletion: ${err}`, 'gmail-reader');
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
         
-        if (apiReady) {
-          log(`Gmail API initialized, attempting to trash ${emailsToDelete.length} emails`, 'gmail-reader');
-          const deleted = await gmailService.trashMessages(emailsToDelete);
+        if (emailsToDelete.length > 0) {
+          log(`[Email Auto-Delete] Deleting ${emailsToDelete.length} processed emails as per settings`, 'gmail-reader');
           
-          if (deleted > 0) {
-            log(`✅ Successfully deleted ${deleted} emails using Gmail API`, 'gmail-reader');
-          }
+          // CRITICAL PART: Add the Delete flag to emails to move them to Trash
+          // This is the part that works in their code
+          await new Promise<void>((resolve, reject) => {
+            this.imap.addFlags(emailsToDelete, '\\Deleted', (err) => {
+              if (err) {
+                log(`[Email Auto-Delete] Error flagging emails for deletion: ${err}`, 'gmail-reader');
+                reject(err);
+              } else {
+                log(`[Email Auto-Delete] Successfully marked ${emailsToDelete.length} emails for deletion`, 'gmail-reader');
+                resolve();
+              }
+            });
+          });
+          
+          // CRITICAL PART: Expunge to permanently remove the emails
+          // This is the part that works in their code
+          await new Promise<void>((resolve, reject) => {
+            this.imap.expunge((expungeErr) => {
+              if (expungeErr) {
+                log(`[Email Auto-Delete] Error expunging deleted emails: ${expungeErr}`, 'gmail-reader');
+                reject(expungeErr);
+              } else {
+                log(`[Email Auto-Delete] ✅ Successfully deleted ${emailsToDelete.length} emails in bulk operation`, 'gmail-reader');
+                resolve();
+              }
+            });
+          });
+          
+          log(`[Email Auto-Delete] Bulk deletion of ${emailsToDelete.length} emails completed successfully`, 'gmail-reader');
+        } else {
+          log(`[Email Auto-Delete] No valid email UIDs found for deletion`, 'gmail-reader');
         }
-      } catch (apiError) {
+      } catch (deleteError) {
+        log(`[Email Auto-Delete] Error during email deletion: ${deleteError}`, 'gmail-reader');
+        
         // Don't worry if this fails, we've already removed the emails from tracking
-        log(`Gmail API deletion attempt failed, but emails are already removed from tracking`, 'gmail-reader');
+        log(`Emails are already removed from tracking system, deletion status will not affect processing`, 'gmail-reader');
       }
     } catch (error) {
       log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
