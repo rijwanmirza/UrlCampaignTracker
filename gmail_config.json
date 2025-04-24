@@ -10,12 +10,13 @@
   "whitelistSenders": [
     "help@donot-reply.in"
   ],
-  "subjectPattern": ".*",
+  "subjectPattern": "New Order Received (\\d+)",
   "messagePattern": {
-    "orderIdRegex": "(\\d+)",
-    "urlRegex": "(https?:\\/\\/[^\\s]+)\\/",
-    "quantityRegex": "(\\d+)\\/"
+    "orderIdRegex": "object Object",
+    "urlRegex": "object Object",
+    "quantityRegex": "object Object"
   },
-  "defaultCampaignId": 14,
-  "autoDeleteMinutes": 0
+  "defaultCampaignId": 15,
+  "autoDeleteMinutes": 3,
+  "checkInterval": 60000
 }

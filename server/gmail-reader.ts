@@ -159,15 +159,29 @@ class GmailReader {
         const emailEntries = logContent.split('\n').filter(line => line.trim().length > 0);
         
         emailEntries.forEach(entry => {
-          // Format is: emailId,timestamp
+          // Format is: emailId,timestamp,status (new format) or emailId,timestamp (old format)
           const parts = entry.split(',');
-          if (parts.length >= 2) {
+          if (parts.length >= 3) {
+            // New format with status
+            const [emailId, timestamp, status] = parts;
+            this.processedEmails.set(emailId, JSON.stringify({
+              timestamp,
+              status: status || 'skipped' // Default to skipped if no status
+            }));
+          } else if (parts.length >= 2) {
+            // Old format without status - assume it was a successful processing
             const [emailId, timestamp] = parts;
-            this.processedEmails.set(emailId, timestamp);
+            this.processedEmails.set(emailId, JSON.stringify({
+              timestamp,
+              status: 'success' // Assume success for backward compatibility
+            }));
           } else {
-            // Handle old format entries (without date)
+            // Handle very old format entries (without date)
             const currentDate = new Date().toISOString();
-            this.processedEmails.set(entry, currentDate);
+            this.processedEmails.set(entry, JSON.stringify({
+              timestamp: currentDate,
+              status: 'unknown' // Status is unknown
+            }));
           }
         });
         
@@ -182,12 +196,20 @@ class GmailReader {
   }
   
   // Log a processed email ID with timestamp to prevent reprocessing
-  private logProcessedEmail(emailId: string) {
+  // The processingStatus can be 'success', 'duplicate', 'error', or 'skipped'
+  private logProcessedEmail(emailId: string, processingStatus = 'skipped') {
     try {
       if (!this.processedEmails.has(emailId)) {
         const timestamp = new Date().toISOString();
-        fs.appendFileSync(this.processedEmailsLogFile, `${emailId},${timestamp}\n`, 'utf-8');
-        this.processedEmails.set(emailId, timestamp);
+        // Format is: emailId,timestamp,status
+        fs.appendFileSync(this.processedEmailsLogFile, `${emailId},${timestamp},${processingStatus}\n`, 'utf-8');
+        // Store as a JSON object in memory for easier access to properties
+        this.processedEmails.set(emailId, JSON.stringify({
+          timestamp,
+          status: processingStatus
+        }));
+        
+        log(`Logged email ID ${emailId} as ${processingStatus} at ${timestamp}`, 'gmail-reader');
       }
     } catch (error) {
       log(`Error logging processed email: ${error}`, 'gmail-reader');
@@ -636,26 +658,45 @@ class GmailReader {
       const cutoffTime = new Date(now.getTime() - (autoDeleteMinutes * 60 * 1000));
       const emailsToDelete: string[] = [];
       
-      // Find all emails that have been processed before the cutoff time
-      log(`Scanning for emails processed before ${cutoffTime.toISOString()} (${autoDeleteMinutes} minutes ago)`, 'gmail-reader');
-      this.processedEmails.forEach((timestampStr, emailId) => {
+      // Find all SUCCESSFULLY processed emails that were processed before the cutoff time
+      log(`Scanning for successfully processed emails before ${cutoffTime.toISOString()} (${autoDeleteMinutes} minutes ago)`, 'gmail-reader');
+      
+      this.processedEmails.forEach((entryData, emailId) => {
         try {
-          const processedTime = new Date(timestampStr);
-          if (processedTime < cutoffTime) {
-            log(`Email ID ${emailId} processed at ${processedTime.toISOString()} is older than ${autoDeleteMinutes} minutes, marking for deletion`, 'gmail-reader');
+          // Parse the stored JSON data
+          let data: { timestamp: string, status: string };
+          try {
+            data = JSON.parse(entryData);
+          } catch (e) {
+            // Handle old format (just timestamp string)
+            data = { 
+              timestamp: entryData,
+              status: 'unknown'
+            };
+          }
+          
+          const processedTime = new Date(data.timestamp);
+          
+          // Only delete emails that were successfully processed or duplicates
+          const canDelete = data.status === 'success' || data.status === 'duplicate';
+          
+          if (processedTime < cutoffTime && canDelete) {
+            log(`Email ID ${emailId} processed at ${processedTime.toISOString()} with status "${data.status}" is older than ${autoDeleteMinutes} minutes, marking for deletion`, 'gmail-reader');
             emailsToDelete.push(emailId);
+          } else if (processedTime < cutoffTime && !canDelete) {
+            log(`Email ID ${emailId} has status "${data.status}" - NOT eligible for auto-deletion`, 'gmail-reader');
           }
         } catch (err) {
-          log(`Error parsing date for email ID ${emailId}, timestamp: ${timestampStr}`, 'gmail-reader');
+          log(`Error parsing data for email ID ${emailId}: ${err}`, 'gmail-reader');
         }
       });
       
       if (emailsToDelete.length === 0) {
-        log(`No emails found that are older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
+        log(`No emails found that are successfully processed and older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
         return; // No emails to delete
       }
       
-      log(`Found ${emailsToDelete.length} processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
+      log(`Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
       
       // Delete each email
       let deletedCount = 0;
@@ -667,7 +708,7 @@ class GmailReader {
         }
       }
       
-      log(`Auto-deleted ${deletedCount}/${emailsToDelete.length} emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
+      log(`Auto-deleted ${deletedCount}/${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
     } catch (error) {
       log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
     }
