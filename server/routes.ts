@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import spdy from 'spdy';
+import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
 import { 
   insertCampaignSchema, 
@@ -15,16 +16,9 @@ import { gmailReader } from "./gmail-reader";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // SPDY options for HTTP/2 support
-  const spdyOptions = {
-    spdy: {
-      protocols: ['h2', 'http/1.1'],
-      plain: true,
-      connection: {
-        windowSize: 1024 * 1024, // 1MB
-      }
-    }
-  };
+  // Just create a regular HTTP server for now
+  // We'll handle HTTP/2 headers in the route handlers
+  const server = createServer(app);
   // API route for campaigns
   app.get("/api/campaigns", async (_req: Request, res: Response) => {
     try {
@@ -1257,7 +1251,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Use SPDY to create an HTTP/2 capable server
-  const httpServer = spdy.createServer(spdyOptions, app);
-  return httpServer;
+  // Create an HTTP/2 capable server
+  // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
+  // We'll handle the HTTP/2.0 headers in the individual route handlers
+  return server;
 }

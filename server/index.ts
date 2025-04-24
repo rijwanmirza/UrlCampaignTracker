@@ -4,6 +4,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import compression from "compression";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
+import * as spdy from 'spdy';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const app = express();
 
