@@ -594,50 +594,70 @@ class GmailReader {
   // Track if we've done the initial scan
   private initialScanComplete = false;
   
-  // Delete a specific email by its UID
-  private deleteEmail(uid: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      if (!this.isRunning || this.imap.state !== 'authenticated') {
-        log(`Cannot delete email: IMAP connection not ready`, 'gmail-reader');
-        resolve(false);
-        return;
-      }
-      
-      try {
-        // Open the inbox
-        this.imap.openBox('INBOX', false, (err, box) => {
+  // Delete multiple emails at once - improved approach
+  private async performBulkDeletion(emailIds: string[]): Promise<number> {
+    if (!this.isRunning || this.imap.state !== 'authenticated') {
+      log(`Cannot delete emails: IMAP connection not ready`, 'gmail-reader');
+      return 0;
+    }
+    
+    if (emailIds.length === 0) {
+      return 0;
+    }
+    
+    try {
+      // Use a stronger approach for bulk deletion
+      return new Promise<number>((resolve) => {
+        // Re-create the connection - fresh connection helps improve reliability
+        this.imap.closeBox((err) => {
           if (err) {
-            log(`Error opening mailbox for deletion: ${err.message}`, 'gmail-reader');
-            resolve(false);
-            return;
+            log(`Warning: Error closing box before bulk delete: ${err.message}`, 'gmail-reader');
           }
           
-          // Add the Deleted flag to the message
-          this.imap.addFlags(uid, '\\Deleted', (err) => {
+          // Open the inbox for modification (readOnly: false)
+          this.imap.openBox('INBOX', false, async (err, box) => {
             if (err) {
-              log(`Error adding Deleted flag to email ${uid}: ${err.message}`, 'gmail-reader');
-              resolve(false);
+              log(`Failed to open inbox for deletion: ${err.message}`, 'gmail-reader');
+              resolve(0);
               return;
             }
             
-            // Expunge the mailbox to permanently remove the message
-            this.imap.expunge((err) => {
-              if (err) {
-                log(`Error expunging mailbox after deletion: ${err.message}`, 'gmail-reader');
-                resolve(false);
-                return;
-              }
-              
-              log(`Successfully deleted email with ID: ${uid}`, 'gmail-reader');
-              resolve(true);
-            });
+            log(`Marking ${emailIds.length} emails for deletion...`, 'gmail-reader');
+            
+            try {
+              // Use a more efficient approach - mark all in one command
+              this.imap.addFlags(emailIds.join(','), '\\Deleted', (err) => {
+                if (err) {
+                  log(`Error marking emails for deletion: ${err.message}`, 'gmail-reader');
+                  resolve(0);
+                  return;
+                }
+                
+                log(`Successfully marked ${emailIds.length} emails for deletion, expunging...`, 'gmail-reader');
+                
+                // Expunge to actually remove the messages
+                this.imap.expunge((err) => {
+                  if (err) {
+                    log(`Error during expunge operation: ${err.message}`, 'gmail-reader');
+                    resolve(0);
+                    return;
+                  }
+                  
+                  log(`🧹 Successfully deleted ${emailIds.length} emails in bulk operation`, 'gmail-reader');
+                  resolve(emailIds.length);
+                });
+              });
+            } catch (error) {
+              log(`Error in bulk deletion process: ${error}`, 'gmail-reader');
+              resolve(0);
+            }
           });
         });
-      } catch (error) {
-        log(`Unexpected error in deleteEmail: ${error}`, 'gmail-reader');
-        resolve(false);
-      }
-    });
+      });
+    } catch (error) {
+      log(`Critical error in bulk deletion: ${error}`, 'gmail-reader');
+      return 0;
+    }
   }
   
   // Check for emails that need to be deleted based on the autoDeleteMinutes setting
@@ -699,63 +719,17 @@ class GmailReader {
       
       log(`Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
       
-      // Delete emails one by one but do it quickly
-      log(`Deleting ${emailsToDelete.length} emails one by one (reliable method)`, 'gmail-reader');
+      // Perform bulk deletion using our more reliable method
+      log(`🔥 FAST BULK DELETE: Attempting to delete all ${emailsToDelete.length} emails at once`, 'gmail-reader');
       
       try {
-        // Open the inbox once for all deletions
-        await new Promise<void>((resolve, reject) => {
-          this.imap.openBox('INBOX', false, async (err, box) => {
-            if (err) {
-              log(`Error opening mailbox for deletion: ${err.message}`, 'gmail-reader');
-              reject(err);
-              return;
-            }
-            
-            let deletedCount = 0;
-            let failedCount = 0;
-            
-            // Process emails one by one for reliability
-            for (const emailId of emailsToDelete) {
-              try {
-                // Add the Deleted flag to the message
-                await new Promise<void>((resolveFlag, rejectFlag) => {
-                  this.imap.addFlags(emailId, '\\Deleted', (err) => {
-                    if (err) {
-                      log(`Error adding Deleted flag to email ${emailId}: ${err.message}`, 'gmail-reader');
-                      rejectFlag(err);
-                      return;
-                    }
-                    resolveFlag();
-                  });
-                });
-                
-                // Expunge right after each flag to ensure deletion
-                await new Promise<void>((resolveExpunge, rejectExpunge) => {
-                  this.imap.expunge((err) => {
-                    if (err) {
-                      log(`Error expunging mailbox after deleting email ${emailId}: ${err.message}`, 'gmail-reader');
-                      rejectExpunge(err);
-                      return;
-                    }
-                    resolveExpunge();
-                  });
-                });
-                
-                deletedCount++;
-                log(`Successfully deleted email with ID: ${emailId} (${deletedCount}/${emailsToDelete.length})`, 'gmail-reader');
-              } catch (error) {
-                failedCount++;
-                log(`Failed to delete email ${emailId}: ${error}`, 'gmail-reader');
-              }
-            }
-            
-            log(`Successfully deleted ${deletedCount}/${emailsToDelete.length} emails, failed: ${failedCount}`, 'gmail-reader');
-            resolve();
-          });
-        });
+        const deletedCount = await this.performBulkDeletion(emailsToDelete);
         
-        log(`Auto-deleted emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
+        if (deletedCount > 0) {
+          log(`✅ Successfully auto-deleted ${deletedCount}/${emailsToDelete.length} emails older than ${autoDeleteMinutes} minutes in one batch`, 'gmail-reader');
+        } else {
+          log(`Failed to delete emails in bulk operation. Verify your Gmail settings.`, 'gmail-reader');
+        }
       } catch (error) {
         log(`Error in email deletion: ${error}`, 'gmail-reader');
       }
