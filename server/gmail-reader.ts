@@ -24,6 +24,7 @@ interface GmailConfigOptions {
     quantityRegex: RegExp;
   };
   defaultCampaignId: number;
+  autoDeleteMinutes: number; // Time in minutes after which processed emails should be deleted (0 = disabled)
 }
 
 // Default Gmail IMAP configuration
@@ -43,7 +44,8 @@ const defaultGmailConfig: GmailConfigOptions = {
     urlRegex: /(https?:\/\/[^\s]+)/i,  // Any URL format
     quantityRegex: /(\d+)/i,  // Any number can be a quantity
   },
-  defaultCampaignId: 0
+  defaultCampaignId: 0,
+  autoDeleteMinutes: 0 // Default is 0 (disabled)
 };
 
 class GmailReader {
@@ -51,6 +53,7 @@ class GmailReader {
   private imap!: Imap; // Using definite assignment assertion
   private isRunning: boolean = false;
   private checkInterval: NodeJS.Timeout | null = null;
+  private deleteEmailsInterval: NodeJS.Timeout | null = null;
   private processedEmailsLogFile: string;
   // Store processed emails with their processing dates
   private processedEmails: Map<string, string> = new Map(); // emailId -> date string
@@ -466,6 +469,92 @@ class GmailReader {
 
   // Track if we've done the initial scan
   private initialScanComplete = false;
+  
+  // Delete a specific email by its UID
+  private deleteEmail(uid: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      if (!this.isRunning || !this.imap.state === 'authenticated') {
+        log(`Cannot delete email: IMAP connection not ready`, 'gmail-reader');
+        resolve(false);
+        return;
+      }
+      
+      try {
+        // Open the inbox
+        this.imap.openBox('INBOX', false, (err, box) => {
+          if (err) {
+            log(`Error opening mailbox for deletion: ${err.message}`, 'gmail-reader');
+            resolve(false);
+            return;
+          }
+          
+          // Add the Deleted flag to the message
+          this.imap.addFlags(uid, '\\Deleted', (err) => {
+            if (err) {
+              log(`Error adding Deleted flag to email ${uid}: ${err.message}`, 'gmail-reader');
+              resolve(false);
+              return;
+            }
+            
+            // Expunge the mailbox to permanently remove the message
+            this.imap.expunge((err) => {
+              if (err) {
+                log(`Error expunging mailbox after deletion: ${err.message}`, 'gmail-reader');
+                resolve(false);
+                return;
+              }
+              
+              log(`Successfully deleted email with ID: ${uid}`, 'gmail-reader');
+              resolve(true);
+            });
+          });
+        });
+      } catch (error) {
+        log(`Unexpected error in deleteEmail: ${error}`, 'gmail-reader');
+        resolve(false);
+      }
+    });
+  }
+  
+  // Check for emails that need to be deleted based on the autoDeleteMinutes setting
+  private async checkEmailsForDeletion() {
+    if (this.config.autoDeleteMinutes <= 0) {
+      return; // Auto-delete is disabled
+    }
+    
+    try {
+      const now = new Date();
+      const cutoffTime = new Date(now.getTime() - (this.config.autoDeleteMinutes * 60 * 1000));
+      const emailsToDelete: string[] = [];
+      
+      // Find all emails that have been processed before the cutoff time
+      this.processedEmails.forEach((timestampStr, emailId) => {
+        const processedTime = new Date(timestampStr);
+        if (processedTime < cutoffTime) {
+          emailsToDelete.push(emailId);
+        }
+      });
+      
+      if (emailsToDelete.length === 0) {
+        return; // No emails to delete
+      }
+      
+      log(`Found ${emailsToDelete.length} processed emails older than ${this.config.autoDeleteMinutes} minutes to delete`, 'gmail-reader');
+      
+      // Delete each email
+      let deletedCount = 0;
+      for (const emailId of emailsToDelete) {
+        const success = await this.deleteEmail(emailId);
+        if (success) {
+          deletedCount++;
+        }
+      }
+      
+      log(`Auto-deleted ${deletedCount}/${emailsToDelete.length} emails older than ${this.config.autoDeleteMinutes} minutes`, 'gmail-reader');
+    } catch (error) {
+      log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
+    }
+  }
 
   private async checkEmails() {
     if (!this.isRunning) return;
@@ -564,6 +653,23 @@ class GmailReader {
           log(`Error in periodic email check: ${err}`, 'gmail-reader');
         });
       }, 300000); // Check every 5 minutes to reduce connection frequency
+      
+      // Set up auto-delete interval if enabled
+      if (this.config.autoDeleteMinutes > 0) {
+        log(`Auto-delete enabled: emails will be deleted ${this.config.autoDeleteMinutes} minutes after processing`, 'gmail-reader');
+        
+        // Check for emails to delete immediately
+        this.checkEmailsForDeletion().catch(err => {
+          log(`Error in initial email deletion check: ${err}`, 'gmail-reader');
+        });
+        
+        // Set up interval to check for emails to delete periodically (every 5 minutes)
+        this.deleteEmailsInterval = setInterval(() => {
+          this.checkEmailsForDeletion().catch(err => {
+            log(`Error in periodic email deletion check: ${err}`, 'gmail-reader');
+          });
+        }, 300000); // Check every 5 minutes
+      }
     });
   }
 
@@ -573,6 +679,11 @@ class GmailReader {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
+    }
+    
+    if (this.deleteEmailsInterval) {
+      clearInterval(this.deleteEmailsInterval);
+      this.deleteEmailsInterval = null;
     }
     
     this.isRunning = false;
