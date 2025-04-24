@@ -995,10 +995,10 @@ class GmailReader {
             return;
           }
           
-          // Search for all messages on initial run, then only unseen ones after
-          // This ensures we process existing messages too
-          const searchCriteria = this.initialScanComplete ? ['UNSEEN'] : ['ALL'];
-          log(`Searching for ${searchCriteria.join(', ')} messages in inbox`, 'gmail-reader');
+          // CRITICAL FIX: Always search for ALL emails every time
+          // Using UNSEEN was causing us to miss emails
+          const searchCriteria = ['ALL'];
+          log(`Searching for ALL messages in inbox`, 'gmail-reader');
           
           this.imap.search(searchCriteria, async (err, results) => {
             if (err) {
