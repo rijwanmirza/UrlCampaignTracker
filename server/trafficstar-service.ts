@@ -571,10 +571,15 @@ class TrafficStarService {
             active: false,
             is_active: false,
             status: 'paused',
+            state: 'paused',
+            campaign_status: 'paused',
+            is_enabled: false,
+            enabled: false,
             is_paused: true,
             paused: true,
             is_archived: false,
-            archived: false
+            archived: false,
+            pause: true
           };
           
           // Keep existing budget if present
@@ -585,25 +590,121 @@ class TrafficStarService {
           console.log(`Sending pause request with parameters: ${JSON.stringify(pauseParams)}`);
           
           let response;
-          try {
-            // First try PATCH method
-            response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 30000 // 30 second timeout
-            });
-          } catch (patchError) {
-            console.log(`PATCH method failed, trying PUT instead: ${patchError.message}`);
-            // If PATCH fails, try PUT method
-            response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 30000 // 30 second timeout
-            });
+          
+          // Try multiple methods and endpoints until one works
+          const methods = ['PATCH', 'PUT', 'POST'];
+          const endpoints = [
+            'https://api.trafficstars.com/v1.1/campaigns',
+            'https://api.trafficstars.com/v1/campaigns',
+            'https://api.trafficstars.com/campaigns'
+          ];
+          
+          let methodSuccess = false;
+          
+          // First, try the main endpoint with different HTTP methods
+          for (const method of methods) {
+            if (methodSuccess) break;
+            
+            try {
+              console.log(`Trying ${method} method on primary endpoint for pause...`);
+              
+              if (method === 'PATCH') {
+                response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+              } else if (method === 'PUT') {
+                response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+              } else if (method === 'POST') {
+                // Some APIs require ID in the payload for POST requests
+                const postParams = { ...pauseParams, id };
+                response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/pause`, postParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+              }
+              
+              console.log(`${method} method for pause succeeded!`);
+              methodSuccess = true;
+              
+            } catch (methodError) {
+              console.log(`${method} method for pause failed: ${methodError.message}`);
+            }
+          }
+          
+          // If all methods failed on primary endpoint, try alternate endpoints
+          if (!methodSuccess) {
+            for (const endpoint of endpoints) {
+              if (methodSuccess) break;
+              
+              try {
+                console.log(`Trying alternate endpoint for pause: ${endpoint}/${id}`);
+                response = await axios.patch(`${endpoint}/${id}`, pauseParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+                
+                console.log(`Alternate endpoint ${endpoint}/${id} for pause succeeded!`);
+                methodSuccess = true;
+                
+              } catch (endpointError) {
+                console.log(`Failed with alternate endpoint ${endpoint}/${id} for pause: ${endpointError.message}`);
+                
+                // If PATCH fails, try PUT
+                try {
+                  console.log(`Trying PUT on alternate endpoint for pause: ${endpoint}/${id}`);
+                  response = await axios.put(`${endpoint}/${id}`, pauseParams, {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                    },
+                    timeout: 30000 // 30 second timeout
+                  });
+                  
+                  console.log(`PUT on alternate endpoint ${endpoint}/${id} for pause succeeded!`);
+                  methodSuccess = true;
+                  
+                } catch (putError) {
+                  console.log(`PUT failed on alternate endpoint ${endpoint}/${id} for pause: ${putError.message}`);
+                }
+              }
+            }
+          }
+          
+          // If we still haven't succeeded, try the /pause specific endpoint
+          if (!methodSuccess) {
+            try {
+              console.log(`Trying specific pause endpoint...`);
+              response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/pause`, {}, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 30000 // 30 second timeout
+              });
+              
+              console.log(`Specific pause endpoint succeeded!`);
+              methodSuccess = true;
+              
+            } catch (pauseError) {
+              console.log(`Specific pause endpoint failed: ${pauseError.message}`);
+              throw pauseError; // Rethrow to be caught by outer catch
+            }
           }
           console.log(`Successfully paused campaign ${id} using v1.1 API endpoint (real mode)`);
           console.log(`API response: ${JSON.stringify(response.data || {})}`);
@@ -918,12 +1019,17 @@ class TrafficStarService {
             active: true,
             is_active: true,
             status: 'enabled',
+            state: 'enabled',
+            campaign_status: 'enabled',
+            is_enabled: true,
+            enabled: true,
+            activate: true,
             is_paused: false,
             paused: false,
             is_archived: false,
             archived: false,
-            // Ensure we have end time in the correct format
-            schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
+            // Set end date to far in the future (1 year)
+            schedule_end_time: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
               .toISOString()
               .replace('T', ' ')
               .replace(/\.\d+Z$/, '')
@@ -937,25 +1043,121 @@ class TrafficStarService {
           console.log(`Sending activation request with parameters: ${JSON.stringify(activateParams)}`);
           
           let response;
-          try {
-            // First try PATCH method
-            response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 30000 // 30 second timeout
-            });
-          } catch (patchError) {
-            console.log(`PATCH method failed, trying PUT instead: ${patchError.message}`);
-            // If PATCH fails, try PUT method
-            response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 30000 // 30 second timeout
-            });
+          
+          // Try multiple methods and endpoints until one works
+          const methods = ['PATCH', 'PUT', 'POST'];
+          const endpoints = [
+            'https://api.trafficstars.com/v1.1/campaigns',
+            'https://api.trafficstars.com/v1/campaigns',
+            'https://api.trafficstars.com/campaigns'
+          ];
+          
+          let methodSuccess = false;
+          
+          // First, try the main endpoint with different HTTP methods
+          for (const method of methods) {
+            if (methodSuccess) break;
+            
+            try {
+              console.log(`Trying ${method} method on primary endpoint...`);
+              
+              if (method === 'PATCH') {
+                response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+              } else if (method === 'PUT') {
+                response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+              } else if (method === 'POST') {
+                // Some APIs require ID in the payload for POST requests
+                const postParams = { ...activateParams, id };
+                response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/activate`, postParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+              }
+              
+              console.log(`${method} method succeeded!`);
+              methodSuccess = true;
+              
+            } catch (methodError) {
+              console.log(`${method} method failed: ${methodError.message}`);
+            }
+          }
+          
+          // If all methods failed on primary endpoint, try alternate endpoints
+          if (!methodSuccess) {
+            for (const endpoint of endpoints) {
+              if (methodSuccess) break;
+              
+              try {
+                console.log(`Trying alternate endpoint: ${endpoint}/${id}`);
+                response = await axios.patch(`${endpoint}/${id}`, activateParams, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 30000 // 30 second timeout
+                });
+                
+                console.log(`Alternate endpoint ${endpoint}/${id} succeeded!`);
+                methodSuccess = true;
+                
+              } catch (endpointError) {
+                console.log(`Failed with alternate endpoint ${endpoint}/${id}: ${endpointError.message}`);
+                
+                // If PATCH fails, try PUT
+                try {
+                  console.log(`Trying PUT on alternate endpoint: ${endpoint}/${id}`);
+                  response = await axios.put(`${endpoint}/${id}`, activateParams, {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                    },
+                    timeout: 30000 // 30 second timeout
+                  });
+                  
+                  console.log(`PUT on alternate endpoint ${endpoint}/${id} succeeded!`);
+                  methodSuccess = true;
+                  
+                } catch (putError) {
+                  console.log(`PUT failed on alternate endpoint ${endpoint}/${id}: ${putError.message}`);
+                }
+              }
+            }
+          }
+          
+          // If we still haven't succeeded, try the /activate specific endpoint
+          if (!methodSuccess) {
+            try {
+              console.log(`Trying specific activate endpoint...`);
+              response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/activate`, {}, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 30000 // 30 second timeout
+              });
+              
+              console.log(`Specific activate endpoint succeeded!`);
+              methodSuccess = true;
+              
+            } catch (activateError) {
+              console.log(`Specific activate endpoint failed: ${activateError.message}`);
+              throw activateError; // Rethrow to be caught by outer catch
+            }
           }
           console.log(`Successfully activated campaign ${id} using v1.1 API endpoint (real mode)`);
           console.log(`API response: ${JSON.stringify(response.data || {})}`);
