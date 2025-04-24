@@ -1046,6 +1046,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Database migration - update campaign multiplier to decimal type
+  app.post("/api/system/migrate-decimal-multiplier", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration function
+      const { updateMultiplierToDecimal } = await import("./migrations/decimal-multiplier");
+      
+      // Execute the migration
+      const result = await updateMultiplierToDecimal();
+      
+      if (result.success) {
+        console.log("✅ Multiplier migration successful:", result.message);
+        res.status(200).json({
+          message: "Multiplier migration completed successfully",
+          details: result.message
+        });
+      } else {
+        console.error("❌ Multiplier migration failed:", result.message);
+        res.status(500).json({
+          message: "Multiplier migration failed",
+          details: result.message
+        });
+      }
+    } catch (error) {
+      console.error("Failed to run multiplier migration:", error);
+      res.status(500).json({ message: "Failed to run multiplier migration" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
