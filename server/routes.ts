@@ -1033,10 +1033,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reset Gmail tracking system (clear all processed email logs)
   app.post("/api/gmail-reader/reset-tracking", (_req: Request, res: Response) => {
     try {
+      // Stop the Gmail reader first to clear any in-progress operations
+      gmailReader.stop();
+      
+      // Clear all email logs
       const result = gmailReader.clearAllEmailLogs();
+      
+      // Restart with a clean state after a short delay
+      setTimeout(() => {
+        // Start Gmail reader again to force a fresh scan
+        gmailReader.start();
+        
+        console.log('Gmail reader restarted with clean tracking state for fresh email scan');
+      }, 2000);
+      
       res.json({
         success: true,
-        message: `Gmail tracking system reset successfully. Removed ${result.entriesRemoved} entries.`,
+        message: `Gmail tracking system reset successfully. Removed ${result.entriesRemoved} entries. Reader restarted to perform a complete fresh scan.`,
         details: result
       });
     } catch (error) {
