@@ -674,115 +674,45 @@ class TrafficStarService {
           let success = false;
           let lastError = null;
           
-          // Try different endpoint patterns
-          for (const baseUrl of API_BASE_URLS) {
-            // Format 1: POST /campaigns/{id}/enable
-            try {
-              console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
-              await axios.post(`${baseUrl}/campaigns/${id}/enable`, {}, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
-              lastError = error;
-              // Continue to next attempt
-            }
+          // Use the v1.1 API endpoint directly for campaign 1000866
+          // We know this endpoint works based on previous testing
+          try {
+            console.log(`Activating campaign ${id} using direct v1.1 API endpoint`);
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              active: true
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000 // 10 second timeout
+            });
+            console.log(`Successfully activated campaign ${id} using v1.1 PATCH endpoint`);
+            success = true;
+          } catch (error) {
+            console.log(`Failed to activate campaign ${id} using v1.1 endpoint: ${error.message}`);
+            lastError = error;
             
-            // Format 2: PUT /campaigns/{id} with active=true
-            try {
-              console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=true`);
-              await axios.put(`${baseUrl}/campaigns/${id}`, {
-                active: true
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=true`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=true`);
-              lastError = error;
-              // Continue to next attempt
-            }
-            
-            // Format 3: POST /campaigns/{id}/status with status=active
-            try {
-              console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-              await axios.post(`${baseUrl}/campaigns/${id}/status`, {
-                status: 'active'
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-              lastError = error;
-              // Continue to next attempt
-            }
-            
-            // Format 4: PUT /campaigns/activate with campaign_ids array (v2 format)
-            try {
-              console.log(`Trying to activate campaign ${id} using batch endpoint: ${baseUrl}/campaigns/activate`);
-              await axios.put(`${baseUrl}/campaigns/activate`, {
-                campaign_ids: [parseInt(id.toString())]
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully activated campaign ${id} using batch endpoint: ${baseUrl}/campaigns/activate`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to activate campaign ${id} using batch endpoint: ${baseUrl}/campaigns/activate`);
-              lastError = error;
-              // Continue to next attempt
-            }
-            
-            // Format 5: PATCH campaigns/{id} endpoint (v1.1 format from PHP code)
-            try {
-              console.log(`Trying to activate campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
-              
-              // Set end time to end of today in GMT
-              const campaign_end_time = new Date();
-              campaign_end_time.setUTCHours(23, 59, 59, 999);
-              
-              await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                max_daily: 10.15, // Set daily budget to $10.15 as in PHP code
-                schedule_end_time: campaign_end_time.toISOString()
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully activated campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to activate campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
-              lastError = error;
-              // Continue to next attempt
+            // If the direct approach fails, try a few other formats just in case
+            for (const baseUrl of ['https://api.trafficstars.com/v1.1', 'https://api.trafficstars.com/v1']) {
+              try {
+                console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
+                await axios.patch(`${baseUrl}/campaigns/${id}`, {
+                  active: true
+                }, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 5000 // 5 second timeout
+                });
+                console.log(`Successfully activated campaign ${id} using ${baseUrl}`);
+                success = true;
+                break;
+              } catch (altError) {
+                console.log(`Failed with alternate endpoint ${baseUrl}: ${altError.message}`);
+                // Continue to next attempt
+              }
             }
           }
           
@@ -938,69 +868,45 @@ class TrafficStarService {
           let success = false;
           let lastError = null;
           
-          // Try different endpoint patterns
-          for (const baseUrl of API_BASE_URLS) {
-            // Format 1: PUT /campaigns/{id} with max_daily field
-            try {
-              console.log(`Trying to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
-              await axios.put(`${baseUrl}/campaigns/${id}`, {
-                max_daily: maxDaily
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully updated budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
-              lastError = error;
-              // Continue to next attempt
-            }
+          // Use the v1.1 API endpoint directly for budget updates
+          // We know this endpoint works based on previous testing
+          try {
+            console.log(`Updating budget for campaign ${id} using direct v1.1 API endpoint`);
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              max_daily: maxDaily
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000 // 10 second timeout
+            });
+            console.log(`Successfully updated budget for campaign ${id} to $${maxDaily} using v1.1 PATCH endpoint`);
+            success = true;
+          } catch (error) {
+            console.log(`Failed to update budget for campaign ${id} using v1.1 endpoint: ${error.message}`);
+            lastError = error;
             
-            // Format 2: PATCH /campaigns/{id} with max_daily field (v1.1 format from PHP code)
-            try {
-              console.log(`Trying to update budget for campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
-              await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                max_daily: maxDaily
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully updated budget for campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to update budget for campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
-              lastError = error;
-              // Continue to next attempt
-            }
-            
-            // Format 3: POST /campaigns/{id}/budget with amount field
-            try {
-              console.log(`Trying to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/budget`);
-              await axios.post(`${baseUrl}/campaigns/${id}/budget`, {
-                amount: maxDaily
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10 second timeout
-              });
-              console.log(`Successfully updated budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/budget`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/budget`);
-              lastError = error;
-              // Continue to next attempt
+            // If the direct approach fails, try a few other formats just in case
+            for (const baseUrl of ['https://api.trafficstars.com/v1.1', 'https://api.trafficstars.com/v1']) {
+              try {
+                console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
+                await axios.patch(`${baseUrl}/campaigns/${id}`, {
+                  max_daily: maxDaily
+                }, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 5000 // 5 second timeout
+                });
+                console.log(`Successfully updated budget for campaign ${id} to $${maxDaily} using ${baseUrl}`);
+                success = true;
+                break;
+              } catch (altError) {
+                console.log(`Failed with alternate endpoint ${baseUrl}: ${altError.message}`);
+                // Continue to next attempt
+              }
             }
           }
           
