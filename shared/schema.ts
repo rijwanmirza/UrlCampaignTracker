@@ -152,6 +152,11 @@ export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   maxDaily: numeric("max_daily", { precision: 10, scale: 2 }), // Budget
   pricingModel: text("pricing_model"),
   scheduleEndTime: text("schedule_end_time"),
+  lastRequestedAction: text("last_requested_action"), // 'activate' or 'pause' - what we last asked the API to do
+  lastRequestedActionAt: timestamp("last_requested_action_at"), // When we last sent a request
+  lastRequestedActionSuccess: boolean("last_requested_action_success"), // Whether API reported success
+  lastVerifiedStatus: text("last_verified_status"), // Last status we verified directly from the API
+  syncStatus: text("sync_status").default('synced'), // 'synced', 'pending_activation', 'pending_pause'
   campaignData: json("campaign_data"), // Store full campaign data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

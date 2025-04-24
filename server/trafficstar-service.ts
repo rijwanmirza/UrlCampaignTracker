@@ -569,7 +569,7 @@ class TrafficStarService {
           
           console.log(`Sending pause request with parameters: ${JSON.stringify(pauseParams)}`);
           
-          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
+          const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -577,6 +577,19 @@ class TrafficStarService {
             timeout: 30000 // 30 second timeout
           });
           console.log(`Successfully paused campaign ${id} using v1.1 PATCH endpoint (real mode)`);
+          console.log(`API response: ${JSON.stringify(response.data || {})}`);
+          
+          // Record that we requested pausing in the database
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedAction: 'pause',
+              lastRequestedActionAt: new Date(),
+              lastRequestedActionSuccess: true,
+              syncStatus: 'pending_pause',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            
           success = true;
         } catch (error) {
           console.error(`Failed to pause campaign ${id} using v1.1 endpoint: ${error.message}`, error);
@@ -879,7 +892,7 @@ class TrafficStarService {
           
           console.log(`Sending activation request with parameters: ${JSON.stringify(activateParams)}`);
           
-          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
+          const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -887,6 +900,19 @@ class TrafficStarService {
             timeout: 30000 // 30 second timeout
           });
           console.log(`Successfully activated campaign ${id} using v1.1 PATCH endpoint (real mode)`);
+          console.log(`API response: ${JSON.stringify(response.data || {})}`);
+          
+          // Record that we requested activation in the database
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedAction: 'activate',
+              lastRequestedActionAt: new Date(),
+              lastRequestedActionSuccess: true,
+              syncStatus: 'pending_activation',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
           success = true;
         } catch (error) {
           console.error(`Failed to activate campaign ${id} using v1.1 endpoint: ${error.message}`, error);
