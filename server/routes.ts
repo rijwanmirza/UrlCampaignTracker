@@ -1030,6 +1030,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Reset Gmail tracking system (clear all processed email logs)
+  app.post("/api/gmail-reader/reset-tracking", (_req: Request, res: Response) => {
+    try {
+      const result = gmailReader.clearAllEmailLogs();
+      res.json({
+        success: true,
+        message: `Gmail tracking system reset successfully. Removed ${result.entriesRemoved} entries.`,
+        details: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: `Error resetting Gmail tracking system: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
+  });
+  
   // Full system cleanup endpoint
   app.post("/api/system/full-cleanup", async (req: Request, res: Response) => {
     try {
