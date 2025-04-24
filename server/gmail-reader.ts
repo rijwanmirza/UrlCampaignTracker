@@ -379,6 +379,50 @@ class GmailReader {
     });
   }
   
+  // Test if we can get proper write access to the mailbox (for deletion)
+  private async testMailboxAccess(): Promise<{ writable: boolean, error?: string }> {
+    return new Promise<{ writable: boolean, error?: string }>((resolve) => {
+      try {
+        if (!this.isRunning || this.imap.state !== 'authenticated') {
+          resolve({ writable: false, error: 'IMAP not connected' });
+          return;
+        }
+        
+        // First close any existing box
+        this.imap.closeBox((err) => {
+          if (err) {
+            log(`Warning during mailbox test: ${err.message}`, 'gmail-reader');
+          }
+          
+          // Try to open the inbox in readWrite mode
+          this.imap.openBox('INBOX', false, (err, box) => {
+            if (err) {
+              resolve({ writable: false, error: `Failed to open inbox: ${err.message}` });
+              return;
+            }
+            
+            // Check if mailbox is marked as readOnly
+            if (box && box.readOnly === true) {
+              resolve({ 
+                writable: false, 
+                error: 'Mailbox is READ-ONLY. Please check your Gmail settings.' 
+              });
+              return;
+            }
+            
+            // Success - mailbox is writable
+            resolve({ writable: true });
+          });
+        });
+      } catch (error) {
+        resolve({ 
+          writable: false, 
+          error: `Error testing mailbox access: ${error}` 
+        });
+      }
+    });
+  }
+  
   // Verify SMTP credentials - an alternative way to test if credentials are valid
   public async verifyCredentials(): Promise<{ success: boolean, message: string }> {
     try {
@@ -858,10 +902,21 @@ class GmailReader {
       
     // Log current auto-delete settings with additional details
     console.log('🔍 DEBUG: Running checkEmailsForDeletion with autoDeleteMinutes =', autoDeleteMinutes);
+    console.log('🔍 DEBUG: Gmail IMAP state:', this.imap.state);
     
     if (autoDeleteMinutes <= 0) {
       return; // Auto-delete is disabled
     }
+    
+    // First check if we have proper permissions to delete emails
+    const mailboxAccess = await this.testMailboxAccess();
+    if (!mailboxAccess.writable) {
+      log(`Unable to delete emails: ${mailboxAccess.error}`, 'gmail-reader');
+      log(`Please check your Gmail settings to allow deletion via IMAP.`, 'gmail-reader');
+      return; // Cannot proceed with deletion
+    }
+    
+    log(`✅ Gmail mailbox is writable, proceeding with email deletion`, 'gmail-reader');
     
     try {
       const now = new Date();
