@@ -608,11 +608,22 @@ class GmailReader {
           
           // Add URL to the campaign
           try {
+            // SAFETY CHECK: Make sure we have a campaign ID
+            if (!this.config.defaultCampaignId) {
+              log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
+              this.logProcessedEmail(msgId, 'error-no-campaign-id');
+              resolve();
+              return;
+            }
+            
+            // Store the campaign ID locally to ensure it never changes
+            const campaignId = this.config.defaultCampaignId;
+            
             // First check if we already have this order ID in the campaign
             // This is our first defense against duplicates
-            const campaign = await storage.getCampaign(this.config.defaultCampaignId);
+            const campaign = await storage.getCampaign(campaignId);
             if (!campaign) {
-              log(`Campaign with ID ${this.config.defaultCampaignId} not found`, 'gmail-reader');
+              log(`Campaign with ID ${campaignId} not found`, 'gmail-reader');
               resolve();
               return;
             }
@@ -623,7 +634,7 @@ class GmailReader {
               u.name === orderId || u.name.startsWith(`${orderId} #`));
             
             if (urlWithSameName) {
-              log(`URL with name "${orderId}" already exists in campaign ${this.config.defaultCampaignId}. Skipping.`, 'gmail-reader');
+              log(`URL with name "${orderId}" already exists in campaign ${campaignId}. Skipping.`, 'gmail-reader');
               // Log this email as a duplicate - it's also eligible for auto-delete
               this.logProcessedEmail(msgId, 'duplicate');
               resolve();
@@ -644,11 +655,11 @@ class GmailReader {
               targetUrl: url || 'https://example.com', // Provide a fallback
               clickLimit: calculatedClickLimit,   // Multiplied by campaign multiplier
               originalClickLimit: quantity,       // Original value from email
-              campaignId: this.config.defaultCampaignId
+              campaignId: campaignId  // Use the stored campaignId to ensure consistency
             };
             
             const createdUrl = await storage.createUrl(newUrl);
-            log(`Successfully added URL to campaign ${this.config.defaultCampaignId}:
+            log(`Successfully added URL to campaign ${campaignId}:
               Name: ${createdUrl.name}
               Target URL: ${createdUrl.targetUrl}
               Original Click Limit: ${quantity}
