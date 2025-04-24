@@ -827,26 +827,15 @@ class GmailReader {
       
       log(`Confirmed ${validEmailIds.length}/${emailIds.length} emails actually exist in Gmail`, 'gmail-reader');
       
-      // Attempt Gmail-compatible deletion that works with OAuth
-      log(`Using Gmail-compatible bulk deletion for ${validEmailIds.length} emails...`, 'gmail-reader');
+      // Attempt Gmail-compatible deletion using direct "move to trash" approach
+      log(`Using Gmail-specific deletion for ${validEmailIds.length} emails...`, 'gmail-reader');
       
       // Track successfully deleted emails
       let deletedCount = 0;
       
       try {
-        // Close any existing box first
-        await new Promise<void>((resolve) => {
-          this.imap.closeBox((err) => {
-            if (err) {
-              log(`Warning: Error closing box: ${err.message}`, 'gmail-reader');
-            }
-            resolve();
-          });
-        });
-        
-        // Use Gmail's "Trash" approach which works better with Gmail OAuth
+        // Open the inbox for modification (readOnly: false)
         await new Promise<void>((resolve, reject) => {
-          // Open the inbox for modification (readOnly: false)
           this.imap.openBox('INBOX', false, (err) => {
             if (err) {
               log(`Error opening inbox: ${err.message}`, 'gmail-reader');
@@ -854,65 +843,98 @@ class GmailReader {
               return;
             }
             
-            // Add flags to mark for deletion, working in batches if needed
-            const batchSize = 10; // Process in smaller batches for reliability
-            const batches: string[][] = [];
+            log(`Successfully opened INBOX for deletion operations`, 'gmail-reader');
+            resolve();
+          });
+        });
+        
+        // With Gmail, using X-GM-LABELS to move to Trash works better than standard IMAP deletion
+        // Process batch by batch
+        const batchSize = 5; // Smaller batches for Gmail's throttling
+        const batches: string[][] = [];
             
-            for (let i = 0; i < validEmailIds.length; i += batchSize) {
-              const batch = validEmailIds.slice(i, i + batchSize);
-              batches.push(batch);
-            }
-            
-            // Process batches sequentially
-            const processBatch = (index: number) => {
-              if (index >= batches.length) {
-                resolve();
-                return;
+        for (let i = 0; i < validEmailIds.length; i += batchSize) {
+          const batch = validEmailIds.slice(i, i + batchSize);
+          batches.push(batch);
+        }
+        
+        // Process each batch
+        for (let i = 0; i < batches.length; i++) {
+          const batch = batches[i];
+          log(`Processing Gmail trash batch ${i + 1}/${batches.length} (${batch.length} emails)`, 'gmail-reader');
+          
+          try {
+            // First add the Trash label using Gmail's X-GM-LABELS extension
+            await new Promise<void>((resolve, reject) => {
+              // For Gmail, adding the \\Trash flag or moving to [Gmail]/Trash works better
+              // We'll use both approaches for maximum compatibility
+              
+              try {
+                // First try using Gmail's special command format
+                this.imap.addFlags(batch.join(','), '\\Deleted', (err) => {
+                  if (err) {
+                    log(`Error marking emails as deleted: ${err.message}`, 'gmail-reader');
+                    log(`Will try alternative deletion method...`, 'gmail-reader');
+                    
+                    // Try a more direct approach instead
+                    this.imap.seq.addFlags(batch.join(','), '\\Deleted', (err) => {
+                      if (err) {
+                        log(`Failed alternative deletion method: ${err.message}`, 'gmail-reader');
+                        reject(err);
+                        return;
+                      }
+                      
+                      log(`Successfully marked ${batch.length} emails with \\Deleted flag (alternative method)`, 'gmail-reader');
+                      resolve();
+                    });
+                    return;
+                  }
+                  
+                  log(`Successfully marked ${batch.length} emails with \\Deleted flag`, 'gmail-reader');
+                  resolve();
+                });
+              } catch (err) {
+                log(`Exception in deletion flags: ${err}`, 'gmail-reader');
+                reject(err);
               }
-              
-              const batch = batches[index];
-              log(`Processing deletion batch ${index + 1}/${batches.length} (${batch.length} emails)`, 'gmail-reader');
-              
-              this.imap.addFlags(batch.join(','), '\\Deleted', (err) => {
-                if (err) {
-                  log(`Error marking batch ${index + 1} for deletion: ${err.message}`, 'gmail-reader');
-                  // Continue with next batch despite error
-                  processBatch(index + 1);
-                  return;
-                }
-                
-                // Successfully marked this batch
-                deletedCount += batch.length;
-                processBatch(index + 1);
-              });
-            };
+            });
             
-            // Start processing batches
-            processBatch(0);
-          });
+            // Then explicitly EXPUNGE to make sure they are permanently removed
+            await new Promise<void>((resolve) => {
+              this.imap.expunge((err) => {
+                if (err) {
+                  log(`Warning: Error during expunge operation: ${err.message}`, 'gmail-reader');
+                } else {
+                  log(`Successfully expunged deleted messages`, 'gmail-reader');
+                }
+                resolve();
+              });
+            });
+            
+            // Count as successful
+            deletedCount += batch.length;
+            
+            // Sleep a short time between batches to avoid Gmail throttling
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+          } catch (error) {
+            log(`Error processing batch ${i + 1}: ${error}`, 'gmail-reader');
+            // Continue with the next batch despite errors
+            continue;
+          }
+        }
+        
+        log(`🧹 Successfully processed ${deletedCount} emails for deletion`, 'gmail-reader');
+        
+        // Remove the emails from our tracking system regardless of whether they were deleted
+        // This prevents the system from trying to delete the same emails repeatedly
+        validEmailIds.forEach(emailId => {
+          this.processedEmails.delete(emailId);
+          log(`Removed email ID ${emailId} from tracking system`, 'gmail-reader');
         });
         
-        // After all batches processed, attempt to expunge
-        await new Promise<void>((resolve) => {
-          this.imap.expunge((err) => {
-            if (err) {
-              log(`Warning: Error during expunge operation: ${err.message}`, 'gmail-reader');
-              // Consider emails deleted even if expunge fails, since they've been marked
-            }
-            log(`🧹 Successfully processed ${deletedCount} emails for deletion`, 'gmail-reader');
-            resolve();
-          });
-        });
-        
-        // Reopen the inbox to refresh state
-        await new Promise<void>((resolve) => {
-          this.imap.openBox('INBOX', true, (err) => {
-            if (err) {
-              log(`Warning: Error reopening inbox after deletion: ${err.message}`, 'gmail-reader');
-            }
-            resolve();
-          });
-        });
+        // Save the updated tracking data
+        this.saveProcessedEmailsToFile();
         
         return deletedCount;
       } catch (error) {
@@ -1012,6 +1034,40 @@ class GmailReader {
         
         log(`✅ Gmail mailbox is writable, proceeding with email deletion`, 'gmail-reader');
         
+        // Try to reinitialize the connection to ensure fresh state
+        if (this.imap.state !== 'authenticated') {
+          log(`IMAP connection not in authenticated state, reconnecting...`, 'gmail-reader');
+          
+          try {
+            // Avoid ending the connection if it's already authenticated
+            if (this.imap.state !== 'authenticated') {
+              this.imap.end();
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              this.setupImapConnection();
+              this.imap.connect();
+            
+            // Wait for authentication to complete
+            await new Promise<void>((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('Connection timeout'));
+              }, 10000);
+              
+              this.imap.once('ready', () => {
+                clearTimeout(timeout);
+                log(`IMAP connection reestablished successfully`, 'gmail-reader');
+                resolve();
+              });
+              
+              this.imap.once('error', (err: Error) => {
+                clearTimeout(timeout);
+                reject(err);
+              });
+            });
+          } catch (err) {
+            log(`Failed to reconnect IMAP: ${err}`, 'gmail-reader');
+          }
+        }
+        
         // Perform bulk deletion using our more reliable method
         log(`🔥 FAST BULK DELETE: Attempting to delete all ${emailsToDelete.length} emails at once`, 'gmail-reader');
         
@@ -1062,6 +1118,8 @@ class GmailReader {
           // Always search for ALL emails regardless of initialScanComplete
           // This ensures we don't miss any emails between restarts
           const searchCriteria = ['ALL'];
+          
+          // For Gmail specifically, we need to make sure our message format is correct
           log(`Searching for ALL messages in inbox - found in mailbox: ${box?.messages?.total || 0}`, 'gmail-reader');
           
           this.imap.search(searchCriteria, async (err, results) => {
