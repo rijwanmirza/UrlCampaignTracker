@@ -8,6 +8,7 @@ import CampaignList from "@/pages/campaign-list";
 import URLsPage from "@/pages/urls";
 import URLsMobilePage from "@/pages/urls-mobile";
 import RedirectPage from "@/pages/redirect";
+import RedirectTest from "@/pages/redirect-test";
 import GmailSettingsPage from "@/pages/gmail-settings";
 import SystemSettingsPage from "@/pages/system-settings";
 import AppLayout from "@/components/layout/app-layout";
@@ -57,6 +58,9 @@ function Router() {
         </Route>
         <Route path="/system-settings">
           <SystemSettingsPage />
+        </Route>
+        <Route path="/redirect-test">
+          <RedirectTest />
         </Route>
         <Route>
           <NotFound />

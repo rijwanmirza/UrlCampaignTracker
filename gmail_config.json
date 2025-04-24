@@ -1,6 +1,6 @@
 {
   "user": "compaignwalabhai@gmail.com",
-  "password": "hciuemplthdkwfho",
+  "password": "vsbjtgddrvfshkfi",
   "host": "imap.gmail.com",
   "port": 993,
   "tls": true,
@@ -16,7 +16,7 @@
     "urlRegex": "object Object",
     "quantityRegex": "object Object"
   },
-  "defaultCampaignId": 21,
+  "defaultCampaignId": 20,
   "autoDeleteMinutes": 2,
   "checkInterval": 60000
 }
