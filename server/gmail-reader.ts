@@ -389,34 +389,31 @@ class GmailReader {
           return;
         }
         
-        // First close any existing box 
-        this.imap.closeBox((err) => {
+        // Skip closing the inbox - directly try to open with write access
+        // This prevents errors when no mailbox is currently selected
+        this.imap.openBox('INBOX', false, (err, box) => {
           if (err) {
-            log(`Warning during mailbox test: ${err.message}`, 'gmail-reader');
+            log(`Failed to open inbox for writing: ${err.message}`, 'gmail-reader');
+            resolve({ writable: false, error: `Failed to open inbox: ${err.message}` });
+            return;
           }
           
-          // Try to open the inbox in readWrite mode (false = readOnly disabled)
-          this.imap.openBox('INBOX', false, (err, box) => {
-            if (err) {
-              resolve({ writable: false, error: `Failed to open inbox: ${err.message}` });
-              return;
-            }
-            
-            // Check if mailbox is marked as readOnly
-            if (box && box.readOnly === true) {
-              resolve({ 
-                writable: false, 
-                error: 'Mailbox is READ-ONLY. Please check your Gmail settings.' 
-              });
-              return;
-            }
-            
-            // Successfully opened the mailbox for writing
-            log(`Successfully opened mailbox for write access`, 'gmail-reader');
-            resolve({ writable: true });
-          });
+          // Check if mailbox is marked as readOnly
+          if (box && box.readOnly === true) {
+            log('Mailbox is READ-ONLY. Gmail permissions issue.', 'gmail-reader');
+            resolve({ 
+              writable: false, 
+              error: 'Mailbox is READ-ONLY. Please check your Gmail settings.' 
+            });
+            return;
+          }
+          
+          // Successfully opened the mailbox for writing
+          log(`Successfully opened mailbox for write access`, 'gmail-reader');
+          resolve({ writable: true });
         });
       } catch (error) {
+        log(`Error testing mailbox access: ${error}`, 'gmail-reader');
         resolve({ 
           writable: false, 
           error: `Error testing mailbox access: ${error}` 
@@ -729,23 +726,43 @@ class GmailReader {
     }
     
     return new Promise<string[]>((resolve) => {
-      this.imap.openBox('INBOX', true, (err, box) => {
-        if (err) {
-          log(`Error opening inbox: ${err.message}`, 'gmail-reader');
-          resolve([]);
-          return;
+      try {
+        // First check if a mailbox is already selected
+        if (this.imap.state === 'selected') {
+          // If we're already in a mailbox, use UID SEARCH directly
+          this.imap.search(['ALL'], (err, results) => {
+            if (err) {
+              log(`Error searching emails: ${err.message}`, 'gmail-reader');
+              resolve([]);
+              return;
+            }
+            
+            resolve(results.map(r => r.toString()));
+          });
+        } else {
+          // Otherwise open the inbox first
+          this.imap.openBox('INBOX', true, (err, box) => {
+            if (err) {
+              log(`Error opening inbox: ${err.message}`, 'gmail-reader');
+              resolve([]);
+              return;
+            }
+            
+            this.imap.search(['ALL'], (err, results) => {
+              if (err) {
+                log(`Error searching emails: ${err.message}`, 'gmail-reader');
+                resolve([]);
+                return;
+              }
+              
+              resolve(results.map(r => r.toString()));
+            });
+          });
         }
-        
-        this.imap.search(['ALL'], (err, results) => {
-          if (err) {
-            log(`Error searching emails: ${err.message}`, 'gmail-reader');
-            resolve([]);
-            return;
-          }
-          
-          resolve(results.map(r => r.toString()));
-        });
-      });
+      } catch (error) {
+        log(`Error in getActualGmailEmails: ${error}`, 'gmail-reader');
+        resolve([]);
+      }
     });
   }
   
