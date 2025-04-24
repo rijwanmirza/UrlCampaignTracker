@@ -175,6 +175,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                       <SelectItem value={RedirectMethod.DOUBLE_META_REFRESH}>Double Meta Refresh</SelectItem>
                       <SelectItem value={RedirectMethod.HTTP_307}>HTTP 307 Redirect</SelectItem>
                       <SelectItem value={RedirectMethod.HTTP2_307_TEMPORARY}>HTTP/2.0 307 Temporary</SelectItem>
+                      <SelectItem value={RedirectMethod.HTTP2_FORCED_307}>HTTP/2.0 Forced 307</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>

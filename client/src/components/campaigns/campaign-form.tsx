@@ -53,6 +53,7 @@ const redirectMethodLabels = {
   [RedirectMethod.DOUBLE_META_REFRESH]: "Double Meta Refresh",
   [RedirectMethod.HTTP_307]: "HTTP 307 Redirect",
   [RedirectMethod.HTTP2_307_TEMPORARY]: "HTTP/2.0 307 Temporary",
+  [RedirectMethod.HTTP2_FORCED_307]: "HTTP/2.0 Forced 307",
 };
 
 export default function CampaignForm({ open, onOpenChange, onSuccess }: CampaignFormProps) {
