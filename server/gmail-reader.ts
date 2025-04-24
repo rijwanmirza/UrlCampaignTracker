@@ -473,7 +473,7 @@ class GmailReader {
   // Delete a specific email by its UID
   private deleteEmail(uid: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      if (!this.isRunning || !this.imap.state === 'authenticated') {
+      if (!this.isRunning || this.imap.state !== 'authenticated') {
         log(`Cannot delete email: IMAP connection not ready`, 'gmail-reader');
         resolve(false);
         return;

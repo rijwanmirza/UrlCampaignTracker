@@ -29,7 +29,8 @@ const gmailSettingsSchema = z.object({
   urlRegex: z.string().min(1, "URL regex is required"),
   quantityRegex: z.string().min(1, "Quantity regex is required"),
   defaultCampaignId: z.number().int().positive("Please select a campaign"),
-  checkInterval: z.number().int().positive().default(60000)
+  checkInterval: z.number().int().positive().default(60000),
+  autoDeleteMinutes: z.number().int().min(0).default(0)
 });
 
 type GmailSettingsFormValues = z.infer<typeof gmailSettingsSchema>;
@@ -89,7 +90,8 @@ export default function GmailSettingsPage() {
           urlRegex: messagePattern.urlRegex ? messagePattern.urlRegex.toString().slice(1, -1) : 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
           quantityRegex: messagePattern.quantityRegex ? messagePattern.quantityRegex.toString().slice(1, -1) : 'Quantity\\s*:\\s*(\\d+)',
           defaultCampaignId: config.defaultCampaignId || (campaigns.length > 0 ? campaigns[0].id : 0),
-          checkInterval: config.checkInterval || 60000
+          checkInterval: config.checkInterval || 60000,
+          autoDeleteMinutes: config.autoDeleteMinutes || 0
         });
       }
     }
@@ -111,7 +113,8 @@ export default function GmailSettingsPage() {
       urlRegex: 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
       quantityRegex: 'Quantity\\s*:\\s*(\\d+)',
       defaultCampaignId: campaigns.length > 0 ? campaigns[0].id : 0,
-      checkInterval: 60000
+      checkInterval: 60000,
+      autoDeleteMinutes: 0
     }
   });
   
@@ -138,7 +141,8 @@ export default function GmailSettingsPage() {
           quantityRegex: values.quantityRegex
         },
         defaultCampaignId: values.defaultCampaignId,
-        checkInterval: values.checkInterval
+        checkInterval: values.checkInterval,
+        autoDeleteMinutes: values.autoDeleteMinutes
       };
       
       return apiRequest<{message: string, config: any}>('POST', '/api/gmail-reader/config', configData);
