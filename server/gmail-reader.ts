@@ -364,6 +364,7 @@ class GmailReader {
       tlsOptions: this.config.tlsOptions,
       authTimeout: 30000, // Increase auth timeout to 30 seconds
       connTimeout: 30000, // Increase connection timeout to 30 seconds
+      debug: console.log // Enable debug mode to see what's happening with IMAP
     });
 
     this.imap.once('error', (err: Error) => {
@@ -761,6 +762,21 @@ class GmailReader {
     // Filter the email IDs to only those that exist in Gmail
     const validEmailIds = emailIds.filter(id => actualEmails.includes(id));
     
+    // Identify missing emails and clean them from our tracking
+    if (validEmailIds.length < emailIds.length) {
+      const missingEmails = emailIds.filter(id => !actualEmails.includes(id));
+      log(`Found ${missingEmails.length} emails that no longer exist in Gmail - removing from tracking`, 'gmail-reader');
+      
+      // Remove these emails from our tracking to prevent future deletion attempts
+      missingEmails.forEach(emailId => {
+        this.processedEmails.delete(emailId);
+        log(`Removed missing email ID ${emailId} from tracking system`, 'gmail-reader');
+      });
+      
+      // Save our updated tracking data
+      this.saveProcessedEmailsToFile();
+    }
+    
     log(`Out of ${emailIds.length} emails to delete, found ${validEmailIds.length} that actually exist in Gmail`, 'gmail-reader');
     
     return validEmailIds;
@@ -901,68 +917,34 @@ class GmailReader {
   
   // Check for emails that need to be deleted based on the autoDeleteMinutes setting
   private async checkEmailsForDeletion() {
-    // Ensure autoDeleteMinutes is a number and validate it
-    const autoDeleteMinutes = typeof this.config.autoDeleteMinutes === 'number' 
-      ? this.config.autoDeleteMinutes 
-      : 0;
-      
-    // Log current auto-delete settings with additional details
-    console.log('🔍 DEBUG: Running checkEmailsForDeletion with autoDeleteMinutes =', autoDeleteMinutes);
-    console.log('🔍 DEBUG: Gmail IMAP state:', this.imap.state);
-    
-    if (autoDeleteMinutes <= 0) {
-      return; // Auto-delete is disabled
-    }
-    
-    // First make sure we're properly connected to the IMAP server
-    if (!this.isRunning || this.imap.state !== 'authenticated') {
-      log(`Cannot check for emails to delete: IMAP not authenticated`, 'gmail-reader');
-      return;
-    }
-    
-    // Ensure we have a mailbox selected before doing any operations
     try {
-      // First close any box that might be open
-      await new Promise<void>((resolve) => {
-        this.imap.closeBox((err) => {
-          if (err) log(`Warning when closing box: ${err.message}`, 'gmail-reader');
-          resolve();
-        });
-      });
+      // Ensure autoDeleteMinutes is a number and validate it
+      const autoDeleteMinutes = typeof this.config.autoDeleteMinutes === 'number' 
+        ? this.config.autoDeleteMinutes 
+        : 0;
+        
+      // Log current auto-delete settings with additional details
+      log(`Running email auto-delete check with interval set to ${autoDeleteMinutes} minutes`, 'gmail-reader');
+      log(`Current IMAP connection state: ${this.imap.state}`, 'gmail-reader');
       
-      // Then open the INBOX to ensure we have a mailbox selected
-      await new Promise<void>((resolve, reject) => {
-        this.imap.openBox('INBOX', true, (err) => {
-          if (err) {
-            log(`Error opening inbox for deletion check: ${err.message}`, 'gmail-reader');
-            reject(err);
-            return;
-          }
-          resolve();
-        });
-      });
-    } catch (error) {
-      log(`Error preparing mailbox for deletion: ${error}`, 'gmail-reader');
-      return;
-    }
-    
-    // Now check if we have proper permissions to delete emails
-    const mailboxAccess = await this.testMailboxAccess();
-    if (!mailboxAccess.writable) {
-      log(`Unable to delete emails: ${mailboxAccess.error}`, 'gmail-reader');
-      log(`Please check your Gmail settings to allow deletion via IMAP.`, 'gmail-reader');
-      return; // Cannot proceed with deletion
-    }
-    
-    log(`✅ Gmail mailbox is writable, proceeding with email deletion`, 'gmail-reader');
-    
-    try {
+      if (autoDeleteMinutes <= 0) {
+        log(`Auto-delete is disabled (set to ${autoDeleteMinutes} minutes)`, 'gmail-reader');
+        return; // Auto-delete is disabled
+      }
+      
+      // First make sure we're properly connected to the IMAP server
+      if (!this.isRunning || this.imap.state !== 'authenticated') {
+        log(`Cannot check for emails to delete: IMAP not authenticated`, 'gmail-reader');
+        return;
+      }
+      
+      // Get all the emails that need to be deleted FIRST, before interacting with mailbox
       const now = new Date();
       const cutoffTime = new Date(now.getTime() - (autoDeleteMinutes * 60 * 1000));
       const emailsToDelete: string[] = [];
       
       // Find all SUCCESSFULLY processed emails that were processed before the cutoff time
-      log(`Scanning for successfully processed emails before ${cutoffTime.toISOString()} (${autoDeleteMinutes} minutes ago)`, 'gmail-reader');
+      log(`Scanning for processed emails older than ${cutoffTime.toISOString()} (${autoDeleteMinutes} minutes ago)`, 'gmail-reader');
       
       this.processedEmails.forEach((entryData, emailId) => {
         try {
@@ -1001,19 +983,44 @@ class GmailReader {
       
       log(`Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
       
-      // Perform bulk deletion using our more reliable method
-      log(`🔥 FAST BULK DELETE: Attempting to delete all ${emailsToDelete.length} emails at once`, 'gmail-reader');
-      
+      // NOW prepare the mailbox for deletion operations
       try {
-        const deletedCount = await this.performBulkDeletion(emailsToDelete);
+        // Check if we have proper permissions to delete emails
+        const mailboxAccess = await this.testMailboxAccess();
+        if (!mailboxAccess.writable) {
+          log(`Unable to delete emails: ${mailboxAccess.error}`, 'gmail-reader');
+          log(`Please check your Gmail settings to allow deletion via IMAP.`, 'gmail-reader');
+          return; // Cannot proceed with deletion
+        }
         
-        if (deletedCount > 0) {
-          log(`✅ Successfully auto-deleted ${deletedCount}/${emailsToDelete.length} emails older than ${autoDeleteMinutes} minutes in one batch`, 'gmail-reader');
-        } else {
-          log(`Failed to delete emails in bulk operation. Verify your Gmail settings.`, 'gmail-reader');
+        log(`✅ Gmail mailbox is writable, proceeding with email deletion`, 'gmail-reader');
+        
+        // Perform bulk deletion using our more reliable method
+        log(`🔥 FAST BULK DELETE: Attempting to delete all ${emailsToDelete.length} emails at once`, 'gmail-reader');
+        
+        try {
+          const deletedCount = await this.performBulkDeletion(emailsToDelete);
+          
+          if (deletedCount > 0) {
+            log(`✅ Successfully auto-deleted ${deletedCount}/${emailsToDelete.length} emails older than ${autoDeleteMinutes} minutes in one batch`, 'gmail-reader');
+            
+            // Remove the emails from our tracking system regardless of whether they were deleted
+            // This prevents the system from trying to delete the same emails repeatedly
+            emailsToDelete.forEach(emailId => {
+              this.processedEmails.delete(emailId);
+              log(`Removed email ID ${emailId} from tracking system to prevent re-processing`, 'gmail-reader');
+            });
+            
+            // Save the updated tracking data
+            this.saveProcessedEmailsToFile();
+          } else {
+            log(`Failed to delete emails in bulk operation. Verify your Gmail settings.`, 'gmail-reader');
+          }
+        } catch (error) {
+          log(`Error in email deletion: ${error}`, 'gmail-reader');
         }
       } catch (error) {
-        log(`Error in email deletion: ${error}`, 'gmail-reader');
+        log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
       }
     } catch (error) {
       log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
@@ -1021,11 +1028,13 @@ class GmailReader {
   }
 
   // Check for new emails
-  private async checkEmails() {
-    if (!this.isRunning) return;
+  private async checkEmails(): Promise<void> {
+    if (!this.isRunning) {
+      return Promise.resolve();
+    }
     
     try {
-      return new Promise<void>((resolve, reject) => {
+      const promise = new Promise<void>((resolve, reject) => {
         this.imap.openBox('INBOX', false, (err, box) => {
           if (err) {
             log(`Error opening inbox: ${err.message}`, 'gmail-reader');
@@ -1080,8 +1089,11 @@ class GmailReader {
           });
         });
       });
+      
+      return promise;
     } catch (error) {
       log(`Error in checkEmails: ${error}`, 'gmail-reader');
+      return Promise.resolve();
     }
   }
 
