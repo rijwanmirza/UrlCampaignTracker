@@ -659,13 +659,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
           res.setHeader("X-Processing-Time", `${timeInMs}ms`);
           
-          // Force HTTP/2.0 protocol in the response
-          res.setHeader("HTTP-Version", "HTTP/2.0");
-          res.setHeader("X-HTTP-Version", "HTTP/2.0");
+          // Note: True HTTP/2.0 requires HTTPS in production
+          // These headers help indicate HTTP/2.0 intention
+          res.setHeader("X-HTTP2-Version", "HTTP/2.0");
           res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
-          res.setHeader("Upgrade", "h2,h2c");
-          res.setHeader("Connection", "Upgrade, keep-alive");
+          res.setHeader("X-Protocol-Version", "h2");
           
+          // Add standard headers used by HTTP/2 servers
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+          
+          // Add server identification to match pattern
+          res.setHeader("X-Powered-By", "ViralEngine/2.0");
+          
+          // Send 307 redirect with HTTP/2 mimicking headers
           res.status(307).header("Location", targetUrl).end();
           break;
           
@@ -761,7 +768,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case "http2_307_temporary":
           // HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
           res.setHeader("X-Processing-Time", `${timeInMs}ms`);
-          // Simply send a 307 status - HTTP/2 is handled at the server protocol level
+          
+          // Note: True HTTP/2.0 requires HTTPS in production
+          // These headers help indicate HTTP/2.0 intention
+          res.setHeader("X-HTTP2-Version", "HTTP/2.0");
+          res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
+          res.setHeader("X-Protocol-Version", "h2");
+          
+          // Add standard headers used by HTTP/2 servers
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+          
+          // Add server identification to match pattern
+          res.setHeader("X-Powered-By", "ViralEngine/2.0");
+          
+          // Send 307 redirect with HTTP/2 mimicking headers
           res.status(307).header("Location", targetUrl).end();
           break;
           
