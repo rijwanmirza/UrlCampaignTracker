@@ -750,7 +750,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       quantityRegex: z.string()
     }),
     defaultCampaignId: z.number().int().positive(),
-    checkInterval: z.number().int().positive().default(60000)
+    checkInterval: z.number().int().positive().default(60000),
+    autoDeleteMinutes: z.number().int().nonnegative().default(0)
   });
 
   // Get Gmail reader status
