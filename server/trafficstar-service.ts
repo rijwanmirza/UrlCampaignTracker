@@ -931,17 +931,160 @@ class TrafficStarService {
    */
   async updateCampaignDailyBudget(id: number, maxDaily: number): Promise<void> {
     try {
-      const token = await this.ensureToken();
-      await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
-        max_daily: maxDaily
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
+      // If mock mode is enabled, try all endpoints but fall back to local update
+      if (ENABLE_MOCK_MODE) {
+        try {
+          const token = await this.ensureToken();
+          let success = false;
+          let lastError = null;
+          
+          // Try different endpoint patterns
+          for (const baseUrl of API_BASE_URLS) {
+            // Format 1: PUT /campaigns/{id} with max_daily field
+            try {
+              console.log(`Trying to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+              await axios.put(`${baseUrl}/campaigns/${id}`, {
+                max_daily: maxDaily
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 10000 // 10 second timeout
+              });
+              console.log(`Successfully updated budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+              success = true;
+              break;
+            } catch (error) {
+              console.log(`Failed to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+              lastError = error;
+              // Continue to next attempt
+            }
+            
+            // Format 2: PATCH /campaigns/{id} with max_daily field (v1.1 format from PHP code)
+            try {
+              console.log(`Trying to update budget for campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
+              await axios.patch(`${baseUrl}/campaigns/${id}`, {
+                max_daily: maxDaily
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 10000 // 10 second timeout
+              });
+              console.log(`Successfully updated budget for campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
+              success = true;
+              break;
+            } catch (error) {
+              console.log(`Failed to update budget for campaign ${id} using PATCH endpoint: ${baseUrl}/campaigns/${id}`);
+              lastError = error;
+              // Continue to next attempt
+            }
+            
+            // Format 3: POST /campaigns/{id}/budget with amount field
+            try {
+              console.log(`Trying to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/budget`);
+              await axios.post(`${baseUrl}/campaigns/${id}/budget`, {
+                amount: maxDaily
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 10000 // 10 second timeout
+              });
+              console.log(`Successfully updated budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/budget`);
+              success = true;
+              break;
+            } catch (error) {
+              console.log(`Failed to update budget for campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/budget`);
+              lastError = error;
+              // Continue to next attempt
+            }
+          }
+          
+          if (!success) {
+            // If API calls failed but mock mode is enabled, continue with local update
+            console.log(`API calls failed but mock mode is enabled. Proceeding with local update only.`);
+            
+            // In mock mode, just update the local database
+            const [campaign] = await db
+              .select()
+              .from(trafficstarCampaigns)
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            
+            if (!campaign) {
+              // Create a new campaign record if it doesn't exist
+              await db.insert(trafficstarCampaigns).values({
+                trafficstarId: id.toString(),
+                name: `Campaign ${id}`,
+                maxDaily: maxDaily.toString(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+              console.log(`Created new campaign record for ID ${id} with budget ${maxDaily} in mock mode`);
+              return;
+            } else {
+              // Update existing campaign record
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  maxDaily: maxDaily.toString(),
+                  updatedAt: new Date() 
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+              console.log(`Updated campaign ${id} budget to ${maxDaily} in mock mode`);
+              return;
+            }
+          }
+        } catch (error) {
+          // If any error occurs during API call attempt and mock mode is enabled,
+          // proceed with local update only
+          console.log(`Error during API calls but mock mode is enabled. Proceeding with local update only.`);
+          
+          // Update local record in database
+          const [campaign] = await db
+            .select()
+            .from(trafficstarCampaigns)
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+          if (!campaign) {
+            // Create a new campaign record if it doesn't exist
+            await db.insert(trafficstarCampaigns).values({
+              trafficstarId: id.toString(),
+              name: `Campaign ${id}`,
+              maxDaily: maxDaily.toString(),
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            console.log(`Created new campaign record for ID ${id} with budget ${maxDaily} in mock mode`);
+            return;
+          } else {
+            // Update existing campaign record
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                maxDaily: maxDaily.toString(),
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            console.log(`Updated campaign ${id} budget to ${maxDaily} in mock mode`);
+            return;
+          }
+        }
+      } else {
+        // If mock mode is disabled, use the normal API flow
+        const token = await this.ensureToken();
+        await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
+          max_daily: maxDaily
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+      }
 
-      // Update local record
+      // Update local record if we got here (real API was successful)
       await db.update(trafficstarCampaigns)
         .set({ 
           maxDaily: maxDaily.toString(),

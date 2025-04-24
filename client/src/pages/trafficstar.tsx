@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
 import { toast } from '@/hooks/use-toast';
@@ -20,20 +20,18 @@ const apiKeyFormSchema = z.object({
   apiKey: z.string().min(10, 'API key must be at least 10 characters')
 });
 
-const campaignBudgetSchema = z.object({
-  maxDaily: z.coerce.number().min(0, 'Budget must be a positive number')
-});
-
-const campaignEndTimeSchema = z.object({
-  scheduleEndTime: z.string().min(1, 'End time is required')
-});
-
 // Schema for direct campaign ID action form
 const campaignIdActionSchema = z.object({
   campaignId: z.coerce.number().positive('Campaign ID must be a positive number'),
   action: z.enum(['pause', 'activate'], {
     required_error: 'Please select an action',
   }),
+});
+
+// Budget update schema
+const campaignBudgetUpdateSchema = z.object({
+  campaignId: z.coerce.number().positive('Campaign ID must be a positive number'),
+  maxDaily: z.coerce.number().min(0, 'Budget must be a positive number')
 });
 
 // Define the campaign type
@@ -53,12 +51,21 @@ export default function TrafficstarPage() {
   const [activeTab, setActiveTab] = useState<string>('campaigns');
   const queryClient = useQueryClient();
   
-  // Direct Campaign ID action form - defined early to avoid hooks order issues
+  // Direct Campaign ID action form 
   const campaignIdActionForm = useForm<z.infer<typeof campaignIdActionSchema>>({
     resolver: zodResolver(campaignIdActionSchema),
     defaultValues: {
       campaignId: undefined,
       action: 'pause',
+    },
+  });
+  
+  // Budget update form
+  const budgetUpdateForm = useForm<z.infer<typeof campaignBudgetUpdateSchema>>({
+    resolver: zodResolver(campaignBudgetUpdateSchema),
+    defaultValues: {
+      campaignId: 1000866, // Preset this with known campaign ID
+      maxDaily: 15.0,
     },
   });
   
@@ -92,17 +99,6 @@ export default function TrafficstarPage() {
     enabled: !!isConfigured,
     refetchOnWindowFocus: false
   });
-
-  // Initialize budget forms for each campaign
-  const [budgetForms, setBudgetForms] = useState<Record<number, { 
-    form: ReturnType<typeof useForm<z.infer<typeof campaignBudgetSchema>>>, 
-    isOpen: boolean 
-  }>>({});
-  
-  const [endTimeForms, setEndTimeForms] = useState<Record<number, { 
-    form: ReturnType<typeof useForm<z.infer<typeof campaignEndTimeSchema>>>, 
-    isOpen: boolean 
-  }>>({});
 
   // Save API key mutation
   const saveApiKeyMutation = useMutation({
@@ -165,26 +161,6 @@ export default function TrafficstarPage() {
     }
   });
 
-  // Update campaign end time mutation
-  const updateEndTimeMutation = useMutation({
-    mutationFn: (data: { campaignId: number, scheduleEndTime: string }) => 
-      apiRequest('/api/trafficstar/campaigns/end-time', 'POST', data),
-    onSuccess: () => {
-      toast({
-        title: 'End Time Updated',
-        description: 'Campaign end time has been updated successfully.',
-      });
-      refetchCampaigns();
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to update end time',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive',
-      });
-    }
-  });
-
   // Submit handler for API key form
   const onApiKeySubmit = (data: z.infer<typeof apiKeyFormSchema>) => {
     saveApiKeyMutation.mutate(data);
@@ -193,16 +169,6 @@ export default function TrafficstarPage() {
   // Handle campaign pause/activate
   const handleCampaignAction = (campaignId: number, action: 'pause' | 'activate') => {
     campaignActionMutation.mutate({ campaignId, action });
-  };
-
-  // Handle budget update form submission
-  const handleBudgetUpdate = (campaignId: number, budget: number) => {
-    updateBudgetMutation.mutate({ campaignId, maxDaily: budget });
-  };
-
-  // Handle end time update form submission
-  const handleEndTimeUpdate = (campaignId: number, endTime: string) => {
-    updateEndTimeMutation.mutate({ campaignId, scheduleEndTime: endTime });
   };
 
   // Submit handler for direct campaign ID action form
@@ -218,68 +184,13 @@ export default function TrafficstarPage() {
       action: data.action  // Keep the selected action
     });
   };
-
-  useEffect(() => {
-    // Set up forms for each campaign when campaigns are loaded
-    if (campaigns && campaigns.length > 0) {
-      const newBudgetForms: Record<number, { 
-        form: ReturnType<typeof useForm<z.infer<typeof campaignBudgetSchema>>>, 
-        isOpen: boolean 
-      }> = {};
-      
-      const newEndTimeForms: Record<number, { 
-        form: ReturnType<typeof useForm<z.infer<typeof campaignEndTimeSchema>>>, 
-        isOpen: boolean 
-      }> = {};
-      
-      campaigns.forEach(campaign => {
-        // Budget form
-        newBudgetForms[campaign.id] = {
-          form: useForm<z.infer<typeof campaignBudgetSchema>>({
-            resolver: zodResolver(campaignBudgetSchema),
-            defaultValues: {
-              maxDaily: campaign.max_daily || 0,
-            },
-          }),
-          isOpen: false
-        };
-
-        // End time form
-        newEndTimeForms[campaign.id] = {
-          form: useForm<z.infer<typeof campaignEndTimeSchema>>({
-            resolver: zodResolver(campaignEndTimeSchema),
-            defaultValues: {
-              scheduleEndTime: campaign.schedule_end_time || '',
-            },
-          }),
-          isOpen: false
-        };
-      });
-
-      setBudgetForms(newBudgetForms);
-      setEndTimeForms(newEndTimeForms);
-    }
-  }, [campaigns]);
-
-  // Toggle form display
-  const toggleBudgetForm = (campaignId: number) => {
-    setBudgetForms(prev => ({
-      ...prev,
-      [campaignId]: {
-        ...prev[campaignId],
-        isOpen: !prev[campaignId]?.isOpen
-      }
-    }));
-  };
-
-  const toggleEndTimeForm = (campaignId: number) => {
-    setEndTimeForms(prev => ({
-      ...prev,
-      [campaignId]: {
-        ...prev[campaignId],
-        isOpen: !prev[campaignId]?.isOpen
-      }
-    }));
+  
+  // Submit handler for budget update form
+  const onBudgetUpdateSubmit = (data: z.infer<typeof campaignBudgetUpdateSchema>) => {
+    updateBudgetMutation.mutate({ 
+      campaignId: data.campaignId, 
+      maxDaily: data.maxDaily 
+    });
   };
 
   // Render loading state
@@ -365,6 +276,75 @@ export default function TrafficstarPage() {
         </CardContent>
       </Card>
       
+      {/* Budget Update Form */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Update Campaign Budget</CardTitle>
+          <CardDescription>
+            Set the daily budget for a campaign
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...budgetUpdateForm}>
+            <form onSubmit={budgetUpdateForm.handleSubmit(onBudgetUpdateSubmit)} className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <FormField
+                  control={budgetUpdateForm.control}
+                  name="campaignId"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Campaign ID</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="Enter campaign ID" 
+                          {...field}
+                          value={field.value === undefined ? '' : field.value}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={budgetUpdateForm.control}
+                  name="maxDaily"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Daily Budget</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="Enter daily budget" 
+                          {...field}
+                          value={field.value === undefined ? '' : field.value}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex items-end mb-2">
+                  <Button type="submit" disabled={updateBudgetMutation.isPending} className="w-full md:w-auto">
+                    {updateBudgetMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Update Budget'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
@@ -412,38 +392,6 @@ export default function TrafficstarPage() {
                       <div>
                         <Label className="text-sm text-muted-foreground">Daily Budget</Label>
                         <div className="text-lg font-medium">${campaign.max_daily || 0}</div>
-                        {budgetForms[campaign.id]?.isOpen && (
-                          <Form {...budgetForms[campaign.id].form}>
-                            <form 
-                              onSubmit={budgetForms[campaign.id].form.handleSubmit((data) => 
-                                handleBudgetUpdate(campaign.id, data.maxDaily)
-                              )} 
-                              className="mt-2 space-y-2"
-                            >
-                              <FormField
-                                control={budgetForms[campaign.id].form.control}
-                                name="maxDaily"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormControl>
-                                      <div className="flex space-x-2">
-                                        <Input 
-                                          type="number" 
-                                          step="0.01"
-                                          {...field} 
-                                        />
-                                        <Button type="submit" size="sm" disabled={updateBudgetMutation.isPending}>
-                                          {updateBudgetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-                                        </Button>
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </form>
-                          </Form>
-                        )}
                       </div>
                       
                       <div>
@@ -459,37 +407,6 @@ export default function TrafficstarPage() {
                             : 'Not set'
                           }
                         </div>
-                        {endTimeForms[campaign.id]?.isOpen && (
-                          <Form {...endTimeForms[campaign.id].form}>
-                            <form 
-                              onSubmit={endTimeForms[campaign.id].form.handleSubmit((data) => 
-                                handleEndTimeUpdate(campaign.id, data.scheduleEndTime)
-                              )} 
-                              className="mt-2 space-y-2"
-                            >
-                              <FormField
-                                control={endTimeForms[campaign.id].form.control}
-                                name="scheduleEndTime"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormControl>
-                                      <div className="flex space-x-2">
-                                        <Input 
-                                          type="datetime-local" 
-                                          {...field} 
-                                        />
-                                        <Button type="submit" size="sm" disabled={updateEndTimeMutation.isPending}>
-                                          {updateEndTimeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-                                        </Button>
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </form>
-                          </Form>
-                        )}
                       </div>
                     </div>
                     
@@ -519,19 +436,18 @@ export default function TrafficstarPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => toggleBudgetForm(campaign.id)}
+                        onClick={() => {
+                          // Pre-fill the budget update form with this campaign's data
+                          budgetUpdateForm.reset({
+                            campaignId: campaign.id,
+                            maxDaily: campaign.max_daily || 0
+                          });
+                          // Switch to top of page
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
                       >
                         <DollarSign className="h-4 w-4 mr-2" />
-                        {budgetForms[campaign.id]?.isOpen ? 'Cancel' : 'Update Budget'}
-                      </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleEndTimeForm(campaign.id)}
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {endTimeForms[campaign.id]?.isOpen ? 'Cancel' : 'Set End Time'}
+                        Update Budget
                       </Button>
                     </div>
                   </CardContent>
