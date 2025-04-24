@@ -102,6 +102,24 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                 )}
               </p>
             </div>
+
+            <div>
+              <span className="text-sm font-medium text-gray-500">Price Per 1000 Clicks:</span>
+              <p className="text-gray-900">
+                ${typeof campaign.pricePerThousand === 'string' 
+                  ? parseFloat(campaign.pricePerThousand).toFixed(4) 
+                  : (Number(campaign.pricePerThousand || 0)).toFixed(4)}
+              </p>
+            </div>
+
+            {campaign.totalPrice > 0 && (
+              <div>
+                <span className="text-sm font-medium text-gray-500">Campaign Pricing:</span>
+                <p className="text-gray-900">
+                  {campaign.priceFormatted} <span className="text-xs text-gray-500">({campaign.remainingClicks} clicks remaining)</span>
+                </p>
+              </div>
+            )}
           </div>
           
           <div className="mt-6">

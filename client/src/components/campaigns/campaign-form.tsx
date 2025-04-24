@@ -44,6 +44,7 @@ const formSchema = insertCampaignSchema.extend({
   customPath: z.string().max(50, "Custom path must be 50 characters or less")
     .regex(/^[a-z0-9-]*$/, "Only lowercase letters, numbers, and hyphens are allowed")
     .optional(),
+  pricePerThousand: z.number().min(0, "Price must be at least 0").max(10000, "Price can't exceed $10,000").optional(),
 });
 
 // Mapping for human-readable redirect method descriptions

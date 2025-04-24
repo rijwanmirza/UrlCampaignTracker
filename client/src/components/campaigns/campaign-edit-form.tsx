@@ -246,6 +246,43 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
               )}
             />
             
+            {/* Price Per Thousand */}
+            <FormField
+              control={form.control}
+              name="pricePerThousand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price Per 1000 Clicks</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      max="10000"
+                      step="0.0001"
+                      {...field}
+                      onChange={(e) => {
+                        // Handle empty/invalid input cases
+                        const value = e.target.value === '' ? '' : e.target.value;
+                        // Only update field if value is valid
+                        const parsedValue = parseFloat(value);
+                        if (!isNaN(parsedValue)) {
+                          field.onChange(parsedValue);
+                        } else {
+                          // For empty input, set field to empty string to allow user typing
+                          field.onChange(value);
+                        }
+                      }}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Set the price per 1000 clicks ($0.01-$10,000). For example, if you set $0.10, then for 1000 clicks the price will be $0.10, for 2000 clicks it will be $0.20.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button variant="outline" type="button">Cancel</Button>
