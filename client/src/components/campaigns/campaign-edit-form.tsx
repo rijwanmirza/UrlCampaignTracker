@@ -219,7 +219,18 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                       min="0.01"
                       step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
+                      onChange={(e) => {
+                        // Handle empty/invalid input cases
+                        const value = e.target.value === '' ? '' : e.target.value;
+                        // Only update field if value is valid
+                        const parsedValue = parseFloat(value);
+                        if (!isNaN(parsedValue)) {
+                          field.onChange(parsedValue);
+                        } else {
+                          // For empty input, set field to empty string to allow user typing
+                          field.onChange(value);
+                        }
+                      }}
                       value={field.value}
                     />
                   </FormControl>

@@ -64,15 +64,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/campaigns", async (req: Request, res: Response) => {
     try {
+      console.log('🔍 DEBUG: Campaign creation request received:', JSON.stringify(req.body, null, 2));
+      
+      // Parse and validate the input data
       const result = insertCampaignSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.log('🔍 DEBUG: Campaign validation failed:', validationError.message);
         return res.status(400).json({ message: validationError.message });
       }
-
-      const campaign = await storage.createCampaign(result.data);
+      
+      // Ensure multiplier is properly processed
+      const campaignData = result.data;
+      
+      // Log the validated data
+      console.log('🔍 DEBUG: Validated campaign data:', JSON.stringify(campaignData, null, 2));
+      console.log('🔍 DEBUG: Multiplier type:', typeof campaignData.multiplier);
+      console.log('🔍 DEBUG: Multiplier value:', campaignData.multiplier);
+      
+      // Create the campaign
+      const campaign = await storage.createCampaign(campaignData);
+      console.log('🔍 DEBUG: Campaign created successfully with ID:', campaign.id);
+      
       res.status(201).json(campaign);
     } catch (error) {
+      console.error('Error creating campaign:', error);
       res.status(500).json({ message: "Failed to create campaign" });
     }
   });
@@ -85,9 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
       
+      console.log('🔍 DEBUG: Campaign update request received:', JSON.stringify(req.body, null, 2));
+      
       const result = updateCampaignSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.log('🔍 DEBUG: Campaign update validation failed:', validationError.message);
         return res.status(400).json({ message: validationError.message });
       }
       
@@ -100,16 +119,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('🔍 DEBUG: Campaign update requested: ID', id);
-      const oldMultiplier = existingCampaign.multiplier || 1;
-      console.log(`  - Current multiplier: ${oldMultiplier}`);
-      console.log(`  - Requested multiplier: ${multiplier || 'unchanged'}`);
+      
+      // Handle multiplier data type conversions for comparison
+      const oldMultiplierValue = typeof existingCampaign.multiplier === 'string'
+        ? parseFloat(existingCampaign.multiplier)
+        : (existingCampaign.multiplier || 1);
+      
+      const newMultiplierValue = multiplier !== undefined ? Number(multiplier) : oldMultiplierValue;
+      
+      console.log(`  - Current multiplier: ${oldMultiplierValue} (type: ${typeof oldMultiplierValue})`);
+      console.log(`  - Requested multiplier: ${newMultiplierValue} (type: ${typeof newMultiplierValue})`);
       
       // Update campaign first
       const updatedCampaign = await storage.updateCampaign(id, result.data);
       
-      // If multiplier changed, update all active/paused URLs in the campaign
-      if (multiplier && multiplier !== existingCampaign.multiplier) {
-        console.log(`🔍 DEBUG: Multiplier change detected: ${oldMultiplier} → ${multiplier}`);
+      // Check if multiplier actually changed (compare numeric values)
+      const multiplierChanged = multiplier !== undefined && 
+        Math.abs(oldMultiplierValue - newMultiplierValue) > 0.00001; // Floating point comparison with small epsilon
+      
+      if (multiplierChanged) {
+        console.log(`🔍 DEBUG: Multiplier change detected: ${oldMultiplierValue} → ${newMultiplierValue}`);
         
         // Get all active/paused URLs
         const campaignUrls = await storage.getUrls(id);
@@ -123,8 +152,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const url of activeOrPausedUrls) {
           // When multiplier changes, only update the clickLimit based on originalClickLimit
           // The originalClickLimit remains unchanged (it's always the user's original input)
+          const newClickLimit = Math.ceil(url.originalClickLimit * newMultiplierValue);
+          
+          console.log(`  - Updating URL ${url.id}: ${url.originalClickLimit} × ${newMultiplierValue} = ${newClickLimit}`);
+          
           await storage.updateUrl(url.id, {
-            clickLimit: url.originalClickLimit * multiplier, // Recalculate the click limit
+            clickLimit: newClickLimit, // Recalculate the click limit
             // Keep all other values unchanged
             originalClickLimit: url.originalClickLimit, // Original always stays the same
             name: url.name,
@@ -132,6 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined
           });
         }
+      } else {
+        console.log('🔍 DEBUG: No multiplier change detected, skipping URL updates');
       }
       
       res.json(updatedCampaign);
