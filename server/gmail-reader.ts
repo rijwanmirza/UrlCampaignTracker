@@ -55,14 +55,100 @@ class GmailReader {
   private checkInterval: NodeJS.Timeout | null = null;
   private deleteEmailsInterval: NodeJS.Timeout | null = null;
   private processedEmailsLogFile: string;
+  private configFile: string;
   // Store processed emails with their processing dates
   private processedEmails: Map<string, string> = new Map(); // emailId -> date string
 
   constructor(config: Partial<GmailConfigOptions> = {}) {
-    this.config = { ...defaultGmailConfig, ...config };
-    this.setupImapConnection();
     this.processedEmailsLogFile = path.join(process.cwd(), 'processed_emails.log');
+    this.configFile = path.join(process.cwd(), 'gmail_config.json');
+    
+    // Try to load saved configuration
+    const savedConfig = this.loadConfig();
+    
+    // Merge configs with priority: passed config > saved config > default config
+    this.config = { 
+      ...defaultGmailConfig, 
+      ...savedConfig, 
+      ...config 
+    };
+    
+    console.log('🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes:', this.config.autoDeleteMinutes);
+    
+    this.setupImapConnection();
     this.loadProcessedEmails();
+  }
+  
+  // Load configuration from file
+  private loadConfig(): Partial<GmailConfigOptions> {
+    try {
+      if (fs.existsSync(this.configFile)) {
+        const configData = fs.readFileSync(this.configFile, 'utf-8');
+        const savedConfig = JSON.parse(configData);
+        
+        // Convert string patterns back to RegExp if needed
+        if (savedConfig.subjectPattern && typeof savedConfig.subjectPattern === 'string') {
+          savedConfig.subjectPattern = new RegExp(savedConfig.subjectPattern);
+        }
+        
+        if (savedConfig.messagePattern) {
+          if (savedConfig.messagePattern.orderIdRegex && typeof savedConfig.messagePattern.orderIdRegex === 'string') {
+            savedConfig.messagePattern.orderIdRegex = new RegExp(savedConfig.messagePattern.orderIdRegex);
+          }
+          if (savedConfig.messagePattern.urlRegex && typeof savedConfig.messagePattern.urlRegex === 'string') {
+            savedConfig.messagePattern.urlRegex = new RegExp(savedConfig.messagePattern.urlRegex);
+          }
+          if (savedConfig.messagePattern.quantityRegex && typeof savedConfig.messagePattern.quantityRegex === 'string') {
+            savedConfig.messagePattern.quantityRegex = new RegExp(savedConfig.messagePattern.quantityRegex);
+          }
+        }
+        
+        console.log('🔍 DEBUG: Loaded saved config with autoDeleteMinutes:', savedConfig.autoDeleteMinutes);
+        return savedConfig;
+      }
+    } catch (error) {
+      console.error('Error loading Gmail reader config:', error);
+    }
+    return {};
+  }
+  
+  // Save configuration to file
+  private saveConfig() {
+    try {
+      // Create a clean version of the config for saving
+      const configToSave: any = { ...this.config };
+      
+      // Convert RegExp objects to strings for serialization
+      if (configToSave.subjectPattern && configToSave.subjectPattern instanceof RegExp) {
+        // Store as a string without the / /
+        configToSave.subjectPattern = configToSave.subjectPattern.toString().slice(1, -1);
+      }
+      
+      if (configToSave.messagePattern) {
+        const patterns: any = { ...configToSave.messagePattern };
+        if (patterns.orderIdRegex && patterns.orderIdRegex instanceof RegExp) {
+          patterns.orderIdRegex = patterns.orderIdRegex.toString().slice(1, -1);
+        }
+        if (patterns.urlRegex && patterns.urlRegex instanceof RegExp) {
+          patterns.urlRegex = patterns.urlRegex.toString().slice(1, -1);
+        }
+        if (patterns.quantityRegex && patterns.quantityRegex instanceof RegExp) {
+          patterns.quantityRegex = patterns.quantityRegex.toString().slice(1, -1);
+        }
+        configToSave.messagePattern = patterns;
+      }
+      
+      // Make sure autoDeleteMinutes is explicitly included
+      configToSave.autoDeleteMinutes = typeof this.config.autoDeleteMinutes === 'number' 
+        ? this.config.autoDeleteMinutes 
+        : 0;
+      
+      const configJson = JSON.stringify(configToSave, null, 2);
+      fs.writeFileSync(this.configFile, configJson);
+      console.log('🔍 DEBUG: Saved config with autoDeleteMinutes:', configToSave.autoDeleteMinutes);
+    } catch (error) {
+      console.error('Error saving Gmail reader config:', error);
+    }
   }
   
   // Load previously processed emails from log file
@@ -293,6 +379,9 @@ class GmailReader {
     }
     
     console.log('🔍 DEBUG: Updated Gmail config autoDeleteMinutes is now:', this.config.autoDeleteMinutes);
+    
+    // Save configuration to file for persistence
+    this.saveConfig();
     
     this.setupImapConnection();
     
