@@ -595,15 +595,100 @@ class TrafficStarService {
         .set({ active: false, updatedAt: new Date() })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
         
-      // Verify the campaign was actually paused
+      // Verify the campaign was actually paused - with retries and force refresh
       try {
-        console.log(`Verifying campaign ${id} was successfully paused`);
-        const campaign = await this.getCampaign(id);
-        console.log(`Campaign ${id} updated status: ${JSON.stringify({
-          name: campaign.name,
-          active: campaign.active,
-          status: campaign.status
-        })}`);
+        console.log(`Verifying campaign ${id} was successfully paused - implementing verification with retries`);
+        
+        // A direct force refresh request to the API outside of our caching layer
+        const forceRefresh = async () => {
+          try {
+            const token = await this.ensureToken();
+            // Use a cache-busting timestamp query param
+            const timestamp = Date.now();
+            const response = await axios.get(
+              `https://api.trafficstars.com/v1.1/campaigns/${id}?_t=${timestamp}`, 
+              { 
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Cache-Control': 'no-cache, no-store, must-revalidate'
+                } 
+              }
+            );
+            return response.data?.response || null;
+          } catch (error) {
+            console.log(`Force refresh error: ${error}`);
+            return null;
+          }
+        };
+        
+        // Multiple verification attempts (up to 3 times)
+        let campaign = null;
+        const maxRetries = 3;
+        let retryCount = 0;
+        let success = false;
+        
+        while (retryCount < maxRetries && !success) {
+          // Force a direct API refresh to get the latest status
+          const freshData = await forceRefresh();
+          
+          // Also get via our cached method
+          campaign = await this.getCampaign(id);
+          
+          // Log status from both sources
+          console.log(`[Retry ${retryCount + 1}] Campaign ${id} status:`);
+          console.log(`- Via getCampaign: ${JSON.stringify({
+            name: campaign.name,
+            active: campaign.active,
+            status: campaign.status
+          })}`);
+          
+          if (freshData) {
+            console.log(`- Via direct API: ${JSON.stringify({
+              name: freshData.name,
+              active: freshData.active,
+              status: freshData.status
+            })}`);
+          }
+          
+          // Check if either source shows paused
+          const isPaused = 
+            (campaign && (campaign.active === false || campaign.status === 'paused')) ||
+            (freshData && (freshData.active === false || freshData.status === 'paused'));
+            
+          if (isPaused) {
+            console.log(`✅ Campaign ${id} pause confirmed on retry ${retryCount + 1}`);
+            success = true;
+            
+            // Update our local DB to match the real status
+            if (freshData && (freshData.active === false || freshData.status === 'paused')) {
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  active: false, 
+                  status: 'paused',
+                  updatedAt: new Date() 
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            }
+            
+            break;
+          }
+          
+          // Wait 1 second before retrying
+          console.log(`Campaign ${id} not yet paused, retrying verification in 1 second...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          retryCount++;
+        }
+        
+        // Final status report
+        if (!success) {
+          console.log(`⚠️ WARNING: Could not verify pausing of campaign ${id} after ${maxRetries} attempts.`);
+          console.log(`   The API reported success, but verification shows the campaign is still not paused.`);
+          console.log(`   Final status: ${JSON.stringify({
+            name: campaign?.name,
+            active: campaign?.active,
+            status: campaign?.status
+          })}`);
+        }
       } catch (verifyError) {
         console.log(`Could not verify pause status for campaign ${id}: ${verifyError}`);
       }
@@ -820,15 +905,100 @@ class TrafficStarService {
         .set({ active: true, updatedAt: new Date() })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
         
-      // Verify the campaign was actually activated
+      // Verify the campaign was actually activated - with retries and force refresh
       try {
-        console.log(`Verifying campaign ${id} was successfully activated`);
-        const campaign = await this.getCampaign(id);
-        console.log(`Campaign ${id} updated status: ${JSON.stringify({
-          name: campaign.name,
-          active: campaign.active,
-          status: campaign.status
-        })}`);
+        console.log(`Verifying campaign ${id} was successfully activated - implementing verification with retries`);
+        
+        // A direct force refresh request to the API outside of our caching layer
+        const forceRefresh = async () => {
+          try {
+            const token = await this.ensureToken();
+            // Use a cache-busting timestamp query param
+            const timestamp = Date.now();
+            const response = await axios.get(
+              `https://api.trafficstars.com/v1.1/campaigns/${id}?_t=${timestamp}`, 
+              { 
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Cache-Control': 'no-cache, no-store, must-revalidate'
+                } 
+              }
+            );
+            return response.data?.response || null;
+          } catch (error) {
+            console.log(`Force refresh error: ${error}`);
+            return null;
+          }
+        };
+        
+        // Multiple verification attempts (up to 3 times)
+        let campaign = null;
+        const maxRetries = 3;
+        let retryCount = 0;
+        let success = false;
+        
+        while (retryCount < maxRetries && !success) {
+          // Force a direct API refresh to get the latest status
+          const freshData = await forceRefresh();
+          
+          // Also get via our cached method
+          campaign = await this.getCampaign(id);
+          
+          // Log status from both sources
+          console.log(`[Retry ${retryCount + 1}] Campaign ${id} status:`);
+          console.log(`- Via getCampaign: ${JSON.stringify({
+            name: campaign.name,
+            active: campaign.active,
+            status: campaign.status
+          })}`);
+          
+          if (freshData) {
+            console.log(`- Via direct API: ${JSON.stringify({
+              name: freshData.name,
+              active: freshData.active,
+              status: freshData.status
+            })}`);
+          }
+          
+          // Check if either source shows activation
+          const isActive = 
+            (campaign && (campaign.active === true || campaign.status === 'enabled')) ||
+            (freshData && (freshData.active === true || freshData.status === 'enabled'));
+            
+          if (isActive) {
+            console.log(`✅ Campaign ${id} activation confirmed on retry ${retryCount + 1}`);
+            success = true;
+            
+            // Update our local DB to match the real status
+            if (freshData && (freshData.active === true || freshData.status === 'enabled')) {
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  active: true, 
+                  status: 'enabled',
+                  updatedAt: new Date() 
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            }
+            
+            break;
+          }
+          
+          // Wait 1 second before retrying
+          console.log(`Campaign ${id} not yet active, retrying verification in 1 second...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          retryCount++;
+        }
+        
+        // Final status report
+        if (!success) {
+          console.log(`⚠️ WARNING: Could not verify activation of campaign ${id} after ${maxRetries} attempts.`);
+          console.log(`   The API reported success, but verification shows the campaign is still not active.`);
+          console.log(`   Final status: ${JSON.stringify({
+            name: campaign?.name,
+            active: campaign?.active,
+            status: campaign?.status
+          })}`);
+        }
       } catch (verifyError) {
         console.log(`Could not verify activate status for campaign ${id}: ${verifyError}`);
       }
