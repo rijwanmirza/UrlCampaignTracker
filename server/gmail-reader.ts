@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import smtpTransport from 'nodemailer-smtp-transport';
 import fs from 'fs';
 import path from 'path';
+import { gmailService } from './gmail-service';
 
 interface GmailConfigOptions {
   user: string;
