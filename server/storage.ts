@@ -131,8 +131,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCampaign(id: number): Promise<CampaignWithUrls | undefined> {
+    // Check campaign cache first for better performance
+    const cachedCampaign = this.campaignCache.get(id);
+    const now = Date.now();
+    
+    if (cachedCampaign && (now - cachedCampaign.lastUpdated < this.cacheTTL)) {
+      // Use cached campaign data
+      const campaign = cachedCampaign.campaign;
+      
+      // Still need to get fresh URLs for this campaign
+      const urls = await this.getUrls(id);
+      
+      return {
+        ...campaign,
+        urls
+      };
+    }
+    
+    // Cache miss - fetch from database
     const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
     if (!campaign) return undefined;
+    
+    // Add to cache for future requests
+    this.campaignCache.set(id, {
+      lastUpdated: now,
+      campaign
+    });
     
     const urls = await this.getUrls(id);
     return {
@@ -142,8 +166,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCampaignByCustomPath(customPath: string): Promise<CampaignWithUrls | undefined> {
+    // Check custom path cache for faster lookups
+    const cachedPath = this.customPathCache.get(customPath);
+    const now = Date.now();
+    
+    if (cachedPath && (now - cachedPath.lastUpdated < this.cacheTTL)) {
+      // We have the campaign ID in cache, use it to get the campaign
+      return this.getCampaign(cachedPath.campaignId);
+    }
+    
+    // Cache miss - lookup in database
     const [campaign] = await db.select().from(campaigns).where(eq(campaigns.customPath, customPath));
     if (!campaign) return undefined;
+    
+    // Add to path cache for future lookups
+    this.customPathCache.set(customPath, {
+      lastUpdated: now,
+      campaignId: campaign.id
+    });
+    
+    // Also add to campaign cache
+    this.campaignCache.set(campaign.id, {
+      lastUpdated: now,
+      campaign
+    });
     
     const urls = await this.getUrls(campaign.id);
     return {
@@ -343,7 +389,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUrl(id: number): Promise<Url | undefined> {
+    // Ultra-fast URL lookup using cache
+    const cachedUrl = this.urlCache.get(id);
+    const now = Date.now();
+    
+    // Use cache if available and fresh
+    if (cachedUrl && (now - cachedUrl.lastUpdated < this.cacheTTL)) {
+      // Add any pending clicks to the cached URL before returning
+      const pendingClicks = this.pendingClickUpdates.get(id) || 0;
+      if (pendingClicks > 0) {
+        // Return a copy with the pending clicks included
+        return {
+          ...cachedUrl.url,
+          clicks: cachedUrl.url.clicks + pendingClicks
+        };
+      }
+      
+      // Return the cached URL directly
+      return cachedUrl.url;
+    }
+    
+    // Cache miss - fetch from database
     const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    
+    // Add to cache if found
+    if (url) {
+      this.urlCache.set(id, {
+        lastUpdated: now,
+        url
+      });
+    }
+    
     return url;
   }
 
@@ -939,8 +1015,19 @@ export class DatabaseStorage implements IStorage {
       // Then delete all campaigns
       await db.delete(campaigns);
       
-      // Invalidate any cache
+      // Clear all caches for complete reset
       this.campaignUrlsCache.clear();
+      this.urlCache.clear();
+      this.campaignCache.clear();
+      this.customPathCache.clear();
+      this.pendingClickUpdates.clear();
+      
+      // Cancel any pending update timer
+      if (this.clickUpdateTimer) {
+        clearInterval(this.clickUpdateTimer);
+        // Restart the timer
+        this.clickUpdateTimer = setInterval(() => this.flushPendingClickUpdates(), 1000);
+      }
       
       console.log(`Full system cleanup completed: deleted ${allCampaigns.length} campaigns and ${totalUrls} URLs`);
       
