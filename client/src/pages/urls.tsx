@@ -428,6 +428,9 @@ export default function URLsPage() {
                     <SelectItem value="100">100</SelectItem>
                     <SelectItem value="500">500</SelectItem>
                     <SelectItem value="1000">1000</SelectItem>
+                    <SelectItem value="2000">2000</SelectItem>
+                    <SelectItem value="5000">5000</SelectItem>
+                    <SelectItem value="9999">All URLs</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -517,6 +520,21 @@ export default function URLsPage() {
               </div>
             )}
           </div>
+
+          {/* Select All action for all users */}
+          {urls.length > 0 && selectedUrls.length === 0 && (
+            <div className="mb-4 p-2 bg-blue-50 rounded-lg border border-blue-200">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={toggleSelectAll}
+                className="w-full gap-1 border-blue-300 text-blue-700"
+              >
+                <Check className="h-3 w-3" />
+                Select All URLs on This Page ({urls.length})
+              </Button>
+            </div>
+          )}
           
           {/* URLs Table */}
           <div className="bg-white rounded-lg shadow overflow-hidden">
