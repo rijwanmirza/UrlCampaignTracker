@@ -1389,41 +1389,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { campaignId, action } = result.data;
 
-      // Execute the requested action - database will be updated FIRST for immediate UI response
-      if (action === 'pause') {
-        await trafficStarService.pauseCampaign(campaignId);
-      } else if (action === 'activate') {
-        await trafficStarService.activateCampaign(campaignId);
-      } else {
-        return res.status(400).json({ message: `Unsupported action: ${action}` });
-      }
-      
-      // Get the campaign record *after* our action
-      let campaign;
+      // INSTANT DB UPDATE FIRST - Make the change instantly visible in the UI
       try {
-        campaign = await db
-          .select()
-          .from(trafficstarCampaigns)
-          .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()))
-          .limit(1);
+        const targetActive = action === 'activate';
+        const targetStatus = action === 'activate' ? 'enabled' : 'paused';
+        
+        // Update database first - this is what the user will see immediately
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            active: targetActive,
+            status: targetStatus,
+            lastRequestedAction: action,
+            lastRequestedActionAt: new Date(),
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
       } catch (dbError) {
-        console.log(`Error getting campaign from database: ${dbError}`);
-        // Non-fatal, continue without campaign data
+        console.error(`Error updating campaign ${campaignId} in database: ${dbError}`);
+        // Continue even if there's an error, as the API call might still work
       }
       
-      // Always return immediate success with statusChanged=true
-      // We've already updated the database with the target state
+      // IMMEDIATE RESPONSE - Respond to user right away
       res.json({ 
         success: true, 
         message: `Campaign ${campaignId} ${action === 'pause' ? 'paused' : 'activated'} successfully`,
         statusChanged: true, // Always true since we updated DB first
         pendingSync: false, // Don't show pending status in UI
-        syncStatus: campaign?.[0]?.syncStatus || 'unknown',
         lastRequestedAction: action,
         lastRequestedActionAt: new Date().toISOString(),
-        // Include a timestamp to help frontend know this is a fresh response
         timestamp: new Date().toISOString()
       });
+      
+      // BACKGROUND API CALL - Process API call after response is sent
+      // This way API delays won't affect the user experience
+      setTimeout(() => {
+        try {
+          if (action === 'pause') {
+            trafficStarService.pauseCampaign(campaignId)
+              .catch(error => console.error(`Background API call to pause campaign ${campaignId} failed:`, error));
+          } else if (action === 'activate') {
+            trafficStarService.activateCampaign(campaignId)
+              .catch(error => console.error(`Background API call to activate campaign ${campaignId} failed:`, error));
+          }
+        } catch (apiError) {
+          console.error(`Error in background API operation for campaign ${campaignId}:`, apiError);
+          // Error in background process - already responded to user, so just log it
+        }
+      }, 100); // Start background processing after a small delay
     } catch (error) {
       console.error('Error performing TrafficStar campaign action:', error);
       res.status(500).json({ 
@@ -1443,21 +1455,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { campaignId, maxDaily } = result.data;
-      await trafficStarService.updateCampaignDailyBudget(campaignId, maxDaily);
       
-      // Force refresh of campaign after budget update
+      // Update database first for immediate UI response
       try {
-        await trafficStarService.getCampaign(campaignId);
-      } catch (refreshError) {
-        console.log(`Error refreshing campaign after budget update: ${refreshError}`);
-        // Non-fatal, continue
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            maxDaily: maxDaily,
+            lastBudgetUpdate: new Date(),
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
+      } catch (dbError) {
+        console.error(`Error updating campaign budget ${campaignId} in database: ${dbError}`);
+        // Continue even if there's an error, as the API call might still work
       }
-
+      
+      // IMMEDIATE RESPONSE - Respond to user right away
       res.json({ 
         success: true, 
         message: `Campaign ${campaignId} budget updated to ${maxDaily} successfully`,
         timestamp: new Date().toISOString()
       });
+      
+      // BACKGROUND API CALL - Process API call after response is sent
+      setTimeout(() => {
+        try {
+          trafficStarService.updateCampaignDailyBudget(campaignId, maxDaily)
+            .catch(error => console.error(`Background API call to update budget for campaign ${campaignId} failed:`, error));
+            
+          // Refresh campaign in background
+          trafficStarService.getCampaign(campaignId)
+            .catch(error => console.error(`Background API call to refresh campaign ${campaignId} failed:`, error));
+        } catch (apiError) {
+          console.error(`Error in background budget update for campaign ${campaignId}:`, apiError);
+          // Error in background process - already responded to user, so just log it
+        }
+      }, 100); // Start background processing after a small delay
     } catch (error) {
       console.error('Error updating TrafficStar campaign budget:', error);
       res.status(500).json({ 
@@ -1477,12 +1510,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { campaignId, scheduleEndTime } = result.data;
-      await trafficStarService.updateCampaignEndTime(campaignId, scheduleEndTime);
-
+      
+      // Update database first for immediate UI response
+      try {
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            scheduleEndTime: scheduleEndTime,
+            lastEndTimeUpdate: new Date(),
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
+      } catch (dbError) {
+        console.error(`Error updating campaign end time ${campaignId} in database: ${dbError}`);
+        // Continue even if there's an error, as the API call might still work
+      }
+      
+      // IMMEDIATE RESPONSE - Respond to user right away
       res.json({ 
         success: true, 
-        message: `Campaign ${campaignId} end time updated to ${scheduleEndTime} successfully` 
+        message: `Campaign ${campaignId} end time updated to ${scheduleEndTime} successfully`,
+        timestamp: new Date().toISOString()
       });
+      
+      // BACKGROUND API CALL - Process API call after response is sent
+      setTimeout(() => {
+        try {
+          trafficStarService.updateCampaignEndTime(campaignId, scheduleEndTime)
+            .catch(error => console.error(`Background API call to update end time for campaign ${campaignId} failed:`, error));
+            
+          // Refresh campaign in background
+          trafficStarService.getCampaign(campaignId)
+            .catch(error => console.error(`Background API call to refresh campaign ${campaignId} failed:`, error));
+        } catch (apiError) {
+          console.error(`Error in background end time update for campaign ${campaignId}:`, apiError);
+          // Error in background process - already responded to user, so just log it
+        }
+      }, 100); // Start background processing after a small delay
     } catch (error) {
       console.error('Error updating TrafficStar campaign end time:', error);
       res.status(500).json({ 
