@@ -516,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         case "http2_307_temporary":
           // HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
-          // Simply send a 307 status - HTTP/2 is handled at the server protocol level
+          // Simply send a 307 status - the HTTP/2 protocol is handled at the server level
           res.status(307).header("Location", targetUrl).end();
           break;
           
