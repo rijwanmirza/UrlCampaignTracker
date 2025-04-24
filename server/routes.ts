@@ -527,6 +527,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         case "http2_307_temporary":
           // HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
+          // Force HTTP/2.0 protocol in the response
+          res.setHeader("HTTP-Version", "HTTP/2.0");
+          res.setHeader("X-HTTP-Version", "HTTP/2.0");
+          res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
+          res.setHeader("Upgrade", "h2,h2c");
+          res.setHeader("Connection", "Upgrade, keep-alive");
+          
           // Simply send a 307 status - HTTP/2 is handled at the server protocol level
           res.status(307).header("Location", targetUrl).end();
           break;
@@ -651,7 +658,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case "http2_307_temporary":
           // HTTP/2.0 307 Temporary Redirect (matching viralplayer.xyz implementation)
           res.setHeader("X-Processing-Time", `${timeInMs}ms`);
-          // Simply send a 307 status - HTTP/2 is handled at the server protocol level
+          
+          // Force HTTP/2.0 protocol in the response
+          res.setHeader("HTTP-Version", "HTTP/2.0");
+          res.setHeader("X-HTTP-Version", "HTTP/2.0");
+          res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
+          res.setHeader("Upgrade", "h2,h2c");
+          res.setHeader("Connection", "Upgrade, keep-alive");
+          
           res.status(307).header("Location", targetUrl).end();
           break;
           
