@@ -95,6 +95,20 @@ export default function Navbar() {
         </Link>
         
         <Link 
+          href="/trafficstar" 
+          className="block py-3 border-b"
+          onClick={() => setMenuOpen(false)}
+        >
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3v3m0 15v-3M9 12H3m18 0h-3M5.636 5.636l2.12 2.12m8.486 8.486l2.12 2.12M5.636 18.364l2.12-2.12m8.486-8.486l2.12-2.12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
+            </svg>
+            <span className="font-medium">TrafficStar API</span>
+          </div>
+        </Link>
+        
+        <Link 
           href="/redirect-test" 
           className="block py-3 border-b"
           onClick={() => setMenuOpen(false)}

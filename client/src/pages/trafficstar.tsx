@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@lib/queryClient';
+import { apiRequest } from '../lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,7 @@ export default function TrafficstarPage() {
   const { 
     data: statusData, 
     isLoading: isStatusLoading 
-  } = useQuery({
+  } = useQuery<{ configured: boolean }>({
     queryKey: ['/api/trafficstar/status'],
     refetchOnWindowFocus: false
   });
@@ -78,12 +78,25 @@ export default function TrafficstarPage() {
     saveApiKeyMutation.mutate(data);
   };
 
+  // Define the campaign type
+  interface Campaign {
+    id: number;
+    name: string;
+    status: string;
+    active: boolean;
+    is_archived: boolean;
+    max_daily: number;
+    pricing_model: string;
+    schedule_end_time: string;
+    [key: string]: any;
+  }
+
   // Fetch campaigns if configured
   const {
     data: campaigns,
     isLoading: isCampaignsLoading,
     refetch: refetchCampaigns
-  } = useQuery({
+  } = useQuery<Campaign[]>({
     queryKey: ['/api/trafficstar/campaigns'],
     enabled: !!isConfigured,
     refetchOnWindowFocus: false
@@ -165,14 +178,28 @@ export default function TrafficstarPage() {
   };
 
   // Initialize budget forms for each campaign
-  const [budgetForms, setBudgetForms] = useState<Record<number, { form: ReturnType<typeof useForm>, isOpen: boolean }>>({});
-  const [endTimeForms, setEndTimeForms] = useState<Record<number, { form: ReturnType<typeof useForm>, isOpen: boolean }>>({});
+  const [budgetForms, setBudgetForms] = useState<Record<number, { 
+    form: ReturnType<typeof useForm<z.infer<typeof campaignBudgetSchema>>>, 
+    isOpen: boolean 
+  }>>({});
+  
+  const [endTimeForms, setEndTimeForms] = useState<Record<number, { 
+    form: ReturnType<typeof useForm<z.infer<typeof campaignEndTimeSchema>>>, 
+    isOpen: boolean 
+  }>>({});
 
   useEffect(() => {
     // Set up forms for each campaign when campaigns are loaded
     if (campaigns && campaigns.length > 0) {
-      const newBudgetForms: Record<number, { form: ReturnType<typeof useForm>, isOpen: boolean }> = {};
-      const newEndTimeForms: Record<number, { form: ReturnType<typeof useForm>, isOpen: boolean }> = {};
+      const newBudgetForms: Record<number, { 
+        form: ReturnType<typeof useForm<z.infer<typeof campaignBudgetSchema>>>, 
+        isOpen: boolean 
+      }> = {};
+      
+      const newEndTimeForms: Record<number, { 
+        form: ReturnType<typeof useForm<z.infer<typeof campaignEndTimeSchema>>>, 
+        isOpen: boolean 
+      }> = {};
       
       campaigns.forEach(campaign => {
         // Budget form
