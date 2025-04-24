@@ -58,6 +58,8 @@ class GmailReader {
   private configFile: string;
   // Store processed emails with their processing dates
   private processedEmails: Map<string, string> = new Map(); // emailId -> date string
+  // Track if we've done the initial scan
+  private initialScanComplete = false;
 
   constructor(config: Partial<GmailConfigOptions> = {}) {
     this.processedEmailsLogFile = path.join(process.cwd(), 'processed_emails.log');
@@ -195,6 +197,31 @@ class GmailReader {
     }
   }
   
+  // Save processed emails to file
+  private saveProcessedEmailsToFile() {
+    try {
+      const logEntries: string[] = [];
+      
+      this.processedEmails.forEach((data, emailId) => {
+        // For each email, store its ID, timestamp, and status
+        try {
+          // Try to parse the data as JSON
+          const parsedData = JSON.parse(data);
+          // Format: emailId,timestamp,status
+          logEntries.push(`${emailId},${parsedData.timestamp},${parsedData.status}`);
+        } catch (e) {
+          // If it's not valid JSON, use the data as a timestamp with a default status
+          logEntries.push(`${emailId},${data},unknown`);
+        }
+      });
+      
+      fs.writeFileSync(this.processedEmailsLogFile, logEntries.join('\n'), 'utf-8');
+      log(`Saved ${this.processedEmails.size} processed email IDs to log file`, 'gmail-reader');
+    } catch (error) {
+      log(`Error saving processed emails: ${error}`, 'gmail-reader');
+    }
+  }
+  
   // Log a processed email ID with timestamp to prevent reprocessing
   // The processingStatus can be 'success', 'duplicate', 'error', or 'skipped'
   private logProcessedEmail(emailId: string, processingStatus = 'skipped') {
@@ -314,6 +341,7 @@ class GmailReader {
     }
   }
   
+  // Set up the IMAP connection
   private setupImapConnection() {
     this.imap = new Imap({
       user: this.config.user,
@@ -373,6 +401,7 @@ class GmailReader {
     }
   }
 
+  // Attempt to reconnect to the IMAP server
   private reconnect() {
     if (!this.isRunning) {
       setTimeout(() => {
@@ -382,6 +411,7 @@ class GmailReader {
     }
   }
 
+  // Update the configuration
   public updateConfig(newConfig: Partial<GmailConfigOptions>) {
     const wasRunning = this.isRunning;
     
@@ -414,6 +444,7 @@ class GmailReader {
     return this.config;
   }
 
+  // Parse an email message
   private parseEmail(message: any): Promise<void> {
     return new Promise((resolve) => {
       let buffer = '';
@@ -591,9 +622,6 @@ class GmailReader {
     });
   }
 
-  // Track if we've done the initial scan
-  private initialScanComplete = false;
-  
   // Clean up our processed emails log - keep only the IDs that actually exist in Gmail
   public async synchronizeProcessedEmailLog(): Promise<void> {
     if (!this.isRunning || this.imap.state !== 'authenticated') {
@@ -603,25 +631,7 @@ class GmailReader {
     
     try {
       // Get actual emails in the Gmail inbox
-      const actualEmails = await new Promise<string[]>((resolve) => {
-        this.imap.openBox('INBOX', true, (err, box) => {
-          if (err) {
-            log(`Error opening inbox for log sync: ${err.message}`, 'gmail-reader');
-            resolve([]);
-            return;
-          }
-          
-          this.imap.search(['ALL'], (err, results) => {
-            if (err) {
-              log(`Error searching emails for log sync: ${err.message}`, 'gmail-reader');
-              resolve([]);
-              return;
-            }
-            
-            resolve(results.map(r => r.toString()));
-          });
-        });
-      });
+      const actualEmails = await this.getActualGmailEmails();
       
       if (actualEmails.length === 0) {
         log(`No emails found in Gmail inbox, cannot synchronize log`, 'gmail-reader');
@@ -854,6 +864,7 @@ class GmailReader {
     }
   }
 
+  // Check for new emails
   private async checkEmails() {
     if (!this.isRunning) return;
     
@@ -918,6 +929,7 @@ class GmailReader {
     }
   }
 
+  // Start the Gmail reader
   public start() {
     if (this.isRunning) return;
     
@@ -985,6 +997,7 @@ class GmailReader {
     });
   }
 
+  // Stop the Gmail reader
   public stop() {
     log('Stopping Gmail reader...', 'gmail-reader');
     
@@ -1008,6 +1021,7 @@ class GmailReader {
     }
   }
 
+  // Get the status of the Gmail reader
   public getStatus() {
     // Debug logging for status checks
     console.log('🔍 DEBUG: Getting Gmail status, autoDeleteMinutes:', this.config.autoDeleteMinutes);
