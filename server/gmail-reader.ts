@@ -699,17 +699,46 @@ class GmailReader {
       
       log(`Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
       
-      // Delete each email
-      let deletedCount = 0;
-      for (const emailId of emailsToDelete) {
-        log(`Attempting to delete email ID: ${emailId}`, 'gmail-reader');
-        const success = await this.deleteEmail(emailId);
-        if (success) {
-          deletedCount++;
-        }
-      }
+      // Delete all emails in a batch
+      log(`Batch deleting all ${emailsToDelete.length} emails at once`, 'gmail-reader');
       
-      log(`Auto-deleted ${deletedCount}/${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
+      try {
+        // Open the inbox
+        await new Promise<void>((resolve, reject) => {
+          this.imap.openBox('INBOX', false, async (err, box) => {
+            if (err) {
+              log(`Error opening mailbox for batch deletion: ${err.message}`, 'gmail-reader');
+              reject(err);
+              return;
+            }
+            
+            // Add the Deleted flag to all messages at once
+            this.imap.addFlags(emailsToDelete.join(','), '\\Deleted', (err) => {
+              if (err) {
+                log(`Error adding Deleted flags to emails: ${err.message}`, 'gmail-reader');
+                reject(err);
+                return;
+              }
+              
+              // Expunge the mailbox to permanently remove all messages
+              this.imap.expunge((err) => {
+                if (err) {
+                  log(`Error expunging mailbox after batch deletion: ${err.message}`, 'gmail-reader');
+                  reject(err);
+                  return;
+                }
+                
+                log(`Successfully batch deleted ${emailsToDelete.length} emails`, 'gmail-reader');
+                resolve();
+              });
+            });
+          });
+        });
+        
+        log(`Auto-deleted ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
+      } catch (error) {
+        log(`Error in batch deletion: ${error}`, 'gmail-reader');
+      }
     } catch (error) {
       log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
     }
