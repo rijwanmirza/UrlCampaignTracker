@@ -517,7 +517,7 @@ class TrafficStarService {
    */
   async activateCampaign(id: number): Promise<void> {
     try {
-      console.log(`SIMPLIFIED: Activating campaign ${id}...`);
+      console.log(`NEW IMPLEMENTATION: Activating campaign ${id}...`);
       
       // Update our local record FIRST for instant UI feedback
       await db.update(trafficstarCampaigns)
@@ -530,31 +530,48 @@ class TrafficStarService {
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
         
-      // Make a direct API call using the simplest possible params
+      // Make a direct API call using parameters from our test script
       try {
         // Get token
         const token = await this.ensureToken();
         console.log(`Making simplified API call to activate campaign ${id}`);
         
-        // Use the exact same format as the budget update that works correctly
-        // Only the essential parameters, nothing fancy
-        const response = await axios.patch(
-          `https://api.trafficstars.com/v1.1/campaigns/${id}`, 
-          { 
-            // Use precisely the parameters needed
-            status: 'enabled',
-            active: true
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+        // First try the standard API endpoint with both params
+        try {
+          const response = await axios.patch(
+            `https://api.trafficstars.com/v1.1/campaigns/${id}`, 
+            { 
+              status: 'enabled',
+              active: true
             },
-            timeout: 10000
-          }
-        );
-        
-        console.log(`✅ Campaign activation API call made. Response:`, response.data);
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            }
+          );
+          
+          console.log(`✅ Campaign activate API call made. Response:`, response.data);
+        } catch (error) {
+          console.log(`First attempt failed, trying alternate approach...`);
+          
+          // Try an alternate endpoint with specific activate action
+          const altResponse = await axios.post(
+            `https://api.trafficstars.com/v1.1/campaigns/${id}/activate`, 
+            {},
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            }
+          );
+          
+          console.log(`✅ Alternate activate API call made. Response:`, altResponse.data);
+        }
         
         // Update database with success status
         await db.update(trafficstarCampaigns)
