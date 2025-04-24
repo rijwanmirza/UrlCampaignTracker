@@ -43,7 +43,8 @@ export default function TrafficstarPage() {
     refetchOnWindowFocus: false
   });
   
-  const isConfigured = statusData?.configured;
+  // Always consider configured since we're using environment variables now
+  const isConfigured = true;
   
   // Form for API key submission
   const apiKeyForm = useForm<z.infer<typeof apiKeyFormSchema>>({

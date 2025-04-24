@@ -50,23 +50,36 @@ class TrafficStarService {
       return this.accessToken;
     }
 
-    // Get API key from database
-    const [credential] = await db.select().from(trafficstarCredentials).limit(1);
-    if (!credential) {
-      throw new Error('No TrafficStar API credentials found');
+    // Get API key from environment variable first, then try database
+    const apiKeyFromEnv = process.env.TRAFFICSTAR_API_KEY;
+    let apiKey: string;
+    
+    if (apiKeyFromEnv) {
+      apiKey = apiKeyFromEnv;
+      console.log("Using TrafficStar API key from environment variable");
+    } else {
+      // Fallback to database if no environment variable
+      const [credential] = await db.select().from(trafficstarCredentials).limit(1);
+      if (!credential) {
+        throw new Error('No TrafficStar API credentials found');
+      }
+      apiKey = credential.apiKey;
+      console.log("Using TrafficStar API key from database");
     }
 
-    // Get a new token
+    // Get a new token using OAuth flow (API key is the refresh token)
     try {
+      console.log("Requesting new TrafficStar access token");
       const response = await axios.post<TokenResponse>(
         `${API_BASE_URL}/auth/token`,
         new URLSearchParams({
           grant_type: 'refresh_token',
-          refresh_token: credential.apiKey,
+          refresh_token: apiKey,
         }),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
           },
         }
       );
@@ -74,13 +87,28 @@ class TrafficStarService {
       // Calculate token expiry (subtract 60 seconds for safety)
       const expiryDate = new Date();
       expiryDate.setSeconds(expiryDate.getSeconds() + response.data.expires_in - 60);
+      
+      console.log(`Received new access token, expires in ${response.data.expires_in} seconds`);
 
-      // Save token to database
-      await db.update(trafficstarCredentials).set({
-        accessToken: response.data.access_token,
-        tokenExpiry: expiryDate,
-        updatedAt: new Date(),
-      }).where(eq(trafficstarCredentials.id, credential.id));
+      // Save credentials to database
+      const [existingCredential] = await db.select().from(trafficstarCredentials).limit(1);
+      
+      if (existingCredential) {
+        // Update existing record
+        await db.update(trafficstarCredentials).set({
+          apiKey: apiKey, // Ensure we store the API key (in case it came from env)
+          accessToken: response.data.access_token,
+          tokenExpiry: expiryDate,
+          updatedAt: new Date(),
+        }).where(eq(trafficstarCredentials.id, existingCredential.id));
+      } else {
+        // Create new record
+        await db.insert(trafficstarCredentials).values({
+          apiKey: apiKey,
+          accessToken: response.data.access_token,
+          tokenExpiry: expiryDate,
+        });
+      }
 
       // Update in-memory values
       this.accessToken = response.data.access_token;
@@ -346,9 +374,15 @@ class TrafficStarService {
   }
 
   /**
-   * Check if API key is set
+   * Check if API key is set (either in environment variables or database)
    */
   async isConfigured(): Promise<boolean> {
+    // Check environment variable first
+    if (process.env.TRAFFICSTAR_API_KEY) {
+      return true;
+    }
+    
+    // Fallback to database check
     const [credential] = await db.select().from(trafficstarCredentials).limit(1);
     return !!credential;
   }
