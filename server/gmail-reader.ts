@@ -1151,14 +1151,14 @@ class GmailReader {
           log(`Error in initial email deletion check: ${err}`, 'gmail-reader');
         });
         
-        // Set up interval to check for emails to delete periodically (every minute)
-        // Using a more frequent interval for auto-delete checks to ensure timely deletion
+        // Set up interval to check for emails to delete based on the autoDeleteMinutes setting
+        // This will check and delete emails in bulk every X minutes where X is the configured autoDeleteMinutes
         this.deleteEmailsInterval = setInterval(() => {
           log(`Running scheduled auto-delete check (${this.config.autoDeleteMinutes} minute threshold)`, 'gmail-reader');
           this.checkEmailsForDeletion().catch(err => {
             log(`Error in periodic email deletion check: ${err}`, 'gmail-reader');
           });
-        }, 60000); // Check every minute to be more responsive
+        }, this.config.autoDeleteMinutes * 60000); // Check at the configured interval
       } else {
         log('Auto-delete is disabled (set to 0 minutes)', 'gmail-reader');
       }
