@@ -32,7 +32,7 @@ const AUTH_ENDPOINTS = [
 ];
 
 // Flag to enable mock mode if API is unreachable
-const ENABLE_MOCK_MODE = true; // Set to false in production
+const ENABLE_MOCK_MODE = false; // We need real API calls to reach TrafficStar
 
 // Type definitions for API responses
 interface TokenResponse {
@@ -528,10 +528,8 @@ class TrafficStarService {
           return;
         }
       } else {
-        // If mock mode is disabled, proceed with normal API calls only
+        // If mock mode is disabled, use the v1.1 API directly
         const token = await this.ensureToken();
-        
-        // Try all possible API endpoint formats until one works
         let success = false;
         let lastError = null;
         
@@ -548,71 +546,29 @@ class TrafficStarService {
           console.log(`Could not get campaign ${id} details: ${infoError}`);
         }
         
-        // Try different endpoint patterns
-        for (const baseUrl of API_BASE_URLS) {
-          // Format 1: POST /campaigns/{id}/pause
-          try {
-            console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-            await axios.post(`${baseUrl}/campaigns/${id}/pause`, {}, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-            });
-            console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-            success = true;
-            break;
-          } catch (error) {
-            console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-            lastError = error;
-            // Continue to next attempt
-          }
-          
-          // Format 2: PUT /campaigns/{id} with active=false
-          try {
-            console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
-            await axios.put(`${baseUrl}/campaigns/${id}`, {
-              active: false
-            }, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-            });
-            console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
-            success = true;
-            break;
-          } catch (error) {
-            console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
-            lastError = error;
-            // Continue to next attempt
-          }
-          
-          // Format 3: POST /campaigns/{id}/status with status=paused
-          try {
-            console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-            await axios.post(`${baseUrl}/campaigns/${id}/status`, {
-              status: 'paused'
-            }, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-            });
-            console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-            success = true;
-            break;
-          } catch (error) {
-            console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-            lastError = error;
-            // Continue to next attempt
-          }
+        // Use the v1.1 API endpoint directly for campaign pausing
+        try {
+          console.log(`Pausing campaign ${id} using direct v1.1 API endpoint (real mode)`);
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+            active: false
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+          });
+          console.log(`Successfully paused campaign ${id} using v1.1 PATCH endpoint (real mode)`);
+          success = true;
+        } catch (error) {
+          console.error(`Failed to pause campaign ${id} using v1.1 endpoint: ${error.message}`, error);
+          lastError = error;
         }
         
         if (!success) {
           // If we're here, all attempts failed
-          console.error(`All attempts to pause campaign ${id} failed. Last error:`, lastError);
-          throw new Error(`Could not pause campaign. All API endpoints failed.`);
+          console.error(`Failed to pause campaign ${id}. Error:`, lastError);
+          throw new Error(`Could not pause campaign. API call failed.`);
         }
       }
 
@@ -781,29 +737,26 @@ class TrafficStarService {
           console.log(`Could not get campaign ${id} details: ${infoError}`);
         }
         
-        // Try different endpoint patterns
-        for (const baseUrl of API_BASE_URLS) {
-          // Try all formats as in the mock mode section...
-          // Format 1: POST /campaigns/{id}/enable
-          try {
-            console.log(`Trying to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
-            await axios.post(`${baseUrl}/campaigns/${id}/enable`, {}, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-            });
-            console.log(`Successfully activated campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
-            success = true;
-            break;
-          } catch (error) {
-            console.log(`Failed to activate campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/enable`);
-            lastError = error;
-            // Continue to next attempt
-          }
-          
-          // And so on with other formats...
-          // (Same as the ones in the mock mode section)
+        // Use the v1.1 API endpoint directly for campaign activation
+        // We know this endpoint works based on previous testing
+        try {
+          console.log(`Activating campaign ${id} using direct v1.1 API endpoint (real mode)`);
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+            active: true,
+            // Set end time to end of today in GMT for good measure
+            schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999)).toISOString()
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+          });
+          console.log(`Successfully activated campaign ${id} using v1.1 PATCH endpoint (real mode)`);
+          success = true;
+        } catch (error) {
+          console.error(`Failed to activate campaign ${id} using v1.1 endpoint: ${error.message}`, error);
+          lastError = error;
         }
         
         if (!success) {
@@ -959,16 +912,25 @@ class TrafficStarService {
           }
         }
       } else {
-        // If mock mode is disabled, use the normal API flow
+        // If mock mode is disabled, use the v1.1 API directly
         const token = await this.ensureToken();
-        await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
-          max_daily: maxDaily
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        });
+        
+        try {
+          console.log(`Updating campaign ${id} budget to $${maxDaily} using v1.1 API (real mode)`);
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+            max_daily: maxDaily
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+          });
+          console.log(`Successfully updated campaign ${id} budget to $${maxDaily} using v1.1 API (real mode)`);
+        } catch (error) {
+          console.error(`Failed to update campaign ${id} budget: ${error.message}`);
+          throw error;
+        }
       }
 
       // Update local record if we got here (real API was successful)
