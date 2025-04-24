@@ -7,7 +7,16 @@ import { db } from './db';
 import { trafficstarCredentials, trafficstarCampaigns } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-const API_BASE_URL = 'https://api.trafficstars.com/v1';
+// Try a few different API base URLs
+// Different TrafficStar API versions might have different URL structures
+const API_BASE_URLS = [
+  'https://api.trafficstars.com/v1', 
+  'https://api.trafficstars.com',
+  'https://app.trafficstars.com/api/v1',
+  'https://app.trafficstars.com/api'
+];
+
+const API_BASE_URL = API_BASE_URLS[0]; // Default to first one
 
 // Type definitions for API responses
 interface TokenResponse {
@@ -168,11 +177,28 @@ class TrafficStarService {
   async pauseCampaign(id: number): Promise<void> {
     try {
       const token = await this.ensureToken();
-      await axios.post(`${API_BASE_URL}/campaigns/${id}/pause`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      
+      // Try updated API format - API v2 style
+      try {
+        await axios.post(`${API_BASE_URL}/campaigns/${id}/pause`, {}, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+      } catch (apiV1Error) {
+        console.log(`API v1 endpoint failed, trying alternate format for campaign ${id}`);
+        
+        // Try alternate API format if the first one fails
+        await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
+          active: false
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+      }
 
       // Update local record
       await db.update(trafficstarCampaigns)
@@ -190,11 +216,28 @@ class TrafficStarService {
   async activateCampaign(id: number): Promise<void> {
     try {
       const token = await this.ensureToken();
-      await axios.post(`${API_BASE_URL}/campaigns/${id}/enable`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      
+      // Try updated API format - API v2 style
+      try {
+        await axios.post(`${API_BASE_URL}/campaigns/${id}/enable`, {}, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+      } catch (apiV1Error) {
+        console.log(`API v1 endpoint failed, trying alternate format for campaign ${id}`);
+        
+        // Try alternate API format if the first one fails
+        await axios.put(`${API_BASE_URL}/campaigns/${id}`, {
+          active: true
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+      }
 
       // Update local record
       await db.update(trafficstarCampaigns)
