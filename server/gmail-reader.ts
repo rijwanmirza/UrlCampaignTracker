@@ -281,7 +281,19 @@ class GmailReader {
       this.stop();
     }
     
+    // Debug logging for auto-delete minutes
+    console.log('🔍 DEBUG: Updating Gmail config with autoDeleteMinutes:', 
+                newConfig.autoDeleteMinutes !== undefined ? newConfig.autoDeleteMinutes : 'undefined');
+    
     this.config = { ...this.config, ...newConfig };
+    
+    // Ensure auto delete minutes is correctly set (or default to 0)
+    if (typeof this.config.autoDeleteMinutes !== 'number') {
+      this.config.autoDeleteMinutes = 0;
+    }
+    
+    console.log('🔍 DEBUG: Updated Gmail config autoDeleteMinutes is now:', this.config.autoDeleteMinutes);
+    
     this.setupImapConnection();
     
     if (wasRunning) {
