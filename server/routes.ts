@@ -1393,10 +1393,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         return res.status(400).json({ message: `Unsupported action: ${action}` });
       }
+      
+      // Force refresh of campaign status after action
+      try {
+        await trafficStarService.getCampaign(campaignId);
+      } catch (refreshError) {
+        console.log(`Error refreshing campaign after action: ${refreshError}`);
+        // Non-fatal, continue
+      }
 
       res.json({ 
         success: true, 
-        message: `Campaign ${campaignId} ${action === 'pause' ? 'paused' : 'activated'} successfully` 
+        message: `Campaign ${campaignId} ${action === 'pause' ? 'paused' : 'activated'} successfully`,
+        // Include a timestamp to help frontend know this is a fresh response
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error performing TrafficStar campaign action:', error);
@@ -1418,10 +1428,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { campaignId, maxDaily } = result.data;
       await trafficStarService.updateCampaignDailyBudget(campaignId, maxDaily);
+      
+      // Force refresh of campaign after budget update
+      try {
+        await trafficStarService.getCampaign(campaignId);
+      } catch (refreshError) {
+        console.log(`Error refreshing campaign after budget update: ${refreshError}`);
+        // Non-fatal, continue
+      }
 
       res.json({ 
         success: true, 
-        message: `Campaign ${campaignId} budget updated to ${maxDaily} successfully` 
+        message: `Campaign ${campaignId} budget updated to ${maxDaily} successfully`,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error updating TrafficStar campaign budget:', error);

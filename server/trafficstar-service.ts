@@ -549,9 +549,27 @@ class TrafficStarService {
         // Use the v1.1 API endpoint directly for campaign pausing
         try {
           console.log(`Pausing campaign ${id} using direct v1.1 API endpoint (real mode)`);
-          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
-            active: false
-          }, {
+          
+          // Get the campaign first to check what parameters it needs
+          const campaign = await this.getCampaign(id);
+          
+          // Add all possible required parameters for pausing
+          const pauseParams: any = {
+            active: false,
+            status: 'paused',
+            is_active: false,
+            is_paused: true,
+            is_archived: false
+          };
+          
+          // Keep existing budget if present
+          if (campaign.max_daily) {
+            pauseParams.max_daily = campaign.max_daily;
+          }
+          
+          console.log(`Sending pause request with parameters: ${JSON.stringify(pauseParams)}`);
+          
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -751,14 +769,32 @@ class TrafficStarService {
         // We know this endpoint works based on previous testing
         try {
           console.log(`Activating campaign ${id} using direct v1.1 API endpoint (real mode)`);
-          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+          
+          // Get the campaign first to check what parameters it needs
+          const campaign = await this.getCampaign(id);
+          
+          // Add all possible required parameters
+          const activateParams: any = {
             active: true,
+            status: 'enabled',
+            is_active: true,
+            is_paused: false,
+            is_archived: false,
             // Format date as YYYY-MM-DD HH:MM:SS as required by the API
             schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
               .toISOString()
               .replace('T', ' ')
               .replace(/\.\d+Z$/, '')
-          }, {
+          };
+          
+          // If campaign has an existing max_daily parameter, keep it
+          if (campaign.max_daily) {
+            activateParams.max_daily = campaign.max_daily;
+          }
+          
+          console.log(`Sending activation request with parameters: ${JSON.stringify(activateParams)}`);
+          
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
