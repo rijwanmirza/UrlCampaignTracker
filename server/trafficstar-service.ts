@@ -565,13 +565,16 @@ class TrafficStarService {
           // Get the campaign first to check what parameters it needs
           const campaign = await this.getCampaign(id);
           
-          // Add all possible required parameters for pausing
+          // Add ALL POSSIBLE required parameters that might be needed by the API
+          // Different API versions and endpoints may require different parameter names
           const pauseParams: any = {
             active: false,
-            status: 'paused',
             is_active: false,
+            status: 'paused',
             is_paused: true,
-            is_archived: false
+            paused: true,
+            is_archived: false,
+            archived: false
           };
           
           // Keep existing budget if present
@@ -581,14 +584,28 @@ class TrafficStarService {
           
           console.log(`Sending pause request with parameters: ${JSON.stringify(pauseParams)}`);
           
-          const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 30000 // 30 second timeout
-          });
-          console.log(`Successfully paused campaign ${id} using v1.1 PATCH endpoint (real mode)`);
+          let response;
+          try {
+            // First try PATCH method
+            response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000 // 30 second timeout
+            });
+          } catch (patchError) {
+            console.log(`PATCH method failed, trying PUT instead: ${patchError.message}`);
+            // If PATCH fails, try PUT method
+            response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000 // 30 second timeout
+            });
+          }
+          console.log(`Successfully paused campaign ${id} using v1.1 API endpoint (real mode)`);
           console.log(`API response: ${JSON.stringify(response.data || {})}`);
           
           // Record that we requested pausing in the database
@@ -895,14 +912,17 @@ class TrafficStarService {
           // Get the campaign first to check what parameters it needs
           const campaign = await this.getCampaign(id);
           
-          // Add all possible required parameters
+          // Add ALL POSSIBLE required parameters that might be needed by the API
+          // Different API versions and endpoints may require different parameter names
           const activateParams: any = {
             active: true,
-            status: 'enabled',
             is_active: true,
+            status: 'enabled',
             is_paused: false,
+            paused: false,
             is_archived: false,
-            // Format date as YYYY-MM-DD HH:MM:SS as required by the API
+            archived: false,
+            // Ensure we have end time in the correct format
             schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
               .toISOString()
               .replace('T', ' ')
@@ -916,14 +936,28 @@ class TrafficStarService {
           
           console.log(`Sending activation request with parameters: ${JSON.stringify(activateParams)}`);
           
-          const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 30000 // 30 second timeout
-          });
-          console.log(`Successfully activated campaign ${id} using v1.1 PATCH endpoint (real mode)`);
+          let response;
+          try {
+            // First try PATCH method
+            response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000 // 30 second timeout
+            });
+          } catch (patchError) {
+            console.log(`PATCH method failed, trying PUT instead: ${patchError.message}`);
+            // If PATCH fails, try PUT method
+            response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000 // 30 second timeout
+            });
+          }
+          console.log(`Successfully activated campaign ${id} using v1.1 API endpoint (real mode)`);
           console.log(`API response: ${JSON.stringify(response.data || {})}`);
           
           // Record that we requested activation in the database
