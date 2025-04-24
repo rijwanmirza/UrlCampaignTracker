@@ -130,7 +130,11 @@ export default function TrafficstarPage() {
         title: 'Campaign Updated',
         description: 'Campaign status has been updated successfully.',
       });
-      refetchCampaigns();
+      // Force immediate refetch with no cache
+      queryClient.invalidateQueries({ queryKey: ['/api/trafficstar/campaigns'] });
+      setTimeout(() => {
+        refetchCampaigns();
+      }, 1000); // Add additional refetch with delay to ensure updated data
     },
     onError: (error) => {
       toast({
@@ -150,7 +154,11 @@ export default function TrafficstarPage() {
         title: 'Budget Updated',
         description: 'Campaign daily budget has been updated successfully.',
       });
-      refetchCampaigns();
+      // Force immediate refetch with no cache
+      queryClient.invalidateQueries({ queryKey: ['/api/trafficstar/campaigns'] });
+      setTimeout(() => {
+        refetchCampaigns();
+      }, 1000); // Add additional refetch with delay to ensure updated data
     },
     onError: (error) => {
       toast({
