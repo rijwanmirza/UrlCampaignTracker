@@ -16,7 +16,7 @@
     "urlRegex": "object Object",
     "quantityRegex": "object Object"
   },
-  "defaultCampaignId": 16,
-  "autoDeleteMinutes": 3,
+  "defaultCampaignId": 17,
+  "autoDeleteMinutes": 2,
   "checkInterval": 60000
 }

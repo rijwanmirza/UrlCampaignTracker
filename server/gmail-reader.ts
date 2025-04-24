@@ -699,45 +699,65 @@ class GmailReader {
       
       log(`Found ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes to delete`, 'gmail-reader');
       
-      // Delete all emails in a batch
-      log(`Batch deleting all ${emailsToDelete.length} emails at once`, 'gmail-reader');
+      // Delete emails one by one but do it quickly
+      log(`Deleting ${emailsToDelete.length} emails one by one (reliable method)`, 'gmail-reader');
       
       try {
-        // Open the inbox
+        // Open the inbox once for all deletions
         await new Promise<void>((resolve, reject) => {
           this.imap.openBox('INBOX', false, async (err, box) => {
             if (err) {
-              log(`Error opening mailbox for batch deletion: ${err.message}`, 'gmail-reader');
+              log(`Error opening mailbox for deletion: ${err.message}`, 'gmail-reader');
               reject(err);
               return;
             }
             
-            // Add the Deleted flag to all messages at once
-            this.imap.addFlags(emailsToDelete.join(','), '\\Deleted', (err) => {
-              if (err) {
-                log(`Error adding Deleted flags to emails: ${err.message}`, 'gmail-reader');
-                reject(err);
-                return;
-              }
-              
-              // Expunge the mailbox to permanently remove all messages
-              this.imap.expunge((err) => {
-                if (err) {
-                  log(`Error expunging mailbox after batch deletion: ${err.message}`, 'gmail-reader');
-                  reject(err);
-                  return;
-                }
+            let deletedCount = 0;
+            let failedCount = 0;
+            
+            // Process emails one by one for reliability
+            for (const emailId of emailsToDelete) {
+              try {
+                // Add the Deleted flag to the message
+                await new Promise<void>((resolveFlag, rejectFlag) => {
+                  this.imap.addFlags(emailId, '\\Deleted', (err) => {
+                    if (err) {
+                      log(`Error adding Deleted flag to email ${emailId}: ${err.message}`, 'gmail-reader');
+                      rejectFlag(err);
+                      return;
+                    }
+                    resolveFlag();
+                  });
+                });
                 
-                log(`Successfully batch deleted ${emailsToDelete.length} emails`, 'gmail-reader');
-                resolve();
-              });
-            });
+                // Expunge right after each flag to ensure deletion
+                await new Promise<void>((resolveExpunge, rejectExpunge) => {
+                  this.imap.expunge((err) => {
+                    if (err) {
+                      log(`Error expunging mailbox after deleting email ${emailId}: ${err.message}`, 'gmail-reader');
+                      rejectExpunge(err);
+                      return;
+                    }
+                    resolveExpunge();
+                  });
+                });
+                
+                deletedCount++;
+                log(`Successfully deleted email with ID: ${emailId} (${deletedCount}/${emailsToDelete.length})`, 'gmail-reader');
+              } catch (error) {
+                failedCount++;
+                log(`Failed to delete email ${emailId}: ${error}`, 'gmail-reader');
+              }
+            }
+            
+            log(`Successfully deleted ${deletedCount}/${emailsToDelete.length} emails, failed: ${failedCount}`, 'gmail-reader');
+            resolve();
           });
         });
         
-        log(`Auto-deleted ${emailsToDelete.length} successfully processed emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
+        log(`Auto-deleted emails older than ${autoDeleteMinutes} minutes`, 'gmail-reader');
       } catch (error) {
-        log(`Error in batch deletion: ${error}`, 'gmail-reader');
+        log(`Error in email deletion: ${error}`, 'gmail-reader');
       }
     } catch (error) {
       log(`Error in checkEmailsForDeletion: ${error}`, 'gmail-reader');
