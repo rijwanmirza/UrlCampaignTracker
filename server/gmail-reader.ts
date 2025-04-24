@@ -388,13 +388,13 @@ class GmailReader {
           return;
         }
         
-        // First close any existing box
+        // First close any existing box 
         this.imap.closeBox((err) => {
           if (err) {
             log(`Warning during mailbox test: ${err.message}`, 'gmail-reader');
           }
           
-          // Try to open the inbox in readWrite mode
+          // Try to open the inbox in readWrite mode (false = readOnly disabled)
           this.imap.openBox('INBOX', false, (err, box) => {
             if (err) {
               resolve({ writable: false, error: `Failed to open inbox: ${err.message}` });
@@ -410,7 +410,8 @@ class GmailReader {
               return;
             }
             
-            // Success - mailbox is writable
+            // Successfully opened the mailbox for writing
+            log(`Successfully opened mailbox for write access`, 'gmail-reader');
             resolve({ writable: true });
           });
         });
@@ -776,6 +777,8 @@ class GmailReader {
       return 0;
     }
     
+    log(`Starting bulk deletion process for ${emailIds.length} emails`, 'gmail-reader');
+    
     try {
       // First validate which emails actually exist
       const validEmailIds = await this.validateEmailsExist(emailIds);
@@ -788,6 +791,8 @@ class GmailReader {
         
         return 0;
       }
+      
+      log(`Confirmed ${validEmailIds.length}/${emailIds.length} emails actually exist in Gmail`, 'gmail-reader');
       
       // Attempt Gmail-compatible deletion that works with OAuth
       log(`Using Gmail-compatible bulk deletion for ${validEmailIds.length} emails...`, 'gmail-reader');
@@ -909,7 +914,39 @@ class GmailReader {
       return; // Auto-delete is disabled
     }
     
-    // First check if we have proper permissions to delete emails
+    // First make sure we're properly connected to the IMAP server
+    if (!this.isRunning || this.imap.state !== 'authenticated') {
+      log(`Cannot check for emails to delete: IMAP not authenticated`, 'gmail-reader');
+      return;
+    }
+    
+    // Ensure we have a mailbox selected before doing any operations
+    try {
+      // First close any box that might be open
+      await new Promise<void>((resolve) => {
+        this.imap.closeBox((err) => {
+          if (err) log(`Warning when closing box: ${err.message}`, 'gmail-reader');
+          resolve();
+        });
+      });
+      
+      // Then open the INBOX to ensure we have a mailbox selected
+      await new Promise<void>((resolve, reject) => {
+        this.imap.openBox('INBOX', true, (err) => {
+          if (err) {
+            log(`Error opening inbox for deletion check: ${err.message}`, 'gmail-reader');
+            reject(err);
+            return;
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      log(`Error preparing mailbox for deletion: ${error}`, 'gmail-reader');
+      return;
+    }
+    
+    // Now check if we have proper permissions to delete emails
     const mailboxAccess = await this.testMailboxAccess();
     if (!mailboxAccess.writable) {
       log(`Unable to delete emails: ${mailboxAccess.error}`, 'gmail-reader');
