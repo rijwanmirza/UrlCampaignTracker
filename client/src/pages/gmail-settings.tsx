@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mail, Play, Power, Save, Trash, Calendar } from "lucide-react";
+import { AlertTriangle, Loader2, Mail, Play, Power, RefreshCw, RotateCcw, Save, Trash, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -273,6 +273,29 @@ export default function GmailSettingsPage() {
     }
   });
   
+  // Reset tracking system mutation
+  const resetTrackingMutation = useMutation<{message: string, details: any}, Error, void>({
+    mutationFn: () => {
+      return apiRequest<{message: string, details: any}>('POST', '/api/gmail-reader/reset-tracking');
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Tracking Reset Complete",
+        description: data.message,
+        variant: "success"
+      });
+      refetchStatus();
+    },
+    onError: (error) => {
+      toast({
+        title: "Reset Failed",
+        description: "Failed to reset email tracking system",
+        variant: "destructive",
+      });
+      console.error("Gmail tracking reset failed:", error);
+    }
+  });
+  
   // Cleanup logs mutation
   const cleanupLogsMutation = useMutation<
     { message: string, entriesRemoved: number, entriesKept: number },
@@ -392,6 +415,21 @@ export default function GmailSettingsPage() {
                 Cleanup Logs
               </Button>
               
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-amber-50 text-amber-700 border-amber-200 mr-2"
+                onClick={() => resetTrackingMutation.mutate()}
+                disabled={resetTrackingMutation.isPending}
+              >
+                {resetTrackingMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Reset Tracking
+              </Button>
+            
               <Button
                 variant="outline"
                 size="sm"
