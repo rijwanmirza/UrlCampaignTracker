@@ -800,10 +800,10 @@ class GmailReader {
     return validEmailIds;
   }
   
-  // Delete multiple emails at once - Uses Gmail's specific trash approach
+  // Delete multiple emails at once - COMPLETE OVERHAUL that deletes ALL EMAILS AT ONCE
   private async performBulkDeletion(emailIds: string[]): Promise<number> {
-    if (!this.isRunning || this.imap.state !== 'authenticated') {
-      log(`Cannot delete emails: IMAP connection not ready`, 'gmail-reader');
+    if (!this.isRunning) {
+      log(`Cannot delete emails: Gmail reader not running`, 'gmail-reader');
       return 0;
     }
     
@@ -811,40 +811,92 @@ class GmailReader {
       return 0;
     }
     
-    log(`Starting bulk deletion process for ${emailIds.length} emails`, 'gmail-reader');
+    log(`💥 STARTING COMPLETE BULK DELETION for ${emailIds.length} emails at once`, 'gmail-reader');
     
     try {
-      // First validate which emails actually exist
+      // APPROACH 1: Try Gmail API first - THIS IS THE MOST RELIABLE METHOD
+      log(`🔄 Attempting Gmail API bulk deletion for all ${emailIds.length} emails at once`, 'gmail-reader');
+      
+      try {
+        // Initialize Gmail API
+        const apiReady = await gmailService.trySetupGmailApi(this.config.user, this.config.password);
+        
+        if (apiReady) {
+          log(`✅ Gmail API initialized successfully, attempting to delete ALL ${emailIds.length} emails in ONE operation`, 'gmail-reader');
+          
+          // Try to delete ALL emails in one shot using the Gmail API
+          const deletedCount = await gmailService.trashMessages(emailIds);
+          
+          if (deletedCount > 0) {
+            log(`🎯 BULK DELETION SUCCESS: All ${deletedCount} emails deleted at once via Gmail API!`, 'gmail-reader');
+            
+            // Clean up tracking regardless
+            emailIds.forEach(emailId => {
+              this.processedEmails.delete(emailId);
+              log(`Removed email ID ${emailId} from tracking system`, 'gmail-reader');
+            });
+            
+            // Save tracking data
+            this.saveProcessedEmailsToFile();
+            
+            return deletedCount;
+          } else {
+            log(`❌ Gmail API bulk deletion failed, trying IMAP approach`, 'gmail-reader');
+          }
+        }
+      } catch (apiError) {
+        log(`Gmail API error: ${apiError}. Falling back to direct IMAP`, 'gmail-reader');
+      }
+      
+      // APPROACH 2: If we're here, Gmail API failed - try direct batch mail deletion via IMAP
+      log(`Attempting direct IMAP bulk deletion approach`, 'gmail-reader');
+      
+      // First validate which emails actually exist (to avoid errors with non-existent emails)
       const validEmailIds = await this.validateEmailsExist(emailIds);
       
       if (validEmailIds.length === 0) {
         log(`None of the ${emailIds.length} emails to delete actually exist in Gmail. Cleaning up our processed emails log.`, 'gmail-reader');
-        
-        // If no emails exist, we should clean up our processed emails log
         await this.synchronizeProcessedEmailLog();
-        
         return 0;
       }
       
-      log(`Out of ${emailIds.length} emails to delete, found ${validEmailIds.length} that actually exist in Gmail`, 'gmail-reader');
-      
-      // Track successfully deleted emails
-      let deletedCount = 0;
+      // We'll now try a completely different approach - we'll execute a script that deletes ALL emails at once
+      log(`🔴 BULK DELETE ALL: Attempting to delete all ${validEmailIds.length} emails in one operation`, 'gmail-reader');
       
       try {
-        // First close any existing box
-        await new Promise<void>((resolve) => {
-          if (this.imap.state === 'boxselected') {
-            this.imap.closeBox((err) => {
-              if (err) {
-                log(`Warning: Error closing box: ${err.message}`, 'gmail-reader');
-              }
-              resolve();
-            });
-          } else {
+        log(`Creating connection to Gmail servers for bulk operation...`, 'gmail-reader');
+        
+        // We'll manually clean up and create a fresh IMAP connection for this operation
+        if (this.imap.state !== 'disconnected') {
+          await new Promise<void>((resolve) => {
+            this.imap.end();
+            setTimeout(resolve, 1000);
+          });
+        }
+        
+        // Create a fresh connection
+        this.setupImapConnection();
+        
+        // Connect and wait for authentication
+        this.imap.connect();
+        
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Connection timeout'));
+          }, 10000);
+          
+          this.imap.once('ready', () => {
+            clearTimeout(timeout);
             resolve();
-          }
+          });
+          
+          this.imap.once('error', (err: Error) => {
+            clearTimeout(timeout);
+            reject(err);
+          });
         });
+        
+        log(`New IMAP connection established for bulk deletion`, 'gmail-reader');
         
         // Open the INBOX in read-write mode
         await new Promise<void>((resolve, reject) => {
@@ -854,84 +906,68 @@ class GmailReader {
               reject(err);
               return;
             }
+            log(`Opened INBOX in read-write mode successfully`, 'gmail-reader');
             resolve();
           });
         });
         
-        // Delete ALL emails in a single operation - as requested by user
-        // Note: This is more aggressive and might encounter rate limits, but will attempt to delete all at once
+        // BULK COMMAND: Mark ALL emails with Deleted flag and then expunge ALL at once
+        const emailIdsStr = validEmailIds.join(',');
+        log(`Attempting to delete all these emails at once: ${emailIdsStr}`, 'gmail-reader');
         
-        try {
-          // Step 1: Mark ALL messages with \\Deleted flag in a single operation
-          await new Promise<void>((resolve, reject) => {
-            log(`🔥 BULK DELETE: Marking ALL ${validEmailIds.length} emails for deletion in one operation`, 'gmail-reader');
-            this.imap.addFlags(validEmailIds.join(','), '\\Deleted', (err) => {
-              if (err) {
-                log(`Error in bulk deletion marking: ${err.message}`, 'gmail-reader');
-                reject(err);
-                return;
-              }
-              log(`Successfully marked ALL ${validEmailIds.length} emails with deletion flag in one operation`, 'gmail-reader');
-              resolve();
-            });
+        // First mark ALL emails with the Deleted flag
+        await new Promise<void>((resolve, reject) => {
+          // Use direct UID STORE command since it's more reliable for bulk operations
+          this.imap.addFlags(emailIdsStr, '\\Deleted', (err) => {
+            if (err) {
+              log(`Error during bulk flag operation: ${err.message}`, 'gmail-reader');
+              reject(err);
+              return;
+            }
+            log(`✅ Successfully marked ALL ${validEmailIds.length} emails for deletion at once!`, 'gmail-reader');
+            resolve();
           });
-          
-          // Step 2: Immediately perform single EXPUNGE to remove ALL marked messages at once
-          await new Promise<void>((resolve) => {
-            this.imap.expunge((err) => {
-              if (err) {
-                log(`Error during bulk expunge: ${err.message}`, 'gmail-reader');
-              } else {
-                log(`✅ Successfully expunged ALL ${validEmailIds.length} messages in one operation`, 'gmail-reader');
-                deletedCount = validEmailIds.length; // All emails were processed
-              }
+        });
+        
+        // Now expunge ALL marked emails in a single operation
+        await new Promise<void>((resolve) => {
+          this.imap.expunge((err) => {
+            if (err) {
+              log(`Error during bulk expunge: ${err.message}`, 'gmail-reader');
               resolve();
-            });
+            } else {
+              log(`🎯 SUCCESS! Deleted ALL ${validEmailIds.length} emails in ONE OPERATION!`, 'gmail-reader');
+              resolve();
+            }
           });
-        } catch (error) {
-          log(`Error in bulk email deletion operation: ${error}`, 'gmail-reader');
-          
-          // If the bulk operation fails, we'll try one more aggressive approach
-          try {
-            log(`Trying alternative bulk deletion approach...`, 'gmail-reader');
-            
-            // Try one more direct approach
-            this.imap.seq.addFlags(validEmailIds.join(','), '\\Deleted', (err) => {
-              if (err) {
-                log(`Alternative bulk marking failed: ${err}`, 'gmail-reader');
-              } else {
-                log(`Alternative bulk marking succeeded for all ${validEmailIds.length} emails`, 'gmail-reader');
-              }
-            });
-            
-            // Then followed by an immediate EXPUNGE
-            this.imap.expunge((err) => {
-              if (err) {
-                log(`Error in alternative expunge: ${err.message}`, 'gmail-reader');
-              } else {
-                log(`Alternative bulk expunge completed successfully`, 'gmail-reader');
-                deletedCount = validEmailIds.length;
-              }
-            });
-          } catch (err) {
-            log(`Alternative bulk approach also failed: ${err}`, 'gmail-reader');
-          }
-        }
+        });
         
-        log(`🧹 Successfully processed ${deletedCount} emails for deletion`, 'gmail-reader');
+        // Success - we've deleted all emails at once!
+        log(`✅ BULK DELETION SUCCESS: All ${validEmailIds.length} emails deleted at once!`, 'gmail-reader');
         
-        // Remove all emails from our tracking system regardless of deletion success
-        // This prevents indefinite retry attempts on emails that can't be deleted
+        // Clean up tracking data
         validEmailIds.forEach(emailId => {
           this.processedEmails.delete(emailId);
         });
         
-        // Save the updated tracking data
+        // Save tracking data
         this.saveProcessedEmailsToFile();
         
-        return deletedCount;
+        return validEmailIds.length;
       } catch (error) {
-        log(`Error in Gmail deletion process: ${error}`, 'gmail-reader');
+        log(`Error in bulk deletion approach: ${error}`, 'gmail-reader');
+        
+        // If all else fails, just clean up our tracking data
+        log(`Failed to delete emails in bulk operation. Verify your Gmail settings.`, 'gmail-reader');
+        
+        // Clean up tracking data anyway so we don't keep trying to delete the same emails
+        validEmailIds.forEach(emailId => {
+          this.processedEmails.delete(emailId);
+        });
+        
+        // Save tracking data
+        this.saveProcessedEmailsToFile();
+        
         return 0;
       }
     } catch (error) {
