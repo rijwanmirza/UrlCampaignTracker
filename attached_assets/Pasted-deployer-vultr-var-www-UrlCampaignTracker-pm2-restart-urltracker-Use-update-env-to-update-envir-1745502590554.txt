@@ -1,0 +1,233 @@
+deployer@vultr:/var/www/UrlCampaignTracker$ pm2 restart urltracker
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [urltracker](ids: [ 0 ])
+[PM2] [urltracker](0) ✓
+┌────┬───────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name          │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urltracker    │ default     │ 1.0.0   │ fork    │ 21511    │ 0s     │ 4    │ online    │ 0%       │ 4.0kb    │ deployer │ disabled │
+└────┴───────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+deployer@vultr:/var/www/UrlCampaignTracker$ cat /var/www/UrlCampaignTracker/.env
+DATABASE_URL=postgres://urltracker:uiic123%40%23%24@localhost:5432/urltracker
+NODE_ENV=production
+PORT=3000
+deployer@vultr:/var/www/UrlCampaignTracker$ curl http://localhost:3000
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Connection refused
+deployer@vultr:/var/www/UrlCampaignTracker$ netstat -tulpn | grep node
+Command 'netstat' not found, but can be installed with:
+sudo apt install net-tools
+deployer@vultr:/var/www/UrlCampaignTracker$ netstat -tulpn | grep LISTEN
+Command 'netstat' not found, but can be installed with:
+sudo apt install net-tools
+deployer@vultr:/var/www/UrlCampaignTracker$ ^C
+deployer@vultr:/var/www/UrlCampaignTracker$ sudo apt install net-tools
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following NEW packages will be installed:
+  net-tools
+0 upgraded, 1 newly installed, 0 to remove and 1 not upgraded.
+Need to get 204 kB of archives.
+After this operation, 819 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu jammy/main amd64 net-tools amd64 1.60+git20181103.0eebece-1ubuntu5 [204 kB]
+Fetched 204 kB in 1s (193 kB/s)
+Selecting previously unselected package net-tools.
+(Reading database ... 129155 files and directories currently installed.)
+Preparing to unpack .../net-tools_1.60+git20181103.0eebece-1ubuntu5_amd64.deb ...
+Unpacking net-tools (1.60+git20181103.0eebece-1ubuntu5) ...
+Setting up net-tools (1.60+git20181103.0eebece-1ubuntu5) ...
+Processing triggers for man-db (2.10.2-1) ...
+Scanning processes...
+Scanning linux images...
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+deployer@vultr:/var/www/UrlCampaignTracker$ netstat -tulpn | grep LISTEN
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      -
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      -
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -
+tcp6       0      0 ::1:5432                :::*                    LISTEN      -
+tcp6       0      0 :::22                   :::*                    LISTEN      -
+tcp6       0      0 :::80                   :::*                    LISTEN      -
+deployer@vultr:/var/www/UrlCampaignTracker$ pm2 restart urltracker
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [urltracker](ids: [ 0 ])
+[PM2] [urltracker](0) ✓
+┌────┬───────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name          │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urltracker    │ default     │ 1.0.0   │ fork    │ 21727    │ 0s     │ 5    │ online    │ 0%       │ 680.0kb  │ deployer │ disabled │
+└────┴───────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+deployer@vultr:/var/www/UrlCampaignTracker$ cd /var/www/UrlCampaignTracker
+NODE_ENV=production node dist/index.js
+file:///var/www/UrlCampaignTracker/dist/index.js:151
+      throw new Error(
+            ^
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at server/db.ts (file:///var/www/UrlCampaignTracker/dist/index.js:151:13)
+    at __init (file:///var/www/UrlCampaignTracker/dist/index.js:4:56)
+    at file:///var/www/UrlCampaignTracker/dist/index.js:204:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.1
+deployer@vultr:/var/www/UrlCampaignTracker$ cat /var/www/UrlCampaignTracker/.env
+DATABASE_URL=postgres://urltracker:uiic123%40%23%24@localhost:5432/urltracker
+NODE_ENV=production
+PORT=3000
+deployer@vultr:/var/www/UrlCampaignTracker$ sudo tail -n 100 /var/log/nginx/error.log
+2025/04/24 13:07:22 [notice] 14830#14830: using inherited sockets from "6;7;"
+2025/04/24 13:23:24 [emerg] 20899#20899: unknown directive "http2" in /etc/nginx/sites-enabled/urltracker:15
+2025/04/24 13:23:24 [emerg] 20904#20904: unknown directive "http2" in /etc/nginx/sites-enabled/urltracker:15
+2025/04/24 13:23:35 [emerg] 20910#20910: unknown directive "http2" in /etc/nginx/sites-enabled/urltracker:15
+2025/04/24 13:24:06 [emerg] 20944#20944: unknown directive "http2" in /etc/nginx/sites-enabled/urltracker:15
+2025/04/24 13:28:04 [emerg] 21047#21047: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/urltracker:1
+2025/04/24 13:29:53 [notice] 21096#21096: signal process started
+2025/04/24 13:30:06 [notice] 21101#21101: signal process started
+2025/04/24 13:30:10 [notice] 21112#21112: signal process started
+2025/04/24 13:32:05 [notice] 21291#21291: signal process started
+2025/04/24 13:32:13 [notice] 21300#21300: signal process started
+2025/04/24 13:32:19 [notice] 21304#21304: signal process started
+2025/04/24 13:32:23 [notice] 21307#21307: signal process started
+2025/04/24 13:32:24 [notice] 21309#21309: signal process started
+2025/04/24 13:32:37 [error] 21310#21310: *8 connect() failed (111: Unknown error) while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:32:37 [error] 21310#21310: *8 connect() failed (111: Unknown error) while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:32:40 [crit] 21310#21310: *31 SSL_do_handshake() failed (SSL: error:0A00006C:SSL routines::bad key share) while SSL handshaking, client: 165.227.173.41, server: 0.0.0.0:443
+2025/04/24 13:32:40 [error] 21310#21310: *33 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "views.yoyoprime.com"
+2025/04/24 13:32:41 [error] 21310#21310: *34 no live upstreams while connecting to upstream, client: 104.164.173.91, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "views.yoyoprime.com"
+2025/04/24 13:32:41 [error] 21310#21310: *37 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /@vite/env HTTP/1.1", upstream: "http://localhost/@vite/env", host: "views.yoyoprime.com"
+2025/04/24 13:32:41 [error] 21310#21310: *35 no live upstreams while connecting to upstream, client: 104.164.173.145, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "views.yoyoprime.com"
+2025/04/24 13:32:41 [error] 21310#21310: *40 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /actuator/env HTTP/1.1", upstream: "http://localhost/actuator/env", host: "views.yoyoprime.com"
+2025/04/24 13:32:42 [error] 21310#21310: *42 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /server HTTP/1.1", upstream: "http://localhost/server", host: "views.yoyoprime.com"
+2025/04/24 13:32:42 [error] 21310#21310: *45 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /.vscode/sftp.json HTTP/1.1", upstream: "http://localhost/.vscode/sftp.json", host: "views.yoyoprime.com"
+2025/04/24 13:32:43 [error] 21310#21310: *47 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /about HTTP/1.1", upstream: "http://localhost/about", host: "views.yoyoprime.com"
+2025/04/24 13:32:43 [error] 21310#21310: *50 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /debug/default/view?panel=config HTTP/1.1", upstream: "http://localhost/debug/default/view?panel=config", host: "views.yoyoprime.com"
+2025/04/24 13:32:44 [error] 21310#21310: *52 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /v2/_catalog HTTP/1.1", upstream: "http://localhost/v2/_catalog", host: "views.yoyoprime.com"
+2025/04/24 13:32:44 [error] 21310#21310: *53 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /ecp/Current/exporttool/microsoft.exchange.ediscovery.exporttool.application HTTP/1.1", upstream: "http://localhost/ecp/Current/exporttool/microsoft.exchange.ediscovery.exporttool.application", host: "views.yoyoprime.com"
+2025/04/24 13:32:45 [error] 21310#21310: *54 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /server-status HTTP/1.1", upstream: "http://localhost/server-status", host: "views.yoyoprime.com"
+2025/04/24 13:32:45 [error] 21310#21310: *55 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /login.action HTTP/1.1", upstream: "http://localhost/login.action", host: "views.yoyoprime.com"
+2025/04/24 13:32:46 [error] 21310#21310: *56 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /_all_dbs HTTP/1.1", upstream: "http://localhost/_all_dbs", host: "views.yoyoprime.com"
+2025/04/24 13:32:46 [error] 21310#21310: *57 no live upstreams while connecting to upstream, client: 157.180.29.204, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "views.yoyoprime.com"
+2025/04/24 13:32:46 [error] 21310#21310: *58 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /.DS_Store HTTP/1.1", upstream: "http://localhost/.DS_Store", host: "views.yoyoprime.com"
+2025/04/24 13:32:47 [error] 21310#21310: *59 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /.env HTTP/1.1", upstream: "http://localhost/.env", host: "views.yoyoprime.com"
+2025/04/24 13:32:47 [error] 21310#21310: *60 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /.git/config HTTP/1.1", upstream: "http://localhost/.git/config", host: "views.yoyoprime.com"
+2025/04/24 13:32:47 [error] 21310#21310: *61 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /s/235323e2936313e24383e2933313/_/;/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.properties HTTP/1.1", upstream: "http://localhost/s/235323e2936313e24383e2933313/_/;/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.properties", host: "views.yoyoprime.com"
+2025/04/24 13:32:48 [error] 21310#21310: *62 connect() failed (111: Unknown error) while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /config.json HTTP/1.1", upstream: "http://127.0.0.1:3000/config.json", host: "views.yoyoprime.com"
+2025/04/24 13:32:48 [error] 21310#21310: *62 connect() failed (111: Unknown error) while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /config.json HTTP/1.1", upstream: "http://[::1]:3000/config.json", host: "views.yoyoprime.com"
+2025/04/24 13:32:48 [error] 21310#21310: *65 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /telescope/requests HTTP/1.1", upstream: "http://localhost/telescope/requests", host: "views.yoyoprime.com"
+2025/04/24 13:32:49 [error] 21310#21310: *66 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /info.php HTTP/1.1", upstream: "http://localhost/info.php", host: "views.yoyoprime.com"
+2025/04/24 13:32:49 [error] 21310#21310: *67 no live upstreams while connecting to upstream, client: 165.227.173.41, server: views.yoyoprime.com, request: "GET /?rest_route=/wp/v2/users/ HTTP/1.1", upstream: "http://localhost/?rest_route=/wp/v2/users/", host: "views.yoyoprime.com"
+2025/04/24 13:32:54 [error] 21310#21310: *68 no live upstreams while connecting to upstream, client: 104.164.173.249, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "views.yoyoprime.com"
+2025/04/24 13:33:09 [error] 21310#21310: *69 connect() failed (111: Unknown error) while connecting to upstream, client: 195.211.77.140, server: views.yoyoprime.com, request: "HEAD / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:33:09 [error] 21310#21310: *69 connect() failed (111: Unknown error) while connecting to upstream, client: 195.211.77.140, server: views.yoyoprime.com, request: "HEAD / HTTP/1.1", upstream: "http://[::1]:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:37:05 [error] 21310#21310: *76 connect() failed (111: Unknown error) while connecting to upstream, client: 157.119.40.30, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:37:05 [error] 21310#21310: *76 connect() failed (111: Unknown error) while connecting to upstream, client: 157.119.40.30, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:37:05 [error] 21310#21310: *79 no live upstreams while connecting to upstream, client: 157.119.40.30, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/1.1", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com"
+2025/04/24 13:37:05 [error] 21310#21310: *80 no live upstreams while connecting to upstream, client: 157.119.40.30, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "views.yoyoprime.com", referrer: "http://views.yoyoprime.com"
+2025/04/24 13:37:06 [error] 21310#21310: *84 no live upstreams while connecting to upstream, client: 157.119.40.30, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/1.1", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "http://views.yoyoprime.com/favicon.ico"
+2025/04/24 13:37:07 [crit] 21310#21310: *92 SSL_do_handshake() failed (SSL: error:0A00006C:SSL routines::bad key share) while SSL handshaking, client: 157.119.40.30, server: 0.0.0.0:443
+2025/04/24 13:37:56 [error] 21310#21310: *94 connect() failed (111: Unknown error) while connecting to upstream, client: 146.70.185.32, server: views.yoyoprime.com, request: "HEAD / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:37:56 [error] 21310#21310: *94 connect() failed (111: Unknown error) while connecting to upstream, client: 146.70.185.32, server: views.yoyoprime.com, request: "HEAD / HTTP/1.1", upstream: "http://[::1]:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:43:29 [error] 21457#21457: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:43:29 [error] 21457#21457: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:43:29 [error] 21457#21457: *1 no live upstreams while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/1.1", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "http://views.yoyoprime.com/"
+2025/04/24 13:43:52 [error] 21457#21457: *5 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "139.84.169.252"
+2025/04/24 13:43:52 [error] 21457#21457: *5 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:3000/", host: "139.84.169.252"
+2025/04/24 13:44:22 [error] 21457#21457: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:44:22 [error] 21457#21457: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:3000/", host: "views.yoyoprime.com"
+2025/04/24 13:44:22 [error] 21457#21457: *1 no live upstreams while connecting to upstream, client: 1.187.216.53, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/1.1", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "http://views.yoyoprime.com/"
+deployer@vultr:/var/www/UrlCampaignTracker$ sudo nano /etc/nginx/sites-available/urltracker
+deployer@vultr:/var/www/UrlCampaignTracker$ sudo nginx -t
+sudo systemctl restart nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+deployer@vultr:/var/www/UrlCampaignTracker$ cd /var/www/UrlCampaignTracker
+npm install
+
+up to date, audited 571 packages in 4s
+
+74 packages are looking for funding
+  run `npm fund` for details
+
+15 vulnerabilities (8 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+deployer@vultr:/var/www/UrlCampaignTracker$ sudo systemctl status postgresql
+● postgresql.service - PostgreSQL RDBMS
+     Loaded: loaded (/lib/systemd/system/postgresql.service; enabled; vendor preset: enabled)
+     Active: active (exited) since Thu 2025-04-24 13:10:44 UTC; 37min ago
+   Main PID: 18913 (code=exited, status=0/SUCCESS)
+        CPU: 1ms
+
+Apr 24 13:10:44 vultr systemd[1]: Starting PostgreSQL RDBMS...
+Apr 24 13:10:44 vultr systemd[1]: Finished PostgreSQL RDBMS.
+deployer@vultr:/var/www/UrlCampaignTracker$ sudo nano /var/www/UrlCampaignTracker/.env
+deployer@vultr:/var/www/UrlCampaignTracker$ cd /var/www/UrlCampaignTracker
+node -e "const { Pool } = require('@neondatabase/serverless'); const pool = new Pool({ connectionString: process.env.DATABASE_URL }); pool.query('SELECT NOW()', (err, res) => { console.log(err ? err : res.rows[0]); pool.end(); });"
+/var/www/UrlCampaignTracker/node_modules/@neondatabase/serverless/index.js:1582
+this.user===s&&this.database===s&&this.password===null)throw new Error(`No datab\
+                                                       ^
+
+Error: No database host or connection string was set, and key parameters have default values (host: localhost, user: deployer, db: deployer, password: null). Is an environment variable missing? Alternatively, if you intended to connect with these parameters, please set the host to 'localhost' explicitly.
+    at Tn.connect (/var/www/UrlCampaignTracker/node_modules/@neondatabase/serverless/index.js:1582:62)
+    at In.newClient (/var/www/UrlCampaignTracker/node_modules/@neondatabase/serverless/index.js:1383:3)
+    at In.connect (/var/www/UrlCampaignTracker/node_modules/@neondatabase/serverless/index.js:1378:23)
+    at In.query (/var/www/UrlCampaignTracker/node_modules/@neondatabase/serverless/index.js:1407:63)
+    at In.query (/var/www/UrlCampaignTracker/node_modules/@neondatabase/serverless/index.js:1626:14)
+    at [eval]:1:131
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:118:14
+    at [eval]-wrapper:6:24
+    at runScript (node:internal/process/execution:101:62)
+
+Node.js v20.19.1
+deployer@vultr:/var/www/UrlCampaignTracker$ cd /var/www/UrlCampaignTracker
+npm run build
+pm2 restart urltracker
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+transforming (1) index.htmlBrowserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2160 modules transformed.
+../dist/public/index.html                   2.02 kB │ gzip:   0.86 kB
+../dist/public/assets/index-D6Hmz6Xd.css   63.94 kB │ gzip:  11.13 kB
+../dist/public/assets/index-BbF40AQO.js   617.37 kB │ gzip: 179.16 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 11.66s
+
+  dist/index.js  117.2kb
+
+⚡ Done in 29ms
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [urltracker](ids: [ 0 ])
+[PM2] [urltracker](0) ✓
+┌────┬───────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name          │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urltracker    │ default     │ 1.0.0   │ fork    │ 21878    │ 0s     │ 6    │ online    │ 0%       │ 14.1mb   │ deployer │ disabled │
+└────┴───────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+deployer@vultr:/var/www/UrlCampaignTracker$
