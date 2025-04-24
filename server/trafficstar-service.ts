@@ -408,432 +408,85 @@ class TrafficStarService {
   }
 
   /**
-   * Pause a campaign
+   * Pause a campaign - SIMPLIFIED IMPLEMENTATION
    */
   async pauseCampaign(id: number): Promise<void> {
-    // IMMEDIATE CHANGE: Force immediate state change in our database
-    // This will make the UI update instantly while the API processes in background
     try {
+      console.log(`SIMPLIFIED: Pausing campaign ${id}...`);
+      
       // Update our local record FIRST for instant UI feedback
       await db.update(trafficstarCampaigns)
         .set({ 
           active: false, 
           status: 'paused',
-          updatedAt: new Date() 
+          updatedAt: new Date(),
+          lastRequestedAction: 'pause',
+          lastRequestedActionAt: new Date() 
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
       
-      // Now proceed with the actual API call
-      // If mock mode is enabled and API calls are failing, just update the local database
-      if (ENABLE_MOCK_MODE) {
-        try {
-          // First try the real API
-          const token = await this.ensureToken();
-          
-          // Try all possible API endpoint formats until one works
-          let success = false;
-          let lastError = null;
-          
-          // Use the v1.1 API endpoint directly for campaign pausing
-          // We know this endpoint works based on previous testing
-          try {
-            console.log(`Pausing campaign ${id} using direct v1.1 API endpoint`);
-            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
-              active: false
-            }, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000 // 10 second timeout
-            });
-            console.log(`Successfully paused campaign ${id} using v1.1 PATCH endpoint`);
-            success = true;
-          } catch (error) {
-            console.log(`Failed to pause campaign ${id} using v1.1 endpoint: ${error.message}`);
-            lastError = error;
-            
-            // If the direct approach fails, try a few other formats just in case
-            for (const baseUrl of ['https://api.trafficstars.com/v1.1', 'https://api.trafficstars.com/v1']) {
-              try {
-                console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
-                await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                  active: false
-                }, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 5000 // 5 second timeout
-                });
-                console.log(`Successfully paused campaign ${id} using ${baseUrl}`);
-                success = true;
-                break;
-              } catch (altError) {
-                console.log(`Failed with alternate endpoint ${baseUrl}: ${altError.message}`);
-                // Continue to next attempt
-              }
-            }
-          }
-          
-          if (!success) {
-            // If API calls failed but mock mode is enabled, continue with local update
-            console.log(`API calls failed but mock mode is enabled. Proceeding with local update only.`);
-            
-            // In mock mode, just update the local database
-            const [campaign] = await db
-              .select()
-              .from(trafficstarCampaigns)
-              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            
-            if (!campaign) {
-              // Create a new campaign record if it doesn't exist
-              await db.insert(trafficstarCampaigns).values({
-                trafficstarId: id.toString(),
-                name: `Campaign ${id}`,
-                status: 'paused',
-                active: false,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              });
-              console.log(`Created new paused campaign record for ID ${id} in mock mode`);
-            } else {
-              // Update existing campaign record
-              await db.update(trafficstarCampaigns)
-                .set({ active: false, status: 'paused', updatedAt: new Date() })
-                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-              console.log(`Updated campaign ${id} to paused state in mock mode`);
-            }
-            
-            return;
-          }
-        } catch (error) {
-          // If any error occurs during API call attempt and mock mode is enabled, 
-          // proceed with local update only
-          console.log(`Error during API calls but mock mode is enabled. Proceeding with local update only.`);
-          
-          // Update local record in database
-          const [campaign] = await db
-            .select()
-            .from(trafficstarCampaigns)
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-          
-          if (!campaign) {
-            // Create a new campaign record if it doesn't exist
-            await db.insert(trafficstarCampaigns).values({
-              trafficstarId: id.toString(),
-              name: `Campaign ${id}`,
-              status: 'paused',
-              active: false,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-            console.log(`Created new paused campaign record for ID ${id} in mock mode`);
-          } else {
-            // Update existing campaign record
-            await db.update(trafficstarCampaigns)
-              .set({ active: false, status: 'paused', updatedAt: new Date() })
-              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            console.log(`Updated campaign ${id} to paused state in mock mode`);
-          }
-          
-          return;
-        }
-      } else {
-        // If mock mode is disabled, use the v1.1 API directly
-        const token = await this.ensureToken();
-        let success = false;
-        let lastError = null;
-        
-        // Get detailed information about this campaign first to understand its current state
-        try {
-          console.log(`Getting campaign details for ID ${id} before attempting to pause`);
-          const campaign = await this.getCampaign(id);
-          console.log(`Campaign ${id} current status: ${JSON.stringify({
-            name: campaign.name,
-            active: campaign.active,
-            status: campaign.status
-          })}`);
-        } catch (infoError) {
-          console.log(`Could not get campaign ${id} details: ${infoError}`);
-        }
-        
-        // Use the v1.1 API endpoint directly for campaign pausing
-        try {
-          console.log(`Pausing campaign ${id} using direct v1.1 API endpoint (real mode)`);
-          
-          // Get the campaign first to check what parameters it needs
-          const campaign = await this.getCampaign(id);
-          
-          // Add ALL POSSIBLE required parameters that might be needed by the API
-          // Different API versions and endpoints may require different parameter names
-          const pauseParams: any = {
-            active: false,
-            is_active: false,
-            status: 'paused',
-            state: 'paused',
-            campaign_status: 'paused',
-            is_enabled: false,
-            enabled: false,
-            is_paused: true,
-            paused: true,
-            is_archived: false,
-            archived: false,
-            pause: true
-          };
-          
-          // Keep existing budget if present
-          if (campaign.max_daily) {
-            pauseParams.max_daily = campaign.max_daily;
-          }
-          
-          console.log(`Sending pause request with parameters: ${JSON.stringify(pauseParams)}`);
-          
-          let response;
-          
-          // Try multiple methods and endpoints until one works
-          const methods = ['PATCH', 'PUT', 'POST'];
-          const endpoints = [
-            'https://api.trafficstars.com/v1.1/campaigns',
-            'https://api.trafficstars.com/v1/campaigns',
-            'https://api.trafficstars.com/campaigns'
-          ];
-          
-          let methodSuccess = false;
-          
-          // First, try the main endpoint with different HTTP methods
-          for (const method of methods) {
-            if (methodSuccess) break;
-            
-            try {
-              console.log(`Trying ${method} method on primary endpoint for pause...`);
-              
-              if (method === 'PATCH') {
-                response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-              } else if (method === 'PUT') {
-                response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, pauseParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-              } else if (method === 'POST') {
-                // Some APIs require ID in the payload for POST requests
-                const postParams = { ...pauseParams, id };
-                response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/pause`, postParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-              }
-              
-              console.log(`${method} method for pause succeeded!`);
-              methodSuccess = true;
-              
-            } catch (methodError) {
-              console.log(`${method} method for pause failed: ${methodError.message}`);
-            }
-          }
-          
-          // If all methods failed on primary endpoint, try alternate endpoints
-          if (!methodSuccess) {
-            for (const endpoint of endpoints) {
-              if (methodSuccess) break;
-              
-              try {
-                console.log(`Trying alternate endpoint for pause: ${endpoint}/${id}`);
-                response = await axios.patch(`${endpoint}/${id}`, pauseParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-                
-                console.log(`Alternate endpoint ${endpoint}/${id} for pause succeeded!`);
-                methodSuccess = true;
-                
-              } catch (endpointError) {
-                console.log(`Failed with alternate endpoint ${endpoint}/${id} for pause: ${endpointError.message}`);
-                
-                // If PATCH fails, try PUT
-                try {
-                  console.log(`Trying PUT on alternate endpoint for pause: ${endpoint}/${id}`);
-                  response = await axios.put(`${endpoint}/${id}`, pauseParams, {
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json'
-                    },
-                    timeout: 30000 // 30 second timeout
-                  });
-                  
-                  console.log(`PUT on alternate endpoint ${endpoint}/${id} for pause succeeded!`);
-                  methodSuccess = true;
-                  
-                } catch (putError) {
-                  console.log(`PUT failed on alternate endpoint ${endpoint}/${id} for pause: ${putError.message}`);
-                }
-              }
-            }
-          }
-          
-          // If we still haven't succeeded, try the /pause specific endpoint
-          if (!methodSuccess) {
-            try {
-              console.log(`Trying specific pause endpoint...`);
-              response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/pause`, {}, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 30000 // 30 second timeout
-              });
-              
-              console.log(`Specific pause endpoint succeeded!`);
-              methodSuccess = true;
-              
-            } catch (pauseError) {
-              console.log(`Specific pause endpoint failed: ${pauseError.message}`);
-              throw pauseError; // Rethrow to be caught by outer catch
-            }
-          }
-          console.log(`Successfully paused campaign ${id} using v1.1 API endpoint (real mode)`);
-          console.log(`API response: ${JSON.stringify(response.data || {})}`);
-          
-          // Record that we requested pausing in the database
-          await db.update(trafficstarCampaigns)
-            .set({ 
-              lastRequestedAction: 'pause',
-              lastRequestedActionAt: new Date(),
-              lastRequestedActionSuccess: true,
-              syncStatus: 'pending_pause',
-              updatedAt: new Date() 
-            })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            
-          success = true;
-        } catch (error) {
-          console.error(`Failed to pause campaign ${id} using v1.1 endpoint: ${error.message}`, error);
-          lastError = error;
-        }
-        
-        if (!success) {
-          // If we're here, all attempts failed
-          console.error(`Failed to pause campaign ${id}. Error:`, lastError);
-          throw new Error(`Could not pause campaign. API call failed.`);
-        }
-      }
-
-      // Update local record
-      await db.update(trafficstarCampaigns)
-        .set({ active: false, updatedAt: new Date() })
-        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-        
-      // Verify the campaign was actually paused - with retries and force refresh
+      // Make a direct API call using the simplest possible params
       try {
-        console.log(`Verifying campaign ${id} was successfully paused - implementing verification with retries`);
+        // Get token
+        const token = await this.ensureToken();
+        console.log(`Making simplified API call to pause campaign ${id}`);
         
-        // A direct force refresh request to the API outside of our caching layer
-        const forceRefresh = async () => {
-          try {
-            const token = await this.ensureToken();
-            // Use a cache-busting timestamp query param
-            const timestamp = Date.now();
-            const response = await axios.get(
-              `https://api.trafficstars.com/v1.1/campaigns/${id}?_t=${timestamp}`, 
-              { 
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Cache-Control': 'no-cache, no-store, must-revalidate'
-                } 
-              }
-            );
-            return response.data?.response || null;
-          } catch (error) {
-            console.log(`Force refresh error: ${error}`);
-            return null;
+        // Use the exact same format as the budget update that works correctly
+        // Only the essential parameters, nothing fancy
+        const response = await axios.patch(
+          `https://api.trafficstars.com/v1.1/campaigns/${id}`, 
+          { 
+            // Use precisely the parameters needed
+            status: 'paused',
+            active: false
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
           }
-        };
+        );
         
-        // Multiple verification attempts (up to 3 times)
-        let campaign = null;
-        const maxRetries = 3;
-        let retryCount = 0;
-        let success = false;
+        console.log(`✅ Campaign pause API call made. Response:`, response.data);
         
-        while (retryCount < maxRetries && !success) {
-          // Force a direct API refresh to get the latest status
-          const freshData = await forceRefresh();
+        // Update database with success status
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            lastRequestedActionSuccess: true,
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
           
-          // Also get via our cached method
-          campaign = await this.getCampaign(id);
-          
-          // Log status from both sources
-          console.log(`[Retry ${retryCount + 1}] Campaign ${id} status:`);
-          console.log(`- Via getCampaign: ${JSON.stringify({
-            name: campaign.name,
-            active: campaign.active,
-            status: campaign.status
-          })}`);
-          
-          if (freshData) {
-            console.log(`- Via direct API: ${JSON.stringify({
-              name: freshData.name,
-              active: freshData.active,
-              status: freshData.status
-            })}`);
-          }
-          
-          // Check if either source shows paused
-          const isPaused = 
-            (campaign && (campaign.active === false || campaign.status === 'paused')) ||
-            (freshData && (freshData.active === false || freshData.status === 'paused'));
-            
-          if (isPaused) {
-            console.log(`✅ Campaign ${id} pause confirmed on retry ${retryCount + 1}`);
-            success = true;
-            
-            // Update our local DB to match the real status
-            if (freshData && (freshData.active === false || freshData.status === 'paused')) {
-              await db.update(trafficstarCampaigns)
-                .set({ 
-                  active: false, 
-                  status: 'paused',
-                  updatedAt: new Date() 
-                })
-                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            }
-            
-            break;
-          }
-          
-          // Wait 1 second before retrying
-          console.log(`Campaign ${id} not yet paused, retrying verification in 1 second...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retryCount++;
-        }
+      } catch (error) {
+        console.error(`⚠️ Error pausing campaign ${id}:`, error);
         
-        // Final status report
-        if (!success) {
-          console.log(`⚠️ WARNING: Could not verify pausing of campaign ${id} after ${maxRetries} attempts.`);
-          console.log(`   The API reported success, but verification shows the campaign is still not paused.`);
-          console.log(`   Final status: ${JSON.stringify({
-            name: campaign?.name,
-            active: campaign?.active,
-            status: campaign?.status
-          })}`);
-        }
+        // Record error in database
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            lastRequestedActionSuccess: false,
+            lastRequestedActionError: error.message || 'Unknown error',
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      }
+      
+      // Verify status - simple check only, without affecting user experience
+      try {
+        // Wait 2 seconds for API to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check if it worked
+        const updatedCampaign = await this.getCampaign(id);
+        
+        console.log(`Campaign ${id} status after pause attempt: ${JSON.stringify({
+          name: updatedCampaign.name,
+          active: updatedCampaign.active,
+          status: updatedCampaign.status
+        })}`);
       } catch (verifyError) {
-        console.log(`Could not verify pause status for campaign ${id}: ${verifyError}`);
+        console.log(`Unable to verify pause status: ${verifyError}`);
       }
       
     } catch (error) {
@@ -843,450 +496,85 @@ class TrafficStarService {
   }
 
   /**
-   * Activate a campaign
+   * Activate a campaign - SIMPLIFIED IMPLEMENTATION
    */
   async activateCampaign(id: number): Promise<void> {
-    // IMMEDIATE CHANGE: Force immediate state change in our database
-    // This will make the UI update instantly while the API processes in background
     try {
+      console.log(`SIMPLIFIED: Activating campaign ${id}...`);
+      
       // Update our local record FIRST for instant UI feedback
       await db.update(trafficstarCampaigns)
         .set({ 
           active: true, 
           status: 'enabled',
-          updatedAt: new Date() 
+          updatedAt: new Date(),
+          lastRequestedAction: 'activate',
+          lastRequestedActionAt: new Date() 
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
         
-      // Now proceed with the actual API call
-      // If mock mode is enabled and API calls are failing, just update the local database
-      if (ENABLE_MOCK_MODE) {
-        try {
-          // First try the real API
-          const token = await this.ensureToken();
-          
-          // Try all possible API endpoint formats until one works
-          let success = false;
-          let lastError = null;
-          
-          // Use the v1.1 API endpoint directly for campaign 1000866
-          // We know this endpoint works based on previous testing
-          try {
-            console.log(`Activating campaign ${id} using direct v1.1 API endpoint`);
-            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
-              active: true,
-              // Format date as YYYY-MM-DD HH:MM:SS as required by the API
-              schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
-                .toISOString()
-                .replace('T', ' ')
-                .replace(/\.\d+Z$/, '')
-            }, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000 // 10 second timeout
-            });
-            console.log(`Successfully activated campaign ${id} using v1.1 PATCH endpoint`);
-            success = true;
-          } catch (error) {
-            console.log(`Failed to activate campaign ${id} using v1.1 endpoint: ${error.message}`);
-            lastError = error;
-            
-            // If the direct approach fails, try a few other formats just in case
-            for (const baseUrl of ['https://api.trafficstars.com/v1.1', 'https://api.trafficstars.com/v1']) {
-              try {
-                console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
-                await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                  active: true,
-                  // Format date as YYYY-MM-DD HH:MM:SS as required by the API
-                  schedule_end_time: new Date(new Date().setUTCHours(23, 59, 59, 999))
-                    .toISOString()
-                    .replace('T', ' ')
-                    .replace(/\.\d+Z$/, '')
-                }, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 5000 // 5 second timeout
-                });
-                console.log(`Successfully activated campaign ${id} using ${baseUrl}`);
-                success = true;
-                break;
-              } catch (altError) {
-                console.log(`Failed with alternate endpoint ${baseUrl}: ${altError.message}`);
-                // Continue to next attempt
-              }
-            }
-          }
-          
-          if (!success) {
-            // If API calls failed but mock mode is enabled, continue with local update
-            console.log(`API calls failed but mock mode is enabled. Proceeding with local update only.`);
-            
-            // In mock mode, just update the local database
-            const [campaign] = await db
-              .select()
-              .from(trafficstarCampaigns)
-              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            
-            if (!campaign) {
-              // Create a new campaign record if it doesn't exist
-              await db.insert(trafficstarCampaigns).values({
-                trafficstarId: id.toString(),
-                name: `Campaign ${id}`,
-                status: 'active',
-                active: true,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              });
-              console.log(`Created new active campaign record for ID ${id} in mock mode`);
-            } else {
-              // Update existing campaign record
-              await db.update(trafficstarCampaigns)
-                .set({ active: true, status: 'active', updatedAt: new Date() })
-                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-              console.log(`Updated campaign ${id} to active state in mock mode`);
-            }
-            
-            return;
-          }
-        } catch (error) {
-          // If any error occurs during API call attempt and mock mode is enabled, 
-          // proceed with local update only
-          console.log(`Error during API calls but mock mode is enabled. Proceeding with local update only.`);
-          
-          // Update local record in database
-          const [campaign] = await db
-            .select()
-            .from(trafficstarCampaigns)
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-          
-          if (!campaign) {
-            // Create a new campaign record if it doesn't exist
-            await db.insert(trafficstarCampaigns).values({
-              trafficstarId: id.toString(),
-              name: `Campaign ${id}`,
-              status: 'active',
-              active: true,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-            console.log(`Created new active campaign record for ID ${id} in mock mode`);
-          } else {
-            // Update existing campaign record
-            await db.update(trafficstarCampaigns)
-              .set({ active: true, status: 'active', updatedAt: new Date() })
-              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            console.log(`Updated campaign ${id} to active state in mock mode`);
-          }
-          
-          return;
-        }
-      } else {
-        // If mock mode is disabled, proceed with normal API calls only
-        const token = await this.ensureToken();
-        
-        // Try all possible API endpoint formats until one works
-        let success = false;
-        let lastError = null;
-        
-        // Get detailed information about this campaign first to understand its current state
-        try {
-          console.log(`Getting campaign details for ID ${id} before attempting to activate`);
-          const campaign = await this.getCampaign(id);
-          console.log(`Campaign ${id} current status: ${JSON.stringify({
-            name: campaign.name,
-            active: campaign.active,
-            status: campaign.status
-          })}`);
-        } catch (infoError) {
-          console.log(`Could not get campaign ${id} details: ${infoError}`);
-        }
-        
-        // Use the v1.1 API endpoint directly for campaign activation
-        // We know this endpoint works based on previous testing
-        try {
-          console.log(`Activating campaign ${id} using direct v1.1 API endpoint (real mode)`);
-          
-          // Get the campaign first to check what parameters it needs
-          const campaign = await this.getCampaign(id);
-          
-          // Add ALL POSSIBLE required parameters that might be needed by the API
-          // Different API versions and endpoints may require different parameter names
-          const activateParams: any = {
-            active: true,
-            is_active: true,
-            status: 'enabled',
-            state: 'enabled',
-            campaign_status: 'enabled',
-            is_enabled: true,
-            enabled: true,
-            activate: true,
-            is_paused: false,
-            paused: false,
-            is_archived: false,
-            archived: false,
-            // Set end date to far in the future (1 year)
-            schedule_end_time: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-              .toISOString()
-              .replace('T', ' ')
-              .replace(/\.\d+Z$/, '')
-          };
-          
-          // If campaign has an existing max_daily parameter, keep it
-          if (campaign.max_daily) {
-            activateParams.max_daily = campaign.max_daily;
-          }
-          
-          console.log(`Sending activation request with parameters: ${JSON.stringify(activateParams)}`);
-          
-          let response;
-          
-          // Try multiple methods and endpoints until one works
-          const methods = ['PATCH', 'PUT', 'POST'];
-          const endpoints = [
-            'https://api.trafficstars.com/v1.1/campaigns',
-            'https://api.trafficstars.com/v1/campaigns',
-            'https://api.trafficstars.com/campaigns'
-          ];
-          
-          let methodSuccess = false;
-          
-          // First, try the main endpoint with different HTTP methods
-          for (const method of methods) {
-            if (methodSuccess) break;
-            
-            try {
-              console.log(`Trying ${method} method on primary endpoint...`);
-              
-              if (method === 'PATCH') {
-                response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-              } else if (method === 'PUT') {
-                response = await axios.put(`https://api.trafficstars.com/v1.1/campaigns/${id}`, activateParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-              } else if (method === 'POST') {
-                // Some APIs require ID in the payload for POST requests
-                const postParams = { ...activateParams, id };
-                response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/activate`, postParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-              }
-              
-              console.log(`${method} method succeeded!`);
-              methodSuccess = true;
-              
-            } catch (methodError) {
-              console.log(`${method} method failed: ${methodError.message}`);
-            }
-          }
-          
-          // If all methods failed on primary endpoint, try alternate endpoints
-          if (!methodSuccess) {
-            for (const endpoint of endpoints) {
-              if (methodSuccess) break;
-              
-              try {
-                console.log(`Trying alternate endpoint: ${endpoint}/${id}`);
-                response = await axios.patch(`${endpoint}/${id}`, activateParams, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 30000 // 30 second timeout
-                });
-                
-                console.log(`Alternate endpoint ${endpoint}/${id} succeeded!`);
-                methodSuccess = true;
-                
-              } catch (endpointError) {
-                console.log(`Failed with alternate endpoint ${endpoint}/${id}: ${endpointError.message}`);
-                
-                // If PATCH fails, try PUT
-                try {
-                  console.log(`Trying PUT on alternate endpoint: ${endpoint}/${id}`);
-                  response = await axios.put(`${endpoint}/${id}`, activateParams, {
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json'
-                    },
-                    timeout: 30000 // 30 second timeout
-                  });
-                  
-                  console.log(`PUT on alternate endpoint ${endpoint}/${id} succeeded!`);
-                  methodSuccess = true;
-                  
-                } catch (putError) {
-                  console.log(`PUT failed on alternate endpoint ${endpoint}/${id}: ${putError.message}`);
-                }
-              }
-            }
-          }
-          
-          // If we still haven't succeeded, try the /activate specific endpoint
-          if (!methodSuccess) {
-            try {
-              console.log(`Trying specific activate endpoint...`);
-              response = await axios.post(`https://api.trafficstars.com/v1.1/campaigns/${id}/activate`, {}, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 30000 // 30 second timeout
-              });
-              
-              console.log(`Specific activate endpoint succeeded!`);
-              methodSuccess = true;
-              
-            } catch (activateError) {
-              console.log(`Specific activate endpoint failed: ${activateError.message}`);
-              throw activateError; // Rethrow to be caught by outer catch
-            }
-          }
-          console.log(`Successfully activated campaign ${id} using v1.1 API endpoint (real mode)`);
-          console.log(`API response: ${JSON.stringify(response.data || {})}`);
-          
-          // Record that we requested activation in the database
-          await db.update(trafficstarCampaigns)
-            .set({ 
-              lastRequestedAction: 'activate',
-              lastRequestedActionAt: new Date(),
-              lastRequestedActionSuccess: true,
-              syncStatus: 'pending_activation',
-              updatedAt: new Date() 
-            })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-          
-          success = true;
-        } catch (error) {
-          console.error(`Failed to activate campaign ${id} using v1.1 endpoint: ${error.message}`, error);
-          lastError = error;
-        }
-        
-        if (!success) {
-          // If we're here, all attempts failed
-          console.error(`All attempts to activate campaign ${id} failed. Last error:`, lastError);
-          throw new Error(`Could not activate campaign. All API endpoints failed.`);
-        }
-      }
-
-      // Update local record
-      await db.update(trafficstarCampaigns)
-        .set({ active: true, updatedAt: new Date() })
-        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-        
-      // Verify the campaign was actually activated - with retries and force refresh
+      // Make a direct API call using the simplest possible params
       try {
-        console.log(`Verifying campaign ${id} was successfully activated - implementing verification with retries`);
+        // Get token
+        const token = await this.ensureToken();
+        console.log(`Making simplified API call to activate campaign ${id}`);
         
-        // A direct force refresh request to the API outside of our caching layer
-        const forceRefresh = async () => {
-          try {
-            const token = await this.ensureToken();
-            // Use a cache-busting timestamp query param
-            const timestamp = Date.now();
-            const response = await axios.get(
-              `https://api.trafficstars.com/v1.1/campaigns/${id}?_t=${timestamp}`, 
-              { 
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Cache-Control': 'no-cache, no-store, must-revalidate'
-                } 
-              }
-            );
-            return response.data?.response || null;
-          } catch (error) {
-            console.log(`Force refresh error: ${error}`);
-            return null;
+        // Use the exact same format as the budget update that works correctly
+        // Only the essential parameters, nothing fancy
+        const response = await axios.patch(
+          `https://api.trafficstars.com/v1.1/campaigns/${id}`, 
+          { 
+            // Use precisely the parameters needed
+            status: 'enabled',
+            active: true
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
           }
-        };
+        );
         
-        // Multiple verification attempts (up to 3 times)
-        let campaign = null;
-        const maxRetries = 3;
-        let retryCount = 0;
-        let success = false;
+        console.log(`✅ Campaign activation API call made. Response:`, response.data);
         
-        while (retryCount < maxRetries && !success) {
-          // Force a direct API refresh to get the latest status
-          const freshData = await forceRefresh();
+        // Update database with success status
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            lastRequestedActionSuccess: true,
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
           
-          // Also get via our cached method
-          campaign = await this.getCampaign(id);
-          
-          // Log status from both sources
-          console.log(`[Retry ${retryCount + 1}] Campaign ${id} status:`);
-          console.log(`- Via getCampaign: ${JSON.stringify({
-            name: campaign.name,
-            active: campaign.active,
-            status: campaign.status
-          })}`);
-          
-          if (freshData) {
-            console.log(`- Via direct API: ${JSON.stringify({
-              name: freshData.name,
-              active: freshData.active,
-              status: freshData.status
-            })}`);
-          }
-          
-          // Check if either source shows activation
-          const isActive = 
-            (campaign && (campaign.active === true || campaign.status === 'enabled')) ||
-            (freshData && (freshData.active === true || freshData.status === 'enabled'));
-            
-          if (isActive) {
-            console.log(`✅ Campaign ${id} activation confirmed on retry ${retryCount + 1}`);
-            success = true;
-            
-            // Update our local DB to match the real status
-            if (freshData && (freshData.active === true || freshData.status === 'enabled')) {
-              await db.update(trafficstarCampaigns)
-                .set({ 
-                  active: true, 
-                  status: 'enabled',
-                  updatedAt: new Date() 
-                })
-                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            }
-            
-            break;
-          }
-          
-          // Wait 1 second before retrying
-          console.log(`Campaign ${id} not yet active, retrying verification in 1 second...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retryCount++;
-        }
+      } catch (error) {
+        console.error(`⚠️ Error activating campaign ${id}:`, error);
         
-        // Final status report
-        if (!success) {
-          console.log(`⚠️ WARNING: Could not verify activation of campaign ${id} after ${maxRetries} attempts.`);
-          console.log(`   The API reported success, but verification shows the campaign is still not active.`);
-          console.log(`   Final status: ${JSON.stringify({
-            name: campaign?.name,
-            active: campaign?.active,
-            status: campaign?.status
-          })}`);
-        }
+        // Record error in database
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            lastRequestedActionSuccess: false,
+            lastRequestedActionError: error.message || 'Unknown error',
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      }
+      
+      // Verify status - simple check only, without affecting user experience
+      try {
+        // Wait 2 seconds for API to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check if it worked
+        const updatedCampaign = await this.getCampaign(id);
+        
+        console.log(`Campaign ${id} status after activation attempt: ${JSON.stringify({
+          name: updatedCampaign.name,
+          active: updatedCampaign.active,
+          status: updatedCampaign.status
+        })}`);
       } catch (verifyError) {
-        console.log(`Could not verify activate status for campaign ${id}: ${verifyError}`);
+        console.log(`Unable to verify activation status: ${verifyError}`);
       }
       
     } catch (error) {
