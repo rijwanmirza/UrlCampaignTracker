@@ -857,48 +857,63 @@ class GmailReader {
           });
         });
         
-        // Directly move messages to Gmail's Trash folder using Gmail's dedicated command
-        // This is the most reliable method for Gmail
+        // Delete ALL emails in a single operation - as requested by user
+        // Note: This is more aggressive and might encounter rate limits, but will attempt to delete all at once
         
-        // Process in small batches to avoid hitting rate limits
-        const batchSize = 3;
-        for (let i = 0; i < validEmailIds.length; i += batchSize) {
-          // Get the current batch of email IDs
-          const batch = validEmailIds.slice(i, i + batchSize);
+        try {
+          // Step 1: Mark ALL messages with \\Deleted flag in a single operation
+          await new Promise<void>((resolve, reject) => {
+            log(`🔥 BULK DELETE: Marking ALL ${validEmailIds.length} emails for deletion in one operation`, 'gmail-reader');
+            this.imap.addFlags(validEmailIds.join(','), '\\Deleted', (err) => {
+              if (err) {
+                log(`Error in bulk deletion marking: ${err.message}`, 'gmail-reader');
+                reject(err);
+                return;
+              }
+              log(`Successfully marked ALL ${validEmailIds.length} emails with deletion flag in one operation`, 'gmail-reader');
+              resolve();
+            });
+          });
           
+          // Step 2: Immediately perform single EXPUNGE to remove ALL marked messages at once
+          await new Promise<void>((resolve) => {
+            this.imap.expunge((err) => {
+              if (err) {
+                log(`Error during bulk expunge: ${err.message}`, 'gmail-reader');
+              } else {
+                log(`✅ Successfully expunged ALL ${validEmailIds.length} messages in one operation`, 'gmail-reader');
+                deletedCount = validEmailIds.length; // All emails were processed
+              }
+              resolve();
+            });
+          });
+        } catch (error) {
+          log(`Error in bulk email deletion operation: ${error}`, 'gmail-reader');
+          
+          // If the bulk operation fails, we'll try one more aggressive approach
           try {
-            // Step 1: Mark messages with \\Deleted flag
-            await new Promise<void>((resolve, reject) => {
-              this.imap.addFlags(batch.join(','), '\\Deleted', (err) => {
-                if (err) {
-                  log(`Error marking batch for deletion: ${err.message}`, 'gmail-reader');
-                  reject(err);
-                  return;
-                }
-                log(`Successfully marked ${batch.length} emails with deletion flag`, 'gmail-reader');
-                resolve();
-              });
+            log(`Trying alternative bulk deletion approach...`, 'gmail-reader');
+            
+            // Try one more direct approach
+            this.imap.seq.addFlags(validEmailIds.join(','), '\\Deleted', (err) => {
+              if (err) {
+                log(`Alternative bulk marking failed: ${err}`, 'gmail-reader');
+              } else {
+                log(`Alternative bulk marking succeeded for all ${validEmailIds.length} emails`, 'gmail-reader');
+              }
             });
             
-            // Step 2: Immediately perform EXPUNGE to remove those messages
-            await new Promise<void>((resolve) => {
-              this.imap.expunge((err) => {
-                if (err) {
-                  log(`Error during expunge: ${err.message}`, 'gmail-reader');
-                } else {
-                  log(`Successfully expunged ${batch.length} messages`, 'gmail-reader');
-                  deletedCount += batch.length;
-                }
-                resolve();
-              });
+            // Then followed by an immediate EXPUNGE
+            this.imap.expunge((err) => {
+              if (err) {
+                log(`Error in alternative expunge: ${err.message}`, 'gmail-reader');
+              } else {
+                log(`Alternative bulk expunge completed successfully`, 'gmail-reader');
+                deletedCount = validEmailIds.length;
+              }
             });
-            
-            // Pause briefly between batches to give Gmail time to process
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-          } catch (error) {
-            log(`Error processing deletion batch: ${error}`, 'gmail-reader');
-            // Continue with next batch despite errors
+          } catch (err) {
+            log(`Alternative bulk approach also failed: ${err}`, 'gmail-reader');
           }
         }
         
