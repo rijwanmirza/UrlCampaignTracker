@@ -671,34 +671,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case "http2_forced_307":
-          // Forced HTTP/2.0 307 Temporary Redirect - Specific implementation for HTTP/2.0
-          res.setHeader("X-Processing-Time", `${timeInMs}ms`);
+          // This implementation matches the exact format seen in viralplayer.xyz
+          // First, set all headers exactly in the same order as the reference implementation
           
-          // Force HTTP/2.0 version in headers
+          // Create a set-cookie that matches reference implementation format
+          const cookieExpiration = new Date();
+          cookieExpiration.setFullYear(cookieExpiration.getFullYear() + 1); // Expire in 1 year
+          const cookieExpiryString = cookieExpiration.toUTCString();
+          
+          // Generate a random ID similar to viralplayer.xyz
+          const randomId = Math.random().toString(16).substring(2, 10);
+          
+          // Set headers exactly matching viralplayer.xyz in their specific order
+          res.removeHeader('X-Powered-By'); // Clear default Express headers
+          res.setHeader("date", new Date().toUTCString());
+          res.setHeader("content-length", "0");
+          res.setHeader("location", targetUrl);
+          res.setHeader("server", "cloudflare");
+          
+          // Generate a UUID for x-request-id
+          const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+          res.setHeader("x-request-id", uuid);
+          
+          res.setHeader("cf-cache-status", "DYNAMIC");
+          
+          // Set cookies that match the format
+          res.setHeader("set-cookie", [
+            `bc45=fpc0|${randomId}::351:55209; SameSite=Lax; Max-Age=31536000; Expires=${cookieExpiryString}`,
+            `rc45=fpc0|${randomId}::28; SameSite=Lax; Max-Age=31536000; Expires=${cookieExpiryString}`,
+            `uclick=mr7ZxwtaaNs1gOWlamCY4hIUD7craeFLJuyMJz3hmBMFe4/9c70RDu5SgPFmEHXMW9DJfw==; SameSite=Lax; Max-Age=31536000`,
+            `bcid=d0505amc402c73djlgl0; SameSite=Lax; Max-Age=31536000`
+          ]);
+          
+          // Generate a random CF-Ray value
+          const cfRay = Math.random().toString(16).substring(2, 11) + "a3fe-EWR";
+          res.setHeader("cf-ray", cfRay);
+          
+          // Alt-Svc header for HTTP/3 protocol negotiation
+          res.setHeader("alt-svc", "h3=\":443\"; ma=86400");
+          
+          // For HTTP/2 protocol support in node.js express
+          // Note: true HTTP/2 protocol requires HTTPS in production
           res.setHeader("X-HTTP2-Version", "HTTP/2.0");
-          res.setHeader("HTTP-Version", "HTTP/2.0"); 
           
-          // HTTP/2 required headers and compatibility
-          res.setHeader("Alt-Svc", "h2=\":443\"; ma=86400");
-          res.setHeader("X-Protocol-Version", "h2");
-          res.setHeader("Upgrade-Insecure-Requests", "1");
-          res.setHeader("X-HTTP2-Only", "true");
-          
-          // Advanced HTTP/2 specific settings
-          res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-          res.setHeader("Cache-Control", "no-store, must-revalidate, no-cache");
-          res.setHeader("Pragma", "no-cache");
-          
-          // Add extra identification for this special mode
-          res.setHeader("X-Powered-By", "ViralEngine/2.0-HTTP2-Forced");
-          res.setHeader("Server", "HTTP/2.0-Specialized-Server");
-          
-          // Force HTTP/2.0 content and connection settings
-          res.setHeader("Connection", "Upgrade, close");
-          res.setHeader("Upgrade", "h2c, h2");
-          
-          // Send 307 redirect with enforced HTTP/2 settings
-          res.status(307).header("Location", targetUrl).end();
+          // Send 307 redirect
+          res.status(307).end();
           break;
           
         case "direct":
