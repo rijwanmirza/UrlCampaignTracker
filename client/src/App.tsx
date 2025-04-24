@@ -9,6 +9,7 @@ import URLsPage from "@/pages/urls";
 import URLsMobilePage from "@/pages/urls-mobile";
 import RedirectPage from "@/pages/redirect";
 import GmailSettingsPage from "@/pages/gmail-settings";
+import SystemSettingsPage from "@/pages/system-settings";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -53,6 +54,9 @@ function Router() {
         </Route>
         <Route path="/gmail-settings">
           <GmailSettingsPage />
+        </Route>
+        <Route path="/system-settings">
+          <SystemSettingsPage />
         </Route>
         <Route>
           <NotFound />

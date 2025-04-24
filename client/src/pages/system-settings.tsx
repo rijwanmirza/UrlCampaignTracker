@@ -43,8 +43,11 @@ export default function SystemSettings() {
     try {
       setIsDeleting(true);
       
-      const response = await apiRequest("/api/system/full-cleanup", {
+      const response = await fetch("/api/system/full-cleanup", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ confirmText }),
       });
       
