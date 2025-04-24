@@ -1292,6 +1292,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TrafficStar API Routes
+
+  // Check if TrafficStar API is configured (has API key)
+  app.get("/api/trafficstar/status", async (_req: Request, res: Response) => {
+    try {
+      const isConfigured = await trafficStarService.isConfigured();
+      res.json({ configured: isConfigured });
+    } catch (error) {
+      console.error('Error checking TrafficStar configuration:', error);
+      res.status(500).json({ 
+        message: "Failed to check TrafficStar configuration",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Save TrafficStar API key
+  app.post("/api/trafficstar/config", async (req: Request, res: Response) => {
+    try {
+      const result = insertTrafficstarCredentialSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      await trafficStarService.saveApiKey(result.data.apiKey);
+      res.json({ success: true, message: "TrafficStar API key saved successfully" });
+    } catch (error) {
+      console.error('Error saving TrafficStar API key:', error);
+      res.status(500).json({ 
+        message: "Failed to save TrafficStar API key",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Get TrafficStar campaigns
+  app.get("/api/trafficstar/campaigns", async (_req: Request, res: Response) => {
+    try {
+      const campaigns = await trafficStarService.getCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching TrafficStar campaigns:', error);
+      res.status(500).json({ 
+        message: "Failed to fetch TrafficStar campaigns",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Get TrafficStar campaign by ID
+  app.get("/api/trafficstar/campaigns/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      const campaign = await trafficStarService.getCampaign(id);
+      res.json(campaign);
+    } catch (error) {
+      console.error(`Error fetching TrafficStar campaign ${req.params.id}:`, error);
+      res.status(500).json({ 
+        message: `Failed to fetch TrafficStar campaign ${req.params.id}`,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Get saved TrafficStar campaigns from database
+  app.get("/api/trafficstar/saved-campaigns", async (_req: Request, res: Response) => {
+    try {
+      const campaigns = await trafficStarService.getSavedCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching saved TrafficStar campaigns:', error);
+      res.status(500).json({ 
+        message: "Failed to fetch saved TrafficStar campaigns",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Perform campaign action (pause/activate)
+  app.post("/api/trafficstar/campaigns/action", async (req: Request, res: Response) => {
+    try {
+      const result = trafficstarCampaignActionSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const { campaignId, action } = result.data;
+
+      if (action === 'pause') {
+        await trafficStarService.pauseCampaign(campaignId);
+      } else if (action === 'activate') {
+        await trafficStarService.activateCampaign(campaignId);
+      } else {
+        return res.status(400).json({ message: `Unsupported action: ${action}` });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Campaign ${campaignId} ${action === 'pause' ? 'paused' : 'activated'} successfully` 
+      });
+    } catch (error) {
+      console.error('Error performing TrafficStar campaign action:', error);
+      res.status(500).json({ 
+        message: "Failed to perform TrafficStar campaign action",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Update campaign daily budget
+  app.post("/api/trafficstar/campaigns/budget", async (req: Request, res: Response) => {
+    try {
+      const result = trafficstarCampaignBudgetSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const { campaignId, maxDaily } = result.data;
+      await trafficStarService.updateCampaignDailyBudget(campaignId, maxDaily);
+
+      res.json({ 
+        success: true, 
+        message: `Campaign ${campaignId} budget updated to ${maxDaily} successfully` 
+      });
+    } catch (error) {
+      console.error('Error updating TrafficStar campaign budget:', error);
+      res.status(500).json({ 
+        message: "Failed to update TrafficStar campaign budget",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Update campaign end time
+  app.post("/api/trafficstar/campaigns/end-time", async (req: Request, res: Response) => {
+    try {
+      const result = trafficstarCampaignEndTimeSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const { campaignId, scheduleEndTime } = result.data;
+      await trafficStarService.updateCampaignEndTime(campaignId, scheduleEndTime);
+
+      res.json({ 
+        success: true, 
+        message: `Campaign ${campaignId} end time updated to ${scheduleEndTime} successfully` 
+      });
+    } catch (error) {
+      console.error('Error updating TrafficStar campaign end time:', error);
+      res.status(500).json({ 
+        message: "Failed to update TrafficStar campaign end time",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
   // We'll handle the HTTP/2.0 headers in the individual route handlers

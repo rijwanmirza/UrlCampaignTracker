@@ -309,7 +309,7 @@ class TrafficStarService {
               status: campaign.status,
               active: campaign.active,
               isArchived: campaign.is_archived,
-              maxDaily: campaign.max_daily,
+              maxDaily: campaign.max_daily ? campaign.max_daily.toString() : null,
               pricingModel: campaign.pricing_model,
               scheduleEndTime: campaign.schedule_end_time,
               campaignData: campaign,
@@ -320,12 +320,12 @@ class TrafficStarService {
           // Insert new campaign
           await db.insert(trafficstarCampaigns)
             .values({
-              trafficstarId: campaign.id,
+              trafficstarId: campaign.id.toString(),
               name: campaign.name,
               status: campaign.status,
               active: campaign.active,
               isArchived: campaign.is_archived,
-              maxDaily: campaign.max_daily,
+              maxDaily: campaign.max_daily ? campaign.max_daily.toString() : null,
               pricingModel: campaign.pricing_model,
               scheduleEndTime: campaign.schedule_end_time,
               campaignData: campaign,
