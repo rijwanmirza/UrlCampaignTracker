@@ -422,64 +422,45 @@ class TrafficStarService {
           let success = false;
           let lastError = null;
           
-          // Try different endpoint patterns
-          for (const baseUrl of API_BASE_URLS) {
-            // Format 1: POST /campaigns/{id}/pause
-            try {
-              console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-              await axios.post(`${baseUrl}/campaigns/${id}/pause`, {}, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-              });
-              console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-              lastError = error;
-              // Continue to next attempt
-            }
+          // Use the v1.1 API endpoint directly for campaign pausing
+          // We know this endpoint works based on previous testing
+          try {
+            console.log(`Pausing campaign ${id} using direct v1.1 API endpoint`);
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              active: false
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000 // 10 second timeout
+            });
+            console.log(`Successfully paused campaign ${id} using v1.1 PATCH endpoint`);
+            success = true;
+          } catch (error) {
+            console.log(`Failed to pause campaign ${id} using v1.1 endpoint: ${error.message}`);
+            lastError = error;
             
-            // Format 2: PUT /campaigns/{id} with active=false
-            try {
-              console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
-              await axios.put(`${baseUrl}/campaigns/${id}`, {
-                active: false
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-              });
-              console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id} with active=false`);
-              lastError = error;
-              // Continue to next attempt
-            }
-            
-            // Format 3: POST /campaigns/{id}/status with status=paused
-            try {
-              console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-              await axios.post(`${baseUrl}/campaigns/${id}/status`, {
-                status: 'paused'
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-              });
-              console.log(`Successfully paused campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-              success = true;
-              break;
-            } catch (error) {
-              console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/status`);
-              lastError = error;
-              // Continue to next attempt
+            // If the direct approach fails, try a few other formats just in case
+            for (const baseUrl of ['https://api.trafficstars.com/v1.1', 'https://api.trafficstars.com/v1']) {
+              try {
+                console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
+                await axios.patch(`${baseUrl}/campaigns/${id}`, {
+                  active: false
+                }, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 5000 // 5 second timeout
+                });
+                console.log(`Successfully paused campaign ${id} using ${baseUrl}`);
+                success = true;
+                break;
+              } catch (altError) {
+                console.log(`Failed with alternate endpoint ${baseUrl}: ${altError.message}`);
+                // Continue to next attempt
+              }
             }
           }
           
