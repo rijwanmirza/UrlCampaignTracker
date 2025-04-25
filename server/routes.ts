@@ -1389,6 +1389,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all campaigns' daily spending data for current UTC date
+  app.get("/api/trafficstar/daily-spending", async (_req: Request, res: Response) => {
+    try {
+      const spendingData = await trafficStarService.getAllCampaignsDailySpending();
+      res.json(spendingData);
+    } catch (error) {
+      console.error(`Error fetching all TrafficStar campaign daily spending:`, error);
+      res.status(500).json({ 
+        message: `Failed to fetch daily spending for all TrafficStar campaigns`,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Get campaign daily spending data for current UTC date from TrafficStar API
   app.get("/api/trafficstar/campaigns/:id/spending", async (req: Request, res: Response) => {
     try {

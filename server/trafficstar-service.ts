@@ -1417,12 +1417,12 @@ class TrafficStarService {
       const now = new Date();
       const todayUtc = now.toISOString().split('T')[0];
       
-      // First try the v1/stats/advertiser/day endpoint which is specifically for daily spending
+      // First try the custom report by-day endpoint which gives exact spending data
       try {
-        console.log(`Trying to get campaign ${id} daily spending using v1/stats/advertiser/day endpoint`);
+        console.log(`Trying to get campaign ${id} daily spending using custom/report/by-day endpoint`);
         
         // Format for this API is from the documentation you shared
-        const statsResponse = await axios.get(`https://api.trafficstars.com/v1/stats/advertiser/day`, {
+        const statsResponse = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -1430,31 +1430,30 @@ class TrafficStarService {
           params: {
             campaign_id: id,
             date_from: todayUtc,
-            date_until: new Date(new Date(todayUtc).getTime() + 86400000).toISOString().split('T')[0], // tomorrow
-            total: true
+            date_to: todayUtc // Same day for current date only
           },
           timeout: 20000 // 20 second timeout for potentially slow API
         });
         
-        console.log(`Advertiser stats response for campaign ${id}:`, JSON.stringify(statsResponse.data).substring(0, 500));
+        console.log(`Custom report response for campaign ${id}:`, JSON.stringify(statsResponse.data).substring(0, 500));
         
-        // Check if we have any data in the response
-        if (statsResponse.data && statsResponse.data.response) {
-          const responseData = statsResponse.data.response;
+        // Check if we have any data in the response - this endpoint returns an array directly
+        if (statsResponse.data && Array.isArray(statsResponse.data)) {
+          const responseData = statsResponse.data;
           
           // Process the data - extract today's spending
           let daily = 0;
           
-          if (Array.isArray(responseData) && responseData.length > 0) {
+          if (responseData.length > 0) {
             // Find today's data or use the first entry if it's the only one
-            // The date format in this API response is "2025-04-25T00:00:00Z"
+            // The day property contains the date in "YYYY-MM-DD" format
             const todayData = responseData.find((item: any) => 
-              item.date && item.date.startsWith(todayUtc)
+              item.day === todayUtc
             ) || responseData[0];
             
-            // According to docs, price field contains the spending amount
-            daily = parseFloat(todayData.price || '0');
-            console.log(`Found daily spending for campaign ${id} in advertiser stats: ${daily} (from price field)`);
+            // According to docs, amount field contains the spending amount
+            daily = parseFloat(todayData.amount || '0');
+            console.log(`Found daily spending for campaign ${id} in custom report: ${daily} (from amount field)`);
           }
           
           // Get max_daily budget from campaign details separately
@@ -1694,6 +1693,144 @@ class TrafficStarService {
     } catch (error) {
       console.error(`Error getting campaign ${id} daily spending:`, error);
       throw new Error(`Failed to fetch daily spending for campaign ${id}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
+  /**
+   * Get daily spending for all campaigns for current UTC date
+   * @returns Array of campaign IDs with their spending for today
+   */
+  async getAllCampaignsDailySpending(): Promise<{ 
+    campaigns: { id: number, daily: number, maxDaily: number }[],
+    date: string
+  }> {
+    try {
+      // Get the access token
+      let token = '';
+      try {
+        token = await getToken();
+      } catch (tokenError) {
+        console.error('Failed to get token, attempting refresh', tokenError);
+        token = await refreshToken();
+      }
+      
+      if (!token) {
+        throw new Error('Failed to get TrafficStar API token');
+      }
+      
+      // Get current date in YYYY-MM-DD format for UTC
+      const now = new Date();
+      const todayUtc = now.toISOString().split('T')[0];
+      
+      console.log(`Getting daily spending for all campaigns on ${todayUtc}`);
+      
+      try {
+        // Use the custom/report/by-day endpoint as it's most reliable
+        const response = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            date_from: todayUtc,
+            date_to: todayUtc
+          },
+          timeout: 30000 // 30 second timeout
+        });
+        
+        console.log(`All campaigns spending response for ${todayUtc}:`, 
+          JSON.stringify(response.data).substring(0, 300) + 
+          (JSON.stringify(response.data).length > 300 ? '...' : ''));
+        
+        // Process the response data
+        const result = {
+          campaigns: [] as { id: number, daily: number, maxDaily: number }[],
+          date: todayUtc
+        };
+        
+        // Get all campaign data to add max_daily budgets
+        const allCampaigns = await this.getCampaigns();
+        const campaignsMap = new Map();
+        
+        if (allCampaigns) {
+          allCampaigns.forEach(campaign => {
+            if (campaign.id) {
+              campaignsMap.set(campaign.id, campaign);
+            }
+          });
+        }
+        
+        if (response.data && Array.isArray(response.data)) {
+          const campaignSpendingMap = new Map<number, number>();
+          
+          // First, aggregate spending by campaign ID
+          response.data.forEach((item: any) => {
+            if (item.campaign_id && item.amount && item.day === todayUtc) {
+              const campaignId = parseInt(item.campaign_id);
+              const spent = parseFloat(item.amount || '0');
+              
+              // Add to existing or create new
+              if (campaignSpendingMap.has(campaignId)) {
+                campaignSpendingMap.set(campaignId, campaignSpendingMap.get(campaignId)! + spent);
+              } else {
+                campaignSpendingMap.set(campaignId, spent);
+              }
+            }
+          });
+          
+          // Now create the final result array with campaign details
+          for (const [campaignId, daily] of campaignSpendingMap.entries()) {
+            const campaign = campaignsMap.get(campaignId);
+            const maxDaily = campaign && campaign.max_daily 
+              ? parseFloat(campaign.max_daily.toString()) 
+              : 0;
+              
+            result.campaigns.push({
+              id: campaignId,
+              daily,
+              maxDaily
+            });
+          }
+        }
+        
+        // If we got no data from custom report, try to get data from other sources
+        if (result.campaigns.length === 0) {
+          console.log('No spending data from custom report, falling back to individual campaign queries');
+          
+          // Get saved campaigns from our database
+          const savedCampaigns = await this.getSavedCampaigns();
+          
+          // For each saved campaign, try to get spending data
+          for (const campaign of savedCampaigns) {
+            try {
+              if (campaign.trafficstarId) {
+                const id = parseInt(campaign.trafficstarId);
+                const spendingData = await this.getCampaignSpending(id);
+                
+                if (spendingData) {
+                  result.campaigns.push({
+                    id,
+                    daily: spendingData.daily,
+                    maxDaily: spendingData.maxDaily
+                  });
+                }
+              }
+            } catch (error) {
+              console.error(`Error getting spending for campaign ${campaign.trafficstarId}:`, error);
+              // Continue with other campaigns even if one fails
+            }
+          }
+        }
+        
+        console.log(`Returning spending data for ${result.campaigns.length} campaigns`);
+        return result;
+      } catch (error) {
+        console.error(`Error getting all campaigns daily spending:`, error);
+        throw error;
+      }
+    } catch (error) {
+      console.error(`Failed to get all campaigns daily spending:`, error);
+      throw new Error(`Failed to get all campaigns daily spending: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
