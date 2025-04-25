@@ -1,14 +1,28 @@
 import { Link, useLocation } from "wouter";
-import { Link2, Menu } from "lucide-react";
+import { Link2, Menu, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Navbar() {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { logout } = useAuth();
+  const { toast } = useToast();
   
   // Toggle hamburger menu
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
+  };
+  
+  // Handle logout
+  const handleLogout = async () => {
+    await logout();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+    setMenuOpen(false);
   };
 
   // Header with hamburger menu button
@@ -131,6 +145,16 @@ export default function Navbar() {
             <span className="font-medium">Help & Support</span>
           </div>
         </div>
+        
+        <button 
+          onClick={handleLogout}
+          className="block w-full text-left py-3 border-b text-red-600"
+        >
+          <div className="flex items-center">
+            <LogOut className="w-5 h-5 mr-3" />
+            <span className="font-medium">Logout</span>
+          </div>
+        </button>
       </div>
     </div>
   );
