@@ -277,7 +277,56 @@ COPY public.trafficstar_credentials (id, api_key, access_token, token_expiry, cr
 --
 
 COPY public.urls (id, campaign_id, name, target_url, click_limit, clicks, status, created_at, updated_at, original_click_limit) FROM stdin;
+1481	26	63679513	https://www.youtube.com/watch?v=mK3pWkIHLN8	5160	0	active	2025-04-25 07:32:26.547	2025-04-25 07:32:26.547	1200
+1482	26	63679520	https://www.youtube.com/watch?v=fGFB1Ssv2Qw	10320	0	active	2025-04-25 07:32:26.557	2025-04-25 07:32:26.557	2400
+1483	26	63679508	https://www.youtube.com/watch?v=zAPPhCVJgog	5160	0	active	2025-04-25 07:32:26.557	2025-04-25 07:32:26.557	1200
+1484	26	63679511	https://www.youtube.com/watch?v=wXyrd_z9Kd0	5160	0	active	2025-04-25 07:32:26.602	2025-04-25 07:32:26.602	1200
+1485	26	63679514	https://www.youtube.com/watch?v=SAPhFVQI7_A	7310	0	active	2025-04-25 07:32:26.594	2025-04-25 07:32:26.594	1700
+1486	26	63679517	https://www.youtube.com/watch?v=CbGDK-niUfM	10320	0	active	2025-04-25 07:32:26.608	2025-04-25 07:32:26.608	2400
+1487	26	63679649	https://www.youtube.com/watch?v=I1xWe_04WLE	17200	0	active	2025-04-25 08:55:58.134	2025-04-25 08:55:58.134	4000
+1488	26	63679678	https://www.youtube.com/watch?v=MT-4a9nzL1s	10320	0	active	2025-04-25 08:55:58.233	2025-04-25 08:55:58.233	2400
+1489	26	63679760	https://www.youtube.com/watch?v=BsTkQdXyzL0	7310	0	active	2025-04-25 08:55:58.24	2025-04-25 08:55:58.24	1700
+1490	26	63680095	https://www.youtube.com/watch?v=Oq_6egJBgwI	1290	0	active	2025-04-25 08:55:58.246	2025-04-25 08:55:58.246	300
+1491	26	63680093	https://www.youtube.com/watch?v=Oq_6egJBgwI	4300	0	active	2025-04-25 08:55:58.251	2025-04-25 08:55:58.251	1000
+1492	26	63679745	https://www.youtube.com/watch?v=7xhLArpwtjo	860	0	active	2025-04-25 08:55:58.242	2025-04-25 08:55:58.242	200
+1493	26	63679714	https://www.youtube.com/watch?v=_9jtLPZzbwM	8600	0	active	2025-04-25 08:55:58.244	2025-04-25 08:55:58.244	2000
+1494	26	63679994	https://www.youtube.com/watch?v=ykI7N1K5A2A	14190	0	active	2025-04-25 08:55:58.265	2025-04-25 08:55:58.265	3300
+1495	26	63679972	https://www.youtube.com/watch?v=X8HJnUW9MrY	8600	0	active	2025-04-25 08:55:58.267	2025-04-25 08:55:58.267	2000
 1446	26	63678995	https://www.youtube.com/watch?v=Ga3IiU0QyGU	2150	0	active	2025-04-25 06:45:04.616	2025-04-25 06:45:04.616	500
+1447	26	63679361	https://www.youtube.com/watch?v=2EQ0KnVDCxk	10320	0	active	2025-04-25 07:12:21.438	2025-04-25 07:12:21.438	2400
+1448	26	63679372	https://www.youtube.com/watch?v=fX8_s7qN5Ew	5160	0	active	2025-04-25 07:12:21.439	2025-04-25 07:12:21.439	1200
+1449	26	63679373	https://www.youtube.com/watch?v=hBOxgwsVDfc	7310	0	active	2025-04-25 07:12:21.44	2025-04-25 07:12:21.44	1700
+1450	26	63679362	https://www.youtube.com/watch?v=2EQ0KnVDCxk	10320	0	active	2025-04-25 07:12:21.441	2025-04-25 07:12:21.441	2400
+1451	26	63679374	https://www.youtube.com/watch?v=TsFSZaeR1Ig	5160	0	active	2025-04-25 07:12:21.442	2025-04-25 07:12:21.442	1200
+1452	26	63679363	https://www.youtube.com/watch?v=89TMD4nEXnU	5160	0	active	2025-04-25 07:12:21.443	2025-04-25 07:12:21.443	1200
+1453	26	63679382	https://www.youtube.com/watch?v=I7ExBPHIjeU	10320	0	active	2025-04-25 07:12:21.442	2025-04-25 07:12:21.442	2400
+1454	26	63679384	https://www.youtube.com/watch?v=5AC_KKgpPus	10320	0	active	2025-04-25 07:12:21.444	2025-04-25 07:12:21.444	2400
+1455	26	63679383	https://www.youtube.com/watch?v=nup3CIdBJjE	5160	0	active	2025-04-25 07:12:21.454	2025-04-25 07:12:21.454	1200
+1456	26	63679360	https://www.youtube.com/watch?v=bp1hEW-L4iw	10320	0	active	2025-04-25 07:12:23.39	2025-04-25 07:12:23.39	2400
+1457	26	63679371	https://www.youtube.com/watch?v=mslO0mt6HsU	5160	0	active	2025-04-25 07:12:23.411	2025-04-25 07:12:23.411	1200
+1458	26	63679422	https://www.youtube.com/watch?v=m7moy0E1has	4300	0	active	2025-04-25 07:17:21.674	2025-04-25 07:17:21.674	1000
+1460	26	63679522	https://www.youtube.com/watch?v=jwzpERD3jbE	5160	0	active	2025-04-25 07:32:26.371	2025-04-25 07:32:26.371	1200
+1459	26	63679509	https://www.youtube.com/watch?v=kArDCZBQuBU	4300	0	active	2025-04-25 07:32:26.374	2025-04-25 07:32:26.374	1000
+1461	26	63679510	https://www.youtube.com/watch?v=IHER7dFRoy8	5160	0	active	2025-04-25 07:32:26.376	2025-04-25 07:32:26.376	1200
+1463	26	63679507	https://www.youtube.com/watch?v=TiX668NihIs	10320	0	active	2025-04-25 07:32:26.375	2025-04-25 07:32:26.375	2400
+1462	26	63679518	https://www.youtube.com/watch?v=_VF1jLpP6kU	5160	0	active	2025-04-25 07:32:26.391	2025-04-25 07:32:26.391	1200
+1464	26	63679516	https://www.youtube.com/watch?v=zJA1R-JvueE	5160	0	active	2025-04-25 07:32:26.393	2025-04-25 07:32:26.393	1200
+1465	26	63679530	https://www.youtube.com/watch?v=P4BIZ4wXGEY	5160	0	active	2025-04-25 07:32:26.392	2025-04-25 07:32:26.392	1200
+1466	26	63679519	https://www.youtube.com/watch?v=vxo1afFRhug	5160	0	active	2025-04-25 07:32:26.394	2025-04-25 07:32:26.394	1200
+1467	26	63679535	https://www.youtube.com/watch?v=pkZ-rEhxxyU	7310	0	active	2025-04-25 07:32:26.409	2025-04-25 07:32:26.409	1700
+1468	26	63679521	https://www.youtube.com/watch?v=Vgkkdx1pY-Q	5375	0	active	2025-04-25 07:32:26.408	2025-04-25 07:32:26.408	1250
+1469	26	63679532	https://www.youtube.com/watch?v=BsTkQdXyzL0	7310	0	active	2025-04-25 07:32:26.409	2025-04-25 07:32:26.409	1700
+1470	26	63679512	https://www.youtube.com/watch?v=BUSPOPNhPAQ	5160	0	active	2025-04-25 07:32:26.414	2025-04-25 07:32:26.414	1200
+1471	26	63679538	https://www.youtube.com/watch?v=cjjZJrGlwX0	4300	0	active	2025-04-25 07:32:26.429	2025-04-25 07:32:26.429	1000
+1472	26	63679533	https://www.youtube.com/watch?v=Om6JARxm6jw	5160	0	active	2025-04-25 07:32:26.428	2025-04-25 07:32:26.428	1200
+1473	26	63679547	https://www.youtube.com/watch?v=uu8FiZF7EVk	4300	0	active	2025-04-25 07:32:26.445	2025-04-25 07:32:26.445	1000
+1474	26	63679546	https://www.youtube.com/watch?v=kQXlWnHOxtU	4300	0	active	2025-04-25 07:32:26.444	2025-04-25 07:32:26.444	1000
+1475	26	63679534	https://www.youtube.com/watch?v=BsTkQdXyzL0	4300	0	active	2025-04-25 07:32:26.435	2025-04-25 07:32:26.435	1000
+1476	26	63679549	https://www.youtube.com/watch?v=ShR3F1zynYg	4300	0	active	2025-04-25 07:32:26.462	2025-04-25 07:32:26.462	1000
+1477	26	63679537	https://www.youtube.com/watch?v=_CQ7wPbCl0g	7310	0	active	2025-04-25 07:32:26.444	2025-04-25 07:32:26.444	1700
+1478	26	63679531	https://www.youtube.com/watch?v=TzFd_TBfBpc	5160	0	active	2025-04-25 07:32:26.427	2025-04-25 07:32:26.427	1200
+1479	26	63679550	https://www.youtube.com/watch?v=jDukxjRA8w8	4300	0	active	2025-04-25 07:32:26.454	2025-04-25 07:32:26.454	1000
+1480	26	63679548	https://www.youtube.com/watch?v=3p8_0_kCzVE	4300	0	active	2025-04-25 07:32:26.462	2025-04-25 07:32:26.462	1000
 \.
 
 
@@ -306,7 +355,7 @@ SELECT pg_catalog.setval('public.trafficstar_credentials_id_seq', 1, true);
 -- Name: urls_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.urls_id_seq', 1446, true);
+SELECT pg_catalog.setval('public.urls_id_seq', 1495, true);
 
 
 --
