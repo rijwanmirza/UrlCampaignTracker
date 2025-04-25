@@ -4,7 +4,7 @@
  * credentials are properly configured in the database
  */
 import { db } from './db';
-import { trafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service-fix';
 import { trafficstarCredentials } from '@shared/schema';
 
 export async function initializeTrafficStar() {
