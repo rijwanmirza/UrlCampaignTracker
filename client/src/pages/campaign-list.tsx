@@ -214,6 +214,12 @@ export default function CampaignList() {
                           <span className="text-gray-500">Multiplier: </span>
                           <span className="font-medium">{campaign.multiplier}x</span>
                         </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500">Price per 1000: </span>
+                          <span className="font-medium">${typeof campaign.pricePerThousand === 'string' 
+                            ? parseFloat(campaign.pricePerThousand).toFixed(4) 
+                            : (Number(campaign.pricePerThousand || 0)).toFixed(4)}</span>
+                        </div>
                       </div>
                     </CardContent>
                     <CardContent className="pt-0 pb-4 border-t flex justify-between">

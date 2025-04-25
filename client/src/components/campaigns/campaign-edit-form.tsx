@@ -69,6 +69,9 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     },
   });
   
+  // For debugging purpose
+  console.log("Campaign data:", campaign);
+  
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (values: CampaignEditValues) => {
@@ -254,26 +257,32 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 <FormItem>
                   <FormLabel>Price Per 1000 Clicks</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0"
-                      max="10000"
-                      step="0.0001"
-                      {...field}
-                      onChange={(e) => {
-                        // Handle empty/invalid input cases
-                        const value = e.target.value === '' ? '' : e.target.value;
-                        // Only update field if value is valid
-                        const parsedValue = parseFloat(value);
-                        if (!isNaN(parsedValue)) {
-                          field.onChange(parsedValue);
-                        } else {
-                          // For empty input, set field to empty string to allow user typing
-                          field.onChange(value);
-                        }
-                      }}
-                      value={field.value}
-                    />
+                    <div className="flex items-center">
+                      <div className="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 rounded-l-md text-sm">
+                        $
+                      </div>
+                      <Input 
+                        type="number" 
+                        min="0"
+                        max="10000"
+                        step="0.0001"
+                        className="rounded-l-none"
+                        {...field}
+                        onChange={(e) => {
+                          // Handle empty/invalid input cases
+                          const value = e.target.value === '' ? '' : e.target.value;
+                          // Only update field if value is valid
+                          const parsedValue = parseFloat(value);
+                          if (!isNaN(parsedValue)) {
+                            field.onChange(parsedValue);
+                          } else {
+                            // For empty input, set field to empty string to allow user typing
+                            field.onChange(value);
+                          }
+                        }}
+                        value={field.value}
+                      />
+                    </div>
                   </FormControl>
                   <FormDescription>
                     Set the price per 1000 clicks ($0.01-$10,000). For example, if you set $0.10, then for 1000 clicks the price will be $0.10, for 2000 clicks it will be $0.20.
