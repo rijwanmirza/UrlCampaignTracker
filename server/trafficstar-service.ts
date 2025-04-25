@@ -991,14 +991,6 @@ class TrafficStarService {
       const urlsResult = await storage.getUrls(campaign.id);
       const urls = urlsResult.filter(url => url.isActive);
       
-      // Calculate remaining clicks across all active URLs
-      const totalRemainingClicks = urls.reduce((total, url) => {
-        const remainingClicks = url.clickLimit - url.clicks;
-        return total + (remainingClicks > 0 ? remainingClicks : 0);
-      }, 0);
-      
-      console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
-      
       // Get current date in UTC to check if it's a new day
       const currentUtcDate = new Date().toISOString().split('T')[0];
       const lastSyncDate = campaign.lastTrafficstarSync ? 
@@ -1010,6 +1002,10 @@ class TrafficStarService {
                            now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
                            now.getUTCSeconds().toString().padStart(2, '0');
       
+      // Format current date for end time (DD/MM/YYYY)
+      const formattedDate = `${currentUtcDate.split('-')[2]}/${currentUtcDate.split('-')[1]}/${currentUtcDate.split('-')[0]}`;
+      const formattedCurrentDateTime = `${formattedDate} ${currentUtcTime}`;
+      
       // Get the campaign's budget update time setting (default to midnight if not set)
       const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
       
@@ -1019,6 +1015,44 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
         new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
       
+      // Check if we have no active URLs - NEW FEATURE
+      if (urls.length === 0) {
+        console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - pausing TrafficStar campaign and setting end date to current time (${formattedCurrentDateTime})`);
+        
+        try {
+          // Get TrafficStar campaign ID
+          const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
+            parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+            Number(campaign.trafficstarCampaignId);
+            
+          // Pause the campaign
+          await this.pauseCampaign(trafficstarId);
+          
+          // Set end time to current UTC time
+          await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+          
+          // Update campaign's last sync timestamp
+          await db.update(campaigns)
+            .set({
+              lastTrafficstarSync: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+            
+          console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${formattedCurrentDateTime}`);
+          return; // No need to continue with regular auto-management if campaign paused
+        } catch (error) {
+          console.error(`Error pausing campaign with no active URLs:`, error);
+        }
+      }
+      
+      // Calculate remaining clicks across all active URLs
+      const totalRemainingClicks = urls.reduce((total, url) => {
+        const remainingClicks = url.clickLimit - url.clicks;
+        return total + (remainingClicks > 0 ? remainingClicks : 0);
+      }, 0);
+      
+      console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
       console.log(`Campaign ${campaign.id} - Current UTC time: ${currentUtcTime}, Budget update time: ${budgetUpdateTime}, Last sync time: ${lastUpdateTime || 'never'}`);
       
       // Get the previously used budget update time from database
