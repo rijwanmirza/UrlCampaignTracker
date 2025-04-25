@@ -550,10 +550,10 @@ class TrafficStarService {
     try {
       console.log(`USING V2 API: Activating campaign ${id}...`);
       
-      // Set end date to current UTC date at 23:59
+      // Set end date to current UTC date at 23:59:00 (with seconds for API)
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const endTimeFormatted = `${currentDate} 23:59`; // YYYY-MM-DD 23:59
+      const endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
       
       console.log(`Setting campaign ${id} end time to end of current UTC day: ${endTimeFormatted}`);
       
@@ -845,6 +845,22 @@ class TrafficStarService {
         formattedEndTime = scheduleEndTime.replace('T', ' ').replace(/\.\d+Z$/, '');
       }
       
+      // Make sure we have the correct time format with seconds (HH:MM:SS)
+      // TrafficStar API requires YYYY-MM-DD HH:MM:SS format
+      if (formattedEndTime.includes(' ')) {
+        const parts = formattedEndTime.split(' ');
+        if (parts.length === 2) {
+          const timePart = parts[1];
+          // Count the number of colons to determine if we need to add seconds
+          const colonCount = (timePart.match(/:/g) || []).length;
+          
+          if (colonCount === 1) {
+            // Time is in HH:MM format, add :00 for seconds
+            formattedEndTime = `${parts[0]} ${timePart}:00`;
+          }
+        }
+      }
+      
       console.log(`Setting campaign ${id} end time to: ${formattedEndTime} (original input: ${scheduleEndTime})`);
       
       try {
@@ -869,32 +885,73 @@ class TrafficStarService {
           
         return;
       } catch (error: any) {
-        console.error(`Error from TrafficStar API when updating end time:`, error.response?.data || error.message);
+        console.error(`Error from TrafficStar API when updating end time:`, error.response?.data);
         
         // If the error is related to date format, try another format
         if (error.response?.data?.msg?.includes('parsing time')) {
-          // Try alternative format - perhaps just YYYY-MM-DD without time
+          try {
+            // Try with full HH:MM:SS format if not already using it
+            if (!formattedEndTime.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
+              const datePart = formattedEndTime.split(' ')[0];
+              let timePart = formattedEndTime.split(' ')[1] || '00:00';
+              
+              // Ensure time has seconds
+              if ((timePart.match(/:/g) || []).length === 1) {
+                timePart = `${timePart}:00`;
+              }
+              
+              const fullFormat = `${datePart} ${timePart}`;
+              console.log(`Retrying with full time format: ${fullFormat}`);
+              
+              await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+                schedule_end_time: fullFormat
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 30000
+              });
+              
+              console.log(`Successfully updated campaign ${id} end time to ${fullFormat}`);
+              
+              // Update local record
+              await db.update(trafficstarCampaigns)
+                .set({ scheduleEndTime: fullFormat, updatedAt: new Date() })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+                
+              return;
+            }
+          } catch (retryError: any) {
+            console.error(`Retry with full format failed:`, retryError.response?.data || retryError.message);
+          }
+          
+          // As a last resort, try date-only format
           const dateOnly = formattedEndTime.split(' ')[0];
           console.log(`Retrying with date-only format: ${dateOnly}`);
           
-          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
-            schedule_end_time: dateOnly
-          }, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 30000
-          });
-          
-          console.log(`Successfully updated campaign ${id} end time to ${dateOnly} (date-only format)`);
-          
-          // Update local record
-          await db.update(trafficstarCampaigns)
-            .set({ scheduleEndTime: dateOnly, updatedAt: new Date() })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          try {
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              schedule_end_time: dateOnly
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000
+            });
             
-          return;
+            console.log(`Successfully updated campaign ${id} end time to ${dateOnly} (date-only format)`);
+            
+            // Update local record
+            await db.update(trafficstarCampaigns)
+              .set({ scheduleEndTime: dateOnly, updatedAt: new Date() })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+              
+            return;
+          } catch (dateOnlyError: any) {
+            console.error(`All format attempts failed:`, dateOnlyError.response?.data || dateOnlyError.message);
+          }
         }
         
         throw error;
@@ -1072,9 +1129,8 @@ class TrafficStarService {
                            now.getUTCSeconds().toString().padStart(2, '0');
       
       // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
-      // TrafficStar API requires YYYY-MM-DD HH:MM format (without seconds)
-      const currentTimeWithoutSeconds = currentUtcTime.substring(0, 5); // Get just HH:MM
-      const formattedCurrentDateTime = `${currentUtcDate} ${currentTimeWithoutSeconds}`;
+      // TrafficStar API requires YYYY-MM-DD HH:MM:SS format with seconds
+      const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
       
       // Get the campaign's budget update time setting (default to midnight if not set)
       const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
