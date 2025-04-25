@@ -1,0 +1,152 @@
+root@vultr:/opt/url-system# curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+2025-04-25 10:24:05 - Installing pre-requisites
+Hit:1 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu jammy InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
+Hit:4 http://ubuntu.mirror.constant.com jammy InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu jammy-security InRelease
+Hit:7 http://ubuntu.mirror.constant.com jammy-updates InRelease
+Hit:8 http://ubuntu.mirror.constant.com jammy-backports InRelease
+Hit:9 http://ubuntu.mirror.constant.com jammy-security InRelease
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+ca-certificates is already the newest version (20240203~22.04.1).
+curl is already the newest version (7.81.0-1ubuntu1.20).
+gnupg is already the newest version (2.2.27-3ubuntu2.3).
+apt-transport-https is already the newest version (2.4.13).
+The following packages were automatically installed and are no longer required:
+  adwaita-icon-theme at-spi2-core dconf-gsettings-backend dconf-service fontconfig gsettings-desktop-schemas gtk-update-icon-cache gyp hicolor-icon-theme
+  humanity-icon-theme libatk-bridge2.0-0 libatk1.0-0 libatk1.0-data libatspi2.0-0 libauthen-sasl-perl libavahi-client3 libavahi-common-data
+  libavahi-common3 libc-ares2 libcairo-gobject2 libcairo2 libclone-perl libcolord2 libcups2 libdata-dump-perl libdatrie1 libdconf1 libencode-locale-perl
+  libepoxy0 libfile-basedir-perl libfile-desktopentry-perl libfile-listing-perl libfile-mimeinfo-perl libfont-afm-perl libfontenc1 libgraphite2-3
+  libgtk-3-0 libgtk-3-bin libgtk-3-common libgtkd-3-0 libharfbuzz0b libhtml-form-perl libhtml-format-perl libhtml-parser-perl libhtml-tagset-perl
+  libhtml-tree-perl libhttp-cookies-perl libhttp-daemon-perl libhttp-date-perl libhttp-message-perl libhttp-negotiate-perl libice6 libio-html-perl
+  libio-socket-ssl-perl libio-stringy-perl libipc-system-simple-perl libjs-events libjs-highlight.js libjs-inherits libjs-is-typedarray libjs-psl
+  libjs-source-map libjs-sprintf-js libjs-typedarray-to-buffer liblcms2-2 libllvm11 liblwp-mediatypes-perl liblwp-protocol-https-perl libmailtools-perl
+  libnet-dbus-perl libnet-http-perl libnet-smtp-ssl-perl libnet-ssleay-perl libnode-dev libnode72 libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0
+  libphobos2-ldc-shared98 libpixman-1-0 librsvg2-2 librsvg2-common libsm6 libssl-dev libthai-data libthai0 libtie-ixhash-perl libtimedate-perl
+  libtry-tiny-perl liburi-perl libuv1-dev libvte-2.91-0 libvte-2.91-common libvted-3-0 libwayland-cursor0 libwayland-egl1 libwww-perl
+  libwww-robotrules-perl libx11-protocol-perl libxaw7 libxcb-render0 libxcb-shape0 libxcomposite1 libxcursor1 libxdamage1 libxft2 libxi6 libxinerama1
+  libxkbcommon0 libxkbfile1 libxml-parser-perl libxml-twig-perl libxml-xpathengine-perl libxmu6 libxrandr2 libxrender1 libxt6 libxtst6 libxv1 libxxf86dga1
+  node-abbrev node-ansi-regex node-ansi-styles node-ansistyles node-are-we-there-yet node-arrify node-asap node-asynckit node-balanced-match
+  node-brace-expansion node-chownr node-clean-yaml-object node-color-convert node-color-name node-commander node-core-util-is node-decompress-response
+  node-delayed-stream node-delegates node-depd node-diff node-encoding node-end-of-stream node-err-code node-escape-string-regexp node-fancy-log
+  node-foreground-child node-fs.realpath node-function-bind node-get-stream node-glob node-growl node-has-flag node-has-unicode node-hosted-git-info
+  node-iconv-lite node-iferr node-imurmurhash node-indent-string node-inflight node-inherits node-ini node-ip node-ip-regex node-is-buffer
+  node-is-plain-obj node-is-typedarray node-isarray node-isexe node-json-parse-better-errors node-jsonparse node-kind-of node-lodash-packages
+  node-lowercase-keys node-lru-cache node-mimic-response node-minimatch node-minimist node-minipass node-mute-stream node-negotiator node-npm-bundled
+  node-once node-osenv node-p-cancelable node-p-map node-path-is-absolute node-process-nextick-args node-promise-inflight node-promise-retry node-promzard
+  node-pump node-quick-lru node-read node-readable-stream node-resolve node-retry node-safe-buffer node-set-blocking node-signal-exit node-slash
+  node-slice-ansi node-source-map node-spdx-correct node-spdx-exceptions node-spdx-expression-parse node-spdx-license-ids node-sprintf-js
+  node-stealthy-require node-string-decoder node-supports-color node-text-table node-time-stamp node-tmatch node-typedarray-to-buffer node-universalify
+  node-util-deprecate node-validate-npm-package-license node-webidl-conversions node-whatwg-fetch node-wrappy node-yallist perl-openssl-defaults
+  session-migration tilix tilix-common ubuntu-mono x11-common x11-utils x11-xserver-utils xdg-utils
+Use 'apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 5 not upgraded.
+Hit:1 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu jammy InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
+Hit:4 http://ubuntu.mirror.constant.com jammy InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu jammy-security InRelease
+Hit:7 http://ubuntu.mirror.constant.com jammy-updates InRelease
+Hit:8 http://ubuntu.mirror.constant.com jammy-backports InRelease
+Hit:9 http://ubuntu.mirror.constant.com jammy-security InRelease
+Reading package lists... Done
+2025-04-25 10:24:16 - Repository configured successfully.
+2025-04-25 10:24:16 - To install Node.js, run: apt-get install nodejs -y
+2025-04-25 10:24:16 - You can use N|solid Runtime as a node.js alternative
+2025-04-25 10:24:16 - To install N|solid Runtime, run: apt-get install nsolid -y
+
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  adwaita-icon-theme at-spi2-core dconf-gsettings-backend dconf-service fontconfig gsettings-desktop-schemas gtk-update-icon-cache gyp hicolor-icon-theme
+  humanity-icon-theme libatk-bridge2.0-0 libatk1.0-0 libatk1.0-data libatspi2.0-0 libauthen-sasl-perl libavahi-client3 libavahi-common-data
+  libavahi-common3 libc-ares2 libcairo-gobject2 libcairo2 libclone-perl libcolord2 libcups2 libdata-dump-perl libdatrie1 libdconf1 libencode-locale-perl
+  libepoxy0 libfile-basedir-perl libfile-desktopentry-perl libfile-listing-perl libfile-mimeinfo-perl libfont-afm-perl libfontenc1 libgraphite2-3
+  libgtk-3-0 libgtk-3-bin libgtk-3-common libgtkd-3-0 libharfbuzz0b libhtml-form-perl libhtml-format-perl libhtml-parser-perl libhtml-tagset-perl
+  libhtml-tree-perl libhttp-cookies-perl libhttp-daemon-perl libhttp-date-perl libhttp-message-perl libhttp-negotiate-perl libice6 libio-html-perl
+  libio-socket-ssl-perl libio-stringy-perl libipc-system-simple-perl libjs-events libjs-highlight.js libjs-inherits libjs-is-typedarray libjs-psl
+  libjs-source-map libjs-sprintf-js libjs-typedarray-to-buffer liblcms2-2 libllvm11 liblwp-mediatypes-perl liblwp-protocol-https-perl libmailtools-perl
+  libnet-dbus-perl libnet-http-perl libnet-smtp-ssl-perl libnet-ssleay-perl libnode-dev libnode72 libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0
+  libphobos2-ldc-shared98 libpixman-1-0 librsvg2-2 librsvg2-common libsm6 libssl-dev libthai-data libthai0 libtie-ixhash-perl libtimedate-perl
+  libtry-tiny-perl liburi-perl libuv1-dev libvte-2.91-0 libvte-2.91-common libvted-3-0 libwayland-cursor0 libwayland-egl1 libwww-perl
+  libwww-robotrules-perl libx11-protocol-perl libxaw7 libxcb-render0 libxcb-shape0 libxcomposite1 libxcursor1 libxdamage1 libxft2 libxi6 libxinerama1
+  libxkbcommon0 libxkbfile1 libxml-parser-perl libxml-twig-perl libxml-xpathengine-perl libxmu6 libxrandr2 libxrender1 libxt6 libxtst6 libxv1 libxxf86dga1
+  node-abbrev node-ansi-regex node-ansi-styles node-ansistyles node-are-we-there-yet node-arrify node-asap node-asynckit node-balanced-match
+  node-brace-expansion node-chownr node-clean-yaml-object node-color-convert node-color-name node-commander node-core-util-is node-decompress-response
+  node-delayed-stream node-delegates node-depd node-diff node-encoding node-end-of-stream node-err-code node-escape-string-regexp node-fancy-log
+  node-foreground-child node-fs.realpath node-function-bind node-get-stream node-glob node-growl node-has-flag node-has-unicode node-hosted-git-info
+  node-iconv-lite node-iferr node-imurmurhash node-indent-string node-inflight node-inherits node-ini node-ip node-ip-regex node-is-buffer
+  node-is-plain-obj node-is-typedarray node-isarray node-isexe node-json-parse-better-errors node-jsonparse node-kind-of node-lodash-packages
+  node-lowercase-keys node-lru-cache node-mimic-response node-minimatch node-minimist node-minipass node-mute-stream node-negotiator node-npm-bundled
+  node-once node-osenv node-p-cancelable node-p-map node-path-is-absolute node-process-nextick-args node-promise-inflight node-promise-retry node-promzard
+  node-pump node-quick-lru node-read node-readable-stream node-resolve node-retry node-safe-buffer node-set-blocking node-signal-exit node-slash
+  node-slice-ansi node-source-map node-spdx-correct node-spdx-exceptions node-spdx-expression-parse node-spdx-license-ids node-sprintf-js
+  node-stealthy-require node-string-decoder node-supports-color node-text-table node-time-stamp node-tmatch node-typedarray-to-buffer node-universalify
+  node-util-deprecate node-validate-npm-package-license node-webidl-conversions node-whatwg-fetch node-wrappy node-yallist perl-openssl-defaults
+  session-migration tilix tilix-common ubuntu-mono x11-common x11-utils x11-xserver-utils xdg-utils
+Use 'apt autoremove' to remove them.
+The following NEW packages will be installed:
+  nodejs
+0 upgraded, 1 newly installed, 0 to remove and 5 not upgraded.
+Need to get 0 B/32.0 MB of archives.
+After this operation, 199 MB of additional disk space will be used.
+Selecting previously unselected package nodejs.
+(Reading database ... 107745 files and directories currently installed.)
+Preparing to unpack .../nodejs_20.19.1-1nodesource1_amd64.deb ...
+Unpacking nodejs (20.19.1-1nodesource1) ...
+dpkg: error processing archive /var/cache/apt/archives/nodejs_20.19.1-1nodesource1_amd64.deb (--unpack):
+ trying to overwrite '/usr/include/node/common.gypi', which is also in package libnode-dev 12.22.9~dfsg-1ubuntu3.6
+dpkg-deb: error: paste subprocess was killed by signal (Broken pipe)
+Errors were encountered while processing:
+ /var/cache/apt/archives/nodejs_20.19.1-1nodesource1_amd64.deb
+E: Sub-process /usr/bin/dpkg returned an error code (1)
+root@vultr:/opt/url-system# node -v
+npm -v
+-bash: /usr/bin/node: No such file or directory
+Command 'npm' not found, but can be installed with:
+apt install npm
+root@vultr:/opt/url-system# ^C
+root@vultr:/opt/url-system# apt update
+apt install -y nodejs npm
+Hit:1 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:2 http://ubuntu.mirror.constant.com jammy InRelease
+Hit:3 http://ubuntu.mirror.constant.com jammy-updates InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu jammy InRelease
+Hit:5 http://ubuntu.mirror.constant.com jammy-backports InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
+Hit:7 http://ubuntu.mirror.constant.com jammy-security InRelease
+Hit:8 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:9 http://archive.ubuntu.com/ubuntu jammy-security InRelease
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+5 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ nodejs : Conflicts: npm
+ npm : Depends: node-cacache but it is not going to be installed
+       Depends: node-gyp but it is not going to be installed
+       Depends: node-mkdirp but it is not going to be installed
+       Depends: node-nopt but it is not going to be installed
+       Depends: node-tar but it is not going to be installed
+       Depends: node-which but it is not going to be installed
+       Depends: nodejs:any (>= 10)
+       Recommends: node-tap but it is not going to be installed
+E: Unable to correct problems, you have held broken packages.
+root@vultr:/opt/url-system#

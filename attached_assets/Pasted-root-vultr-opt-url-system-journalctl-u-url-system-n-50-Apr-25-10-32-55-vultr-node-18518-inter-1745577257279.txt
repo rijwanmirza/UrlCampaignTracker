@@ -1,0 +1,46 @@
+root@vultr:/opt/url-system# journalctl -u url-system -n 50
+Apr 25 10:32:55 vultr node[18518]: internal/modules/cjs/loader.js:818
+Apr 25 10:32:55 vultr node[18518]:   throw err;
+Apr 25 10:32:55 vultr node[18518]:   ^
+Apr 25 10:32:55 vultr node[18518]: Error: Cannot find module '/opt/url-system/dist/server/index.js'
+Apr 25 10:32:55 vultr node[18518]:     at Function.Module._resolveFilename (internal/modules/cjs/loader.js:815:15)
+Apr 25 10:32:55 vultr node[18518]:     at Function.Module._load (internal/modules/cjs/loader.js:667:27)
+Apr 25 10:32:55 vultr node[18518]:     at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+Apr 25 10:32:55 vultr node[18518]:     at internal/main/run_main_module.js:17:47 {
+Apr 25 10:32:55 vultr node[18518]:   code: 'MODULE_NOT_FOUND',
+Apr 25 10:32:55 vultr node[18518]:   requireStack: []
+Apr 25 10:32:55 vultr node[18518]: }
+Apr 25 10:32:55 vultr systemd[1]: url-system.service: Main process exited, code=exited, status=1/FAILURE
+Apr 25 10:32:55 vultr systemd[1]: url-system.service: Failed with result 'exit-code'.
+Apr 25 10:32:55 vultr systemd[1]: url-system.service: Scheduled restart job, restart counter is at 3.
+Apr 25 10:32:55 vultr systemd[1]: Stopped URL Management System.
+Apr 25 10:32:55 vultr systemd[1]: Started URL Management System.
+Apr 25 10:32:55 vultr node[18525]: internal/modules/cjs/loader.js:818
+Apr 25 10:32:55 vultr node[18525]:   throw err;
+Apr 25 10:32:55 vultr node[18525]:   ^
+Apr 25 10:32:55 vultr node[18525]: Error: Cannot find module '/opt/url-system/dist/server/index.js'
+Apr 25 10:32:55 vultr node[18525]:     at Function.Module._resolveFilename (internal/modules/cjs/loader.js:815:15)
+Apr 25 10:32:55 vultr node[18525]:     at Function.Module._load (internal/modules/cjs/loader.js:667:27)
+Apr 25 10:32:55 vultr node[18525]:     at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+Apr 25 10:32:55 vultr node[18525]:     at internal/main/run_main_module.js:17:47 {
+Apr 25 10:32:55 vultr node[18525]:   code: 'MODULE_NOT_FOUND',
+Apr 25 10:32:55 vultr node[18525]:   requireStack: []
+Apr 25 10:32:55 vultr node[18525]: }
+Apr 25 10:32:55 vultr systemd[1]: url-system.service: Main process exited, code=exited, status=1/FAILURE
+Apr 25 10:32:55 vultr systemd[1]: url-system.service: Failed with result 'exit-code'.
+Apr 25 10:32:56 vultr systemd[1]: url-system.service: Scheduled restart job, restart counter is at 4.
+Apr 25 10:32:56 vultr systemd[1]: Stopped URL Management System.
+Apr 25 10:32:56 vultr systemd[1]: Started URL Management System.
+Apr 25 10:32:56 vultr node[18532]: internal/modules/cjs/loader.js:818
+Apr 25 10:32:56 vultr node[18532]:   throw err;
+Apr 25 10:32:56 vultr node[18532]:   ^
+Apr 25 10:32:56 vultr node[18532]: Error: Cannot find module '/opt/url-system/dist/server/index.js'
+Apr 25 10:32:56 vultr node[18532]:     at Function.Module._resolveFilename (internal/modules/cjs/loader.js:815:15)
+Apr 25 10:32:56 vultr node[18532]:     at Function.Module._load (internal/modules/cjs/loader.js:667:27)
+Apr 25 10:32:56 vultr node[18532]:     at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+Apr 25 10:32:56 vultr node[18532]:     at internal/main/run_main_module.js:17:47 {
+Apr 25 10:32:56 vultr node[18532]:   code: 'MODULE_NOT_FOUND',
+Apr 25 10:32:56 vultr node[18532]:   requireStack: []
+Apr 25 10:32:56 vultr node[18532]: }
+lines 1-43
+
