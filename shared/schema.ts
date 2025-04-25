@@ -177,6 +177,10 @@ export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   lastEndTimeUpdate: timestamp("last_end_time_update"), // When end time was last updated
   lastEndTimeUpdateValue: text("last_end_time_update_value"), // The value set
   
+  // Store current day spent amount
+  dailySpent: numeric("daily_spent", { precision: 10, scale: 2 }), // Current day's spent amount for budget control
+  dailySpentUpdatedAt: timestamp("daily_spent_updated_at"), // When we last updated the spent amount
+  
   campaignData: json("campaign_data"), // Store full campaign data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

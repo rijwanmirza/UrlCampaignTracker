@@ -599,7 +599,7 @@ class TrafficStarService {
   /**
    * Activate a campaign - SIMPLIFIED IMPLEMENTATION
    */
-  async activateCampaign(id: number): Promise<void> {
+  async activateCampaign(id: number, customEndTime?: string): Promise<void> {
     try {
       console.log(`USING V2 API: Checking campaign ${id} status before activating...`);
       
@@ -656,10 +656,15 @@ class TrafficStarService {
         return;
       }
       
-      // Set end date to current UTC date at 23:59:00 (with seconds for API)
-      const now = new Date();
-      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
+      // Set end date to current UTC date at 23:59:00 (with seconds for API) or use the passed customEndTime
+      let endTimeFormatted;
+      if (customEndTime) {
+        endTimeFormatted = customEndTime;
+      } else {
+        const now = new Date();
+        const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
+      }
       
       console.log(`Setting campaign ${id} end time to end of current UTC day: ${endTimeFormatted}`);
       
@@ -1226,6 +1231,7 @@ class TrafficStarService {
       
       // Get current TrafficStar campaign status
       let currentTrafficstarStatus;
+      let currentDbCampaign;
       try {
         // Get the current TrafficStar campaign status from database first (faster)
         const [dbCampaign] = await db
@@ -1233,13 +1239,16 @@ class TrafficStarService {
           .from(trafficstarCampaigns)
           .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
         
+        currentDbCampaign = dbCampaign;
+        
         if (dbCampaign) {
           currentTrafficstarStatus = {
             active: dbCampaign.active,
             status: dbCampaign.status,
             lastRequestedAction: dbCampaign.lastRequestedAction,
             lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
-            lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
+            lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess,
+            dailySpent: dbCampaign.dailySpent ? Number(dbCampaign.dailySpent) : 0
           };
           
           console.log(`Using cached status for campaign ${trafficstarId}: ${JSON.stringify(currentTrafficstarStatus)}`);
@@ -1252,7 +1261,8 @@ class TrafficStarService {
             status: apiCampaign.status,
             lastRequestedAction: null,
             lastRequestedActionAt: null,
-            lastRequestedActionSuccess: null
+            lastRequestedActionSuccess: null,
+            dailySpent: 0
           };
         }
       } catch (error) {
@@ -1277,7 +1287,8 @@ class TrafficStarService {
       
       // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
       // TrafficStar API requires YYYY-MM-DD HH:MM:SS format with seconds
-      const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
+      const currentUtcDateTime = `${currentUtcDate} ${currentUtcTime}`;
+      const endOfDayDateTime = `${currentUtcDate} 23:59:00`;
       
       // Get the campaign's budget update time setting (default to midnight if not set)
       const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
@@ -1288,7 +1299,88 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
         new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
       
-      // Check if we have no active URLs - NEW FEATURE
+      // Calculate total pending clicks
+      let totalPendingClicks = 0;
+      for (const url of urls) {
+        const pendingClicks = url.clickLimit - url.clicks;
+        if (pendingClicks > 0) {
+          totalPendingClicks += pendingClicks;
+        }
+      }
+      
+      // Check if daily spent has reached or exceeded $10
+      let dailySpentAmount = 0;
+      
+      if (currentDbCampaign && currentDbCampaign.dailySpent) {
+        dailySpentAmount = Number(currentDbCampaign.dailySpent);
+      } else {
+        // If we don't have a value in the database, fetch it from the API
+        try {
+          const campaignStats = await this.getCampaignSpentValue(trafficstarId);
+          if (campaignStats && campaignStats.daily_costs && campaignStats.daily_costs.length > 0) {
+            // Get today's stats only
+            const todayStats = campaignStats.daily_costs.find((day: any) => day.date === currentUtcDate);
+            if (todayStats) {
+              dailySpentAmount = Number(todayStats.total_cost);
+              
+              // Update the database with the current daily spent
+              if (currentDbCampaign) {
+                await db.update(trafficstarCampaigns)
+                  .set({ 
+                    dailySpent: dailySpentAmount.toString(),
+                    dailySpentUpdatedAt: new Date(),
+                    updatedAt: new Date() 
+                  })
+                  .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching daily spent for campaign ${trafficstarId}:`, error);
+          // Continue with 0 as the default value if we can't fetch it
+        }
+      }
+      
+      console.log(`Campaign ${campaign.id} stats: Total pending clicks: ${totalPendingClicks}, Daily spent: $${dailySpentAmount}`);
+      
+      // Check if we have more than 15,000 pending clicks and daily spent is less than $10
+      if (totalPendingClicks > 15000 && dailySpentAmount < 10) {
+        console.log(`Campaign ${campaign.id} has ${totalPendingClicks} pending clicks and daily spent $${dailySpentAmount} - activating TrafficStar campaign`);
+        
+        if (!currentTrafficstarStatus || !currentTrafficstarStatus.active || currentTrafficstarStatus.status !== 'enabled') {
+          // Activate the campaign with end time set to end of current day
+          await this.activateCampaign(trafficstarId, endOfDayDateTime);
+          
+          // Update the campaign's sync status
+          await storage.updateCampaign(campaign.id, {
+            lastTrafficstarSync: new Date()
+          });
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already active - no action needed`);
+        }
+      }
+      // Check if pending clicks have dropped to 5,000 or below, or daily spent has reached $10
+      else if ((totalPendingClicks <= 5000 && totalPendingClicks > 0) || dailySpentAmount >= 10) {
+        const reason = dailySpentAmount >= 10 ? 
+          `daily spent ($${dailySpentAmount}) reached $10 threshold` : 
+          `pending clicks (${totalPendingClicks}) dropped to 5,000 or below`;
+        
+        console.log(`Campaign ${campaign.id} needs to be paused: ${reason}`);
+        
+        if (currentTrafficstarStatus && currentTrafficstarStatus.active && currentTrafficstarStatus.status !== 'paused') {
+          // Pause the campaign
+          await this.pauseCampaign(trafficstarId);
+          
+          // Update the campaign's sync status
+          await storage.updateCampaign(campaign.id, {
+            lastTrafficstarSync: new Date()
+          });
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already paused - no action needed`);
+        }
+      }
+      
+      // Check if we have no active URLs - should pause the campaign
       if (urls.length === 0) {
         console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
         
