@@ -229,7 +229,8 @@ export class DatabaseStorage implements IStorage {
           ...campaign,
           trafficstarCampaignId: null as any,
           autoManageTrafficstar: false as any,
-          lastTrafficstarSync: null as any
+          lastTrafficstarSync: null as any,
+          budgetUpdateTime: "00:00:00" as any // Default to midnight UTC
         };
         
         this.campaignCache.set(id, {
@@ -294,6 +295,7 @@ export class DatabaseStorage implements IStorage {
           trafficstarCampaignId: null as any,
           autoManageTrafficstar: false as any, 
           lastTrafficstarSync: null as any,
+          budgetUpdateTime: "00:00:00" as any, // Default to midnight UTC
           urls
         };
       }
