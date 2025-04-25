@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 export function LoginForm() {
   const { login } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +35,8 @@ export function LoginForm() {
         description: 'You have been successfully logged in',
         variant: 'default',
       });
+      // Navigate to campaigns after successful login
+      setLocation('/campaigns');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during login');
       toast({

@@ -15,12 +15,33 @@ import TrafficstarPage from "@/pages/trafficstar";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
+const ProtectedAppRoutes = () => {
+  const isMobile = useIsMobile();
+  
+  return (
+    <AppLayout>
+      <Switch>
+        <Route path="/" component={() => <Redirect to="/campaigns" />} />
+        <Route path="/campaigns/:id" component={Home} />
+        <Route path="/campaigns" component={CampaignList} />
+        <Route path="/urls">
+          {isMobile ? <URLsMobilePage /> : <URLsPage />}
+        </Route>
+        <Route path="/gmail-settings" component={GmailSettingsPage} />
+        <Route path="/system-settings" component={SystemSettingsPage} />
+        <Route path="/trafficstar" component={TrafficstarPage} />
+        <Route path="/redirect-test" component={RedirectTest} />
+        <Route component={NotFound} />
+      </Switch>
+    </AppLayout>
+  );
+};
 
 function Router() {
   const [location] = useLocation();
-  const isMobile = useIsMobile();
   
   // Check if current location is a redirect route
   const isRedirectRoute = 
@@ -44,44 +65,8 @@ function Router() {
   // App routes with navbar
   return (
     <Switch>
-      <Route path="/login">
-        <LoginPage />
-      </Route>
-      
-      {/* Protected routes that require authentication */}
-      <ProtectedRoute path="/" component={() => (
-        <AppLayout>
-          <Switch>
-            <Route path="/">
-              <Redirect to="/campaigns" />
-            </Route>
-            <Route path="/campaigns/:id">
-              <Home />
-            </Route>
-            <Route path="/campaigns">
-              <CampaignList />
-            </Route>
-            <Route path="/urls">
-              {isMobile ? <URLsMobilePage /> : <URLsPage />}
-            </Route>
-            <Route path="/gmail-settings">
-              <GmailSettingsPage />
-            </Route>
-            <Route path="/system-settings">
-              <SystemSettingsPage />
-            </Route>
-            <Route path="/trafficstar">
-              <TrafficstarPage />
-            </Route>
-            <Route path="/redirect-test">
-              <RedirectTest />
-            </Route>
-            <Route>
-              <NotFound />
-            </Route>
-          </Switch>
-        </AppLayout>
-      )} />
+      <Route path="/login" component={LoginPage} />
+      <ProtectedRoute path="/" component={ProtectedAppRoutes} />
     </Switch>
   );
 }
