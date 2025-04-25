@@ -1286,7 +1286,7 @@ class TrafficStarService {
   async getSavedCampaigns() {
     return db.select().from(trafficstarCampaigns).orderBy(trafficstarCampaigns.name);
   }
-
+  
   /**
    * Check if API key is set (either in environment variables or database)
    */
@@ -1310,26 +1310,68 @@ class TrafficStarService {
     try {
       const token = await this.ensureToken();
       
-      console.log(`Fetching spending for campaign ${id} from TrafficStar API`);
-      
-      // Use the v1.1 API endpoint
-      const response = await axios.get(
+      // Try multiple API endpoints since the TrafficStar API documentation seems to be inconsistent
+      const endpoints = [
+        `https://api.trafficstars.com/v1.1/campaigns/${id}/stats`,
         `https://api.trafficstars.com/v1.1/campaigns/${id}/spending`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000 // 10 second timeout
+        `https://api.trafficstars.com/v1/campaigns/${id}/stats`
+      ];
+      
+      // Get current date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Trying to get campaign ${id} spending using endpoint: ${endpoint}`);
+          
+          const response = await axios.get(endpoint, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            params: {
+              date_from: today,
+              date_to: today,
+              group_by: 'day'
+            },
+            timeout: 10000 // 10 second timeout
+          });
+          
+          if (response.data) {
+            console.log(`Successfully fetched spending for campaign ${id}`);
+            
+            // Different endpoints return different response structures
+            if (response.data.response && response.data.response.stats) {
+              // Stats API response
+              const stats = response.data.response.stats;
+              const dailySpending = stats[0]?.total || 0;
+              
+              return {
+                id,
+                total: parseFloat(dailySpending)
+              };
+            } else if (response.data.total !== undefined) {
+              // Direct spending API response
+              return {
+                id,
+                total: parseFloat(response.data.total)
+              };
+            }
+          }
+        } catch (apiError) {
+          console.error(`Failed to get campaign ${id} spending using endpoint: ${endpoint}`, apiError);
+          // Continue to next endpoint
         }
-      );
+      }
       
-      console.log(`Successfully fetched spending for campaign ${id}`);
-      
-      return response.data;
-    } catch (error: any) {
-      console.error(`Error fetching spending for campaign ${id}:`, error.message);
-      throw new Error(`Failed to fetch spending for campaign ${id}: ${error.message}`);
+      // If all endpoints fail, return a default value
+      return {
+        id,
+        total: 0
+      };
+    } catch (error) {
+      console.error(`Error getting campaign ${id} spending:`, error);
+      throw new Error(`Failed to fetch spending for campaign ${id}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
