@@ -59,11 +59,18 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
       });
   };
   
+  // Define the interface for daily spending data
+  interface DailySpendingData {
+    id: number;
+    daily: number;
+    date: string;
+  }
+  
   // Fetch daily spending data if TrafficStar integration is enabled
   const { 
     data: spendingData, 
     isLoading: isLoadingSpending 
-  } = useQuery({
+  } = useQuery<DailySpendingData>({
     queryKey: [`/api/trafficstar/campaigns/${campaign.trafficstarCampaignId}/spending`],
     enabled: !!campaign.trafficstarCampaignId,
     refetchInterval: 300000, // Refresh every 5 minutes
@@ -214,7 +221,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                         className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
                       >
                         <DollarSign className="h-3 w-3" />
-                        ${spendingData.daily.toFixed(2)}
+                        ${spendingData?.daily ? spendingData.daily.toFixed(2) : '0.00'}
                       </Badge>
                       <span className="text-xs text-gray-500">
                         Daily Spending (UTC {new Date().toISOString().split('T')[0]})

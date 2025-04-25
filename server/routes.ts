@@ -1545,6 +1545,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Run multiple campaigns simultaneously
+  app.post("/api/trafficstar/campaigns/run-multiple", async (req: Request, res: Response) => {
+    try {
+      const { campaignIds } = req.body;
+      
+      if (!campaignIds || !Array.isArray(campaignIds) || campaignIds.length === 0) {
+        return res.status(400).json({ message: "Invalid campaign IDs. Please provide an array of campaign IDs." });
+      }
+      
+      // Validate all campaign IDs are numbers
+      const validIds = campaignIds.filter(id => !isNaN(Number(id)));
+      if (validIds.length === 0) {
+        return res.status(400).json({ message: "No valid campaign IDs provided" });
+      }
+      
+      // Immediate response to user - we'll process in background
+      res.json({
+        success: true,
+        message: `Processing ${validIds.length} campaigns for activation`,
+        campaignIds: validIds,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Process activations in background
+      setTimeout(async () => {
+        const results = {
+          success: [] as number[],
+          failed: [] as number[],
+          total: validIds.length
+        };
+        
+        // Process campaigns in parallel for faster execution
+        await Promise.all(validIds.map(async (id) => {
+          try {
+            // Activate the campaign via TrafficStar API
+            await trafficStarService.activateCampaign(Number(id));
+            
+            // Update database record for immediate UI feedback on refresh
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                active: true,
+                status: 'enabled',
+                lastRequestedAction: 'activate',
+                lastRequestedActionAt: new Date(),
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+              
+            results.success.push(Number(id));
+            console.log(`✅ Successfully activated campaign ${id}`);
+          } catch (error) {
+            results.failed.push(Number(id));
+            console.error(`❌ Failed to activate campaign ${id}:`, error);
+          }
+        }));
+        
+        console.log(`Campaign batch activation complete: ${results.success.length} succeeded, ${results.failed.length} failed`);
+      }, 100); // Start processing after response is sent
+      
+    } catch (error) {
+      console.error('Error in batch campaign activation:', error);
+      res.status(500).json({ 
+        message: "Failed to process campaign batch activation",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Force immediate budget update for a campaign (used when budget update time changes)
   app.post("/api/trafficstar/campaigns/force-budget-update", async (req: Request, res: Response) => {
     try {
