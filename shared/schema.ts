@@ -54,6 +54,10 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01).default(1),
   pricePerThousand: z.number().min(0).max(10000).default(0),
+  // TrafficStar fields
+  trafficstarCampaignId: z.string().optional(),
+  autoManageTrafficstar: z.boolean().default(false).optional(),
+  lastTrafficstarSync: z.date().optional().nullable(),
 });
 
 export const updateCampaignSchema = z.object({
@@ -69,6 +73,10 @@ export const updateCampaignSchema = z.object({
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01).optional(),
   pricePerThousand: z.number().min(0).max(10000).optional(),
+  // TrafficStar fields
+  trafficstarCampaignId: z.string().optional(),
+  autoManageTrafficstar: z.boolean().optional(),
+  lastTrafficstarSync: z.date().optional().nullable(),
 });
 
 // URL schema

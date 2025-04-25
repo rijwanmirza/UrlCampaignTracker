@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { InfoIcon } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { InfoIcon, Loader2 } from "lucide-react";
 import { 
   Form, 
   FormControl, 
@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Campaign, RedirectMethod, insertCampaignSchema } from "@shared/schema";
@@ -61,6 +62,13 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Fetch TrafficStar campaigns for the dropdown
+  const { data: trafficstarCampaigns = [], isLoading: isLoadingTrafficstarCampaigns } = useQuery<any[]>({
+    queryKey: ['/api/trafficstar/saved-campaigns'],
+    retry: false,
+    staleTime: 30000 // Cache for 30 seconds
+  });
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,6 +77,8 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
       customPath: "",
       multiplier: 1,
       pricePerThousand: 0,
+      trafficstarCampaignId: "",
+      autoManageTrafficstar: false,
     },
   });
 
@@ -312,6 +322,76 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                 </FormItem>
               )}
             />
+            
+            {/* TrafficStar Integration Section */}
+            <div className="border-t pt-4 mt-6">
+              <h3 className="text-md font-medium mb-4">TrafficStar Integration</h3>
+              
+              <FormField
+                control={form.control}
+                name="trafficstarCampaignId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>TrafficStar Campaign</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select TrafficStar campaign">
+                            {isLoadingTrafficstarCampaigns && (
+                              <div className="flex items-center">
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <span>Loading campaigns...</span>
+                              </div>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
+                        {trafficstarCampaigns.map((campaign: any) => (
+                          <SelectItem 
+                            key={campaign.trafficstarId} 
+                            value={campaign.trafficstarId || `campaign-${campaign.id}`}
+                          >
+                            {campaign.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Link this campaign to a TrafficStar campaign for automatic management
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="autoManageTrafficstar"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
+                    <div className="space-y-0.5">
+                      <FormLabel>Auto-Manage TrafficStar</FormLabel>
+                      <FormDescription>
+                        Automatically start campaign when remaining clicks exceed 15,000<br />
+                        Automatically set daily budget to $10.15 when UTC date changes
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!form.watch("trafficstarCampaignId")}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button 
