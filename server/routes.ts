@@ -1525,6 +1525,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Force immediate budget update for a campaign (used when budget update time changes)
+  app.post("/api/trafficstar/campaigns/force-budget-update", async (req: Request, res: Response) => {
+    try {
+      const { campaignId } = req.body;
+      
+      if (!campaignId || isNaN(Number(campaignId))) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      // Get campaign from database
+      const campaign = await storage.getCampaign(Number(campaignId));
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      // Only process if TrafficStar integration is enabled
+      if (!campaign.trafficstarCampaignId || !campaign.autoManageTrafficstar) {
+        return res.status(400).json({ 
+          message: "Cannot force budget update: TrafficStar integration not enabled for this campaign" 
+        });
+      }
+
+      // Manually trigger auto-management for this campaign
+      console.log(`🔄 Forcing immediate TrafficStar budget update for campaign ${campaignId}`);
+      
+      try {
+        // Set daily budget to $10.15 via TrafficStar API
+        await trafficStarService.updateCampaignDailyBudget(
+          Number(campaign.trafficstarCampaignId), 
+          10.15
+        );
+        
+        // Update last sync time
+        await db.update(campaigns)
+          .set({
+            lastTrafficstarSync: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(campaigns.id, Number(campaignId)));
+          
+        return res.json({ 
+          success: true, 
+          message: `Budget for campaign ${campaignId} updated to $10.15 successfully`,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error(`Error forcing budget update for campaign ${campaignId}:`, error);
+        return res.status(500).json({ 
+          success: false,
+          message: "Failed to force budget update",
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    } catch (error) {
+      console.error('Error forcing TrafficStar budget update:', error);
+      res.status(500).json({ 
+        message: "Failed to force TrafficStar budget update",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Update campaign end time
   app.post("/api/trafficstar/campaigns/end-time", async (req: Request, res: Response) => {
     try {

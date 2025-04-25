@@ -1021,12 +1021,28 @@ class TrafficStarService {
       
       console.log(`Campaign ${campaign.id} - Current UTC time: ${currentUtcTime}, Budget update time: ${budgetUpdateTime}, Last sync time: ${lastUpdateTime || 'never'}`);
       
+      // Get the previously used budget update time from database
+      const [campaignSettings] = await db
+        .select({ lastBudgetUpdateTime: campaigns.budgetUpdateTime })
+        .from(campaigns)
+        .where(eq(campaigns.id, campaign.id));
+      
+      // Check if budget update time has been changed since last sync
+      const budgetUpdateTimeChanged = campaign.lastTrafficstarSync && 
+        campaignSettings?.lastBudgetUpdateTime !== budgetUpdateTime;
+      
+      if (budgetUpdateTimeChanged) {
+        console.log(`Budget update time changed from ${campaignSettings?.lastBudgetUpdateTime} to ${budgetUpdateTime} - triggering immediate update`);
+      }
+      
       // Determine if budget update should happen:
       // 1. If this is first time (no lastSyncDate) OR
       // 2. If date has changed since last update OR
-      // 3. If we're within 5 minutes after the configured budget update time and haven't updated today
+      // 3. If we're within 5 minutes after the configured budget update time and haven't updated today OR
+      // 4. If the budgetUpdateTime setting has changed (immediate effect)
       const isTimeForBudgetUpdate = !lastSyncDate || 
         currentUtcDate !== lastSyncDate || 
+        budgetUpdateTimeChanged ||
         (this.isWithinTimeWindow(currentUtcTime, budgetUpdateTime, 5) && 
          (!lastUpdateTime || !this.isWithinTimeWindow(lastUpdateTime, budgetUpdateTime, 5)));
       
@@ -1088,7 +1104,7 @@ class TrafficStarService {
       // Run initial auto-management
       await this.autoManageCampaigns();
       
-      // Schedule to run every hour
+      // Schedule to run every minute for immediate effect
       setInterval(async () => {
         try {
           console.log('Running scheduled auto-management for TrafficStar campaigns');
@@ -1096,7 +1112,7 @@ class TrafficStarService {
         } catch (error) {
           console.error('Error in scheduled auto-management:', error);
         }
-      }, 60 * 60 * 1000); // Every hour
+      }, 60 * 1000); // Every minute
       
       console.log('TrafficStar auto-management scheduler initialized');
     } catch (error) {
