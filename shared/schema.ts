@@ -53,11 +53,8 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   pricePerThousand: z.number().min(0).max(10000).default(0),
 });
 
-export const updateCampaignSchema = createInsertSchema(campaigns).omit({
-  id: true,
-  createdAt: true, 
-  updatedAt: true,
-}).extend({
+export const updateCampaignSchema = z.object({
+  name: z.string().min(1).optional(),
   redirectMethod: z.enum([
     RedirectMethod.DIRECT,
     RedirectMethod.META_REFRESH,

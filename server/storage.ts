@@ -201,6 +201,17 @@ export class DatabaseStorage implements IStorage {
   async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
     const now = new Date();
     
+    // Handle price value
+    let priceValue = 0;
+    if (insertCampaign.pricePerThousand !== undefined) {
+      if (typeof insertCampaign.pricePerThousand === 'string') {
+        priceValue = parseFloat(insertCampaign.pricePerThousand);
+        if (isNaN(priceValue)) priceValue = 0;
+      } else {
+        priceValue = insertCampaign.pricePerThousand;
+      }
+    }
+    
     // Prepare data for insert, converting multiplier to string if needed
     const campaignData = {
       name: insertCampaign.name,
@@ -209,6 +220,8 @@ export class DatabaseStorage implements IStorage {
       // Convert multiplier to string for numeric DB field
       multiplier: insertCampaign.multiplier !== undefined ? 
         String(insertCampaign.multiplier) : "1",
+      // Format price with 4 decimal places
+      pricePerThousand: priceValue.toFixed(4),
       createdAt: now,
       updatedAt: now
     };
