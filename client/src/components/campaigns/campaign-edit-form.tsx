@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Campaign, RedirectMethod } from "@shared/schema";
@@ -8,7 +8,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Edit, Loader2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -43,6 +44,9 @@ const campaignEditSchema = z.object({
   customPath: z.string().optional(),
   multiplier: z.number().min(0.01, "Multiplier must be at least 0.01").optional(),
   pricePerThousand: z.number().min(0, "Price must be at least 0").max(10000, "Price can't exceed $10,000").optional(),
+  // TrafficStar integration fields
+  trafficstarCampaignId: z.string().optional(),
+  autoManageTrafficstar: z.boolean().optional(),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -57,6 +61,13 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   
+  // Fetch TrafficStar campaigns for the dropdown
+  const { data: trafficstarCampaigns = [], isLoading: isLoadingTrafficstarCampaigns } = useQuery<any[]>({
+    queryKey: ['/api/trafficstar/saved-campaigns'],
+    retry: false,
+    staleTime: 30000 // Cache for 30 seconds
+  });
+  
   // Form setup with default values from existing campaign
   const form = useForm<CampaignEditValues>({
     resolver: zodResolver(campaignEditSchema),
@@ -66,6 +77,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       customPath: campaign.customPath || "",
       multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
       pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
+      trafficstarCampaignId: campaign.trafficstarCampaignId || "",
+      autoManageTrafficstar: Boolean(campaign.autoManageTrafficstar),
     },
   });
   
@@ -77,6 +90,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     customPath: campaign.customPath || "",
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
+    trafficstarCampaignId: campaign.trafficstarCampaignId || "",
+    autoManageTrafficstar: Boolean(campaign.autoManageTrafficstar),
   });
   
   // CRITICAL FIX: Force the pricePerThousand to be set properly in the form
@@ -311,6 +326,78 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 </FormItem>
               )}
             />
+            
+            {/* TrafficStar Integration Section */}
+            <div className="border-t pt-4 mt-6">
+              <h3 className="text-md font-medium mb-4">TrafficStar Integration</h3>
+              
+              {/* TrafficStar Campaign Selection */}
+              <FormField
+                control={form.control}
+                name="trafficstarCampaignId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>TrafficStar Campaign</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || "none"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select TrafficStar campaign">
+                            {isLoadingTrafficstarCampaigns && (
+                              <div className="flex items-center">
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <span>Loading campaigns...</span>
+                              </div>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
+                        {trafficstarCampaigns.map((tsCampaign: any) => (
+                          <SelectItem 
+                            key={tsCampaign.trafficstarId} 
+                            value={tsCampaign.trafficstarId || `campaign-${tsCampaign.id}`}
+                          >
+                            {tsCampaign.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Link this campaign to a TrafficStar campaign for automatic management
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Auto-Manage TrafficStar */}
+              <FormField
+                control={form.control}
+                name="autoManageTrafficstar"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
+                    <div className="space-y-0.5">
+                      <FormLabel>Auto-Manage TrafficStar</FormLabel>
+                      <FormDescription>
+                        Automatically start campaign when remaining clicks exceed 15,000<br />
+                        Automatically set daily budget to $10.15 when UTC date changes
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!form.watch("trafficstarCampaignId") || form.watch("trafficstarCampaignId") === "none"}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
             
             <DialogFooter className="pt-4">
               <DialogClose asChild>
