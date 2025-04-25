@@ -31,6 +31,9 @@ export const campaigns = pgTable("campaigns", {
   customPath: text("custom_path").unique(), // Custom path for campaign URLs
   multiplier: numeric("multiplier", { precision: 10, scale: 2 }).default("1").notNull(), // Multiplier for URL click limits (supports decimals)
   pricePerThousand: numeric("price_per_thousand", { precision: 10, scale: 4 }).default("0").notNull(), // Price per 1000 clicks in dollars (supports 4 decimal places)
+  trafficstarCampaignId: text("trafficstar_campaign_id"), // Link to TrafficStar campaign ID
+  autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // Auto-manage TrafficStar campaign
+  lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
