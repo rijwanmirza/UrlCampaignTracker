@@ -99,13 +99,18 @@ router.get('/me', (req: Request, res: Response) => {
 // Direct login page (completely separate from React app)
 router.get('/direct-login', (req: Request, res: Response) => {
   try {
-    const htmlPath = path.join(__dirname, '../../client/src/pages/direct-login.html');
+    // In ES modules, __dirname is not available, use a different approach
+    const projectRootDir = process.cwd(); // Get the current working directory
+    const htmlPath = path.join(projectRootDir, 'client/src/pages/direct-login.html');
+    
+    console.log('Attempting to serve login page from:', htmlPath);
     
     // Check if file exists
     if (fs.existsSync(htmlPath)) {
       res.sendFile(htmlPath);
     } else {
-      res.status(404).send('Login page not found');
+      console.log('Login page file not found at path:', htmlPath);
+      res.status(404).send(`Login page not found - checked path: ${htmlPath}`);
     }
   } catch (error) {
     console.error('Error serving direct login page:', error);

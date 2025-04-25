@@ -40,6 +40,57 @@ app.use((req, res, next) => {
   next();
 });
 
+// Site security check middleware for admin sections (not for public routes like redirects)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Allow all redirect routes without security check
+  if (req.path.startsWith('/c/') || 
+      req.path.startsWith('/r/') || 
+      req.path.startsWith('/views/') || 
+      req.path.startsWith('/api/auth/') ||
+      req.path === '/login' ||
+      // Allow OPTIONS requests for CORS
+      req.method === 'OPTIONS') {
+    return next();
+  }
+  
+  console.log(`🔒 Security check for path: ${req.path}`); // Debug logging
+  
+  // API security key check
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey || req.cookies.apiKey;
+  
+  // The API key is hardcoded here for simplicity and speed
+  const validApiKey = 'rijwa487mirza';
+  
+  if (apiKey === validApiKey) {
+    // Key matches - set cookie for future requests
+    res.cookie('apiKey', validApiKey, { 
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+    
+    // Automatically set admin user in session
+    // This ensures all auth checks will pass internally
+    if (!req.session.user) {
+      req.session.user = {
+        id: 2,
+        username: 'rijwamirza',
+        role: 'admin'
+      };
+    }
+    
+    return next();
+  }
+  
+  // If no API key is found and this is an API request, return 401
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ message: 'Unauthorized - API key required' });
+  }
+  
+  // For web UI access, redirect to login page rather than showing a white screen
+  return res.redirect('/login');
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -75,11 +126,22 @@ app.use("/api/auth", authRouter);
 
 // Root route redirect to direct login if not authenticated
 app.get("/login", (req: Request, res: Response) => {
-  if (req.session.user) {
-    res.redirect("/campaigns");
-  } else {
-    res.redirect("/api/auth/direct-login");
+  // Check if we're coming back from a failed authentication
+  const apiKey = req.cookies.apiKey || req.query.apiKey || req.headers['x-api-key'];
+  const validApiKey = 'rijwa487mirza';
+  
+  // If we already have the correct API key in the cookie, go directly to campaigns
+  if (apiKey === validApiKey) {
+    return res.redirect("/campaigns");
   }
+  
+  // Otherwise go to login page
+  // If there was an invalid API key, add the error parameter
+  if (apiKey && apiKey !== validApiKey) {
+    return res.redirect("/api/auth/direct-login?error=invalid");
+  }
+  
+  return res.redirect("/api/auth/direct-login");
 });
 
 (async () => {
