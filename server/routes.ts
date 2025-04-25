@@ -1392,13 +1392,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get campaign daily spending data for current UTC date from TrafficStar API
   app.get("/api/trafficstar/campaigns/:id/spending", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
       
-      const spending = await trafficStarService.getCampaignSpending(id);
-      res.json(spending);
+      // First, get the campaign from TrafficStar directly to ensure we have budget data
+      let campaignData = null;
+      let maxDaily = 0;
+      
+      try {
+        const campaigns = await trafficStarService.getCampaigns();
+        
+        if (campaigns && campaigns.length > 0) {
+          const targetCampaign = campaigns.find(c => c.id === campaignId);
+          if (targetCampaign) {
+            campaignData = targetCampaign;
+            maxDaily = parseFloat(targetCampaign.max_daily?.toString() || '0');
+            console.log(`Found campaign ${campaignId} in cached data with max_daily: ${maxDaily}`);
+          }
+        }
+      } catch (campaignError) {
+        console.error(`Failed to fetch campaign details from cached data:`, campaignError);
+      }
+      
+      // If we couldn't get the campaign from the getCampaigns cache, try directly
+      if (!campaignData) {
+        try {
+          campaignData = await trafficStarService.getCampaign(campaignId);
+          if (campaignData && campaignData.max_daily) {
+            maxDaily = parseFloat(campaignData.max_daily.toString());
+            console.log(`Found campaign ${campaignId} directly with max_daily: ${maxDaily}`);
+          }
+        } catch (directError) {
+          console.error(`Failed to fetch campaign directly:`, directError);
+        }
+      }
+      
+      // Try to get actual spending - we'll use 0 if we can't get real data
+      let daily = 0;
+      
+      // Fall back to database record if available
+      try {
+        const [savedCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
+          
+        if (savedCampaign && !maxDaily && savedCampaign.maxDaily) {
+          maxDaily = parseFloat(savedCampaign.maxDaily);
+          console.log(`Using database max_daily for campaign ${campaignId}: ${maxDaily}`);
+        }
+      } catch (dbError) {
+        console.error(`Database lookup failed for campaign budget:`, dbError);
+      }
+      
+      // Try to get spending data from various API endpoints
+      try {
+        const campaignSpending = await trafficStarService.getCampaignSpending(campaignId);
+        if (campaignSpending && campaignSpending.daily > 0) {
+          daily = campaignSpending.daily;
+          console.log(`Found daily spending for campaign ${campaignId}: ${daily}`);
+        }
+        
+        // If maxDaily was returned from spending query and we don't have it yet, use it
+        if (campaignSpending.maxDaily > 0 && maxDaily === 0) {
+          maxDaily = campaignSpending.maxDaily;
+          console.log(`Using spending query max_daily for campaign ${campaignId}: ${maxDaily}`);
+        }
+      } catch (spendingError) {
+        console.error(`Failed to get spending data:`, spendingError);
+      }
+      
+      // Get current date in YYYY-MM-DD format for UTC
+      const now = new Date();
+      const todayUtc = now.toISOString().split('T')[0];
+      
+      const result = {
+        id: campaignId,
+        daily,
+        date: todayUtc,
+        maxDaily
+      };
+      
+      console.log(`Returning spending data for campaign ${campaignId}:`, result);
+      res.json(result);
     } catch (error) {
       console.error(`Error fetching TrafficStar campaign ${req.params.id} daily spending:`, error);
       res.status(500).json({ 
