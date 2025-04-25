@@ -145,7 +145,7 @@ export async function testCustomReport(req: Request, res: Response) {
       token = await getToken();
     } catch (tokenError) {
       console.error("Failed to get API token:", tokenError);
-      // Return a meaningful response with fallback data
+      // Return a meaningful response with fallback data without error status
       return res.json({
         id: parseInt(campaignId),
         daily: 0,

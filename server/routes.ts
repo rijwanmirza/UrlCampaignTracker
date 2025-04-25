@@ -1887,11 +1887,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle any errors in the custom report function
       console.error('Error in custom report endpoint:', error);
       
-      // Return a fallback response
+      // Return a fallback response with 200 status
       const campaignId = parseInt(req.params.id);
       const todayUtc = new Date().toISOString().split('T')[0];
       
-      return res.json({
+      return res.status(200).json({
         id: campaignId,
         daily: 0,
         date: todayUtc,
