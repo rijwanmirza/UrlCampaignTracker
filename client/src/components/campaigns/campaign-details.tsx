@@ -57,19 +57,24 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
       });
   };
 
+  // Check if the budgetUpdateTime field is populated and the campaign is already using TrafficStar
+  const migrationComplete = !!campaign.budgetUpdateTime;
+  
   return (
     <div className="space-y-4 mb-6">
-      <Alert className="border-amber-300 bg-amber-50">
-        <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800">Database Migration Required</AlertTitle>
-        <AlertDescription className="text-amber-700">
-          The budget update time feature is ready but requires a database migration. 
-          Click the button below to run the migration before setting TrafficStar settings.
-          <div className="mt-2">
-            <RunMigrationButton />
-          </div>
-        </AlertDescription>
-      </Alert>
+      {!migrationComplete && (
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Database Migration Required</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            The budget update time feature is ready but requires a database migration. 
+            Click the button below to run the migration before setting TrafficStar settings.
+            <div className="mt-2">
+              <RunMigrationButton />
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
