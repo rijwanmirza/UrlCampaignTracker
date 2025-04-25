@@ -544,7 +544,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
                   </div>
                 </TableCell>
                 <TableCell>
-                  {campaign?.pricePerThousand ? (
+                  {campaign && campaign.pricePerThousand ? (
                     <span>
                       ${((Number(campaign.pricePerThousand) * url.clickLimit) / 1000).toFixed(4)}
                     </span>
