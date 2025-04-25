@@ -160,6 +160,7 @@ export default function Home() {
             <CampaignUrls 
               campaignId={formattedCampaign.id} 
               urls={formattedCampaign.urls}
+              campaign={campaign}
               onRefresh={() => {
                 queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${formattedCampaign.id}`] });
               }}
