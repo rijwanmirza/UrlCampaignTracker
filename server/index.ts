@@ -73,6 +73,15 @@ app.use((req, res, next) => {
 // Register authentication routes
 app.use("/api/auth", authRouter);
 
+// Root route redirect to direct login if not authenticated
+app.get("/login", (req: Request, res: Response) => {
+  if (req.session.user) {
+    res.redirect("/campaigns");
+  } else {
+    res.redirect("/api/auth/direct-login");
+  }
+});
+
 (async () => {
   const server = await registerRoutes(app);
 
