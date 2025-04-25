@@ -807,31 +807,81 @@ class TrafficStarService {
     try {
       const token = await this.ensureToken();
       
-      // Format the date as required by the API (YYYY-MM-DD HH:MM:SS)
-      // If the scheduleEndTime already has the format we need, use it directly
-      const formattedEndTime = scheduleEndTime.includes('T') 
-        ? scheduleEndTime.replace('T', ' ').replace(/\.\d+Z$/, '')
-        : scheduleEndTime;
+      // If we're getting a date string in DD/MM/YYYY format from our code,
+      // we need to convert it to YYYY-MM-DD format for the API
+      let formattedEndTime = scheduleEndTime;
       
-      // Use the v1.1 API endpoint directly
-      await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
-        schedule_end_time: formattedEndTime
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000 // 30 second timeout
-      });
+      if (scheduleEndTime.includes('/')) {
+        // Input format: DD/MM/YYYY HH:MM:SS
+        const parts = scheduleEndTime.split(' ');
+        if (parts.length === 2) {
+          const dateParts = parts[0].split('/');
+          if (dateParts.length === 3) {
+            // Convert DD/MM/YYYY to YYYY-MM-DD
+            formattedEndTime = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]} ${parts[1]}`;
+          }
+        }
+      } else if (scheduleEndTime.includes('T')) {
+        // Handle ISO format if present
+        formattedEndTime = scheduleEndTime.replace('T', ' ').replace(/\.\d+Z$/, '');
+      }
       
-      console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime}`);
+      console.log(`Setting campaign ${id} end time to: ${formattedEndTime} (original input: ${scheduleEndTime})`);
+      
+      try {
+        // Use the v1.1 API endpoint directly
+        const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+          schedule_end_time: formattedEndTime
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000 // 30 second timeout
+        });
+        
+        console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime}`);
+        console.log(`API Response:`, response.data);
 
-      // Update local record
-      await db.update(trafficstarCampaigns)
-        .set({ scheduleEndTime, updatedAt: new Date() })
-        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-    } catch (error) {
-      console.error(`Error updating TrafficStar campaign ${id} end time:`, error);
+        // Update local record
+        await db.update(trafficstarCampaigns)
+          .set({ scheduleEndTime, updatedAt: new Date() })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        return;
+      } catch (error: any) {
+        console.error(`Error from TrafficStar API when updating end time:`, error.response?.data || error.message);
+        
+        // If the error is related to date format, try another format
+        if (error.response?.data?.msg?.includes('parsing time')) {
+          // Try alternative format - perhaps just YYYY-MM-DD without time
+          const dateOnly = formattedEndTime.split(' ')[0];
+          console.log(`Retrying with date-only format: ${dateOnly}`);
+          
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+            schedule_end_time: dateOnly
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000
+          });
+          
+          console.log(`Successfully updated campaign ${id} end time to ${dateOnly} (date-only format)`);
+          
+          // Update local record
+          await db.update(trafficstarCampaigns)
+            .set({ scheduleEndTime: dateOnly, updatedAt: new Date() })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            
+          return;
+        }
+        
+        throw error;
+      }
+    } catch (error: any) {
+      console.error(`Error updating TrafficStar campaign ${id} end time:`, error.message);
       throw new Error(`Failed to update campaign ${id} end time`);
     }
   }
@@ -1002,9 +1052,9 @@ class TrafficStarService {
                            now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
                            now.getUTCSeconds().toString().padStart(2, '0');
       
-      // Format current date for end time (DD/MM/YYYY)
-      const formattedDate = `${currentUtcDate.split('-')[2]}/${currentUtcDate.split('-')[1]}/${currentUtcDate.split('-')[0]}`;
-      const formattedCurrentDateTime = `${formattedDate} ${currentUtcTime}`;
+      // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
+      // TrafficStar API requires YYYY-MM-DD HH:MM:SS format
+      const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
       
       // Get the campaign's budget update time setting (default to midnight if not set)
       const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
