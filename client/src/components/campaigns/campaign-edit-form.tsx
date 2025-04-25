@@ -331,7 +331,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
             <div className="border-t pt-4 mt-6">
               <h3 className="text-md font-medium mb-4">TrafficStar Integration</h3>
               
-              {/* TrafficStar Campaign Selection */}
+              {/* TrafficStar Campaign Selection - With option for direct ID input */}
               <FormField
                 control={form.control}
                 name="trafficstarCampaignId"
@@ -339,7 +339,14 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   <FormItem>
                     <FormLabel>TrafficStar Campaign</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        // Special case for direct input
+                        if (value === "direct_input") {
+                          // Don't change the field yet - we'll update it with text input
+                          return;
+                        }
+                        field.onChange(value);
+                      }}
                       value={field.value || "none"}
                     >
                       <FormControl>
@@ -356,6 +363,10 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
+                        <SelectItem value="direct_input">Enter Campaign ID directly</SelectItem>
+                        <SelectItem value="spacer" disabled className="py-1 my-1 border-t cursor-default">
+                          <span className="text-xs text-gray-500">Available Campaigns</span>
+                        </SelectItem>
                         {trafficstarCampaigns.map((tsCampaign: any) => (
                           <SelectItem 
                             key={tsCampaign.trafficstarId} 
@@ -366,6 +377,23 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Direct Campaign ID input */}
+                    {form.watch("trafficstarCampaignId") === "direct_input" && (
+                      <div className="mt-2">
+                        <Input 
+                          type="text"
+                          placeholder="Enter TrafficStar Campaign ID"
+                          onChange={(e) => {
+                            // Directly update the field value
+                            const value = e.target.value.trim();
+                            field.onChange(value);
+                          }}
+                          className="mt-2"
+                        />
+                      </div>
+                    )}
+                    
                     <FormDescription>
                       Link this campaign to a TrafficStar campaign for automatic management
                     </FormDescription>

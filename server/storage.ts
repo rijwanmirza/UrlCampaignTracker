@@ -385,6 +385,30 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting pricePerThousand to:', updateData.pricePerThousand);
     }
     
+    // Handle TrafficStar campaign ID - CRITICAL FIX
+    if (updateCampaign.trafficstarCampaignId !== undefined) {
+      // If the value is "none" or empty string, set to null
+      if (updateCampaign.trafficstarCampaignId === "none" || updateCampaign.trafficstarCampaignId === "") {
+        updateData.trafficstarCampaignId = null;
+        console.log('🔍 DEBUG: Setting trafficstarCampaignId to null (no integration)');
+      } else {
+        // Otherwise, use the provided value
+        updateData.trafficstarCampaignId = updateCampaign.trafficstarCampaignId;
+        console.log('🔍 DEBUG: Setting trafficstarCampaignId to:', updateData.trafficstarCampaignId);
+      }
+    }
+    
+    // Handle TrafficStar auto-management - CRITICAL FIX
+    if (updateCampaign.autoManageTrafficstar !== undefined) {
+      updateData.autoManageTrafficstar = updateCampaign.autoManageTrafficstar;
+      console.log('🔍 DEBUG: Setting autoManageTrafficstar to:', updateData.autoManageTrafficstar);
+    }
+    
+    // If auto-management is enabled, record the time of change
+    if (updateData.autoManageTrafficstar === true) {
+      updateData.lastTrafficstarSync = new Date();
+    }
+    
     const [updated] = await db
       .update(campaigns)
       .set(updateData)
