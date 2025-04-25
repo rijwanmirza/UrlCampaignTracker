@@ -1409,83 +1409,134 @@ class TrafficStarService {
    * @param id The TrafficStar campaign ID
    * @returns An object with the campaign spending data { id: number, daily: number, date: string }
    */
-  async getCampaignSpending(id: number): Promise<{ id: number, daily: number, date: string }> {
+  async getCampaignSpending(id: number): Promise<{ id: number, daily: number, date: string, maxDaily: number }> {
     try {
       const token = await this.ensureToken();
-      
-      // Try multiple API endpoints since the TrafficStar API documentation seems to be inconsistent
-      const endpoints = [
-        `https://api.trafficstars.com/v1.1/campaigns/${id}/stats/daily`,
-        `https://api.trafficstars.com/v1.1/campaigns/${id}/stats`,
-        `https://api.trafficstars.com/v1/campaigns/${id}/stats`
-      ];
       
       // Get current date in YYYY-MM-DD format for UTC
       const now = new Date();
       const todayUtc = now.toISOString().split('T')[0];
       
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`Trying to get campaign ${id} daily spending for ${todayUtc} using endpoint: ${endpoint}`);
+      // First try to get the new V2 stats API endpoint which is more reliable
+      try {
+        console.log(`Trying to get campaign ${id} daily spending using V2 API endpoint`);
+        
+        const response = await axios.get(`https://api.trafficstars.com/v2/campaigns/${id}/stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            date_from: todayUtc,
+            date_to: todayUtc,
+            group_by: 'day',
+            timezone: 0 // Ensure UTC timezone
+          },
+          timeout: 20000 // 20 second timeout for potentially slow API
+        });
+        
+        // Check if we have any spending data
+        if (response.data && response.data.stats && response.data.stats.length > 0) {
+          const dailyStats = response.data.stats[0];
+          console.log(`Successfully fetched V2 daily spending for campaign ${id}: `, dailyStats);
           
-          const response = await axios.get(endpoint, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            params: {
-              date_from: todayUtc,
-              date_to: todayUtc,
-              group_by: 'day',
-              timezone: 0 // Ensure UTC timezone
-            },
-            timeout: 10000 // 10 second timeout
-          });
-          
-          if (response.data) {
-            console.log(`Successfully fetched daily spending for campaign ${id}`);
-            
-            // Different endpoints return different response structures
-            if (response.data.response && response.data.response.stats) {
-              // Stats API response
-              const stats = response.data.response.stats;
-              const todayStats = stats.find((day: any) => day.date === todayUtc) || stats[0];
-              
-              if (todayStats) {
-                const dailySpending = todayStats.total || 0;
-                return {
-                  id,
-                  daily: parseFloat(dailySpending),
-                  date: todayUtc
-                };
-              }
-            } else if (response.data.daily !== undefined) {
-              // Direct spending API response
-              return {
-                id,
-                daily: parseFloat(response.data.daily),
-                date: todayUtc
-              };
-            } else if (response.data.spending !== undefined && response.data.spending[todayUtc] !== undefined) {
-              // Alternative API response format
-              return {
-                id,
-                daily: parseFloat(response.data.spending[todayUtc]),
-                date: todayUtc
-              };
-            }
-          }
-        } catch (apiError) {
-          console.error(`Failed to get campaign ${id} daily spending using endpoint: ${endpoint}`, apiError);
-          // Continue to next endpoint
+          return {
+            id,
+            daily: parseFloat(dailyStats.spent || '0'),
+            date: todayUtc,
+            maxDaily: parseFloat(dailyStats.max_daily || '0')
+          };
         }
+      } catch (v2ApiError) {
+        console.error(`V2 API stats endpoint failed for campaign ${id}:`, v2ApiError);
       }
       
-      // If all endpoints fail, return a default value
+      // If V2 API fails, try to get the campaign details directly which includes the max daily budget
+      // Even if we can't get actual spending, this will at least give us the budget information
+      try {
+        console.log(`Trying to get campaign ${id} details to extract budget information`);
+        
+        const campaignResponse = await axios.get(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
+        
+        if (campaignResponse.data) {
+          // Get the campaign max daily budget from the campaign details
+          const maxDaily = campaignResponse.data.max_daily || 0;
+          
+          // Try to get actual spending with another method if available
+          let daily = 0;
+          
+          try {
+            // Try the financial API endpoint
+            const financeResponse = await axios.get(`https://api.trafficstars.com/v1.1/account/financial/stats`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              params: {
+                date_from: todayUtc,
+                date_to: todayUtc,
+                group_by: 'campaign',
+                timezone: 0 
+              },
+              timeout: 10000
+            });
+            
+            // Check if we have campaign specific spending data
+            if (financeResponse.data && 
+                financeResponse.data.campaigns && 
+                financeResponse.data.campaigns[id.toString()]) {
+              daily = parseFloat(financeResponse.data.campaigns[id.toString()].spent || '0');
+            }
+          } catch (financeError) {
+            console.error(`Failed to get financial stats for campaign ${id}:`, financeError);
+          }
+          
+          // Return the best data we have
+          return {
+            id,
+            daily,
+            date: todayUtc,
+            maxDaily: parseFloat(maxDaily.toString())
+          };
+        }
+      } catch (campaignError) {
+        console.error(`Failed to get campaign details for ${id}:`, campaignError);
+      }
+      
+      // If all other methods fail, check the database for the stored max daily value
+      // This won't have actual spending but at least will provide the budget
+      try {
+        console.log(`Falling back to database for campaign ${id} budget information`);
+        
+        const [savedCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        if (savedCampaign && savedCampaign.maxDaily) {
+          return {
+            id,
+            daily: 0, // We don't have actual spending, but at least have budget
+            date: todayUtc,
+            maxDaily: parseFloat(savedCampaign.maxDaily)
+          };
+        }
+      } catch (dbError) {
+        console.error(`Database fallback failed for campaign ${id}:`, dbError);
+      }
+      
+      // If all methods fail, return default values
       return {
         id,
         daily: 0,
-        date: todayUtc
+        date: todayUtc,
+        maxDaily: 0
       };
     } catch (error) {
       console.error(`Error getting campaign ${id} daily spending:`, error);
