@@ -820,6 +820,109 @@ class TrafficStarService {
   }
 
   /**
+   * Activate multiple campaigns at once
+   * @param campaignIds Array of TrafficStar campaign IDs to activate
+   * @returns Object with success and failed campaign IDs
+   */
+  async activateMultipleCampaigns(campaignIds: number[]): Promise<{ success: number[], failed: number[] }> {
+    try {
+      console.log(`USING V2 API: Activating multiple campaigns: ${campaignIds.join(', ')}...`);
+      
+      // Set end date to current UTC date at 23:59:00 (with seconds for API)
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
+      
+      console.log(`Setting campaigns end time to end of current UTC day: ${endTimeFormatted}`);
+      
+      // Update local records FIRST for instant UI feedback
+      for (const id of campaignIds) {
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            active: true, 
+            status: 'active',
+            scheduleEndTime: endTimeFormatted,
+            updatedAt: new Date(),
+            lastRequestedAction: 'activate',
+            lastRequestedActionAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      }
+      
+      // Make the batch API call
+      const token = await this.ensureToken();
+      const response = await axios.put(
+        `https://api.trafficstars.com/v2/campaigns/run`, 
+        { 
+          campaign_ids: campaignIds
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        }
+      );
+      
+      console.log(`✅ V2 Multiple campaign activation API call made. Response:`, response.data);
+      
+      // Track successful and failed activations
+      const successful: number[] = [];
+      const failed: number[] = [];
+      
+      // Check if activation was successful
+      if (response.data && response.data.success) {
+        successful.push(...response.data.success);
+        
+        // Set end time for all successfully activated campaigns
+        for (const id of response.data.success) {
+          try {
+            // Set end time to end of current day in TrafficStar
+            await this.updateCampaignEndTime(id, endTimeFormatted);
+            console.log(`✅ Set end time to ${endTimeFormatted} for activated campaign ${id}`);
+            
+            // Update database with success status
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                scheduleEndTime: endTimeFormatted,
+                lastRequestedActionSuccess: true,
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          } catch (endTimeError) {
+            console.error(`Error setting end time for campaign ${id}:`, endTimeError);
+          }
+        }
+      }
+      
+      // Process any failures
+      if (response.data && response.data.fail) {
+        failed.push(...response.data.fail);
+        
+        // Update database for failed activation attempts
+        for (const id of response.data.fail) {
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              active: false, // Reset to inactive since it failed
+              lastRequestedActionSuccess: false,
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        }
+      }
+      
+      return {
+        success: successful,
+        failed: failed
+      };
+    } catch (error) {
+      console.error(`Error activating multiple TrafficStar campaigns:`, error);
+      throw new Error('Failed to activate multiple campaigns');
+    }
+  }
+
+  /**
    * Update a campaign's end time
    */
   async updateCampaignEndTime(id: number, scheduleEndTime: string): Promise<void> {
