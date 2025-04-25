@@ -278,18 +278,21 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                         className="rounded-l-none"
                         {...field}
                         onChange={(e) => {
+                          console.log("Price input change:", e.target.value);
                           // Handle empty/invalid input cases
-                          const value = e.target.value === '' ? '' : e.target.value;
+                          const value = e.target.value === '' ? '0' : e.target.value;
                           // Only update field if value is valid
                           const parsedValue = parseFloat(value);
                           if (!isNaN(parsedValue)) {
+                            console.log("Setting price to number:", parsedValue);
                             field.onChange(parsedValue);
                           } else {
-                            // For empty input, set field to empty string to allow user typing
-                            field.onChange(value);
+                            // If parsing fails, set to 0
+                            console.log("Setting price to fallback 0");
+                            field.onChange(0);
                           }
                         }}
-                        value={field.value}
+                        value={field.value === 0 ? "0" : field.value}
                       />
                     </div>
                   </FormControl>

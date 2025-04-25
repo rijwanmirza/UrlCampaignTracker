@@ -250,7 +250,14 @@ export class DatabaseStorage implements IStorage {
     
     // Handle pricePerThousand field
     if (updateCampaign.pricePerThousand !== undefined) {
-      updateData.pricePerThousand = String(updateCampaign.pricePerThousand);
+      console.log('🔍 DEBUG: Received pricePerThousand:', updateCampaign.pricePerThousand, 'type:', typeof updateCampaign.pricePerThousand);
+      
+      const priceValue = updateCampaign.pricePerThousand;
+      // Convert to string for DB (numeric type requires string)
+      updateData.pricePerThousand = priceValue === null || priceValue === 0 
+        ? '0' 
+        : String(priceValue);
+      
       console.log('🔍 DEBUG: Setting pricePerThousand to:', updateData.pricePerThousand);
     }
     
