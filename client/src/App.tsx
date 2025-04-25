@@ -12,8 +12,11 @@ import RedirectTest from "@/pages/redirect-test";
 import GmailSettingsPage from "@/pages/gmail-settings";
 import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
+import { LoginPage } from "@/pages/LoginPage";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function Router() {
   const [location] = useLocation();
@@ -40,45 +43,58 @@ function Router() {
   
   // App routes with navbar
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/">
-          <Redirect to="/campaigns" />
-        </Route>
-        <Route path="/campaigns/:id">
-          <Home />
-        </Route>
-        <Route path="/campaigns">
-          <CampaignList />
-        </Route>
-        <Route path="/urls">
-          {isMobile ? <URLsMobilePage /> : <URLsPage />}
-        </Route>
-        <Route path="/gmail-settings">
-          <GmailSettingsPage />
-        </Route>
-        <Route path="/system-settings">
-          <SystemSettingsPage />
-        </Route>
-        <Route path="/trafficstar">
-          <TrafficstarPage />
-        </Route>
-        <Route path="/redirect-test">
-          <RedirectTest />
-        </Route>
-        <Route>
-          <NotFound />
-        </Route>
-      </Switch>
-    </AppLayout>
+    <Switch>
+      <Route path="/login">
+        <LoginPage />
+      </Route>
+      
+      {/* Protected routes that require authentication */}
+      <Route path="/">
+        <ProtectedRoute>
+          <AppLayout>
+            <Switch>
+              <Route path="/">
+                <Redirect to="/campaigns" />
+              </Route>
+              <Route path="/campaigns/:id">
+                <Home />
+              </Route>
+              <Route path="/campaigns">
+                <CampaignList />
+              </Route>
+              <Route path="/urls">
+                {isMobile ? <URLsMobilePage /> : <URLsPage />}
+              </Route>
+              <Route path="/gmail-settings">
+                <GmailSettingsPage />
+              </Route>
+              <Route path="/system-settings">
+                <SystemSettingsPage />
+              </Route>
+              <Route path="/trafficstar">
+                <TrafficstarPage />
+              </Route>
+              <Route path="/redirect-test">
+                <RedirectTest />
+              </Route>
+              <Route>
+                <NotFound />
+              </Route>
+            </Switch>
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+    </Switch>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
