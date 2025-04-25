@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import * as crypto from "crypto";
 
 // Redirect method enum
 export const RedirectMethod = {
@@ -232,3 +233,64 @@ export type TrafficstarCampaign = typeof trafficstarCampaigns.$inferSelect;
 export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignActionSchema>;
 export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
 export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;
+
+// User role enum
+export const userRoleEnum = pgEnum('user_role', [
+  'admin',
+  'user',
+]);
+
+// User schema for authentication
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  role: text("role").default('user').notNull(),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Helper function to hash a password using Node's crypto module
+export function hashPassword(password: string): string {
+  // Generate a random salt
+  const salt = crypto.randomBytes(16).toString('hex');
+  // Hash the password with salt using SHA-256
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  
+  // Store both salt and hash, separated by a colon
+  return `${salt}:${hash}`;
+}
+
+// Helper function to compare a password with a hash
+export function verifyPassword(password: string, storedHash: string): boolean {
+  try {
+    // Split the stored hash into salt and hash
+    const [salt, hash] = storedHash.split(':');
+    
+    // Generate hash from the input password using the stored salt
+    const calculatedHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    
+    // Compare calculated hash with stored hash
+    return calculatedHash === hash;
+  } catch (error) {
+    console.error('Error verifying password:', error);
+    return false;
+  }
+}
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type LoginCredentials = z.infer<typeof loginSchema>;

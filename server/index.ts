@@ -6,6 +6,11 @@ import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
 import { trafficStarService } from "./trafficstar-service";
+import { initializeAuth } from "./init-auth";
+import { configureSession } from "./session";
+import { pool } from "./db";
+import cookieParser from "cookie-parser";
+import authRoutes from "./routes/auth-routes";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,6 +19,12 @@ const app = express();
 
 // Enable compression for all responses
 app.use(compression());
+
+// Cookie parser middleware
+app.use(cookieParser());
+
+// Session middleware
+app.use(configureSession(pool));
 
 // High-performance JSON parsing with limits to prevent DoS attacks
 app.use(express.json({ limit: '1mb' }));
@@ -58,6 +69,9 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Register authentication routes
+app.use("/api/auth", authRoutes);
 
 (async () => {
   const server = await registerRoutes(app);
@@ -153,6 +167,14 @@ app.use((req, res, next) => {
         }
       } catch (trafficstarError) {
         log(`Error initializing TrafficStar API: ${trafficstarError}`);
+      }
+
+      // Initialize authentication system (admin users)
+      try {
+        await initializeAuth();
+        log('Authentication system initialized successfully');
+      } catch (authError) {
+        log(`Error initializing authentication system: ${authError}`);
       }
     } catch (error) {
       log(`Error auto-configuring integrations: ${error}`, 'startup');
