@@ -19,11 +19,10 @@ import {
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
-import { trafficStarService } from "./trafficstar-service-fix";
+import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import Imap from "imap";
-import axios from "axios";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
@@ -1390,29 +1389,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all campaigns' daily spending data for current UTC date
-  app.get("/api/trafficstar/daily-spending", async (_req: Request, res: Response) => {
-    try {
-      // Import the function from debug-endpoint
-      const { getAllCampaignsDailySpending } = await import('./debug-endpoint');
-      const spendingData = await getAllCampaignsDailySpending();
-      res.json(spendingData);
-    } catch (error) {
-      console.error(`Error fetching all TrafficStar campaign daily spending:`, error);
-      res.status(500).json({ 
-        message: `Failed to fetch daily spending for all TrafficStar campaigns`,
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Get campaign daily spending data for current UTC date from TrafficStar API
-  app.get("/api/trafficstar/campaigns/:id/spending", async (req: Request, res: Response) => {
-    // Use our debug endpoint implementation for testing
-    const { testCustomReport } = await import('./debug-endpoint');
-    await testCustomReport(req, res);
-  });
-
   // Get saved TrafficStar campaigns from database
   app.get("/api/trafficstar/saved-campaigns", async (_req: Request, res: Response) => {
     try {
@@ -1545,105 +1521,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error updating TrafficStar campaign budget:', error);
       res.status(500).json({ 
         message: "Failed to update TrafficStar campaign budget",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Run multiple campaigns simultaneously
-  app.post("/api/trafficstar/campaigns/run-multiple", async (req: Request, res: Response) => {
-    try {
-      const { campaignIds } = req.body;
-      
-      if (!campaignIds || !Array.isArray(campaignIds) || campaignIds.length === 0) {
-        return res.status(400).json({ message: "Invalid campaign IDs. Please provide an array of campaign IDs." });
-      }
-      
-      // Validate all campaign IDs are numbers
-      const validIds = campaignIds.filter(id => !isNaN(Number(id))).map(id => Number(id));
-      if (validIds.length === 0) {
-        return res.status(400).json({ message: "No valid campaign IDs provided" });
-      }
-      
-      // Immediate response to user - we'll process in background
-      res.json({
-        success: true,
-        message: `Processing ${validIds.length} campaigns for activation`,
-        campaignIds: validIds,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Process activations in background using the batch API method
-      setTimeout(async () => {
-        try {
-          console.log(`Starting batch activation of ${validIds.length} campaigns using V2 API...`);
-          
-          // Use the new batch activation method
-          const result = await trafficStarService.activateMultipleCampaigns(validIds);
-          
-          // Log the complete results
-          console.log(`Completed batch activation of ${validIds.length} campaigns.`);
-          console.log(`Success: ${result.success.length} campaigns - ${result.success.join(', ')}`);
-          
-          if (result.failed.length > 0) {
-            console.log(`Failed: ${result.failed.length} campaigns - ${result.failed.join(', ')}`);
-          } else {
-            console.log(`No failures reported.`);
-          }
-        } catch (batchError) {
-          // If the batch activation fails, fall back to individual activation
-          console.error(`Batch activation failed, falling back to individual activations:`, batchError);
-          
-          const results = {
-            success: [] as number[],
-            failed: [] as number[],
-            total: validIds.length
-          };
-          
-          // Process campaigns in parallel as a fallback
-          await Promise.all(validIds.map(async (id) => {
-            try {
-              // Activate the campaign via TrafficStar API (individual method)
-              await trafficStarService.activateCampaign(id);
-              
-              // Update database record for immediate UI feedback on refresh
-              await db.update(trafficstarCampaigns)
-                .set({ 
-                  active: true,
-                  status: 'active',
-                  lastRequestedAction: 'activate',
-                  lastRequestedActionAt: new Date(),
-                  lastRequestedActionSuccess: true,
-                  updatedAt: new Date() 
-                })
-                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-                
-              results.success.push(id);
-              console.log(`✅ Successfully activated campaign ${id} (fallback method)`);
-            } catch (error) {
-              results.failed.push(id);
-              console.error(`❌ Failed to activate campaign ${id}:`, error);
-              
-              // Update database record with failure
-              await db.update(trafficstarCampaigns)
-                .set({ 
-                  lastRequestedAction: 'activate',
-                  lastRequestedActionAt: new Date(),
-                  lastRequestedActionSuccess: false,
-                  updatedAt: new Date()
-                })
-                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            }
-          }));
-          
-          console.log(`Completed fallback activation of ${validIds.length} campaigns. Success: ${results.success.length}, Failed: ${results.failed.length}`);
-        }
-      }, 100); // Start processing after response is sent
-      
-    } catch (error) {
-      console.error('Error in batch campaign activation:', error);
-      res.status(500).json({ 
-        message: "Failed to process campaign batch activation",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -1852,70 +1729,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to add budget update time field:", error);
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
-    }
-  });
-  
-  // DEBUG endpoint to get spending for a specific campaign
-  app.get("/api/debug/trafficstar/spending/:id", async (req: Request, res: Response) => {
-    try {
-      const campaignId = parseInt(req.params.id);
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ error: "Invalid campaign ID" });
-      }
-      
-      console.log(`DEBUG: Getting spending for campaign ${campaignId}`);
-      const spendingData = await trafficStarService.getCampaignSpending(campaignId);
-      console.log(`DEBUG: Spending data:`, spendingData);
-      
-      res.json(spendingData);
-    } catch (error) {
-      console.error(`DEBUG: Error getting spending for campaign:`, error);
-      res.status(500).json({ 
-        error: "Failed to get campaign spending", 
-        details: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-  
-  // New endpoint specifically using advertiser/custom/report/by-day API
-  app.get("/api/debug/trafficstar/custom-report/:id", async (req: Request, res: Response) => {
-    try {
-      // Use the isolated debug endpoint implementation
-      const { testCustomReport } = await import('./debug-endpoint');
-      await testCustomReport(req, res);
-    } catch (error) {
-      // Handle any errors in the custom report function
-      console.error('Error in custom report endpoint:', error);
-      
-      // Return a fallback response with 200 status
-      const campaignId = parseInt(req.params.id);
-      const todayUtc = new Date().toISOString().split('T')[0];
-      
-      return res.status(200).json({
-        id: campaignId,
-        daily: 0,
-        date: todayUtc,
-        maxDaily: 0,
-        message: "Using fallback data due to error",
-        authenticated: false,
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Debug endpoint to get daily spending for all campaigns
-  app.get("/api/debug/trafficstar/all-spending", async (_req: Request, res: Response) => {
-    try {
-      // Import the function from debug-endpoint
-      const { getAllCampaignsDailySpending } = await import('./debug-endpoint');
-      const spendingData = await getAllCampaignsDailySpending();
-      res.json(spendingData);
-    } catch (error) {
-      console.error(`Error fetching debug daily spending data:`, error);
-      res.status(500).json({ 
-        message: `Failed to fetch debug daily spending data`,
-        error: error instanceof Error ? error.message : String(error)
-      });
     }
   });
 

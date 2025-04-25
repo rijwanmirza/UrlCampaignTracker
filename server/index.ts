@@ -5,7 +5,7 @@ import compression from "compression";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
-import { trafficStarService } from "./trafficstar-service-fix";
+import { trafficStarService } from "./trafficstar-service";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';

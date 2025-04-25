@@ -12,10 +12,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Loader2, RefreshCw, Play, Pause, DollarSign, Calendar, PlayCircle } from 'lucide-react';
+import { Loader2, RefreshCw, Play, Pause, DollarSign, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { Checkbox } from '@/components/ui/checkbox';
-import CampaignSpendingStats from '@/components/campaigns/campaign-spending-stats';
 
 // Define schemas for the form validation
 const apiKeyFormSchema = z.object({
@@ -51,7 +49,6 @@ interface Campaign {
 
 export default function TrafficstarPage() {
   const [activeTab, setActiveTab] = useState<string>('campaigns');
-  const [selectedCampaigns, setSelectedCampaigns] = useState<number[]>([]);
   const queryClient = useQueryClient();
   
   // Direct Campaign ID action form 
@@ -171,32 +168,6 @@ export default function TrafficstarPage() {
       });
     }
   });
-  
-  // Run multiple campaigns mutation
-  const runMultipleCampaignsMutation = useMutation({
-    mutationFn: (campaignIds: number[]) => 
-      apiRequest('/api/trafficstar/campaigns/run-multiple', 'POST', { campaignIds }),
-    onSuccess: () => {
-      toast({
-        title: 'Campaigns Activated',
-        description: `${selectedCampaigns.length} campaigns activated successfully.`,
-      });
-      // Clear selection after successful activation
-      setSelectedCampaigns([]);
-      // Force immediate refetch with no cache
-      queryClient.invalidateQueries({ queryKey: ['/api/trafficstar/campaigns'] });
-      setTimeout(() => {
-        refetchCampaigns();
-      }, 1000); // Add additional refetch with delay to ensure updated data
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to activate campaigns',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive',
-      });
-    }
-  });
 
   // Submit handler for API key form
   const onApiKeySubmit = (data: z.infer<typeof apiKeyFormSchema>) => {
@@ -206,65 +177,6 @@ export default function TrafficstarPage() {
   // Handle campaign pause/activate
   const handleCampaignAction = (campaignId: number, action: 'pause' | 'activate') => {
     campaignActionMutation.mutate({ campaignId, action });
-  };
-  
-  // Toggle campaign selection for multi-select
-  const toggleCampaignSelection = (campaignId: number) => {
-    setSelectedCampaigns(prev => {
-      if (prev.includes(campaignId)) {
-        return prev.filter(id => id !== campaignId);
-      } else {
-        return [...prev, campaignId];
-      }
-    });
-  };
-  
-  // Select all paused campaigns
-  const selectAllPausedCampaigns = () => {
-    if (!campaigns) return;
-    
-    const pausedCampaignIds = campaigns
-      .filter(campaign => !campaign.active)
-      .map(campaign => campaign.id);
-      
-    setSelectedCampaigns(pausedCampaignIds);
-    
-    // Show success toast
-    if (pausedCampaignIds.length > 0) {
-      toast({
-        title: 'Campaigns Selected',
-        description: `Selected ${pausedCampaignIds.length} paused campaigns`,
-      });
-    } else {
-      toast({
-        title: 'No Paused Campaigns',
-        description: 'There are no paused campaigns to select',
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  // Clear all selections
-  const clearAllSelections = () => {
-    setSelectedCampaigns([]);
-    toast({
-      title: 'Selections Cleared',
-      description: 'All campaign selections have been cleared',
-    });
-  };
-  
-  // Run multiple campaigns at once
-  const runMultipleCampaigns = () => {
-    if (selectedCampaigns.length === 0) {
-      toast({
-        title: 'No campaigns selected',
-        description: 'Please select campaigns to activate',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    runMultipleCampaignsMutation.mutate(selectedCampaigns);
   };
 
   // Submit handler for direct campaign ID action form
@@ -448,60 +360,21 @@ export default function TrafficstarPage() {
         </TabsList>
         
         <TabsContent value="campaigns" className="mt-4">
-          {/* Spending Stats Dashboard */}
-          <div className="mb-6">
-            <CampaignSpendingStats />
-          </div>
-          
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">TrafficStar Campaigns</h2>
-            <div className="flex gap-2">
-              {selectedCampaigns.length > 0 && (
-                <Button
-                  onClick={runMultipleCampaigns}
-                  variant="default"
-                  size="sm"
-                  disabled={runMultipleCampaignsMutation.isPending}
-                >
-                  {runMultipleCampaignsMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                  )}
-                  <span>Activate {selectedCampaigns.length} Campaigns</span>
-                </Button>
+            <Button
+              onClick={() => refetchCampaigns()}
+              variant="outline"
+              size="sm"
+              disabled={isCampaignsLoading}
+            >
+              {isCampaignsLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
               )}
-              <Button
-                onClick={selectAllPausedCampaigns}
-                variant="outline"
-                size="sm"
-                disabled={isCampaignsLoading}
-              >
-                <span>Select All Paused</span>
-              </Button>
-              {selectedCampaigns.length > 0 && (
-                <Button
-                  onClick={clearAllSelections}
-                  variant="secondary"
-                  size="sm"
-                >
-                  <span>Clear Selection</span>
-                </Button>
-              )}
-              <Button
-                onClick={() => refetchCampaigns()}
-                variant="outline"
-                size="sm"
-                disabled={isCampaignsLoading}
-              >
-                {isCampaignsLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <span className="ml-2">Refresh</span>
-              </Button>
-            </div>
+              <span className="ml-2">Refresh</span>
+            </Button>
           </div>
           
           {isCampaignsLoading ? (
@@ -512,20 +385,10 @@ export default function TrafficstarPage() {
           ) : campaigns && campaigns.length > 0 ? (
             <div className="space-y-4">
               {campaigns.map((campaign) => (
-                <Card key={campaign.id} className={`overflow-hidden ${selectedCampaigns.includes(campaign.id) ? 'border-primary' : ''}`}>
+                <Card key={campaign.id} className="overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        {!campaign.active && (
-                          <Checkbox 
-                            id={`campaign-${campaign.id}`}
-                            checked={selectedCampaigns.includes(campaign.id)}
-                            onCheckedChange={() => toggleCampaignSelection(campaign.id)}
-                            className="mr-1"
-                          />
-                        )}
-                        <CardTitle className="text-xl">{campaign.name}</CardTitle>
-                      </div>
+                      <CardTitle className="text-xl">{campaign.name}</CardTitle>
                       <Badge variant={campaign.active ? "default" : "secondary"}>
                         {campaign.active ? "Active" : "Paused"}
                       </Badge>

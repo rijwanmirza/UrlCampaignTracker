@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clipboard, ExternalLink, AlertCircle, DollarSign, Loader2 } from "lucide-react";
+import { Clipboard, ExternalLink, AlertCircle } from "lucide-react";
 import { FormattedCampaign } from "@/lib/types";
 import { RedirectMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import CampaignDeleteButton from "./campaign-delete-button";
 import { useLocation } from "wouter";
 import RunMigrationButton from "@/components/RunMigrationButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useQuery } from "@tanstack/react-query";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
@@ -58,24 +57,6 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
         });
       });
   };
-  
-  // Define the interface for daily spending data
-  interface DailySpendingData {
-    id: number;
-    daily: number;
-    date: string;
-    maxDaily: number;
-  }
-  
-  // Fetch daily spending data if TrafficStar integration is enabled
-  const { 
-    data: spendingData, 
-    isLoading: isLoadingSpending 
-  } = useQuery<DailySpendingData>({
-    queryKey: [`/api/trafficstar/campaigns/${campaign.trafficstarCampaignId}/spending`],
-    enabled: !!campaign.trafficstarCampaignId,
-    refetchInterval: 300000, // Refresh every 5 minutes
-  });
 
   // Check if migrations are needed when component mounts
   useEffect(() => {
@@ -208,56 +189,6 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                       Campaign #{campaign.trafficstarCampaignId}
                     </span>
                   </div>
-                  
-                  {/* Daily Spending Information */}
-                  {isLoadingSpending ? (
-                    <div className="flex items-center gap-1 mt-1 text-gray-500 text-xs">
-                      <Loader2 className="h-3 w-3 animate-spin" /> 
-                      Loading daily spending...
-                    </div>
-                  ) : spendingData ? (
-                    <div className="mt-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline" 
-                          className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
-                        >
-                          <DollarSign className="h-3 w-3" />
-                          ${spendingData?.daily ? spendingData.daily.toFixed(2) : '0.00'}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          Daily Spending (UTC {spendingData.date})
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline" 
-                          className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1"
-                        >
-                          <DollarSign className="h-3 w-3" />
-                          ${spendingData?.maxDaily ? spendingData.maxDaily.toFixed(2) : '0.00'}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          Daily Budget Limit
-                        </span>
-                      </div>
-                      
-                      {spendingData?.daily > 0 && spendingData?.maxDaily > 0 && (
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                          <div 
-                            className="bg-blue-600 h-1.5 rounded-full" 
-                            style={{ 
-                              width: `${Math.min(
-                                (spendingData.daily / spendingData.maxDaily) * 100, 
-                                100
-                              )}%` 
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
                 </div>
               )}
             </div>
