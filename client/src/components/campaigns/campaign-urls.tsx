@@ -492,6 +492,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
               <TableHead>Target URL</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Clicks</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -536,6 +537,15 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
                     </span>
                     <ProgressBar url={url} />
                   </div>
+                </TableCell>
+                <TableCell>
+                  {campaign?.pricePerThousand ? (
+                    <span>
+                      ${((Number(campaign.pricePerThousand) * url.clickLimit) / 1000).toFixed(4)}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center gap-2">

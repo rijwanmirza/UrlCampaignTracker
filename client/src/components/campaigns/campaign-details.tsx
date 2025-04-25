@@ -112,11 +112,17 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
               </p>
             </div>
 
-            {campaign.totalPrice > 0 && (
+            {Number(campaign.pricePerThousand || 0) > 0 && (
               <div>
                 <span className="text-sm font-medium text-gray-500">Campaign Pricing:</span>
                 <p className="text-gray-900">
-                  {campaign.priceFormatted} <span className="text-xs text-gray-500">({campaign.remainingClicks} clicks remaining)</span>
+                  <span className="font-medium">
+                    ${((campaign.activeUrlCount * Number(campaign.pricePerThousand || 0)) / 1000).toFixed(4)}/
+                    ${((campaign.urls.length * Number(campaign.pricePerThousand || 0)) / 1000).toFixed(4)}
+                  </span> 
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({campaign.remainingClicks.toLocaleString()} clicks remaining)
+                  </span>
                 </p>
               </div>
             )}

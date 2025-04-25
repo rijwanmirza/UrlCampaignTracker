@@ -248,6 +248,12 @@ export class DatabaseStorage implements IStorage {
       updateData.multiplier = String(updateCampaign.multiplier);
     }
     
+    // Handle pricePerThousand field
+    if (updateCampaign.pricePerThousand !== undefined) {
+      updateData.pricePerThousand = String(updateCampaign.pricePerThousand);
+      console.log('🔍 DEBUG: Setting pricePerThousand to:', updateData.pricePerThousand);
+    }
+    
     const [updated] = await db
       .update(campaigns)
       .set(updateData)
