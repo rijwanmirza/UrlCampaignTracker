@@ -338,60 +338,76 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>TrafficStar Campaign</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        // Special case for direct input
-                        if (value === "direct_input") {
-                          // Don't change the field yet - we'll update it with text input
-                          return;
-                        }
-                        field.onChange(value);
-                      }}
-                      value={field.value || "none"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select TrafficStar campaign">
-                            {isLoadingTrafficstarCampaigns && (
-                              <div className="flex items-center">
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                <span>Loading campaigns...</span>
-                              </div>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
-                        <SelectItem value="direct_input">Enter Campaign ID directly</SelectItem>
-                        <SelectItem value="spacer" disabled className="py-1 my-1 border-t cursor-default">
-                          <span className="text-xs text-gray-500">Available Campaigns</span>
-                        </SelectItem>
-                        {trafficstarCampaigns.map((tsCampaign: any) => (
-                          <SelectItem 
-                            key={tsCampaign.trafficstarId} 
-                            value={tsCampaign.trafficstarId || `campaign-${tsCampaign.id}`}
-                          >
-                            {tsCampaign.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    {/* Direct Campaign ID input */}
-                    {form.watch("trafficstarCampaignId") === "direct_input" && (
-                      <div className="mt-2">
+                    {form.getValues("trafficstarCampaignId") === "direct_input" ? (
+                      <div className="space-y-2">
                         <Input 
                           type="text"
                           placeholder="Enter TrafficStar Campaign ID"
+                          value={field.value === "direct_input" ? "" : field.value || ""}
                           onChange={(e) => {
-                            // Directly update the field value
                             const value = e.target.value.trim();
-                            field.onChange(value);
+                            field.onChange(value || "none");
                           }}
                           className="mt-2"
                         />
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => field.onChange("none")}
+                          className="w-full"
+                        >
+                          Cancel Direct Input
+                        </Button>
                       </div>
+                    ) : (
+                      <>
+                        <Select
+                          onValueChange={(value) => {
+                            // Special case for direct input - switch to input field mode
+                            if (value === "direct_input") {
+                              field.onChange("direct_input");
+                              return;
+                            }
+                            field.onChange(value);
+                          }}
+                          value={field.value || "none"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select TrafficStar campaign">
+                                {isLoadingTrafficstarCampaigns && (
+                                  <div className="flex items-center">
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    <span>Loading campaigns...</span>
+                                  </div>
+                                )}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
+                            <SelectItem value="direct_input">Enter Campaign ID directly</SelectItem>
+                            <SelectItem value="spacer" disabled className="py-1 my-1 border-t cursor-default">
+                              <span className="text-xs text-gray-500">Available Campaigns</span>
+                            </SelectItem>
+                            {trafficstarCampaigns.map((tsCampaign: any) => (
+                              <SelectItem 
+                                key={tsCampaign.trafficstarId} 
+                                value={tsCampaign.trafficstarId || `campaign-${tsCampaign.id}`}
+                              >
+                                {tsCampaign.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {/* Show selected campaign ID if it's a direct input value */}
+                        {field.value && field.value !== "none" && !trafficstarCampaigns.some(c => c.trafficstarId === field.value) && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Using manual campaign ID: {field.value}
+                          </div>
+                        )}
+                      </>
                     )}
                     
                     <FormDescription>
