@@ -835,15 +835,49 @@ export class DatabaseStorage implements IStorage {
    */
   private async batchUpdateUrlClicks(id: number, pendingCount: number, isCompleted: boolean): Promise<void> {
     try {
-      // Update database with batched click count
-      await db
-        .update(urls)
-        .set({ 
-          clicks: sql`${urls.clicks} + ${pendingCount}`,
-          status: isCompleted ? 'completed' : sql`${urls.status}`,
-          updatedAt: new Date() 
-        })
-        .where(eq(urls.id, id));
+      if (isCompleted) {
+        // First get the URL to determine if it belongs to a campaign
+        const [url] = await db.select().from(urls).where(eq(urls.id, id));
+        if (url?.campaignId) {
+          // Store the campaign ID before removing it
+          const campaignId = url.campaignId;
+          
+          // If URL is completed and belongs to a campaign, update and remove from campaign
+          await db
+            .update(urls)
+            .set({ 
+              clicks: sql`${urls.clicks} + ${pendingCount}`,
+              status: 'completed',
+              campaignId: null, // Remove from campaign
+              updatedAt: new Date() 
+            })
+            .where(eq(urls.id, id));
+          
+          // Invalidate campaign cache since we've removed a URL
+          this.invalidateCampaignCache(campaignId);
+          console.log(`URL ${id} reached click limit and was removed from campaign ${campaignId}`);
+        } else {
+          // URL is completed but doesn't belong to a campaign, just update status
+          await db
+            .update(urls)
+            .set({ 
+              clicks: sql`${urls.clicks} + ${pendingCount}`,
+              status: 'completed',
+              updatedAt: new Date() 
+            })
+            .where(eq(urls.id, id));
+        }
+      } else {
+        // Standard update for non-completed URLs
+        await db
+          .update(urls)
+          .set({ 
+            clicks: sql`${urls.clicks} + ${pendingCount}`,
+            status: sql`${urls.status}`,
+            updatedAt: new Date() 
+          })
+          .where(eq(urls.id, id));
+      }
       
       // Reset pending count
       this.pendingClickUpdates.set(id, 0);
@@ -873,23 +907,33 @@ export class DatabaseStorage implements IStorage {
             (cachedUrl.url.clicks >= cachedUrl.url.clickLimit);
           
           try {
-            // Update the database with accumulated clicks
-            await db
-              .update(urls)
-              .set({
-                clicks: sql`${urls.clicks} + ${pendingCount}`,
-                status: isCompleted ? 'completed' : sql`${urls.status}`,
-                updatedAt: new Date()
-              })
-              .where(eq(urls.id, id));
+            if (isCompleted) {
+              // If URL is completed, use our updateUrlStatus method which handles
+              // removing from campaign
+              await this.updateUrlStatus(id, 'completed');
+              
+              // Also update the click count (updateUrlStatus only updates status and campaignId)
+              await db
+                .update(urls)
+                .set({
+                  clicks: sql`${urls.clicks} + ${pendingCount}`,
+                  updatedAt: new Date()
+                })
+                .where(eq(urls.id, id));
+            } else {
+              // Standard update for non-completed URLs
+              await db
+                .update(urls)
+                .set({
+                  clicks: sql`${urls.clicks} + ${pendingCount}`,
+                  status: sql`${urls.status}`,
+                  updatedAt: new Date()
+                })
+                .where(eq(urls.id, id));
+            }
             
             // Reset the pending count
             this.pendingClickUpdates.set(id, 0);
-            
-            // Also update the status in DB if needed
-            if (isCompleted) {
-              await this.updateUrlStatus(id, 'completed');
-            }
             
             // Get the latest version from DB to keep cache in sync
             const [updatedUrl] = await db
@@ -1016,18 +1060,54 @@ export class DatabaseStorage implements IStorage {
   
   // Helper to update URL status (used for async marking URLs as completed)
   async updateUrlStatus(id: number, status: string): Promise<void> {
-    await db
-      .update(urls)
-      .set({
-        status,
-        updatedAt: new Date()
-      })
-      .where(eq(urls.id, id));
+    // When a URL is completed, we need to remove it from the campaign
+    if (status === 'completed') {
+      // First, get the URL to find its campaign ID
+      const [url] = await db.select().from(urls).where(eq(urls.id, id));
       
-    // Get the URL to find its campaign ID
-    const [url] = await db.select().from(urls).where(eq(urls.id, id));
-    if (url?.campaignId) {
-      this.invalidateCampaignCache(url.campaignId);
+      if (url?.campaignId) {
+        // Store the campaign ID before removing it
+        const campaignId = url.campaignId;
+        
+        // Update the URL: set status to completed and remove from campaign (set campaignId to null)
+        await db
+          .update(urls)
+          .set({
+            status,
+            campaignId: null, // Remove from campaign
+            updatedAt: new Date()
+          })
+          .where(eq(urls.id, id));
+          
+        // Invalidate the campaign cache since we've removed a URL
+        this.invalidateCampaignCache(campaignId);
+        
+        console.log(`URL ${id} marked as completed and removed from campaign ${campaignId}`);
+      } else {
+        // If there's no campaign ID, just update the status
+        await db
+          .update(urls)
+          .set({
+            status,
+            updatedAt: new Date()
+          })
+          .where(eq(urls.id, id));
+      }
+    } else {
+      // For non-completed status updates, use the original behavior
+      await db
+        .update(urls)
+        .set({
+          status,
+          updatedAt: new Date()
+        })
+        .where(eq(urls.id, id));
+        
+      // Get the URL to find its campaign ID
+      const [url] = await db.select().from(urls).where(eq(urls.id, id));
+      if (url?.campaignId) {
+        this.invalidateCampaignCache(url.campaignId);
+      }
     }
   }
   
