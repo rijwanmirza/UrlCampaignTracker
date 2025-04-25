@@ -1389,7 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get campaign daily spending data from TrafficStar API
+  // Get campaign daily spending data for current UTC date from TrafficStar API
   app.get("/api/trafficstar/campaigns/:id/spending", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -1400,9 +1400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const spending = await trafficStarService.getCampaignSpending(id);
       res.json(spending);
     } catch (error) {
-      console.error(`Error fetching TrafficStar campaign ${req.params.id} spending:`, error);
+      console.error(`Error fetching TrafficStar campaign ${req.params.id} daily spending:`, error);
       res.status(500).json({ 
-        message: `Failed to fetch spending for TrafficStar campaign ${req.params.id}`,
+        message: `Failed to fetch daily spending for TrafficStar campaign ${req.params.id}`,
         error: error instanceof Error ? error.message : String(error)
       });
     }

@@ -1302,27 +1302,28 @@ class TrafficStarService {
   }
   
   /**
-   * Get campaign daily spending from TrafficStar API
+   * Get campaign daily spending from TrafficStar API for the current UTC date
    * @param id The TrafficStar campaign ID
-   * @returns An object with the campaign spending data { id: number, total: number }
+   * @returns An object with the campaign spending data { id: number, daily: number, date: string }
    */
-  async getCampaignSpending(id: number): Promise<{ id: number, total: number }> {
+  async getCampaignSpending(id: number): Promise<{ id: number, daily: number, date: string }> {
     try {
       const token = await this.ensureToken();
       
       // Try multiple API endpoints since the TrafficStar API documentation seems to be inconsistent
       const endpoints = [
+        `https://api.trafficstars.com/v1.1/campaigns/${id}/stats/daily`,
         `https://api.trafficstars.com/v1.1/campaigns/${id}/stats`,
-        `https://api.trafficstars.com/v1.1/campaigns/${id}/spending`,
         `https://api.trafficstars.com/v1/campaigns/${id}/stats`
       ];
       
-      // Get current date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
+      // Get current date in YYYY-MM-DD format for UTC
+      const now = new Date();
+      const todayUtc = now.toISOString().split('T')[0];
       
       for (const endpoint of endpoints) {
         try {
-          console.log(`Trying to get campaign ${id} spending using endpoint: ${endpoint}`);
+          console.log(`Trying to get campaign ${id} daily spending for ${todayUtc} using endpoint: ${endpoint}`);
           
           const response = await axios.get(endpoint, {
             headers: {
@@ -1330,36 +1331,49 @@ class TrafficStarService {
               'Content-Type': 'application/json'
             },
             params: {
-              date_from: today,
-              date_to: today,
-              group_by: 'day'
+              date_from: todayUtc,
+              date_to: todayUtc,
+              group_by: 'day',
+              timezone: 0 // Ensure UTC timezone
             },
             timeout: 10000 // 10 second timeout
           });
           
           if (response.data) {
-            console.log(`Successfully fetched spending for campaign ${id}`);
+            console.log(`Successfully fetched daily spending for campaign ${id}`);
             
             // Different endpoints return different response structures
             if (response.data.response && response.data.response.stats) {
               // Stats API response
               const stats = response.data.response.stats;
-              const dailySpending = stats[0]?.total || 0;
+              const todayStats = stats.find((day: any) => day.date === todayUtc) || stats[0];
               
-              return {
-                id,
-                total: parseFloat(dailySpending)
-              };
-            } else if (response.data.total !== undefined) {
+              if (todayStats) {
+                const dailySpending = todayStats.total || 0;
+                return {
+                  id,
+                  daily: parseFloat(dailySpending),
+                  date: todayUtc
+                };
+              }
+            } else if (response.data.daily !== undefined) {
               // Direct spending API response
               return {
                 id,
-                total: parseFloat(response.data.total)
+                daily: parseFloat(response.data.daily),
+                date: todayUtc
+              };
+            } else if (response.data.spending !== undefined && response.data.spending[todayUtc] !== undefined) {
+              // Alternative API response format
+              return {
+                id,
+                daily: parseFloat(response.data.spending[todayUtc]),
+                date: todayUtc
               };
             }
           }
         } catch (apiError) {
-          console.error(`Failed to get campaign ${id} spending using endpoint: ${endpoint}`, apiError);
+          console.error(`Failed to get campaign ${id} daily spending using endpoint: ${endpoint}`, apiError);
           // Continue to next endpoint
         }
       }
@@ -1367,11 +1381,12 @@ class TrafficStarService {
       // If all endpoints fail, return a default value
       return {
         id,
-        total: 0
+        daily: 0,
+        date: todayUtc
       };
     } catch (error) {
-      console.error(`Error getting campaign ${id} spending:`, error);
-      throw new Error(`Failed to fetch spending for campaign ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(`Error getting campaign ${id} daily spending:`, error);
+      throw new Error(`Failed to fetch daily spending for campaign ${id}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

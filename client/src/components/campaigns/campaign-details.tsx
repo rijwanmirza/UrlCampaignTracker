@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clipboard, ExternalLink, AlertCircle } from "lucide-react";
+import { Clipboard, ExternalLink, AlertCircle, DollarSign, Loader2 } from "lucide-react";
 import { FormattedCampaign } from "@/lib/types";
 import { RedirectMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import CampaignDeleteButton from "./campaign-delete-button";
 import { useLocation } from "wouter";
 import RunMigrationButton from "@/components/RunMigrationButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useQuery } from "@tanstack/react-query";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
@@ -57,6 +58,16 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
         });
       });
   };
+  
+  // Fetch daily spending data if TrafficStar integration is enabled
+  const { 
+    data: spendingData, 
+    isLoading: isLoadingSpending 
+  } = useQuery({
+    queryKey: [`/api/trafficstar/campaigns/${campaign.trafficstarCampaignId}/spending`],
+    enabled: !!campaign.trafficstarCampaignId,
+    refetchInterval: 300000, // Refresh every 5 minutes
+  });
 
   // Check if migrations are needed when component mounts
   useEffect(() => {
@@ -189,6 +200,27 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                       Campaign #{campaign.trafficstarCampaignId}
                     </span>
                   </div>
+                  
+                  {/* Daily Spending Information */}
+                  {isLoadingSpending ? (
+                    <div className="flex items-center gap-1 mt-1 text-gray-500 text-xs">
+                      <Loader2 className="h-3 w-3 animate-spin" /> 
+                      Loading daily spending...
+                    </div>
+                  ) : spendingData ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
+                      >
+                        <DollarSign className="h-3 w-3" />
+                        ${spendingData.daily.toFixed(2)}
+                      </Badge>
+                      <span className="text-xs text-gray-500">
+                        Daily Spending (UTC {new Date().toISOString().split('T')[0]})
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>
