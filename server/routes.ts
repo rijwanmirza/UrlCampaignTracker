@@ -764,19 +764,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
 
-      // Get the campaign to check if it exists and to get the redirect method
+      console.log(`Processing campaign ID: ${campaignId}`);
+      
+      // Get the campaign to check if it exists - use fresh data 
       const campaign = await storage.getCampaign(campaignId);
       if (!campaign) {
+        console.log(`Campaign not found for ID: ${campaignId}`);
         return res.status(404).json({ message: "Campaign not found" });
       }
-
+      
+      console.log(`Found campaign ID ${campaign.id}`);
+      console.log(`Campaign has ${campaign.urls.length} total URLs`);
+      console.log(`Campaign has ${campaign.urls.filter(url => url.isActive).length} active URLs`);
+      
       // Use our optimized method to get a URL based on weighted distribution
       const selectedUrl = await storage.getRandomWeightedUrl(campaignId);
       
       // If no active URLs are available, show an error
       if (!selectedUrl) {
+        console.log(`No active URLs available for campaign ID ${campaignId}`);
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
       }
+      
+      console.log(`Selected URL ID ${selectedUrl.id} (${selectedUrl.name}) for redirect`);
       
       // Redirect to the specific URL directly without going through the /r/ endpoint
       // This saves an extra HTTP redirect and improves performance
