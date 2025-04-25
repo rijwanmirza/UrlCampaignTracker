@@ -1608,6 +1608,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add TrafficStar fields to campaigns table" });
     }
   });
+  
+  // Database migration - add budget update time field to campaigns table
+  app.post("/api/system/migrate-budget-update-time", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration function
+      const { addBudgetUpdateTimeField } = await import("./migrations/add-budget-update-time");
+      
+      // Execute the migration
+      const result = await addBudgetUpdateTimeField();
+      
+      if (result.success) {
+        console.log("✅ Budget update time field migration successful");
+        res.status(200).json({
+          message: "Budget update time field migration completed successfully"
+        });
+      } else {
+        console.error("❌ Budget update time field migration failed:", result.error);
+        res.status(500).json({
+          message: "Budget update time field migration failed",
+          error: result.error
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add budget update time field:", error);
+      res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
+    }
+  });
 
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues

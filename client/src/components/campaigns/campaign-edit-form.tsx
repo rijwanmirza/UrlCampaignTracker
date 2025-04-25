@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Edit, Loader2 } from "lucide-react";
+import { Edit, Loader2, X } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -47,6 +47,7 @@ const campaignEditSchema = z.object({
   // TrafficStar integration fields
   trafficstarCampaignId: z.string().optional(),
   autoManageTrafficstar: z.boolean().optional(),
+  budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -79,6 +80,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
       trafficstarCampaignId: campaign.trafficstarCampaignId || "",
       autoManageTrafficstar: Boolean(campaign.autoManageTrafficstar),
+      budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
     },
   });
   
@@ -338,77 +340,81 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>TrafficStar Campaign</FormLabel>
-                    {form.getValues("trafficstarCampaignId") === "direct_input" ? (
-                      <div className="space-y-2">
+                    <div className="flex flex-col space-y-2">
+                      {/* Direct ID input field - always visible */}
+                      <div className="flex space-x-2">
                         <Input 
                           type="text"
-                          placeholder="Enter TrafficStar Campaign ID"
-                          value={field.value === "direct_input" ? "" : field.value || ""}
+                          placeholder="Enter TrafficStar Campaign ID directly"
+                          value={field.value === "none" ? "" : field.value || ""}
                           onChange={(e) => {
                             const value = e.target.value.trim();
                             field.onChange(value || "none");
                           }}
-                          className="mt-2"
+                          className="flex-1"
                         />
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => field.onChange("none")}
-                          className="w-full"
-                        >
-                          Cancel Direct Input
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <Select
-                          onValueChange={(value) => {
-                            // Special case for direct input - switch to input field mode
-                            if (value === "direct_input") {
-                              field.onChange("direct_input");
-                              return;
-                            }
-                            field.onChange(value);
-                          }}
-                          value={field.value || "none"}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select TrafficStar campaign">
-                                {isLoadingTrafficstarCampaigns && (
-                                  <div className="flex items-center">
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    <span>Loading campaigns...</span>
-                                  </div>
-                                )}
-                              </SelectValue>
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
-                            <SelectItem value="direct_input">Enter Campaign ID directly</SelectItem>
-                            <SelectItem value="spacer" disabled className="py-1 my-1 border-t cursor-default">
-                              <span className="text-xs text-gray-500">Available Campaigns</span>
-                            </SelectItem>
-                            {trafficstarCampaigns.map((tsCampaign: any) => (
-                              <SelectItem 
-                                key={tsCampaign.trafficstarId} 
-                                value={tsCampaign.trafficstarId || `campaign-${tsCampaign.id}`}
-                              >
-                                {tsCampaign.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        {/* Show selected campaign ID if it's a direct input value */}
-                        {field.value && field.value !== "none" && !trafficstarCampaigns.some(c => c.trafficstarId === field.value) && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Using manual campaign ID: {field.value}
-                          </div>
+                        {field.value && field.value !== "none" && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => field.onChange("none")}
+                            title="Clear campaign ID"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         )}
-                      </>
-                    )}
+                      </div>
+
+                      {/* Or divider */}
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">
+                            Or select from list
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Dropdown selection as alternative */}
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        value={trafficstarCampaigns.some(c => c.trafficstarId === field.value) ? field.value : "custom"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select TrafficStar campaign">
+                              {isLoadingTrafficstarCampaigns && (
+                                <div className="flex items-center">
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <span>Loading campaigns...</span>
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">None (No TrafficStar integration)</SelectItem>
+                          <SelectItem value="custom" disabled={!field.value || field.value === "none"}>
+                            Custom ID: {field.value !== "none" ? field.value : ""}
+                          </SelectItem>
+                          <SelectItem value="spacer" disabled className="py-1 my-1 border-t cursor-default">
+                            <span className="text-xs text-gray-500">Available Campaigns</span>
+                          </SelectItem>
+                          {trafficstarCampaigns.map((tsCampaign: any) => (
+                            <SelectItem 
+                              key={tsCampaign.trafficstarId} 
+                              value={tsCampaign.trafficstarId || `campaign-${tsCampaign.id}`}
+                            >
+                              {tsCampaign.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     
                     <FormDescription>
                       Link this campaign to a TrafficStar campaign for automatic management
@@ -428,7 +434,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                       <FormLabel>Auto-Manage TrafficStar</FormLabel>
                       <FormDescription>
                         Automatically start campaign when remaining clicks exceed 15,000<br />
-                        Automatically set daily budget to $10.15 when UTC date changes
+                        Automatically set daily budget to $10.15 at specified UTC time
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -441,6 +447,40 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   </FormItem>
                 )}
               />
+              
+              {/* Budget Update Time */}
+              {form.watch("autoManageTrafficstar") && (
+                <FormField
+                  control={form.control}
+                  name="budgetUpdateTime"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel>Daily Budget Update Time (UTC)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                          value={field.value || "00:00:00"}
+                          onChange={(e) => {
+                            const timeValue = e.target.value;
+                            // Add seconds if not already included
+                            const timeWithSeconds = timeValue.includes(':') && 
+                              timeValue.split(':').length === 2 ? 
+                              `${timeValue}:00` : timeValue;
+                            
+                            field.onChange(timeWithSeconds);
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Set the exact UTC time (HH:MM:SS) when the $10.15 budget will be applied daily.
+                        Current UTC time is shown in the field.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
             
             <DialogFooter className="pt-4">
