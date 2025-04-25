@@ -288,14 +288,16 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                         className="rounded-l-none"
                         onChange={(e) => {
                           // Handle empty/invalid input cases
-                          const value = e.target.value === '' ? '' : e.target.value;
+                          const value = e.target.value === '' ? '0' : e.target.value;
                           // Only update field if value is valid
                           const parsedValue = parseFloat(value);
                           if (!isNaN(parsedValue)) {
+                            console.log("Setting price to number:", parsedValue);
                             field.onChange(parsedValue);
                           } else {
-                            // For empty input, set field to empty string to allow user typing
-                            field.onChange(value);
+                            // For empty or invalid input, set to 0
+                            console.log("Setting price to 0");
+                            field.onChange(0);
                           }
                         }}
                         value={field.value}

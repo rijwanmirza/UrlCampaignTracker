@@ -248,15 +248,22 @@ export class DatabaseStorage implements IStorage {
       updateData.multiplier = String(updateCampaign.multiplier);
     }
     
-    // Handle pricePerThousand field
+    // Handle pricePerThousand field - CRITICAL FIX
     if (updateCampaign.pricePerThousand !== undefined) {
       console.log('🔍 DEBUG: Received pricePerThousand:', updateCampaign.pricePerThousand, 'type:', typeof updateCampaign.pricePerThousand);
       
-      const priceValue = updateCampaign.pricePerThousand;
-      // Convert to string for DB (numeric type requires string)
-      updateData.pricePerThousand = priceValue === null || priceValue === 0 
-        ? '0' 
-        : String(priceValue);
+      let priceValue = updateCampaign.pricePerThousand;
+      
+      // Make sure we always have a valid number
+      if (typeof priceValue === 'string') {
+        priceValue = parseFloat(priceValue);
+        if (isNaN(priceValue)) priceValue = 0;
+      }
+      
+      // Always ensure we're using at least 4 decimal places for the string version
+      updateData.pricePerThousand = priceValue === 0 
+        ? '0.0000' 
+        : priceValue.toFixed(4);
       
       console.log('🔍 DEBUG: Setting pricePerThousand to:', updateData.pricePerThousand);
     }

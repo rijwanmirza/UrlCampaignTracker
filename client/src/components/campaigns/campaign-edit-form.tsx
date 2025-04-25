@@ -79,6 +79,15 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
   });
   
+  // CRITICAL FIX: Force the pricePerThousand to be set properly in the form
+  setTimeout(() => {
+    form.setValue('pricePerThousand', 
+      typeof campaign.pricePerThousand === 'string' 
+        ? parseFloat(campaign.pricePerThousand) 
+        : (campaign.pricePerThousand || 0)
+    );
+  }, 100);
+  
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (values: CampaignEditValues) => {
