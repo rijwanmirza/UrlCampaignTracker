@@ -117,8 +117,8 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                 <span className="text-sm font-medium text-gray-500">Campaign Pricing:</span>
                 <p className="text-gray-900">
                   <span className="font-medium">
-                    ${((campaign.activeUrlCount * Number(campaign.pricePerThousand || 0)) / 1000).toFixed(4)}/
-                    ${((campaign.urls.length * Number(campaign.pricePerThousand || 0)) / 1000).toFixed(4)}
+                    ${campaign.remainingPrice.toFixed(4)}/
+                    ${campaign.totalPrice.toFixed(4)}
                   </span> 
                   <span className="text-xs text-gray-500 ml-1">
                     ({campaign.remainingClicks.toLocaleString()} clicks remaining)
