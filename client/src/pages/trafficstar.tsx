@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { Loader2, RefreshCw, Play, Pause, DollarSign, Calendar, PlayCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
+import CampaignSpendingStats from '@/components/campaigns/campaign-spending-stats';
 
 // Define schemas for the form validation
 const apiKeyFormSchema = z.object({
@@ -447,6 +448,11 @@ export default function TrafficstarPage() {
         </TabsList>
         
         <TabsContent value="campaigns" className="mt-4">
+          {/* Spending Stats Dashboard */}
+          <div className="mb-6">
+            <CampaignSpendingStats />
+          </div>
+          
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">TrafficStar Campaigns</h2>
             <div className="flex gap-2">
