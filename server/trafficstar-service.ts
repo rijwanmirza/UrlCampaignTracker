@@ -550,11 +550,19 @@ class TrafficStarService {
     try {
       console.log(`USING V2 API: Activating campaign ${id}...`);
       
+      // Set end date to current UTC date at 23:59:59
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const endTimeFormatted = `${currentDate} 23:59:59`; // YYYY-MM-DD 23:59:59
+      
+      console.log(`Setting campaign ${id} end time to end of current UTC day: ${endTimeFormatted}`);
+      
       // Update our local record FIRST for instant UI feedback
       await db.update(trafficstarCampaigns)
         .set({ 
           active: true, 
           status: 'enabled',
+          scheduleEndTime: endTimeFormatted,
           updatedAt: new Date(),
           lastRequestedAction: 'activate',
           lastRequestedActionAt: new Date() 
@@ -588,13 +596,23 @@ class TrafficStarService {
         if (response.data && response.data.success && response.data.success.includes(id)) {
           console.log(`Campaign ${id} activated successfully via V2 API`);
           
-          // Update database with success status
-          await db.update(trafficstarCampaigns)
-            .set({ 
-              lastRequestedActionSuccess: true,
-              updatedAt: new Date() 
-            })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          // Now set the end time
+          try {
+            // Set end time to end of current day in TrafficStar
+            await this.updateCampaignEndTime(id, endTimeFormatted);
+            console.log(`✅ Set end time to ${endTimeFormatted} for activated campaign ${id}`);
+            
+            // Update database with success status
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                scheduleEndTime: endTimeFormatted,
+                lastRequestedActionSuccess: true,
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          } catch (endTimeError) {
+            console.error(`⚠️ Error setting end time for campaign ${id}:`, endTimeError);
+          }
         } else {
           // Campaign activation failed according to API response
           console.error(`⚠️ Campaign ${id} activation failed according to API response`);
@@ -632,7 +650,8 @@ class TrafficStarService {
         console.log(`Campaign ${id} status after activation attempt: ${JSON.stringify({
           name: updatedCampaign.name,
           active: updatedCampaign.active,
-          status: updatedCampaign.status
+          status: updatedCampaign.status,
+          schedule_end_time: updatedCampaign.schedule_end_time
         })}`);
       } catch (verifyError) {
         console.log(`Unable to verify activation status: ${verifyError}`);
