@@ -5,6 +5,7 @@ import compression from "compression";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
+import { trafficStarService } from "./trafficstar-service";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -128,6 +129,14 @@ app.use((req, res, next) => {
       try {
         await initializeTrafficStar();
         log('TrafficStar API initialized successfully');
+        
+        // Start auto-management of TrafficStar campaigns
+        try {
+          await trafficStarService.scheduleAutoManagement();
+          log('TrafficStar campaign auto-management initialized successfully');
+        } catch (autoManageError) {
+          log(`Error initializing TrafficStar auto-management: ${autoManageError}`);
+        }
       } catch (trafficstarError) {
         log(`Error initializing TrafficStar API: ${trafficstarError}`);
       }

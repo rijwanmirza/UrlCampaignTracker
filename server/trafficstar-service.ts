@@ -468,7 +468,7 @@ class TrafficStarService {
           await db.update(trafficstarCampaigns)
             .set({ 
               lastRequestedActionSuccess: false,
-              lastRequestedActionError: 'Campaign pause failed according to API response',
+              lastVerifiedStatus: 'error',
               updatedAt: new Date() 
             })
             .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
@@ -569,7 +569,7 @@ class TrafficStarService {
           await db.update(trafficstarCampaigns)
             .set({ 
               lastRequestedActionSuccess: false,
-              lastRequestedActionError: 'Campaign activation failed according to API response',
+              lastVerifiedStatus: 'error',
               updatedAt: new Date() 
             })
             .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
