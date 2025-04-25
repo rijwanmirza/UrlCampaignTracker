@@ -1581,6 +1581,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database migration - add TrafficStar fields to campaigns table
+  app.post("/api/system/migrate-trafficstar-fields", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration function
+      const { addTrafficStarFields } = await import("./migrations/add-trafficstar-fields");
+      
+      // Execute the migration
+      const result = await addTrafficStarFields();
+      
+      if (result.success) {
+        console.log("✅ TrafficStar fields migration successful:", result.message);
+        res.status(200).json({
+          message: "TrafficStar fields migration completed successfully",
+          details: result.message
+        });
+      } else {
+        console.error("❌ TrafficStar fields migration failed:", result.message);
+        res.status(500).json({
+          message: "TrafficStar fields migration failed",
+          details: result.message
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add TrafficStar fields:", error);
+      res.status(500).json({ message: "Failed to add TrafficStar fields to campaigns table" });
+    }
+  });
+
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
   // We'll handle the HTTP/2.0 headers in the individual route handlers
