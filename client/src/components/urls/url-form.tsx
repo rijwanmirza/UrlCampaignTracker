@@ -60,6 +60,7 @@ export default function UrlForm({
   // Create or update URL mutation
   const urlMutation = useMutation({
     mutationFn: async (data: UrlFormValues) => {
+      console.log("URL Form - Submitting data:", data);
       if (isEditing && editingUrl) {
         return apiRequest("PUT", `/api/urls/${editingUrl.id}`, data);
       } else {

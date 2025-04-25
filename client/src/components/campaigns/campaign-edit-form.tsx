@@ -91,14 +91,13 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (values: CampaignEditValues) => {
-      const response = await apiRequest(
+      console.log("Updating campaign with values:", values);
+      // Fixed the apiRequest call with the correct parameter order
+      return await apiRequest(
         "PUT",
         `/api/campaigns/${campaign.id}`,
         values
       );
-      
-      const data = await response.json();
-      return data as Campaign;
     },
     onSuccess: (data) => {
       // Invalidate cached campaign data

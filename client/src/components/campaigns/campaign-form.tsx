@@ -74,8 +74,9 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
 
   const createCampaign = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const response = await apiRequest("POST", "/api/campaigns", data);
-      return response.json();
+      console.log("Creating campaign with data:", data);
+      // Fixed the parameter order to match the updated apiRequest function
+      return await apiRequest("POST", "/api/campaigns", data);
     },
     onSuccess: (data: Campaign) => {
       toast({

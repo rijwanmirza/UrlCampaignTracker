@@ -7,28 +7,39 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest<T = Response>(
-  url: string,
+export async function apiRequest<T = any>(
   method: string,
+  url: string,
   data?: unknown | undefined,
 ): Promise<T> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  console.log(`🔍 DEBUG: API Request - ${method} ${url}`, data);
+  
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  
-  // For JSON responses, parse and return the data
-  const contentType = res.headers.get('content-type');
-  if (contentType && contentType.indexOf('application/json') !== -1) {
-    return res.json() as Promise<T>;
+    console.log(`🔍 DEBUG: API Response status: ${res.status}`);
+    
+    await throwIfResNotOk(res);
+    
+    // For JSON responses, parse and return the data
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.indexOf('application/json') !== -1) {
+      const jsonData = await res.json();
+      console.log(`🔍 DEBUG: API Response data:`, jsonData);
+      return jsonData as T;
+    }
+    
+    // For non-JSON responses, return the Response object
+    return res as unknown as T;
+  } catch (error) {
+    console.error(`🔴 ERROR: API Request failed - ${method} ${url}`, error);
+    throw error;
   }
-  
-  // For non-JSON responses, return the Response object
-  return res as unknown as T;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
