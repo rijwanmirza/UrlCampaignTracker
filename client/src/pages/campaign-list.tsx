@@ -47,6 +47,28 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Campaign, CampaignWithUrls } from "@shared/schema";
 import CampaignForm from "@/components/campaigns/campaign-form";
 
+// Calculate total price for a campaign based on all URLs
+const calculateTotalPrice = (campaign: CampaignWithUrls): string => {
+  if (!campaign.pricePerThousand || !campaign.urls || campaign.urls.length === 0) return "0.0000";
+  
+  const pricePerThousand = Number(campaign.pricePerThousand);
+  const totalClicks = campaign.urls.reduce((sum, url) => sum + url.clickLimit, 0);
+  const totalPrice = (pricePerThousand * totalClicks) / 1000;
+  
+  return totalPrice.toFixed(4);
+};
+
+// Calculate remaining price based on clicks already received
+const calculateRemainingPrice = (campaign: CampaignWithUrls): string => {
+  if (!campaign.pricePerThousand || !campaign.urls || campaign.urls.length === 0) return "0.0000";
+  
+  const pricePerThousand = Number(campaign.pricePerThousand);
+  const remainingClicks = campaign.urls.reduce((sum, url) => sum + (url.clickLimit - url.clicks), 0);
+  const remainingPrice = (pricePerThousand * remainingClicks) / 1000;
+  
+  return remainingPrice.toFixed(4);
+};
+
 export default function CampaignList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -220,6 +242,12 @@ export default function CampaignList() {
                             ? parseFloat(campaign.pricePerThousand).toFixed(4) 
                             : (Number(campaign.pricePerThousand || 0)).toFixed(4)}</span>
                         </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500">Campaign Price: </span>
+                          <span className="font-medium">
+                            ${calculateRemainingPrice(campaign)}/${calculateTotalPrice(campaign)}
+                          </span>
+                        </div>
                       </div>
                     </CardContent>
                     <CardContent className="pt-0 pb-4 border-t flex justify-between">
@@ -276,6 +304,7 @@ export default function CampaignList() {
                     <TableHead>URLs (Active/Total)</TableHead>
                     <TableHead>Multiplier</TableHead>
                     <TableHead>Price per 1000</TableHead>
+                    <TableHead>Campaign Price</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -325,6 +354,9 @@ export default function CampaignList() {
                           ${typeof campaign.pricePerThousand === 'string' 
                             ? parseFloat(campaign.pricePerThousand).toFixed(4) 
                             : (Number(campaign.pricePerThousand || 0)).toFixed(4)}
+                        </TableCell>
+                        <TableCell>
+                          ${calculateRemainingPrice(campaign)}/${calculateTotalPrice(campaign)}
                         </TableCell>
                         <TableCell className="text-gray-500 text-sm">
                           {formatDate(campaign.createdAt)}
