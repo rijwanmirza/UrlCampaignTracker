@@ -4,8 +4,9 @@
  */
 import axios from 'axios';
 import { db } from './db';
-import { trafficstarCredentials, trafficstarCampaigns } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { trafficstarCredentials, trafficstarCampaigns, campaigns } from '@shared/schema';
+import { eq, sql } from 'drizzle-orm';
+import { storage } from './storage';
 
 // Try a few different API base URLs
 // Different TrafficStar API versions might have different URL structures
@@ -905,6 +906,142 @@ class TrafficStarService {
     } catch (error) {
       console.error('Error syncing campaigns to database:', error);
       // Continue operation rather than failing completely
+    }
+  }
+
+  /**
+   * Auto-manage TrafficStar campaigns based on application parameters
+   * Implementation of the requirement to automatically manage linked TrafficStar campaigns
+   */
+  async autoManageCampaigns(): Promise<void> {
+    try {
+      // Find all campaigns with auto-management enabled
+      const campaignsToManage = await db
+        .select()
+        .from(campaigns)
+        .where(
+          sql`${campaigns.autoManageTrafficstar} = true AND ${campaigns.trafficstarCampaignId} IS NOT NULL`
+        );
+      
+      if (campaignsToManage.length === 0) {
+        console.log('No campaigns with auto-management enabled found');
+        return; // No campaigns to auto-manage
+      }
+      
+      console.log(`Found ${campaignsToManage.length} campaigns with auto-management enabled`);
+      
+      for (const campaign of campaignsToManage) {
+        try {
+          await this.autoManageCampaign(campaign);
+        } catch (error) {
+          console.error(`Error auto-managing campaign ${campaign.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in autoManageCampaigns:', error);
+    }
+  }
+  
+  /**
+   * Auto-manage a single campaign based on its settings
+   */
+  private async autoManageCampaign(campaign: any): Promise<void> {
+    try {
+      // Skip if no TrafficStar campaign ID
+      if (!campaign.trafficstarCampaignId) {
+        console.log(`Campaign ${campaign.id} has no TrafficStar campaign ID, skipping auto-management`);
+        return;
+      }
+      
+      // Get the campaign's URLs to calculate remaining clicks
+      const urlsResult = await storage.getUrls(campaign.id);
+      const urls = urlsResult.filter(url => url.isActive);
+      
+      // Calculate remaining clicks across all active URLs
+      const totalRemainingClicks = urls.reduce((total, url) => {
+        const remainingClicks = url.clickLimit - url.clicks;
+        return total + (remainingClicks > 0 ? remainingClicks : 0);
+      }, 0);
+      
+      console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
+      
+      // Get current date in UTC to check if it's a new day
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      const lastSyncDate = campaign.lastTrafficstarSync ? 
+        new Date(campaign.lastTrafficstarSync).toISOString().split('T')[0] : null;
+      
+      // Check if we need to update daily budget (on UTC date change)
+      if (!lastSyncDate || currentUtcDate !== lastSyncDate) {
+        console.log(`Setting daily budget for campaign ${campaign.id} to $10.15 (UTC date changed)`);
+        
+        // Set daily budget to $10.15 as per requirements
+        try {
+          await this.updateCampaignDailyBudget(
+            isNaN(Number(campaign.trafficstarCampaignId)) ? 
+              parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+              Number(campaign.trafficstarCampaignId), 
+            10.15
+          );
+          
+          // Update last sync time in the database
+          await db.update(campaigns)
+            .set({
+              lastTrafficstarSync: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+          
+          console.log(`Successfully updated daily budget for campaign ${campaign.id}`);
+        } catch (error) {
+          console.error(`Error updating daily budget for campaign ${campaign.id}:`, error);
+        }
+      }
+      
+      // Check if we need to activate the campaign (remaining clicks > 15,000)
+      if (totalRemainingClicks > 15000) {
+        console.log(`Activating TrafficStar campaign for campaign ${campaign.id} (${totalRemainingClicks} remaining clicks > 15,000)`);
+        
+        try {
+          // Activate the campaign
+          await this.activateCampaign(
+            isNaN(Number(campaign.trafficstarCampaignId)) ? 
+              parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+              Number(campaign.trafficstarCampaignId)
+          );
+          console.log(`Successfully activated TrafficStar campaign for campaign ${campaign.id}`);
+        } catch (error) {
+          console.error(`Error activating TrafficStar campaign for campaign ${campaign.id}:`, error);
+        }
+      } else {
+        console.log(`Campaign ${campaign.id} has only ${totalRemainingClicks} remaining clicks, which is less than 15,000 threshold`);
+      }
+    } catch (error) {
+      console.error(`Error auto-managing campaign ${campaign.id}:`, error);
+    }
+  }
+  
+  /**
+   * Scheduled function to run daily budget updates and start campaigns as needed
+   * This should be called on application startup and at appropriate intervals
+   */
+  async scheduleAutoManagement(): Promise<void> {
+    try {
+      // Run initial auto-management
+      await this.autoManageCampaigns();
+      
+      // Schedule to run every hour
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled auto-management for TrafficStar campaigns');
+          await this.autoManageCampaigns();
+        } catch (error) {
+          console.error('Error in scheduled auto-management:', error);
+        }
+      }, 60 * 60 * 1000); // Every hour
+      
+      console.log('TrafficStar auto-management scheduler initialized');
+    } catch (error) {
+      console.error('Error scheduling auto-management:', error);
     }
   }
 
