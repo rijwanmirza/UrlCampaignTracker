@@ -47,23 +47,29 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Campaign, CampaignWithUrls } from "@shared/schema";
 import CampaignForm from "@/components/campaigns/campaign-form";
 
-// Calculate total price for a campaign based on all URLs
+// Calculate total price for a campaign based only on active URLs
 const calculateTotalPrice = (campaign: CampaignWithUrls): string => {
   if (!campaign.pricePerThousand || !campaign.urls || campaign.urls.length === 0) return "0.0000";
   
+  // Only consider active URLs
+  const activeUrls = campaign.urls.filter(url => url.isActive);
+  
   const pricePerThousand = Number(campaign.pricePerThousand);
-  const totalClicks = campaign.urls.reduce((sum, url) => sum + url.clickLimit, 0);
+  const totalClicks = activeUrls.reduce((sum, url) => sum + url.clickLimit, 0);
   const totalPrice = (pricePerThousand * totalClicks) / 1000;
   
   return totalPrice.toFixed(4);
 };
 
-// Calculate remaining price based on clicks already received
+// Calculate remaining price based on clicks already received, only for active URLs
 const calculateRemainingPrice = (campaign: CampaignWithUrls): string => {
   if (!campaign.pricePerThousand || !campaign.urls || campaign.urls.length === 0) return "0.0000";
   
+  // Only consider active URLs
+  const activeUrls = campaign.urls.filter(url => url.isActive);
+  
   const pricePerThousand = Number(campaign.pricePerThousand);
-  const remainingClicks = campaign.urls.reduce((sum, url) => sum + (url.clickLimit - url.clicks), 0);
+  const remainingClicks = activeUrls.reduce((sum, url) => sum + (url.clickLimit - url.clicks), 0);
   const remainingPrice = (pricePerThousand * remainingClicks) / 1000;
   
   return remainingPrice.toFixed(4);
