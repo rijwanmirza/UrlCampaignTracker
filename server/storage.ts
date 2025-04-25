@@ -115,19 +115,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCampaigns(): Promise<CampaignWithUrls[]> {
-    const campaignsResult = await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
-    
-    const campaignsWithUrls: CampaignWithUrls[] = [];
-    
-    for (const campaign of campaignsResult) {
-      const urls = await this.getUrls(campaign.id);
-      campaignsWithUrls.push({
-        ...campaign,
-        urls
-      });
+    // Use a safer approach to handle missing columns
+    try {
+      // First try to fetch all columns
+      const campaignsResult = await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
+      
+      const campaignsWithUrls: CampaignWithUrls[] = [];
+      
+      for (const campaign of campaignsResult) {
+        const urls = await this.getUrls(campaign.id);
+        campaignsWithUrls.push({
+          ...campaign,
+          urls
+        });
+      }
+      
+      return campaignsWithUrls;
+    } catch (error) {
+      // If we get a column does not exist error, fall back to selecting only the base columns
+      if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
+        console.log('⚠️ Falling back to base columns for campaigns query as schema migration is pending');
+        
+        // Explicitly select only the columns we know exist in the original schema
+        const campaignsResult = await db.select({
+          id: campaigns.id,
+          name: campaigns.name,
+          redirectMethod: campaigns.redirectMethod,
+          customPath: campaigns.customPath,
+          multiplier: campaigns.multiplier,
+          pricePerThousand: campaigns.pricePerThousand,
+          createdAt: campaigns.createdAt,
+          updatedAt: campaigns.updatedAt
+        }).from(campaigns).orderBy(desc(campaigns.createdAt));
+        
+        const campaignsWithUrls: CampaignWithUrls[] = [];
+        
+        for (const campaign of campaignsResult) {
+          const urls = await this.getUrls(campaign.id);
+          // Add default values for new fields
+          campaignsWithUrls.push({
+            ...campaign,
+            trafficstarCampaignId: null as any, // Type assertion to handle missing field
+            autoManageTrafficstar: false as any, // Type assertion to handle missing field
+            lastTrafficstarSync: null as any, // Type assertion to handle missing field
+            urls
+          });
+        }
+        
+        return campaignsWithUrls;
+      }
+      
+      // For other errors, rethrow
+      throw error;
     }
-    
-    return campaignsWithUrls;
   }
 
   async getCampaign(id: number): Promise<CampaignWithUrls | undefined> {
@@ -148,39 +188,118 @@ export class DatabaseStorage implements IStorage {
       };
     }
     
-    // Cache miss - fetch from database
-    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
-    if (!campaign) return undefined;
-    
-    // Add to cache for future requests
-    this.campaignCache.set(id, {
-      lastUpdated: now,
-      campaign
-    });
-    
-    const urls = await this.getUrls(id);
-    return {
-      ...campaign,
-      urls
-    };
+    try {
+      // Cache miss - fetch from database
+      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+      if (!campaign) return undefined;
+      
+      // Add to cache for future requests
+      this.campaignCache.set(id, {
+        lastUpdated: now,
+        campaign
+      });
+      
+      const urls = await this.getUrls(id);
+      return {
+        ...campaign,
+        urls
+      };
+    } catch (error) {
+      // If we get a column does not exist error, fall back to selecting only the base columns
+      if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
+        console.log('⚠️ Falling back to base columns for campaign query as schema migration is pending');
+        
+        // Explicitly select only the columns we know exist in the original schema
+        const [campaign] = await db.select({
+          id: campaigns.id,
+          name: campaigns.name,
+          redirectMethod: campaigns.redirectMethod,
+          customPath: campaigns.customPath,
+          multiplier: campaigns.multiplier,
+          pricePerThousand: campaigns.pricePerThousand,
+          createdAt: campaigns.createdAt,
+          updatedAt: campaigns.updatedAt
+        }).from(campaigns).where(eq(campaigns.id, id));
+        
+        if (!campaign) return undefined;
+        
+        // Add to cache for future requests with default values for new fields
+        const campaignWithDefaults = {
+          ...campaign,
+          trafficstarCampaignId: null as any,
+          autoManageTrafficstar: false as any,
+          lastTrafficstarSync: null as any
+        };
+        
+        this.campaignCache.set(id, {
+          lastUpdated: now,
+          campaign: campaignWithDefaults
+        });
+        
+        const urls = await this.getUrls(id);
+        return {
+          ...campaignWithDefaults,
+          urls
+        };
+      }
+      
+      // For other errors, rethrow
+      throw error;
+    }
   }
 
   async getCampaignByCustomPath(customPath: string): Promise<CampaignWithUrls | undefined> {
     // Skip cache entirely for custom paths
     // Always do a fresh database lookup
     
-    // Direct database lookup to ensure fresh data
-    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.customPath, customPath));
-    if (!campaign) return undefined;
-    
-    // Get fresh URLs for this campaign
-    const urls = await this.getUrls(campaign.id);
-    
-    // Return fresh data
-    return {
-      ...campaign,
-      urls
-    };
+    try {
+      // Direct database lookup to ensure fresh data
+      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.customPath, customPath));
+      if (!campaign) return undefined;
+      
+      // Get fresh URLs for this campaign
+      const urls = await this.getUrls(campaign.id);
+      
+      // Return fresh data
+      return {
+        ...campaign,
+        urls
+      };
+    } catch (error) {
+      // If we get a column does not exist error, fall back to selecting only the base columns
+      if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
+        console.log('⚠️ Falling back to base columns for custom path query as schema migration is pending');
+        
+        // Explicitly select only the columns we know exist in the original schema
+        const [campaign] = await db.select({
+          id: campaigns.id,
+          name: campaigns.name,
+          redirectMethod: campaigns.redirectMethod,
+          customPath: campaigns.customPath,
+          multiplier: campaigns.multiplier,
+          pricePerThousand: campaigns.pricePerThousand,
+          createdAt: campaigns.createdAt,
+          updatedAt: campaigns.updatedAt
+        }).from(campaigns).where(eq(campaigns.customPath, customPath));
+        
+        if (!campaign) return undefined;
+        
+        // Get fresh URLs for this campaign
+        const urls = await this.getUrls(campaign.id);
+        
+        // Return fresh data with default values for new fields
+        return {
+          ...campaign,
+          trafficstarCampaignId: null as any,
+          autoManageTrafficstar: false as any, 
+          lastTrafficstarSync: null as any,
+          urls
+        };
+      }
+      
+      // For other errors, rethrow
+      throw error;
+    }
   }
 
   async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
