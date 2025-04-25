@@ -1417,11 +1417,12 @@ class TrafficStarService {
       const now = new Date();
       const todayUtc = now.toISOString().split('T')[0];
       
-      // First try the finance/stats endpoint which includes daily spending by campaign
+      // First try the v1/stats/advertiser/day endpoint which is specifically for daily spending
       try {
-        console.log(`Trying to get campaign ${id} daily spending using finance/stats endpoint`);
+        console.log(`Trying to get campaign ${id} daily spending using v1/stats/advertiser/day endpoint`);
         
-        const financeStatsResponse = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/finance/stats`, {
+        // Format for this API is from the documentation you shared
+        const statsResponse = await axios.get(`https://api.trafficstars.com/v1/stats/advertiser/day`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -1429,38 +1430,34 @@ class TrafficStarService {
           params: {
             campaign_id: id,
             date_from: todayUtc,
-            date_to: todayUtc,
-            group_by: 'day'
+            date_until: new Date(new Date(todayUtc).getTime() + 86400000).toISOString().split('T')[0], // tomorrow
+            total: true
           },
           timeout: 20000 // 20 second timeout for potentially slow API
         });
         
-        console.log(`Finance stats response for campaign ${id}:`, JSON.stringify(financeStatsResponse.data).substring(0, 300));
+        console.log(`Advertiser stats response for campaign ${id}:`, JSON.stringify(statsResponse.data).substring(0, 500));
         
-        // Process finance stats data which should include spending
-        if (financeStatsResponse.data && (Array.isArray(financeStatsResponse.data) || financeStatsResponse.data.data)) {
-          const statsData = Array.isArray(financeStatsResponse.data) 
-            ? financeStatsResponse.data 
-            : financeStatsResponse.data.data;
+        // Check if we have any data in the response
+        if (statsResponse.data && statsResponse.data.response) {
+          const responseData = statsResponse.data.response;
           
+          // Process the data - extract today's spending
           let daily = 0;
           
-          if (Array.isArray(statsData) && statsData.length > 0) {
-            // Find today's data or use the first entry
-            const todayData = statsData.find((item: any) => 
-              item.day === todayUtc || item.date === todayUtc
-            ) || statsData[0];
+          if (Array.isArray(responseData) && responseData.length > 0) {
+            // Find today's data or use the first entry if it's the only one
+            // The date format in this API response is "2025-04-25T00:00:00Z"
+            const todayData = responseData.find((item: any) => 
+              item.date && item.date.startsWith(todayUtc)
+            ) || responseData[0];
             
-            daily = parseFloat(
-              todayData.amount || 
-              todayData.spent || 
-              todayData.cost || 
-              todayData.total || 
-              '0'
-            );
+            // According to docs, price field contains the spending amount
+            daily = parseFloat(todayData.price || '0');
+            console.log(`Found daily spending for campaign ${id} in advertiser stats: ${daily} (from price field)`);
           }
           
-          // Get max_daily budget from campaign details for complete data
+          // Get max_daily budget from campaign details separately
           let maxDaily = 0;
           try {
             const campaignResponse = await axios.get(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
@@ -1473,6 +1470,7 @@ class TrafficStarService {
             
             if (campaignResponse.data && campaignResponse.data.max_daily) {
               maxDaily = parseFloat(campaignResponse.data.max_daily.toString());
+              console.log(`Found max daily budget for campaign ${id}: ${maxDaily}`);
             }
           } catch (campaignError) {
             console.error(`Failed to get max daily budget for campaign ${id}:`, campaignError);
@@ -1485,8 +1483,8 @@ class TrafficStarService {
             maxDaily
           };
         }
-      } catch (financeError) {
-        console.error(`Finance stats endpoint failed for campaign ${id}:`, financeError);
+      } catch (statsError) {
+        console.error(`Advertiser stats endpoint failed for campaign ${id}:`, statsError);
       }
       
       // Second, try the advertiser/statistics endpoint
