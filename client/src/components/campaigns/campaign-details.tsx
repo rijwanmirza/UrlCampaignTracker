@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clipboard, ExternalLink, AlertCircle } from "lucide-react";
+import { Clipboard, ExternalLink, AlertCircle, LineChart, Loader2, DollarSign, RefreshCw } from "lucide-react";
 import { FormattedCampaign } from "@/lib/types";
 import { RedirectMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,40 @@ import CampaignDeleteButton from "./campaign-delete-button";
 import { useLocation } from "wouter";
 import RunMigrationButton from "@/components/RunMigrationButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
+}
+
+// Define the spent value stats type for TrafficStar API integration
+interface SpentValueStats {
+  campaignId: number;
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  dailyStats: Array<{
+    date: string;
+    impressions: number;
+    clicks: number;
+    leads: number;
+    price: number;
+    ecpm: number;
+    ecpc: number;
+    ecpa: number;
+    ctr: number;
+  }>;
+  totals: {
+    spent: number;
+    impressions: number;
+    clicks: number;
+    leads: number;
+    ecpm: number;
+    ecpc: number;
+    ecpa: number;
+    ctr: number;
+  };
 }
 
 export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
@@ -22,6 +53,9 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
   const [copied, setCopied] = useState(false);
   const [, navigate] = useLocation();
   const [migrationNeeded, setMigrationNeeded] = useState<boolean>(false);
+  const [spentValueData, setSpentValueData] = useState<SpentValueStats | null>(null);
+  const [isLoadingSpentValue, setIsLoadingSpentValue] = useState(false);
+  const [spentValueError, setSpentValueError] = useState<string | null>(null);
 
   const redirectMethodLabels: Record<string, string> = {
     [RedirectMethod.DIRECT]: "Direct Redirect",
@@ -58,7 +92,55 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
       });
   };
 
-  // Check if migrations are needed when component mounts
+  // Function to fetch campaign spent values from the TrafficStar API
+  const fetchCampaignSpentValues = async (campaignId: number | string) => {
+    if (!campaignId) return;
+    
+    setIsLoadingSpentValue(true);
+    setSpentValueError(null);
+    
+    try {
+      // Get current UTC date
+      const now = new Date();
+      // Default dates: 7 days ago to today (UTC)
+      const today = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      // Calculate 7 days ago in UTC
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(now.getDate() - 7);
+      const fromDate = sevenDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      // Create query parameters
+      const params = new URLSearchParams();
+      params.append('dateFrom', fromDate);
+      params.append('dateUntil', today);
+      
+      // Fetch spent value data
+      const response = await fetch(`/api/trafficstar/campaigns/${campaignId}/spent?${params.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch spent value data');
+      }
+      
+      const spentData: SpentValueStats = await response.json();
+      setSpentValueData(spentData);
+      
+    } catch (error) {
+      console.error('Error fetching campaign spent values:', error);
+      setSpentValueError(error instanceof Error ? error.message : 'An unknown error occurred');
+      
+      toast({
+        title: 'Failed to Fetch Campaign Costs',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingSpentValue(false);
+    }
+  };
+
+  // Check if migrations are needed and fetch campaign spent values when component mounts
   useEffect(() => {
     const checkMigrations = async () => {
       try {
@@ -80,7 +162,12 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
     };
     
     checkMigrations();
-  }, []);
+    
+    // If campaign has a TrafficStar ID, fetch the spent values automatically
+    if (campaign.trafficstarCampaignId) {
+      fetchCampaignSpentValues(campaign.trafficstarCampaignId);
+    }
+  }, [campaign.trafficstarCampaignId]);
   
   return (
     <div className="space-y-4 mb-6">
@@ -270,6 +357,132 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Campaign TrafficStar Stats */}
+      {campaign.trafficstarCampaignId && (
+        <div className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <LineChart className="h-5 w-5 text-blue-600" />
+                    Campaign Statistics
+                  </CardTitle>
+                  <CardDescription>
+                    TrafficStar campaign costs and performance (last 7 days)
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => fetchCampaignSpentValues(campaign.trafficstarCampaignId)}
+                  disabled={isLoadingSpentValue}
+                >
+                  {isLoadingSpentValue ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Refresh
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingSpentValue ? (
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin mr-2" />
+                  <span>Loading campaign statistics...</span>
+                </div>
+              ) : spentValueError ? (
+                <div className="p-4 border border-red-200 rounded-md bg-red-50 text-red-700 flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold">Error retrieving data</h4>
+                    <p>{spentValueError}</p>
+                  </div>
+                </div>
+              ) : spentValueData ? (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="p-4 border rounded-md">
+                      <div className="text-sm text-muted-foreground">Total Spent</div>
+                      <div className="text-2xl font-bold text-blue-700 flex items-center">
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        {spentValueData.totals.spent.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-sm text-muted-foreground">Impressions</div>
+                      <div className="text-2xl font-bold">{spentValueData.totals.impressions.toLocaleString()}</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-sm text-muted-foreground">Clicks</div>
+                      <div className="text-2xl font-bold">{spentValueData.totals.clicks.toLocaleString()}</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-sm text-muted-foreground">eCPM</div>
+                      <div className="text-2xl font-bold">${spentValueData.totals.ecpm.toFixed(4)}</div>
+                    </div>
+                  </div>
+                  
+                  <h4 className="font-medium mb-2">Daily Statistics</h4>
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Impressions</TableHead>
+                          <TableHead className="text-right">Clicks</TableHead>
+                          <TableHead className="text-right">CTR</TableHead>
+                          <TableHead className="text-right">Cost (USD)</TableHead>
+                          <TableHead className="text-right">eCPM</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {spentValueData.dailyStats.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4">
+                              No data available for the selected date range
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          spentValueData.dailyStats.map((day, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{day.date ? new Date(day.date).toLocaleDateString() : 'N/A'}</TableCell>
+                              <TableCell className="text-right">{day.impressions.toLocaleString()}</TableCell>
+                              <TableCell className="text-right">{day.clicks.toLocaleString()}</TableCell>
+                              <TableCell className="text-right">{day.ctr.toFixed(2)}%</TableCell>
+                              <TableCell className="text-right">${parseFloat(day.price.toString()).toFixed(2)}</TableCell>
+                              <TableCell className="text-right">${parseFloat(day.ecpm.toString()).toFixed(4)}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Date range: {spentValueData.dateRange.from} to {spentValueData.dateRange.to} (UTC)
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center items-center py-8 flex-col text-center space-y-2">
+                  <LineChart className="h-10 w-10 text-gray-300" />
+                  <div>
+                    <p className="text-muted-foreground">Campaign statistics not loaded</p>
+                    <p className="text-sm text-muted-foreground">Click refresh to load stats for TrafficStar campaign #{campaign.trafficstarCampaignId}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
