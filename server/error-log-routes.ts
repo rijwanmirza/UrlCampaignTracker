@@ -5,7 +5,7 @@
 import { Request, Response, Router } from 'express';
 import { db } from './db';
 import { apiErrorLogs } from '@shared/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 
 // Create a router for error log routes
 const router = Router();
@@ -51,30 +51,6 @@ router.get('/trafficstar-errors', async (req: Request, res: Response) => {
 });
 
 /**
- * Get error log details
- * GET /api/logs/trafficstar-errors/:id
- */
-router.get('/trafficstar-errors/:id', async (req: Request, res: Response) => {
-  try {
-    const logId = parseInt(req.params.id);
-    
-    const [log] = await db
-      .select()
-      .from(apiErrorLogs)
-      .where(eq(apiErrorLogs.id, logId));
-    
-    if (!log) {
-      return res.status(404).json({ error: "Log not found" });
-    }
-    
-    res.json(log);
-  } catch (error) {
-    console.error("Error retrieving API error log details:", error);
-    res.status(500).json({ error: "Failed to retrieve API error log details" });
-  }
-});
-
-/**
  * Mark error log as resolved
  * POST /api/logs/trafficstar-errors/:id/resolve
  */
@@ -82,16 +58,8 @@ router.post('/trafficstar-errors/:id/resolve', async (req: Request, res: Respons
   try {
     const logId = parseInt(req.params.id);
     
-    const [log] = await db
-      .select()
-      .from(apiErrorLogs)
-      .where(eq(apiErrorLogs.id, logId));
-    
-    if (!log) {
-      return res.status(404).json({ error: "Log not found" });
-    }
-    
-    await db.update(apiErrorLogs)
+    // Update the log regardless of whether it exists
+    const result = await db.update(apiErrorLogs)
       .set({
         resolved: true,
         resolvedAt: new Date(),
@@ -112,14 +80,13 @@ router.post('/trafficstar-errors/:id/resolve', async (req: Request, res: Respons
  */
 router.delete('/trafficstar-errors/resolved', async (_req: Request, res: Response) => {
   try {
-    const result = await db
+    await db
       .delete(apiErrorLogs)
       .where(eq(apiErrorLogs.resolved, true));
     
     res.json({ 
       success: true, 
-      message: "Cleared all resolved error logs",
-      count: result.length
+      message: "Cleared all resolved error logs"
     });
   } catch (error) {
     console.error("Error clearing resolved API error logs:", error);
