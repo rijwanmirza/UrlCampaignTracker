@@ -275,6 +275,7 @@ export default function CampaignList() {
                     <TableHead>Redirect Method</TableHead>
                     <TableHead>URLs (Active/Total)</TableHead>
                     <TableHead>Multiplier</TableHead>
+                    <TableHead>Price per 1000</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -282,7 +283,7 @@ export default function CampaignList() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
+                      <TableCell colSpan={9} className="text-center h-24">
                         <div className="flex justify-center">
                           <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary"></div>
                         </div>
@@ -290,7 +291,7 @@ export default function CampaignList() {
                     </TableRow>
                   ) : filteredCampaigns.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
+                      <TableCell colSpan={9} className="text-center h-24">
                         <div className="flex flex-col items-center">
                           <p className="text-gray-500 mb-4">No campaigns found</p>
                           <Button onClick={() => setShowCreateModal(true)}>
@@ -319,6 +320,11 @@ export default function CampaignList() {
                         </TableCell>
                         <TableCell>
                           {campaign.multiplier}x
+                        </TableCell>
+                        <TableCell>
+                          ${typeof campaign.pricePerThousand === 'string' 
+                            ? parseFloat(campaign.pricePerThousand).toFixed(4) 
+                            : (Number(campaign.pricePerThousand || 0)).toFixed(4)}
                         </TableCell>
                         <TableCell className="text-gray-500 text-sm">
                           {formatDate(campaign.createdAt)}
