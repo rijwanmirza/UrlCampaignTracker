@@ -548,7 +548,7 @@ export default function TrafficstarPage() {
             </div>
           )}
           
-          {spentValueData && (
+          {spentValueData && spentValueData.totals && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Campaign Spend Results</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -584,7 +584,7 @@ export default function TrafficstarPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {spentValueData.dailyStats.length === 0 ? (
+                    {!spentValueData.dailyStats || spentValueData.dailyStats.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-4">
                           No data available for the selected date range
@@ -605,9 +605,11 @@ export default function TrafficstarPage() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="text-sm text-muted-foreground mt-2">
-                Date range: {spentValueData.dateRange.from} to {spentValueData.dateRange.to}
-              </div>
+              {spentValueData.dateRange && (
+                <div className="text-sm text-muted-foreground mt-2">
+                  Date range: {spentValueData.dateRange.from} to {spentValueData.dateRange.to}
+                </div>
+              )}
             </div>
           )}
         </CardContent>
