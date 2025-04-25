@@ -608,8 +608,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use our optimized method to get a URL based on weighted distribution
       const selectedUrl = await storage.getRandomWeightedUrl(campaign.id);
       
+      // If no active URLs are available, use the first URL in the campaign regardless of status
       if (!selectedUrl) {
-        return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
+        // Get all URLs for this campaign even if they're completed
+        const allCampaignUrls = await storage.getUrls(campaign.id);
+        
+        // If there are no URLs at all, show an error
+        if (!allCampaignUrls || allCampaignUrls.length === 0) {
+          return res.status(404).json({ message: "No URLs found in this campaign" });
+        }
+        
+        // Otherwise, use the first URL in the campaign regardless of status
+        // Don't increment clicks since it's already completed its limit
+        const targetUrl = allCampaignUrls[0].targetUrl;
+        
+        // Handle the redirect based on the campaign's redirect method
+        switch (campaign.redirectMethod) {
+          case "meta_refresh":
+            // Meta refresh redirect - completely invisible
+            res.send(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta http-equiv="refresh" content="0;url=${targetUrl}">
+                  <title></title>
+                  <style>body{display:none}</style>
+                </head>
+                <body></body>
+              </html>
+            `);
+            break;
+            
+          case "double_meta_refresh":
+            // Use direct redirect instead since we can't use double for a completed URL
+            res.redirect(targetUrl);
+            break;
+            
+          case "http_307":
+            // HTTP 307 Temporary Redirect
+            res.status(307).header("Location", targetUrl).end();
+            break;
+            
+          case "http2_307_temporary":
+            // Ultra-fast HTTP/2.0 307 Temporary Redirect
+            res.removeHeader('X-Powered-By');
+            res.setHeader("location", targetUrl);
+            res.status(307).end();
+            break;
+            
+          case "direct":
+          default:
+            // Standard redirect
+            res.redirect(targetUrl);
+            break;
+        }
+        
+        return; // End processing here
       }
       
       // Increment click count
