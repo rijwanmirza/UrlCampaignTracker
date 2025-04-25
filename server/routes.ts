@@ -599,19 +599,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid custom path" });
       }
       
-      // Get the campaign by custom path
+      console.log(`Processing custom path request for: ${customPath}`);
+      
+      // Get the campaign by custom path with fresh database lookup
       const campaign = await storage.getCampaignByCustomPath(customPath);
       if (!campaign) {
+        console.log(`Campaign not found for custom path: ${customPath}`);
         return res.status(404).json({ message: "Campaign not found" });
       }
+      
+      console.log(`Found campaign ID ${campaign.id} for custom path: ${customPath}`);
+      console.log(`Campaign has ${campaign.urls.length} total URLs`);
+      console.log(`Campaign has ${campaign.urls.filter(url => url.isActive).length} active URLs`);
       
       // Use our optimized method to get a URL based on weighted distribution
       const selectedUrl = await storage.getRandomWeightedUrl(campaign.id);
       
       // If no active URLs are available, show an error message
       if (!selectedUrl) {
+        console.log(`No active URLs available for campaign ID ${campaign.id}`);
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
       }
+      
+      console.log(`Selected URL ID ${selectedUrl.id} (${selectedUrl.name}) for redirect`);
       
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);

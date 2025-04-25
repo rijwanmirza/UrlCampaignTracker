@@ -166,32 +166,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCampaignByCustomPath(customPath: string): Promise<CampaignWithUrls | undefined> {
-    // Check custom path cache for faster lookups
-    const cachedPath = this.customPathCache.get(customPath);
-    const now = Date.now();
+    // Skip cache entirely for custom paths
+    // Always do a fresh database lookup
     
-    if (cachedPath && (now - cachedPath.lastUpdated < this.cacheTTL)) {
-      // We have the campaign ID in cache, use it to get the campaign
-      return this.getCampaign(cachedPath.campaignId);
-    }
-    
-    // Cache miss - lookup in database
+    // Direct database lookup to ensure fresh data
     const [campaign] = await db.select().from(campaigns).where(eq(campaigns.customPath, customPath));
     if (!campaign) return undefined;
     
-    // Add to path cache for future lookups
-    this.customPathCache.set(customPath, {
-      lastUpdated: now,
-      campaignId: campaign.id
-    });
-    
-    // Also add to campaign cache
-    this.campaignCache.set(campaign.id, {
-      lastUpdated: now,
-      campaign
-    });
-    
+    // Get fresh URLs for this campaign
     const urls = await this.getUrls(campaign.id);
+    
+    // Return fresh data
     return {
       ...campaign,
       urls
