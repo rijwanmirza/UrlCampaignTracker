@@ -86,6 +86,11 @@ export default function CampaignUrls({ campaignId, urls, onRefresh, campaign }: 
       url.name.toLowerCase().includes(search.toLowerCase()) ||
       url.targetUrl.toLowerCase().includes(search.toLowerCase());
     
+    // ALWAYS exclude completed URLs from campaign view
+    if (url.status === 'completed') {
+      return false;
+    }
+    
     // Apply status filter
     let matchesStatus = true;
     if (statusFilter !== "all") {
@@ -311,7 +316,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh, campaign }: 
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="paused">Paused</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                {/* Completed URLs are not shown in campaign views */}
               </SelectContent>
             </Select>
             
@@ -376,7 +381,7 @@ export default function CampaignUrls({ campaignId, urls, onRefresh, campaign }: 
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="paused">Paused</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              {/* Completed URLs are not shown in campaign views */}
             </SelectContent>
           </Select>
           
