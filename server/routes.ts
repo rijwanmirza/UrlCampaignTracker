@@ -1462,7 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         await db.update(trafficstarCampaigns)
           .set({ 
-            maxDaily: maxDaily,
+            maxDaily: maxDaily.toString(), // Convert to string for DB numeric type
             lastBudgetUpdate: new Date(),
             lastBudgetUpdateValue: maxDaily.toString(), // Store the exact value we're setting
             updatedAt: new Date() 
