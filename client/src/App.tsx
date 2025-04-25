@@ -12,19 +12,38 @@ import RedirectTest from "@/pages/redirect-test";
 import GmailSettingsPage from "@/pages/gmail-settings";
 import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
-import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-const ProtectedAppRoutes = () => {
+// Simple app without authentication
+function Router() {
+  const [location] = useLocation();
   const isMobile = useIsMobile();
   
+  // Check if current location is a redirect route
+  const isRedirectRoute = 
+    location.startsWith("/r/") || 
+    location.startsWith("/views/") || 
+    location.startsWith("/c/");
+  
+  // For redirect routes (no layout)
+  if (isRedirectRoute) {
+    return (
+      <Switch>
+        <Route path="/r/:campaignId/:urlId" component={RedirectPage} />
+        <Route path="/r/bridge/:campaignId/:urlId" component={RedirectPage} />
+        <Route path="/views/:customPath" component={RedirectPage} />
+        <Route path="/c/:campaignId" component={RedirectPage} />
+      </Switch>
+    );
+  }
+  
+  // For main app routes (with layout)
   return (
     <AppLayout>
       <Switch>
         <Route path="/" component={() => <Redirect to="/campaigns" />} />
+        <Route path="/login" component={() => <Redirect to="/campaigns" />} />
         <Route path="/campaigns/:id" component={Home} />
         <Route path="/campaigns" component={CampaignList} />
         <Route path="/urls">
@@ -38,46 +57,13 @@ const ProtectedAppRoutes = () => {
       </Switch>
     </AppLayout>
   );
-};
-
-function Router() {
-  const [location] = useLocation();
-  
-  // Check if current location is a redirect route
-  const isRedirectRoute = 
-    location.startsWith("/r/") || 
-    location.startsWith("/views/") || 
-    location.startsWith("/c/");
-  
-  // Render different route sets based on the current location
-  if (isRedirectRoute) {
-    // Standalone routes without layout/navbar
-    return (
-      <Switch>
-        <Route path="/r/:campaignId/:urlId" component={RedirectPage} />
-        <Route path="/r/bridge/:campaignId/:urlId" component={RedirectPage} />
-        <Route path="/views/:customPath" component={RedirectPage} />
-        <Route path="/c/:campaignId" component={RedirectPage} />
-      </Switch>
-    );
-  }
-  
-  // App routes with navbar
-  return (
-    <Switch>
-      <Route path="/login" component={LoginPage} />
-      <ProtectedRoute path="/" component={ProtectedAppRoutes} />
-    </Switch>
-  );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
+      <Router />
+      <Toaster />
     </QueryClientProvider>
   );
 }

@@ -10,31 +10,14 @@ declare module 'express-session' {
   }
 }
 
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.session.user) {
-    return res.status(401).json({ 
-      message: 'Unauthorized',
-      isAuthenticated: false
-    });
-  }
-  
+// Authentication is disabled - all requests pass through
+export const isAuthenticated = (_req: Request, _res: Response, next: NextFunction) => {
+  // Always allow access - bypass authentication check
   next();
 };
 
-export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.session.user) {
-    return res.status(401).json({ 
-      message: 'Unauthorized',
-      isAuthenticated: false
-    });
-  }
-  
-  if (req.session.user.role !== 'admin') {
-    return res.status(403).json({ 
-      message: 'Forbidden - Requires admin access',
-      isAuthenticated: true
-    });
-  }
-  
+// Admin check is also disabled - all requests pass through
+export const isAdmin = (_req: Request, _res: Response, next: NextFunction) => {
+  // Always allow access - bypass admin check
   next();
 };
