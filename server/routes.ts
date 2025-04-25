@@ -1796,6 +1796,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
     }
   });
+  
+  // Database migration - add daily spent fields to campaigns table
+  app.post("/api/system/migrate-daily-spent-fields", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration function
+      const { addDailySpentFields } = await import("./migrations/add-daily-spent-fields");
+      
+      // Execute the migration
+      const result = await addDailySpentFields();
+      
+      if (result) {
+        console.log("✅ Daily spent fields migration successful");
+        res.status(200).json({
+          message: "Daily spent fields migration completed successfully"
+        });
+      } else {
+        console.error("❌ Daily spent fields migration failed");
+        res.status(500).json({
+          message: "Daily spent fields migration failed"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add daily spent fields:", error);
+      res.status(500).json({ 
+        message: "Failed to add daily spent fields to campaigns table",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues

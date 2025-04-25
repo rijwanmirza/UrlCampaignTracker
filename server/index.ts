@@ -125,6 +125,20 @@ app.use((req, res, next) => {
         log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
       }
       
+      // Run database migrations
+      try {
+        // Import and run the daily spent fields migration
+        const { addDailySpentFields } = await import("./migrations/add-daily-spent-fields");
+        const migrationResult = await addDailySpentFields();
+        if (migrationResult) {
+          log('✅ Daily spent fields migration completed successfully');
+        } else {
+          log('❌ Daily spent fields migration failed');
+        }
+      } catch (migrationError) {
+        log(`Error running migrations: ${migrationError}`);
+      }
+
       // Initialize TrafficStar with API key from environment variable
       try {
         await initializeTrafficStar();
