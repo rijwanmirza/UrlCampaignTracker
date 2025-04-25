@@ -29,10 +29,11 @@ router.get('/trafficstar-errors', async (req: Request, res: Response) => {
       .offset(offset);
     
     // Get total count for pagination
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
+    const countResult = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(apiErrorLogs);
     
+    const count = countResult[0]?.count || 0;
     const totalPages = Math.ceil(count / limit);
     
     res.json({
@@ -83,13 +84,13 @@ router.post('/trafficstar-errors/:id/resolve', async (req: Request, res: Respons
  */
 router.delete('/trafficstar-errors/resolved', async (_req: Request, res: Response) => {
   try {
-    const result = await db
+    await db
       .delete(apiErrorLogs)
       .where(eq(apiErrorLogs.resolved, true));
     
     res.json({ 
       message: 'Resolved error logs cleared',
-      count: result.count || 0
+      success: true
     });
   } catch (error) {
     console.error('Error clearing resolved logs:', error);

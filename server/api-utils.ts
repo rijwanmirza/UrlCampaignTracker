@@ -51,21 +51,24 @@ export async function retryOperation<T>(
       // Log the error if this is the first attempt or the last attempt
       if (attempt === 1 || attempt === maxAttempts) {
         try {
+          const errorStatus = error.response?.status || 0;
+          
           await db.insert(apiErrorLogs).values({
-            actionType: options.actionType,
-            campaignId: options.campaignId?.toString(),
-            endpoint: options.endpoint,
-            method: options.method,
+            endpoint: options.endpoint || 'unknown',
+            method: options.method || 'GET',
             requestBody: options.requestBody ? JSON.stringify(options.requestBody) : null,
             errorMessage: error.message || 'Unknown error',
             errorDetails: formatErrorDetails(error),
+            statusCode: errorStatus,
+            campaignId: options.campaignId?.toString(),
+            actionType: options.actionType || 'api_call',
             retryCount: attempt,
             resolved: false,
             createdAt: new Date(),
             updatedAt: new Date()
           });
         } catch (logError) {
-          console.error('Failed to log API error:', logError);
+          console.error('Failed to log API error to database:', logError);
         }
       }
       
