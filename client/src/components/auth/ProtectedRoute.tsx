@@ -1,31 +1,36 @@
-import { ReactNode } from "react";
-import { Redirect } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import React from 'react';
+import { Route, Redirect } from 'wouter';
+import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  path: string;
+  component: React.ComponentType;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Show nothing while checking authentication status
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent border-solid rounded-full inline-block animate-spin"></div>
-          <p className="mt-4 text-lg">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Redirect to="/login" />;
-  }
-
-  // Render children if authenticated
-  return <>{children}</>;
+  return (
+    <Route path={path}>
+      {() => {
+        // Show loading spinner while checking authentication status
+        if (isLoading) {
+          return (
+            <div className="flex items-center justify-center min-h-screen">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          );
+        }
+        
+        // Redirect to login if not authenticated
+        if (!isAuthenticated) {
+          return <Redirect to="/login" />;
+        }
+        
+        // Render the component if authenticated
+        return <Component />;
+      }}
+    </Route>
+  );
 }
