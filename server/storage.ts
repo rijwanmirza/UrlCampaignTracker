@@ -158,6 +158,7 @@ export class DatabaseStorage implements IStorage {
             trafficstarCampaignId: null as any, // Type assertion to handle missing field
             autoManageTrafficstar: false as any, // Type assertion to handle missing field
             lastTrafficstarSync: null as any, // Type assertion to handle missing field
+            budgetUpdateTime: "00:00:00" as any, // Default to midnight UTC
             urls
           });
         }

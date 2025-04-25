@@ -66,6 +66,40 @@ interface CampaignsResponse {
 class TrafficStarService {
   private accessToken: string | null = null;
   private tokenExpiry: Date | null = null;
+  
+  /**
+   * Check if current time is within a window of minutes after target time
+   * @param currentTime Current time in HH:MM:SS format
+   * @param targetTime Target time in HH:MM:SS format
+   * @param windowMinutes Window in minutes after target time
+   * @returns true if current time is within window minutes after target time
+   */
+  private isWithinTimeWindow(currentTime: string, targetTime: string, windowMinutes: number): boolean {
+    try {
+      // Parse times to seconds
+      const currentParts = currentTime.split(':').map(Number);
+      const targetParts = targetTime.split(':').map(Number);
+      
+      const currentSeconds = currentParts[0] * 3600 + currentParts[1] * 60 + currentParts[2];
+      const targetSeconds = targetParts[0] * 3600 + targetParts[1] * 60 + targetParts[2];
+      
+      // Calculate window in seconds
+      const windowSeconds = windowMinutes * 60;
+      
+      // Check if current time is within the window after target time
+      // Handle case where target time is near end of day
+      if (targetSeconds + windowSeconds >= 86400) { // 24*60*60 seconds in a day
+        return (currentSeconds >= targetSeconds && currentSeconds < 86400) || 
+               (currentSeconds >= 0 && currentSeconds < (targetSeconds + windowSeconds) % 86400);
+      }
+      
+      // Normal case
+      return currentSeconds >= targetSeconds && currentSeconds < targetSeconds + windowSeconds;
+    } catch (error) {
+      console.error('Error in isWithinTimeWindow:', error);
+      return false;
+    }
+  }
 
   /**
    * Ensure we have a valid access token
@@ -970,9 +1004,34 @@ class TrafficStarService {
       const lastSyncDate = campaign.lastTrafficstarSync ? 
         new Date(campaign.lastTrafficstarSync).toISOString().split('T')[0] : null;
       
-      // Check if we need to update daily budget (on UTC date change)
-      if (!lastSyncDate || currentUtcDate !== lastSyncDate) {
-        console.log(`Setting daily budget for campaign ${campaign.id} to $10.15 (UTC date changed)`);
+      // Get current time in UTC to check if it's time for budget update
+      const now = new Date();
+      const currentUtcTime = now.getUTCHours().toString().padStart(2, '0') + ':' + 
+                           now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
+                           now.getUTCSeconds().toString().padStart(2, '0');
+      
+      // Get the campaign's budget update time setting (default to midnight if not set)
+      const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
+      
+      // Get the last update time
+      const lastUpdateTime = campaign.lastTrafficstarSync ? 
+        new Date(campaign.lastTrafficstarSync).getUTCHours().toString().padStart(2, '0') + ':' + 
+        new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
+        new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
+      
+      console.log(`Campaign ${campaign.id} - Current UTC time: ${currentUtcTime}, Budget update time: ${budgetUpdateTime}, Last sync time: ${lastUpdateTime || 'never'}`);
+      
+      // Determine if budget update should happen:
+      // 1. If this is first time (no lastSyncDate) OR
+      // 2. If date has changed since last update OR
+      // 3. If we're within 5 minutes after the configured budget update time and haven't updated today
+      const isTimeForBudgetUpdate = !lastSyncDate || 
+        currentUtcDate !== lastSyncDate || 
+        (this.isWithinTimeWindow(currentUtcTime, budgetUpdateTime, 5) && 
+         (!lastUpdateTime || !this.isWithinTimeWindow(lastUpdateTime, budgetUpdateTime, 5)));
+      
+      if (isTimeForBudgetUpdate) {
+        console.log(`Setting daily budget for campaign ${campaign.id} to $10.15 (UTC time: ${currentUtcTime}, configured time: ${budgetUpdateTime})`);
         
         // Set daily budget to $10.15 as per requirements
         try {
