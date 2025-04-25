@@ -550,10 +550,10 @@ class TrafficStarService {
     try {
       console.log(`USING V2 API: Activating campaign ${id}...`);
       
-      // Set end date to current UTC date at 23:59:59
+      // Set end date to current UTC date at 23:59
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const endTimeFormatted = `${currentDate} 23:59:59`; // YYYY-MM-DD 23:59:59
+      const endTimeFormatted = `${currentDate} 23:59`; // YYYY-MM-DD 23:59
       
       console.log(`Setting campaign ${id} end time to end of current UTC day: ${endTimeFormatted}`);
       
@@ -1072,8 +1072,9 @@ class TrafficStarService {
                            now.getUTCSeconds().toString().padStart(2, '0');
       
       // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
-      // TrafficStar API requires YYYY-MM-DD HH:MM:SS format
-      const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
+      // TrafficStar API requires YYYY-MM-DD HH:MM format (without seconds)
+      const currentTimeWithoutSeconds = currentUtcTime.substring(0, 5); // Get just HH:MM
+      const formattedCurrentDateTime = `${currentUtcDate} ${currentTimeWithoutSeconds}`;
       
       // Get the campaign's budget update time setting (default to midnight if not set)
       const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
