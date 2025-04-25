@@ -1941,6 +1941,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
     }
   });
+  
+  // DEBUG endpoint to get spending for a specific campaign
+  app.get("/api/debug/trafficstar/spending/:id", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ error: "Invalid campaign ID" });
+      }
+      
+      console.log(`DEBUG: Getting spending for campaign ${campaignId}`);
+      const spendingData = await trafficStarService.getCampaignSpending(campaignId);
+      console.log(`DEBUG: Spending data:`, spendingData);
+      
+      res.json(spendingData);
+    } catch (error) {
+      console.error(`DEBUG: Error getting spending for campaign:`, error);
+      res.status(500).json({ 
+        error: "Failed to get campaign spending", 
+        details: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
 
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
