@@ -218,6 +218,40 @@ export default function TrafficstarPage() {
     });
   };
   
+  // Select all paused campaigns
+  const selectAllPausedCampaigns = () => {
+    if (!campaigns) return;
+    
+    const pausedCampaignIds = campaigns
+      .filter(campaign => !campaign.active)
+      .map(campaign => campaign.id);
+      
+    setSelectedCampaigns(pausedCampaignIds);
+    
+    // Show success toast
+    if (pausedCampaignIds.length > 0) {
+      toast({
+        title: 'Campaigns Selected',
+        description: `Selected ${pausedCampaignIds.length} paused campaigns`,
+      });
+    } else {
+      toast({
+        title: 'No Paused Campaigns',
+        description: 'There are no paused campaigns to select',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Clear all selections
+  const clearAllSelections = () => {
+    setSelectedCampaigns([]);
+    toast({
+      title: 'Selections Cleared',
+      description: 'All campaign selections have been cleared',
+    });
+  };
+  
   // Run multiple campaigns at once
   const runMultipleCampaigns = () => {
     if (selectedCampaigns.length === 0) {
@@ -429,6 +463,23 @@ export default function TrafficstarPage() {
                     <PlayCircle className="h-4 w-4 mr-2" />
                   )}
                   <span>Activate {selectedCampaigns.length} Campaigns</span>
+                </Button>
+              )}
+              <Button
+                onClick={selectAllPausedCampaigns}
+                variant="outline"
+                size="sm"
+                disabled={isCampaignsLoading}
+              >
+                <span>Select All Paused</span>
+              </Button>
+              {selectedCampaigns.length > 0 && (
+                <Button
+                  onClick={clearAllSelections}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <span>Clear Selection</span>
                 </Button>
               )}
               <Button
