@@ -71,6 +71,13 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
   
   // For debugging purpose
   console.log("Campaign data:", campaign);
+  console.log("Form default values:", {
+    name: campaign.name,
+    redirectMethod: campaign.redirectMethod,
+    customPath: campaign.customPath || "",
+    multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
+    pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
+  });
   
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
@@ -115,6 +122,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
   
   // Handle form submission
   const onSubmit = (values: CampaignEditValues) => {
+    // Log form values being sent to server
+    console.log("Submitting form values:", values);
     updateCampaignMutation.mutate(values);
   };
   

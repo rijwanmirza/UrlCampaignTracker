@@ -115,6 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('🔍 DEBUG: Campaign update request received:', JSON.stringify(req.body, null, 2));
+      console.log('🔍 DEBUG: Campaign update request TYPE:', typeof req.body.pricePerThousand);
       
       const result = updateCampaignSchema.safeParse(req.body);
       if (!result.success) {
