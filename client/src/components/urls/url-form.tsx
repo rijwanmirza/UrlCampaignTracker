@@ -154,9 +154,18 @@ export default function UrlForm({
                       max={100000}
                       {...field} 
                       onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        field.onChange(isNaN(value) ? "" : value);
+                        console.log("Click limit input changed:", e.target.value);
+                        const value = e.target.value === '' ? '' : parseInt(e.target.value);
+                        console.log("Parsed click limit value:", value);
+                        
+                        if (!isNaN(value as number)) {
+                          field.onChange(value);
+                        } else {
+                          // For empty input, set to empty to allow user to type
+                          field.onChange('');
+                        }
                       }}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormDescription>

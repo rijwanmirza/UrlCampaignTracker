@@ -49,14 +49,13 @@ export default function UrlEditForm({ url, onSuccess }: UrlEditFormProps) {
   // Update URL mutation
   const updateUrlMutation = useMutation({
     mutationFn: async (values: UrlEditValues) => {
-      const response = await apiRequest(
+      console.log("Updating URL with data:", values);
+      // Using the fixed apiRequest without response.json()
+      return await apiRequest(
         "PUT",
         `/api/urls/${url.id}`,
         values
       );
-      
-      const data = await response.json();
-      return data as Url;
     },
     onSuccess: (data) => {
       // Invalidate cached URL data
@@ -155,7 +154,18 @@ export default function UrlEditForm({ url, onSuccess }: UrlEditFormProps) {
                     type="number" 
                     min="1"
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                    onChange={(e) => {
+                      console.log("Click limit input changed:", e.target.value);
+                      const value = e.target.value === '' ? '' : parseInt(e.target.value);
+                      console.log("Parsed click limit value:", value);
+                      
+                      if (!isNaN(value as number)) {
+                        field.onChange(value);
+                      } else {
+                        // For empty input, set to empty to allow user to type
+                        field.onChange('');
+                      }
+                    }}
                     value={field.value}
                   />
                 </FormControl>
