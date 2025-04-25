@@ -49,41 +49,39 @@ function Router() {
       </Route>
       
       {/* Protected routes that require authentication */}
-      <Route path="/">
-        <ProtectedRoute>
-          <AppLayout>
-            <Switch>
-              <Route path="/">
-                <Redirect to="/campaigns" />
-              </Route>
-              <Route path="/campaigns/:id">
-                <Home />
-              </Route>
-              <Route path="/campaigns">
-                <CampaignList />
-              </Route>
-              <Route path="/urls">
-                {isMobile ? <URLsMobilePage /> : <URLsPage />}
-              </Route>
-              <Route path="/gmail-settings">
-                <GmailSettingsPage />
-              </Route>
-              <Route path="/system-settings">
-                <SystemSettingsPage />
-              </Route>
-              <Route path="/trafficstar">
-                <TrafficstarPage />
-              </Route>
-              <Route path="/redirect-test">
-                <RedirectTest />
-              </Route>
-              <Route>
-                <NotFound />
-              </Route>
-            </Switch>
-          </AppLayout>
-        </ProtectedRoute>
-      </Route>
+      <ProtectedRoute path="/" component={() => (
+        <AppLayout>
+          <Switch>
+            <Route path="/">
+              <Redirect to="/campaigns" />
+            </Route>
+            <Route path="/campaigns/:id">
+              <Home />
+            </Route>
+            <Route path="/campaigns">
+              <CampaignList />
+            </Route>
+            <Route path="/urls">
+              {isMobile ? <URLsMobilePage /> : <URLsPage />}
+            </Route>
+            <Route path="/gmail-settings">
+              <GmailSettingsPage />
+            </Route>
+            <Route path="/system-settings">
+              <SystemSettingsPage />
+            </Route>
+            <Route path="/trafficstar">
+              <TrafficstarPage />
+            </Route>
+            <Route path="/redirect-test">
+              <RedirectTest />
+            </Route>
+            <Route>
+              <NotFound />
+            </Route>
+          </Switch>
+        </AppLayout>
+      )} />
     </Switch>
   );
 }

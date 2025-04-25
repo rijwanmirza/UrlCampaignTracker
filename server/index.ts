@@ -10,7 +10,7 @@ import { initializeAuth } from "./init-auth";
 import { configureSession } from "./session";
 import { pool } from "./db";
 import cookieParser from "cookie-parser";
-import { authRouter } from "./routes/auth-routes";
+import authRouter from "./routes/auth-routes";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';

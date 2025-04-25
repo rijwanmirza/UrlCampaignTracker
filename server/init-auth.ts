@@ -2,28 +2,30 @@
  * Initialize authentication
  * This script runs on application startup to ensure the admin user is properly configured
  */
-import { authService } from "./services/auth-service";
-
-const DEFAULT_ADMIN_USERNAME = "rijwamirza";
-const DEFAULT_ADMIN_PASSWORD = "uiic487487";
+import { db } from './db';
+import { users } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import { authService } from './services/auth-service';
 
 export async function initializeAuth() {
   try {
-    // Create default admin user if it doesn't exist
-    const adminUser = await authService.createAdminUser(
-      DEFAULT_ADMIN_USERNAME,
-      DEFAULT_ADMIN_PASSWORD
-    );
+    // Check if admin user exists
+    const [existingAdmin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, 'rijwamirza'));
     
-    if (adminUser) {
-      console.log(`✅ Created default admin user: ${DEFAULT_ADMIN_USERNAME}`);
-    } else {
-      console.log("✅ Admin user already exists, skipping creation");
+    if (existingAdmin) {
+      console.log('✅ Admin user already exists, skipping creation');
+      return;
     }
     
-    return true;
+    // Create admin user with hard-coded credentials (only for initial setup)
+    await authService.createAdminUser('rijwamirza', 'uiic487487', 'admin');
+    console.log('✅ Successfully created admin user');
+    
   } catch (error) {
-    console.error("❌ Failed to initialize admin user:", error instanceof Error ? error.message : "An unexpected error occurred while creating the admin user");
-    return false;
+    console.error('Error creating admin user:', error);
+    throw new Error(`Failed to create admin user: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

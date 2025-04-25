@@ -1,90 +1,84 @@
-import { Router, Request, Response } from "express";
-import { authService } from "../services/auth-service";
-import { loginSchema } from "@shared/schema";
-import { isAuthenticated } from "../middleware/auth";
+import { Request, Response, Router } from 'express';
+import { authService } from '../services/auth-service';
+import { isAuthenticated } from '../middleware/auth';
 
-export const authRouter = Router();
+const router = Router();
 
-// Get current authenticated user
-authRouter.get("/me", isAuthenticated, (req: Request, res: Response) => {
-  // Return the user from the session
-  if (req.session.user) {
-    return res.json({
-      isAuthenticated: true,
-      user: req.session.user
-    });
-  }
-  
-  return res.status(401).json({
-    message: "Unauthorized",
-    isAuthenticated: false
-  });
-});
-
-// Login endpoint
-authRouter.post("/login", async (req: Request, res: Response) => {
+// Login route
+router.post('/login', async (req: Request, res: Response) => {
   try {
-    // Validate request body
-    const validationResult = loginSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        message: "Invalid login data",
-        errors: validationResult.error.errors,
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ 
+        message: 'Username and password are required',
         isAuthenticated: false
       });
     }
     
-    // Authenticate user
-    const user = await authService.authenticateUser(validationResult.data);
+    const loginResult = await authService.login(username, password);
     
-    if (!user) {
-      return res.status(401).json({
-        message: "Invalid username or password",
+    if (!loginResult.success) {
+      return res.status(401).json({ 
+        message: loginResult.message,
         isAuthenticated: false
       });
     }
     
-    // Create session
-    req.session.user = {
-      id: user.id,
-      username: user.username,
-      role: user.role
-    };
+    // Set the user session
+    req.session.user = loginResult.user;
     
-    // Return success with user data (excluding sensitive data)
-    return res.json({
-      message: "Logged in successfully",
-      isAuthenticated: true,
+    return res.status(200).json({
       user: {
-        id: user.id,
-        username: user.username,
-        role: user.role
-      }
+        id: loginResult.user.id,
+        username: loginResult.user.username,
+        role: loginResult.user.role
+      },
+      isAuthenticated: true
     });
-  } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({
-      message: "An error occurred during login",
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return res.status(500).json({ 
+      message: 'Internal server error during login',
       isAuthenticated: false
     });
   }
 });
 
-// Logout endpoint
-authRouter.post("/logout", (req: Request, res: Response) => {
+// Logout route
+router.post('/logout', (req: Request, res: Response) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error("Error destroying session:", err);
-      return res.status(500).json({
-        message: "Failed to logout",
+      return res.status(500).json({ 
+        message: 'Failed to logout',
         isAuthenticated: true
       });
     }
     
-    res.clearCookie("connect.sid");
-    return res.json({
-      message: "Logged out successfully",
+    res.status(200).json({ 
+      message: 'Successfully logged out',
       isAuthenticated: false
     });
   });
 });
+
+// Get current user route (protected)
+router.get('/me', (req: Request, res: Response) => {
+  if (!req.session.user) {
+    return res.status(401).json({ 
+      message: 'Unauthorized',
+      isAuthenticated: false
+    });
+  }
+  
+  return res.status(200).json({
+    user: {
+      id: req.session.user.id,
+      username: req.session.user.username,
+      role: req.session.user.role
+    },
+    isAuthenticated: true
+  });
+});
+
+export default router;

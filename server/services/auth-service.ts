@@ -1,133 +1,141 @@
-import { db } from "../db";
-import { users, hashPassword, verifyPassword, LoginCredentials, User } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { db } from '../db';
+import { users, User } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import crypto from 'crypto';
 
-export class AuthService {
+class AuthService {
   /**
-   * Authenticate a user based on provided credentials
-   * @param credentials Login credentials (username and password)
-   * @returns The user if authentication is successful, null otherwise
+   * Verify if a password matches the stored hash
    */
-  async authenticateUser(credentials: LoginCredentials): Promise<User | null> {
+  private async verifyPassword(password: string, storedHash: string, storedSalt: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      crypto.scrypt(password, storedSalt, 64, (err, derivedKey) => {
+        if (err) reject(err);
+        const hashBuffer = Buffer.from(storedHash, 'hex');
+        resolve(crypto.timingSafeEqual(hashBuffer, derivedKey));
+      });
+    });
+  }
+
+  /**
+   * Hash a password for storage
+   */
+  private async hashPassword(password: string): Promise<{ hash: string, salt: string }> {
+    const salt = crypto.randomBytes(16).toString('hex');
+    
+    return new Promise((resolve, reject) => {
+      crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+        if (err) reject(err);
+        resolve({
+          hash: derivedKey.toString('hex'),
+          salt
+        });
+      });
+    });
+  }
+
+  /**
+   * Login a user with username and password
+   */
+  async login(username: string, password: string): Promise<{ 
+    success: boolean,
+    message: string,
+    user?: User
+  }> {
     try {
-      const { username, password } = credentials;
-      
-      // Find the user by username
+      // Find user by username
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.username, username));
       
       if (!user) {
-        return null;
+        return {
+          success: false,
+          message: 'Invalid username or password'
+        };
       }
       
-      // Verify the password
-      const isPasswordValid = verifyPassword(
+      // Verify password
+      const isValidPassword = await this.verifyPassword(
         password, 
-        user.passwordHash, 
-        user.passwordSalt
+        user.passwordHash || '', 
+        user.passwordSalt || ''
       );
       
-      if (!isPasswordValid) {
-        return null;
+      if (!isValidPassword) {
+        return {
+          success: false,
+          message: 'Invalid username or password'
+        };
       }
       
-      // Update last login timestamp
+      // Update last login time
       await db
         .update(users)
         .set({ lastLogin: new Date() })
         .where(eq(users.id, user.id));
       
-      return user;
+      return {
+        success: true,
+        message: 'Login successful',
+        user
+      };
     } catch (error) {
-      console.error("Authentication error:", error);
-      return null;
+      console.error('Login error:', error);
+      return {
+        success: false,
+        message: 'An error occurred during login'
+      };
     }
   }
-  
+
   /**
-   * Create a new user with the given credentials
-   * @param username The username
-   * @param password The password (will be hashed)
-   * @param role The user role (defaults to 'user')
-   * @returns The created user
+   * Create a new admin user
    */
-  async createUser(username: string, password: string, role: string = 'user'): Promise<User> {
-    try {
-      // Check if user already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username));
-      
-      if (existingUser) {
-        throw new Error(`User with username '${username}' already exists`);
-      }
-      
-      // Hash the password
-      const { hash, salt } = hashPassword(password);
-      
-      // Create the user
-      const [user] = await db.insert(users).values({
+  async createAdminUser(username: string, password: string, role: string = 'admin'): Promise<User> {
+    // Hash the password
+    const { hash, salt } = await this.hashPassword(password);
+    
+    // Insert the user
+    const [user] = await db
+      .insert(users)
+      .values({
         username,
         passwordHash: hash,
         passwordSalt: salt,
         role,
-      }).returning();
-      
-      return user;
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw new Error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    return user;
   }
-  
-  /**
-   * Create an admin user if none exists
-   * @param username The admin username
-   * @param password The admin password
-   * @returns The created admin user, or null if an admin already exists
-   */
-  async createAdminUser(username: string, password: string): Promise<User | null> {
-    try {
-      // Check if admin already exists
-      const [existingAdmin] = await db
-        .select()
-        .from(users)
-        .where(eq(users.role, 'admin'));
-      
-      if (existingAdmin) {
-        return null; // Admin already exists
-      }
-      
-      // Create admin user
-      return await this.createUser(username, password, 'admin');
-    } catch (error) {
-      console.error("Error creating admin user:", error);
-      throw new Error(`Failed to create admin user: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-  
+
   /**
    * Get a user by ID
-   * @param id The user ID
-   * @returns The user if found, null otherwise
    */
-  async getUserById(id: number): Promise<User | null> {
-    try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, id));
-      
-      return user || null;
-    } catch (error) {
-      console.error("Error getting user by ID:", error);
-      return null;
-    }
+  async getUserById(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    
+    return user;
+  }
+
+  /**
+   * Get a user by username
+   */
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    
+    return user;
   }
 }
 
-// Export a singleton instance
 export const authService = new AuthService();
