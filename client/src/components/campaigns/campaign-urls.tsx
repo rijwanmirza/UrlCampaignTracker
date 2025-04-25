@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
   Clipboard, 
@@ -13,7 +13,7 @@ import {
   Filter,
   Check
 } from "lucide-react";
-import { Url, UrlWithActiveStatus } from "@shared/schema";
+import { Url, UrlWithActiveStatus, Campaign } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
@@ -77,6 +77,11 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
   const [statusFilter, setStatusFilter] = useState("all");
   const [displayLimit, setDisplayLimit] = useState(10);
   const [selectedUrls, setSelectedUrls] = useState<number[]>([]);
+  
+  // Fetch campaign details to get the price information
+  const { data: campaign } = useQuery<Campaign>({
+    queryKey: [`/api/campaigns/${campaignId}`],
+  });
   
   // Filter URLs based on search term and status
   const filteredUrls = urls.filter(url => {
