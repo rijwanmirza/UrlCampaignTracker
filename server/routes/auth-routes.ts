@@ -1,80 +1,90 @@
 import { Router, Request, Response } from "express";
-import { loginSchema } from "@shared/schema";
 import { authService } from "../services/auth-service";
-import { isAuthenticated, isAdmin } from "../middleware/auth";
+import { loginSchema } from "@shared/schema";
+import { isAuthenticated } from "../middleware/auth";
 
-const router = Router();
+export const authRouter = Router();
 
-// Login route
-router.post("/login", async (req: Request, res: Response) => {
+// Get current authenticated user
+authRouter.get("/me", isAuthenticated, (req: Request, res: Response) => {
+  // Return the user from the session
+  if (req.session.user) {
+    return res.json({
+      isAuthenticated: true,
+      user: req.session.user
+    });
+  }
+  
+  return res.status(401).json({
+    message: "Unauthorized",
+    isAuthenticated: false
+  });
+});
+
+// Login endpoint
+authRouter.post("/login", async (req: Request, res: Response) => {
   try {
     // Validate request body
     const validationResult = loginSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({ 
-        message: "Invalid request data",
-        errors: validationResult.error.errors 
+      return res.status(400).json({
+        message: "Invalid login data",
+        errors: validationResult.error.errors,
+        isAuthenticated: false
       });
     }
-
-    const { username, password } = validationResult.data;
     
     // Authenticate user
-    const result = await authService.login(username, password);
+    const user = await authService.authenticateUser(validationResult.data);
     
-    if (!result.success) {
-      return res.status(401).json({ message: result.message });
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid username or password",
+        isAuthenticated: false
+      });
     }
     
-    // Set session
-    req.session.userId = result.user.id;
-    req.session.username = result.user.username;
+    // Create session
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    };
     
-    // Send success response
-    res.json({
-      message: "Login successful",
+    // Return success with user data (excluding sensitive data)
+    return res.json({
+      message: "Logged in successfully",
+      isAuthenticated: true,
       user: {
-        id: result.user.id,
-        username: result.user.username,
-        role: result.user.role
+        id: user.id,
+        username: user.username,
+        role: user.role
       }
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      message: "An error occurred during login",
+      isAuthenticated: false
+    });
   }
 });
 
-// Logout route
-router.post("/logout", (req: Request, res: Response) => {
+// Logout endpoint
+authRouter.post("/logout", (req: Request, res: Response) => {
   req.session.destroy((err) => {
     if (err) {
       console.error("Error destroying session:", err);
-      return res.status(500).json({ message: "Error logging out" });
+      return res.status(500).json({
+        message: "Failed to logout",
+        isAuthenticated: true
+      });
     }
-    res.json({ message: "Logged out successfully" });
+    
+    res.clearCookie("connect.sid");
+    return res.json({
+      message: "Logged out successfully",
+      isAuthenticated: false
+    });
   });
 });
-
-// Get current user
-router.get("/me", isAuthenticated, (req: Request, res: Response) => {
-  res.json({
-    user: req.user,
-    isAuthenticated: true
-  });
-});
-
-// Check authentication status
-router.get("/status", (req: Request, res: Response) => {
-  if (req.session && req.session.userId) {
-    return res.json({ isAuthenticated: true });
-  }
-  res.json({ isAuthenticated: false });
-});
-
-// Admin-only route example
-router.get("/admin-check", isAuthenticated, isAdmin, (req: Request, res: Response) => {
-  res.json({ message: "You have admin access", user: req.user });
-});
-
-export default router;

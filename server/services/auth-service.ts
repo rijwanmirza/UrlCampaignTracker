@@ -1,157 +1,133 @@
 import { db } from "../db";
-import { users, InsertUser, hashPassword, verifyPassword } from "@shared/schema";
+import { users, hashPassword, verifyPassword, LoginCredentials, User } from "@shared/schema";
 import { eq } from "drizzle-orm";
-
-export interface AuthResult {
-  success: boolean;
-  message: string;
-  user?: any;
-}
 
 export class AuthService {
   /**
-   * Authenticate a user with username and password
+   * Authenticate a user based on provided credentials
+   * @param credentials Login credentials (username and password)
+   * @returns The user if authentication is successful, null otherwise
    */
-  async login(username: string, password: string): Promise<AuthResult> {
+  async authenticateUser(credentials: LoginCredentials): Promise<User | null> {
     try {
-      // Find user by username
+      const { username, password } = credentials;
+      
+      // Find the user by username
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.username, username));
-
-      if (!user) {
-        return { success: false, message: "Invalid username or password" };
-      }
-
-      // Verify password
-      const isPasswordValid = verifyPassword(password, user.password);
-      if (!isPasswordValid) {
-        return { success: false, message: "Invalid username or password" };
-      }
-
-      // Remove password from user object before returning
-      const { password: _, ...userWithoutPassword } = user;
       
-      return {
-        success: true,
-        message: "Login successful",
-        user: userWithoutPassword
-      };
-    } catch (error) {
-      console.error("Login error:", error);
-      return {
-        success: false,
-        message: "An unexpected error occurred during login"
-      };
-    }
-  }
-
-  /**
-   * Register a new user
-   */
-  async register(userData: InsertUser): Promise<AuthResult> {
-    try {
-      // Check if username already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, userData.username));
-
-      if (existingUser) {
-        return { success: false, message: "Username already exists" };
+      if (!user) {
+        return null;
       }
-
-      // Hash password
-      const hashedPassword = hashPassword(userData.password);
-
-      // Create user
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          ...userData,
-          password: hashedPassword
-        })
-        .returning();
-
-      // Remove password from user object before returning
-      const { password, ...userWithoutPassword } = newUser;
-
-      return {
-        success: true,
-        message: "User registered successfully",
-        user: userWithoutPassword
-      };
+      
+      // Verify the password
+      const isPasswordValid = verifyPassword(
+        password, 
+        user.passwordHash, 
+        user.passwordSalt
+      );
+      
+      if (!isPasswordValid) {
+        return null;
+      }
+      
+      // Update last login timestamp
+      await db
+        .update(users)
+        .set({ lastLogin: new Date() })
+        .where(eq(users.id, user.id));
+      
+      return user;
     } catch (error) {
-      console.error("Registration error:", error);
-      return {
-        success: false,
-        message: "An unexpected error occurred during registration"
-      };
+      console.error("Authentication error:", error);
+      return null;
     }
   }
-
+  
   /**
-   * Create an admin user
-   * This method is used to create the initial admin user
+   * Create a new user with the given credentials
+   * @param username The username
+   * @param password The password (will be hashed)
+   * @param role The user role (defaults to 'user')
+   * @returns The created user
    */
-  async createAdminUser(username: string, password: string): Promise<AuthResult> {
+  async createUser(username: string, password: string, role: string = 'user'): Promise<User> {
     try {
       // Check if user already exists
       const [existingUser] = await db
         .select()
         .from(users)
         .where(eq(users.username, username));
-
-      if (existingUser) {
-        // Update existing user's password and ensure role is admin
-        const hashedPassword = hashPassword(password);
-        
-        const [updatedUser] = await db
-          .update(users)
-          .set({
-            password: hashedPassword,
-            role: 'admin'
-          })
-          .where(eq(users.id, existingUser.id))
-          .returning();
-        
-        const { password: _, ...userWithoutPassword } = updatedUser;
-        
-        return {
-          success: true,
-          message: "Admin user updated successfully",
-          user: userWithoutPassword
-        };
-      }
-
-      // Create new admin user
-      const hashedPassword = hashPassword(password);
       
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          username,
-          password: hashedPassword,
-          role: 'admin'
-        })
-        .returning();
-
-      const { password: _, ...userWithoutPassword } = newUser;
-
-      return {
-        success: true,
-        message: "Admin user created successfully",
-        user: userWithoutPassword
-      };
+      if (existingUser) {
+        throw new Error(`User with username '${username}' already exists`);
+      }
+      
+      // Hash the password
+      const { hash, salt } = hashPassword(password);
+      
+      // Create the user
+      const [user] = await db.insert(users).values({
+        username,
+        passwordHash: hash,
+        passwordSalt: salt,
+        role,
+      }).returning();
+      
+      return user;
     } catch (error) {
-      console.error("Admin user creation error:", error);
-      return {
-        success: false,
-        message: "An unexpected error occurred while creating the admin user"
-      };
+      console.error("Error creating user:", error);
+      throw new Error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  /**
+   * Create an admin user if none exists
+   * @param username The admin username
+   * @param password The admin password
+   * @returns The created admin user, or null if an admin already exists
+   */
+  async createAdminUser(username: string, password: string): Promise<User | null> {
+    try {
+      // Check if admin already exists
+      const [existingAdmin] = await db
+        .select()
+        .from(users)
+        .where(eq(users.role, 'admin'));
+      
+      if (existingAdmin) {
+        return null; // Admin already exists
+      }
+      
+      // Create admin user
+      return await this.createUser(username, password, 'admin');
+    } catch (error) {
+      console.error("Error creating admin user:", error);
+      throw new Error(`Failed to create admin user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  /**
+   * Get a user by ID
+   * @param id The user ID
+   * @returns The user if found, null otherwise
+   */
+  async getUserById(id: number): Promise<User | null> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id));
+      
+      return user || null;
+    } catch (error) {
+      console.error("Error getting user by ID:", error);
+      return null;
     }
   }
 }
 
+// Export a singleton instance
 export const authService = new AuthService();

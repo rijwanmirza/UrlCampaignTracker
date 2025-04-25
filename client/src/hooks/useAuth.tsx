@@ -1,11 +1,16 @@
-import { createContext, useContext, ReactNode, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
-// Define types for our authentication context
 interface User {
-  id: string;
+  id: number;
   username: string;
   role: string;
+}
+
+interface LoginCredentials {
+  username: string;
+  password: string;
 }
 
 interface AuthContextType {
@@ -16,95 +21,95 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-// Create the authentication context
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  isLoading: true,
-  user: null,
-  login: async () => ({ success: false, message: "Not implemented" }),
-  logout: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hook to use the auth context
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
 
-// Provider component to wrap the app
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
 
-  // Fetch current user data
-  const { data: user, isLoading } = useQuery({
-    queryKey: ["/api/auth/me"],
+  // Query to check if user is authenticated
+  const { isLoading, data } = useQuery({
+    queryKey: ['/api/auth/me'],
     retry: false,
-    enabled: true,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    queryFn: async () => {
-      try {
-        const response = await fetch("/api/auth/me");
-        if (!response.ok) {
-          throw new Error("Not authenticated");
-        }
-        const data = await response.json();
-        if (data?.user) {
-          setIsAuthenticated(true);
-        }
-        return data;
-      } catch (error) {
-        setIsAuthenticated(false);
-        throw error;
-      }
-    }
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Login function
+  // Login mutation
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginCredentials) => {
+      return await apiRequest('/api/auth/login', 'POST', credentials);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    },
+  });
+
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/auth/logout', 'POST');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      setUser(null);
+    },
+  });
+
+  useEffect(() => {
+    if (data && data.isAuthenticated && data.user) {
+      setUser(data.user);
+    } else {
+      setUser(null);
+    }
+  }, [data]);
+
   async function login(username: string, password: string) {
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsAuthenticated(true);
-        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-        return { success: true, message: data.message };
+      const response = await loginMutation.mutateAsync({ username, password });
+      
+      if (response.isAuthenticated) {
+        return {
+          success: true,
+          message: response.message || 'Login successful',
+        };
       } else {
-        return { success: false, message: data.message || "Login failed" };
+        return {
+          success: false,
+          message: response.message || 'Login failed',
+        };
       }
     } catch (error) {
-      console.error("Login error:", error);
-      return { success: false, message: "An unexpected error occurred" };
+      console.error('Login error:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+      };
     }
   }
 
-  // Logout function
   async function logout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      setIsAuthenticated(false);
-      queryClient.setQueryData(["/api/auth/me"], null);
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    await logoutMutation.mutateAsync();
   }
 
-  const value = {
-    isAuthenticated,
-    isLoading,
-    user: user?.user || null,
-    login,
-    logout
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!user,
+        isLoading,
+        user,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }

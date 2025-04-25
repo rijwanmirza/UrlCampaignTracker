@@ -9,20 +9,21 @@ const DEFAULT_ADMIN_PASSWORD = "uiic487487";
 
 export async function initializeAuth() {
   try {
-    console.log("Initializing authentication system...");
-    
-    // Create the default admin user if not exists
-    const result = await authService.createAdminUser(
-      DEFAULT_ADMIN_USERNAME, 
+    // Create default admin user if it doesn't exist
+    const adminUser = await authService.createAdminUser(
+      DEFAULT_ADMIN_USERNAME,
       DEFAULT_ADMIN_PASSWORD
     );
     
-    if (result.success) {
-      console.log(`✅ ${result.message}`);
+    if (adminUser) {
+      console.log(`✅ Created default admin user: ${DEFAULT_ADMIN_USERNAME}`);
     } else {
-      console.error(`❌ Failed to initialize admin user: ${result.message}`);
+      console.log("✅ Admin user already exists, skipping creation");
     }
+    
+    return true;
   } catch (error) {
-    console.error("Error initializing authentication:", error);
+    console.error("❌ Failed to initialize admin user:", error instanceof Error ? error.message : "An unexpected error occurred while creating the admin user");
+    return false;
   }
 }

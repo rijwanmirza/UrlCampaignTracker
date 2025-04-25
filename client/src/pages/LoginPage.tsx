@@ -1,32 +1,26 @@
-import { useAuth } from "@/hooks/useAuth";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { Redirect } from "wouter";
-import { Loader2 } from "lucide-react";
+import React from 'react';
+import { Redirect } from 'wouter';
+import LoginForm from '@/components/auth/LoginForm';
+import { useAuth } from '@/hooks/useAuth';
 
-export function LoginPage() {
+export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // If already authenticated, redirect to dashboard
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Loading...</p>
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
+  // If already authenticated, redirect to home
+  if (isAuthenticated && !isLoading) {
     return <Redirect to="/" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center p-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">TrafficStar Manager</h1>
-        <p className="text-muted-foreground">Admin access required</p>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">Administration Panel</h1>
+          <p className="text-gray-600 mt-2">Login to access the system</p>
+        </div>
+        
+        <LoginForm />
       </div>
-      <LoginForm />
     </div>
   );
 }

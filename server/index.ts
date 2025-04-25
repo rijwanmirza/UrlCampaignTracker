@@ -10,7 +10,7 @@ import { initializeAuth } from "./init-auth";
 import { configureSession } from "./session";
 import { pool } from "./db";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/auth-routes";
+import { authRouter } from "./routes/auth-routes";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -71,7 +71,7 @@ app.use((req, res, next) => {
 });
 
 // Register authentication routes
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRouter);
 
 (async () => {
   const server = await registerRoutes(app);

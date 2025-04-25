@@ -1,7 +1,19 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import * as crypto from "crypto";
+
+// Password utilities
+export function hashPassword(password: string): { hash: string, salt: string } {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return { hash, salt };
+}
+
+export function verifyPassword(password: string, hash: string, salt: string): boolean {
+  const hashVerify = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return hash === hashVerify;
+}
 
 // Redirect method enum
 export const RedirectMethod = {
@@ -23,6 +35,40 @@ export const urlStatusEnum = pgEnum('url_status', [
   'deleted',   // URL is soft-deleted
   'rejected'   // URL was rejected due to duplicate name
 ]);
+
+// User role enum
+export const userRoleEnum = pgEnum('user_role', [
+  'admin',     // Admin with full access
+  'user',      // Regular user with limited access
+]);
+
+// User schema for authentication
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  passwordSalt: text("password_salt").notNull(),
+  role: text("role").default('admin').notNull(),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  passwordHash: true,
+  passwordSalt: true, 
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
 
 // Campaign schema
 export const campaigns = pgTable("campaigns", {
@@ -135,25 +181,6 @@ export const bulkUrlActionSchema = z.object({
   action: z.enum(['pause', 'activate', 'delete', 'permanent_delete'])
 });
 
-// Types
-export type Campaign = typeof campaigns.$inferSelect;
-export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
-export type UpdateCampaign = z.infer<typeof updateCampaignSchema>;
-
-export type Url = typeof urls.$inferSelect;
-export type InsertUrl = z.infer<typeof insertUrlSchema>;
-export type UpdateUrl = z.infer<typeof updateUrlSchema>;
-export type BulkUrlAction = z.infer<typeof bulkUrlActionSchema>;
-
-// Extended schemas with campaign relationship
-export type UrlWithActiveStatus = Url & {
-  isActive: boolean;
-};
-
-export type CampaignWithUrls = Campaign & {
-  urls: UrlWithActiveStatus[];
-};
-
 // TrafficStar API schema
 export const trafficstarCredentials = pgTable("trafficstar_credentials", {
   id: serial("id").primaryKey(),
@@ -225,6 +252,19 @@ export const trafficstarCampaignEndTimeSchema = z.object({
 });
 
 // Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type LoginCredentials = z.infer<typeof loginSchema>;
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
+export type UpdateCampaign = z.infer<typeof updateCampaignSchema>;
+
+export type Url = typeof urls.$inferSelect;
+export type InsertUrl = z.infer<typeof insertUrlSchema>;
+export type UpdateUrl = z.infer<typeof updateUrlSchema>;
+export type BulkUrlAction = z.infer<typeof bulkUrlActionSchema>;
+
 export type TrafficstarCredential = typeof trafficstarCredentials.$inferSelect;
 export type InsertTrafficstarCredential = z.infer<typeof insertTrafficstarCredentialSchema>;
 export type UpdateTrafficstarCredential = z.infer<typeof updateTrafficstarCredentialSchema>;
@@ -234,63 +274,11 @@ export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignAction
 export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
 export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;
 
-// User role enum
-export const userRoleEnum = pgEnum('user_role', [
-  'admin',
-  'user',
-]);
+// Extended schemas with campaign relationship
+export type UrlWithActiveStatus = Url & {
+  isActive: boolean;
+};
 
-// User schema for authentication
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role").default('user').notNull(),
-  lastLogin: timestamp("last_login"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  lastLogin: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
-// Helper function to hash a password using Node's crypto module
-export function hashPassword(password: string): string {
-  // Generate a random salt
-  const salt = crypto.randomBytes(16).toString('hex');
-  // Hash the password with salt using SHA-256
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  
-  // Store both salt and hash, separated by a colon
-  return `${salt}:${hash}`;
-}
-
-// Helper function to compare a password with a hash
-export function verifyPassword(password: string, storedHash: string): boolean {
-  try {
-    // Split the stored hash into salt and hash
-    const [salt, hash] = storedHash.split(':');
-    
-    // Generate hash from the input password using the stored salt
-    const calculatedHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-    
-    // Compare calculated hash with stored hash
-    return calculatedHash === hash;
-  } catch (error) {
-    console.error('Error verifying password:', error);
-    return false;
-  }
-}
-
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type LoginCredentials = z.infer<typeof loginSchema>;
+export type CampaignWithUrls = Campaign & {
+  urls: UrlWithActiveStatus[];
+};
