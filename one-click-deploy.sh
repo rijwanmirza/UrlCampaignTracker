@@ -31,7 +31,6 @@ PGPASSWORD="urlapp_password"
 PGDATABASE="urlapp"
 PGHOST="localhost"
 PGPORT="5432"
-TRAFFICSTAR_API_KEY="same_key_as_replit"
 EOL
 
 # Apply environment variables
@@ -51,7 +50,6 @@ Environment=PGPASSWORD=urlapp_password
 Environment=PGDATABASE=urlapp
 Environment=PGHOST=localhost
 Environment=PGPORT=5432
-Environment=TRAFFICSTAR_API_KEY=same_key_as_replit
 Type=simple
 User=root
 WorkingDirectory=/opt/url-system
