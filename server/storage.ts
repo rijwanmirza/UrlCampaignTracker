@@ -86,8 +86,8 @@ export class DatabaseStorage implements IStorage {
   // In-memory redirect counter to batch DB updates
   private pendingClickUpdates: Map<number, number>;
   
-  // Cache TTL optimized for high volume (milliseconds)
-  private cacheTTL = 2000; // Reduced to 2 seconds for fresher data with high throughput
+  // Set cache TTL to 0 for immediate updates with no delay
+  private cacheTTL = 0; // Immediate database access with no caching
   
   // Batch processing threshold before writing to DB
   private clickUpdateThreshold = 10;
@@ -969,16 +969,8 @@ export class DatabaseStorage implements IStorage {
   
   // Helper method to get weighted URL distribution for a campaign
   async getWeightedUrlDistribution(campaignId: number) {
-    // Check cache first
-    const cachedData = this.campaignUrlsCache.get(campaignId);
-    const now = Date.now();
-    
-    if (cachedData && (now - cachedData.lastUpdated < this.cacheTTL)) {
-      return {
-        activeUrls: cachedData.activeUrls,
-        weightedDistribution: cachedData.weightedDistribution
-      };
-    }
+    // Skip the cache entirely to always get fresh data from database
+    // This ensures newly created URLs are immediately available for selection
     
     // If not in cache or expired, recalculate
     const campaign = await this.getCampaign(campaignId);
@@ -1020,6 +1012,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Update cache
+    const now = Date.now();
     const cacheEntry = {
       lastUpdated: now,
       activeUrls,
