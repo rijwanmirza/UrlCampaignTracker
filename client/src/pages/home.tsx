@@ -145,7 +145,9 @@ export default function Home() {
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mt-8 mb-4 gap-3">
               <div className="flex flex-col md:flex-row md:items-center">
                 <h2 className="text-lg md:text-xl font-bold">Active URLs</h2>
-                <span className="md:ml-3 text-xs md:text-sm text-gray-500">Only showing active & paused URLs</span>
+                <span className="md:ml-3 text-xs md:text-sm text-gray-500">
+                  Only showing active & paused URLs (completed URLs are removed)
+                </span>
               </div>
               
               <Link href="/urls">
@@ -156,10 +158,10 @@ export default function Home() {
               </Link>
             </div>
             
-            {/* Only active URLs list */}
+            {/* Only active URLs list - explicitly filter out completed URLs */}
             <CampaignUrls 
               campaignId={formattedCampaign.id} 
-              urls={formattedCampaign.urls}
+              urls={formattedCampaign.urls.filter(url => url.status !== 'completed')}
               campaign={campaign}
               onRefresh={() => {
                 queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${formattedCampaign.id}`] });
