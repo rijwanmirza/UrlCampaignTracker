@@ -1417,7 +1417,58 @@ class TrafficStarService {
       const now = new Date();
       const todayUtc = now.toISOString().split('T')[0];
       
-      // First try to get the new V2 stats API endpoint which is more reliable
+      // First try the custom report by day endpoint from the documentation
+      try {
+        console.log(`Trying to get campaign ${id} daily spending using advertiser custom report endpoint`);
+        
+        const reportResponse = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            campaign_id: id,
+            date_from: todayUtc,
+            date_to: todayUtc
+          },
+          timeout: 20000 // 20 second timeout for potentially slow API
+        });
+        
+        // Check if we have any data for today
+        if (reportResponse.data && Array.isArray(reportResponse.data) && reportResponse.data.length > 0) {
+          const todayData = reportResponse.data.find((item: any) => item.day === todayUtc) || reportResponse.data[0];
+          console.log(`Successfully fetched custom report daily spending for campaign ${id}:`, todayData);
+          
+          // Get max_daily budget from campaign details for complete data
+          let maxDaily = 0;
+          try {
+            const campaignResponse = await axios.get(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            });
+            
+            if (campaignResponse.data && campaignResponse.data.max_daily) {
+              maxDaily = parseFloat(campaignResponse.data.max_daily.toString());
+            }
+          } catch (campaignError) {
+            console.error(`Failed to get max daily budget for campaign ${id}:`, campaignError);
+          }
+          
+          return {
+            id,
+            daily: parseFloat(todayData.amount || '0'),
+            date: todayUtc,
+            maxDaily
+          };
+        }
+      } catch (reportError) {
+        console.error(`Custom report endpoint failed for campaign ${id}:`, reportError);
+      }
+      
+      // If custom report fails, try the V2 stats API endpoint
       try {
         console.log(`Trying to get campaign ${id} daily spending using V2 API endpoint`);
         

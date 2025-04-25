@@ -64,6 +64,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
     id: number;
     daily: number;
     date: string;
+    maxDaily: number;
   }
   
   // Fetch daily spending data if TrafficStar integration is enabled
@@ -215,17 +216,46 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                       Loading daily spending...
                     </div>
                   ) : spendingData ? (
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge 
-                        variant="outline" 
-                        className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
-                      >
-                        <DollarSign className="h-3 w-3" />
-                        ${spendingData?.daily ? spendingData.daily.toFixed(2) : '0.00'}
-                      </Badge>
-                      <span className="text-xs text-gray-500">
-                        Daily Spending (UTC {new Date().toISOString().split('T')[0]})
-                      </span>
+                    <div className="mt-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
+                        >
+                          <DollarSign className="h-3 w-3" />
+                          ${spendingData?.daily ? spendingData.daily.toFixed(2) : '0.00'}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          Daily Spending (UTC {spendingData.date})
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1"
+                        >
+                          <DollarSign className="h-3 w-3" />
+                          ${spendingData?.maxDaily ? spendingData.maxDaily.toFixed(2) : '0.00'}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          Daily Budget Limit
+                        </span>
+                      </div>
+                      
+                      {spendingData?.daily > 0 && spendingData?.maxDaily > 0 && (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div 
+                            className="bg-blue-600 h-1.5 rounded-full" 
+                            style={{ 
+                              width: `${Math.min(
+                                (spendingData.daily / spendingData.maxDaily) * 100, 
+                                100
+                              )}%` 
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   ) : null}
                 </div>
