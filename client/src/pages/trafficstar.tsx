@@ -12,8 +12,9 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Loader2, RefreshCw, Play, Pause, DollarSign, Calendar } from 'lucide-react';
+import { Loader2, RefreshCw, Play, Pause, DollarSign, Calendar, LineChart, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Define schemas for the form validation
 const apiKeyFormSchema = z.object({
@@ -47,9 +48,49 @@ interface Campaign {
   [key: string]: any;
 }
 
+// Schema for campaign spent value form
+const campaignSpentValueSchema = z.object({
+  campaignId: z.coerce.number().positive('Campaign ID must be a positive number'),
+  dateFrom: z.string().optional(),
+  dateUntil: z.string().optional()
+});
+
+// Define the spent value stats type
+interface SpentValueStats {
+  campaignId: number;
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  dailyStats: Array<{
+    date: string;
+    impressions: number;
+    clicks: number;
+    leads: number;
+    price: number;
+    ecpm: number;
+    ecpc: number;
+    ecpa: number;
+    ctr: number;
+  }>;
+  totals: {
+    spent: number;
+    impressions: number;
+    clicks: number;
+    leads: number;
+    ecpm: number;
+    ecpc: number;
+    ecpa: number;
+    ctr: number;
+  };
+}
+
 export default function TrafficstarPage() {
   const [activeTab, setActiveTab] = useState<string>('campaigns');
   const queryClient = useQueryClient();
+  const [spentValueData, setSpentValueData] = useState<SpentValueStats | null>(null);
+  const [isLoadingSpentValue, setIsLoadingSpentValue] = useState(false);
+  const [spentValueError, setSpentValueError] = useState<string | null>(null);
   
   // Direct Campaign ID action form 
   const campaignIdActionForm = useForm<z.infer<typeof campaignIdActionSchema>>({
@@ -66,6 +107,16 @@ export default function TrafficstarPage() {
     defaultValues: {
       campaignId: 1000866, // Preset this with known campaign ID
       maxDaily: 15.0,
+    },
+  });
+  
+  // Campaign spent value form
+  const spentValueForm = useForm<z.infer<typeof campaignSpentValueSchema>>({
+    resolver: zodResolver(campaignSpentValueSchema),
+    defaultValues: {
+      campaignId: 995224, // Default campaign ID
+      dateFrom: undefined,
+      dateUntil: undefined
     },
   });
   
@@ -199,6 +250,47 @@ export default function TrafficstarPage() {
       campaignId: data.campaignId, 
       maxDaily: data.maxDaily 
     });
+  };
+  
+  // Submit handler for spent value form
+  const onSpentValueSubmit = async (data: z.infer<typeof campaignSpentValueSchema>) => {
+    // Reset previous data
+    setSpentValueData(null);
+    setSpentValueError(null);
+    setIsLoadingSpentValue(true);
+    
+    try {
+      // Construct query parameters
+      const params = new URLSearchParams();
+      if (data.dateFrom) params.append('dateFrom', data.dateFrom);
+      if (data.dateUntil) params.append('dateUntil', data.dateUntil);
+      
+      // Fetch spent value data
+      const response = await fetch(`/api/trafficstar/campaigns/${data.campaignId}/spent?${params.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch spent value data');
+      }
+      
+      const spentData: SpentValueStats = await response.json();
+      setSpentValueData(spentData);
+      
+      toast({
+        title: 'Spent Value Data Retrieved',
+        description: `Successfully fetched data for campaign ${data.campaignId}`,
+      });
+    } catch (error) {
+      setSpentValueError(error instanceof Error ? error.message : 'An unknown error occurred');
+      
+      toast({
+        title: 'Failed to Fetch Spent Value',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingSpentValue(false);
+    }
   };
 
   // Render loading state
@@ -350,6 +442,174 @@ export default function TrafficstarPage() {
               </div>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+      
+      {/* Get Spent Value Form */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Get Campaign Spent Value</CardTitle>
+          <CardDescription>
+            Retrieve campaign costs and performance statistics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...spentValueForm}>
+            <form onSubmit={spentValueForm.handleSubmit(onSpentValueSubmit)} className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <FormField
+                  control={spentValueForm.control}
+                  name="campaignId"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Campaign ID</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="Enter campaign ID" 
+                          {...field}
+                          value={field.value === undefined ? '' : field.value}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={spentValueForm.control}
+                  name="dateFrom"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>From Date</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          placeholder="YYYY-MM-DD" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Start date (defaults to 7 days ago)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={spentValueForm.control}
+                  name="dateUntil"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Until Date</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          placeholder="YYYY-MM-DD" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        End date (defaults to today)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex items-end mb-2">
+                  <Button type="submit" disabled={isLoadingSpentValue} className="w-full md:w-auto">
+                    {isLoadingSpentValue ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        <LineChart className="mr-2 h-4 w-4" />
+                        Get Spent Value
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Form>
+          
+          {/* Spent Value Results */}
+          {spentValueError && (
+            <div className="mt-4 p-4 border border-red-200 rounded-md bg-red-50 text-red-700 flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold">Error retrieving data</h4>
+                <p>{spentValueError}</p>
+              </div>
+            </div>
+          )}
+          
+          {spentValueData && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2">Campaign Spend Results</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="p-4 border rounded-md">
+                  <div className="text-sm text-muted-foreground">Total Spent</div>
+                  <div className="text-2xl font-bold">${spentValueData.totals.spent.toFixed(2)}</div>
+                </div>
+                <div className="p-4 border rounded-md">
+                  <div className="text-sm text-muted-foreground">Impressions</div>
+                  <div className="text-2xl font-bold">{spentValueData.totals.impressions.toLocaleString()}</div>
+                </div>
+                <div className="p-4 border rounded-md">
+                  <div className="text-sm text-muted-foreground">Clicks</div>
+                  <div className="text-2xl font-bold">{spentValueData.totals.clicks.toLocaleString()}</div>
+                </div>
+                <div className="p-4 border rounded-md">
+                  <div className="text-sm text-muted-foreground">eCPM</div>
+                  <div className="text-2xl font-bold">${spentValueData.totals.ecpm.toFixed(4)}</div>
+                </div>
+              </div>
+              
+              <h4 className="font-medium mb-2">Daily Statistics</h4>
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Impressions</TableHead>
+                      <TableHead className="text-right">Clicks</TableHead>
+                      <TableHead className="text-right">CTR</TableHead>
+                      <TableHead className="text-right">Cost (USD)</TableHead>
+                      <TableHead className="text-right">eCPM</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {spentValueData.dailyStats.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          No data available for the selected date range
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      spentValueData.dailyStats.map((day, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{day.date ? new Date(day.date).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell className="text-right">{day.impressions.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{day.clicks.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{day.ctr.toFixed(2)}%</TableCell>
+                          <TableCell className="text-right">${parseFloat(day.price.toString()).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">${parseFloat(day.ecpm.toString()).toFixed(4)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="text-sm text-muted-foreground mt-2">
+                Date range: {spentValueData.dateRange.from} to {spentValueData.dateRange.to}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       
