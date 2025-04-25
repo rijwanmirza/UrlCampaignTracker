@@ -1311,10 +1311,27 @@ class TrafficStarService {
       // Check if daily spent has reached or exceeded $10
       let dailySpentAmount = 0;
       
-      if (currentDbCampaign && currentDbCampaign.dailySpent) {
-        dailySpentAmount = Number(currentDbCampaign.dailySpent);
-      } else {
-        // If we don't have a value in the database, fetch it from the API
+      // First check if daily spent is already recorded in the campaign table
+      if (campaign.dailySpent) {
+        // Check if the last spent check date is from today (UTC)
+        const lastSpentDate = campaign.dailySpentDate ? new Date(campaign.dailySpentDate) : null;
+        const today = new Date();
+        const isSameDay = lastSpentDate && 
+          lastSpentDate.getUTCFullYear() === today.getUTCFullYear() &&
+          lastSpentDate.getUTCMonth() === today.getUTCMonth() &&
+          lastSpentDate.getUTCDate() === today.getUTCDate();
+        
+        if (isSameDay) {
+          // Use the existing daily spent value if it's from today
+          dailySpentAmount = Number(campaign.dailySpent);
+        } else {
+          // Reset daily spent since it's from a different day
+          dailySpentAmount = 0;
+        }
+      }
+      
+      // If daily spent is zero or from a different day, fetch latest from API
+      if (dailySpentAmount === 0) {
         try {
           const campaignStats = await this.getCampaignSpentValue(trafficstarId);
           if (campaignStats && campaignStats.daily_costs && campaignStats.daily_costs.length > 0) {
@@ -1323,16 +1340,15 @@ class TrafficStarService {
             if (todayStats) {
               dailySpentAmount = Number(todayStats.total_cost);
               
-              // Update the database with the current daily spent
-              if (currentDbCampaign) {
-                await db.update(trafficstarCampaigns)
-                  .set({ 
-                    dailySpent: dailySpentAmount.toString(),
-                    dailySpentUpdatedAt: new Date(),
-                    updatedAt: new Date() 
-                  })
-                  .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
-              }
+              // Update the campaign table with the current daily spent
+              await db.update(campaigns)
+                .set({ 
+                  dailySpent: dailySpentAmount.toString(),
+                  dailySpentDate: new Date(),
+                  lastSpentCheck: new Date(),
+                  updatedAt: new Date() 
+                })
+                .where(eq(campaigns.id, campaign.id));
             }
           }
         } catch (error) {

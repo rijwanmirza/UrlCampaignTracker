@@ -35,6 +35,10 @@ export const campaigns = pgTable("campaigns", {
   autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // Auto-manage TrafficStar campaign
   budgetUpdateTime: text("budget_update_time").default("00:00:00"), // Daily budget update time in UTC (HH:MM:SS format)
   lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
+  // Daily spent tracking fields
+  dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent amount in dollars with 4 decimal places
+  dailySpentDate: timestamp("daily_spent_date").defaultNow(), // Date of the daily spent amount
+  lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time we checked the daily spent
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -79,6 +83,10 @@ export const updateCampaignSchema = z.object({
   autoManageTrafficstar: z.boolean().optional(),
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
+  // Daily spent tracking fields
+  dailySpent: z.number().min(0).optional(),
+  dailySpentDate: z.date().optional(),
+  lastSpentCheck: z.date().optional(),
 });
 
 // URL schema

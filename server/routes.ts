@@ -1825,6 +1825,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Comprehensive migration to fix all missing columns
+  app.post("/api/system/migrate-all-columns", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration function
+      const { addMissingColumns } = await import("./migrations/add-missing-columns");
+      
+      // Execute the migration
+      const result = await addMissingColumns();
+      
+      if (result) {
+        console.log("✅ Comprehensive column migration successful");
+        res.status(200).json({
+          message: "All missing columns added successfully"
+        });
+      } else {
+        console.error("❌ Comprehensive column migration failed");
+        res.status(500).json({
+          message: "Failed to add missing columns"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add missing columns:", error);
+      res.status(500).json({ 
+        message: "Failed to add missing columns to tables",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
