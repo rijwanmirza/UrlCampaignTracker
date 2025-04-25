@@ -1,61 +1,131 @@
 #!/bin/bash
-# One-click deployment script for URL Management System
+# ONE-CLICK DEPLOYMENT - EXACT COPY - NO CHANGES
 
-# Colors for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+echo "==== CREATING EXACT COPY OF REPLIT ENVIRONMENT ===="
 
-# Function to show progress
-show_progress() {
-  echo -e "${GREEN}[+] $1${NC}"
+# Step 1: Update system only
+apt-get update
+apt-get upgrade -y
+
+# Step 2: Install exact same packages
+apt-get install -y curl git nodejs npm postgresql postgresql-contrib nginx build-essential unzip
+
+# Step 3: Install Node.js 20.x (same as Replit)
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
+# Step 4: Set up PostgreSQL exactly the same
+sudo -u postgres psql -c "CREATE USER urlapp WITH PASSWORD 'urlapp_password';"
+sudo -u postgres psql -c "CREATE DATABASE urlapp OWNER urlapp;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE urlapp TO urlapp;"
+
+# Step 5: Set up application directory - EXACTLY THE SAME
+mkdir -p /opt/url-system
+
+# Step 6: Configure environment variables - EXACTLY THE SAME
+cat > /etc/environment << 'EOL'
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+DATABASE_URL="postgres://urlapp:urlapp_password@localhost:5432/urlapp"
+PGUSER="urlapp"
+PGPASSWORD="urlapp_password"
+PGDATABASE="urlapp"
+PGHOST="localhost"
+PGPORT="5432"
+TRAFFICSTAR_API_KEY="same_key_as_replit"
+EOL
+
+# Apply environment variables
+source /etc/environment
+
+# Step 7: Configure service - EXACTLY THE SAME
+cat > /etc/systemd/system/url-system.service << 'EOL'
+[Unit]
+Description=URL Management System
+After=network.target postgresql.service
+
+[Service]
+Environment=NODE_ENV=production
+Environment=DATABASE_URL=postgres://urlapp:urlapp_password@localhost:5432/urlapp
+Environment=PGUSER=urlapp
+Environment=PGPASSWORD=urlapp_password
+Environment=PGDATABASE=urlapp
+Environment=PGHOST=localhost
+Environment=PGPORT=5432
+Environment=TRAFFICSTAR_API_KEY=same_key_as_replit
+Type=simple
+User=root
+WorkingDirectory=/opt/url-system
+ExecStart=/usr/bin/node dist/server/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# Step 8: Configure Nginx - EXACTLY THE SAME
+cat > /etc/nginx/sites-available/url-system << 'EOL'
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
 }
+EOL
 
-# Function to show errors
-show_error() {
-  echo -e "${RED}[!] $1${NC}"
-  exit 1
-}
+# Enable Nginx site
+ln -s /etc/nginx/sites-available/url-system /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+nginx -t
+systemctl reload nginx
 
-# Function to show warnings
-show_warning() {
-  echo -e "${YELLOW}[!] $1${NC}"
-}
+echo "==== STEP 9: MOVING FILES TO CORRECT LOCATIONS ===="
+# This assumes you've uploaded the ZIP file to /root/project.zip
+# and the database.sql file to /root/database.sql
 
-# Check if required variables are provided
-if [ -z "$1" ]; then
-  show_error "Usage: ./one-click-deploy.sh <VPS_IP> [SSH_PORT] [SSH_USER] [BACKUP_FREQUENCY]"
-  exit 1
+# Setup URLs directory
+cd /opt
+
+# Extract your project.zip to /opt/url-system
+# Fixing the nested directory problem automatically
+unzip -o /root/project.zip -d /tmp/extract
+if [ -d "/tmp/extract/UrlCampaignTracker" ]; then
+  echo "Moving files from nested 'UrlCampaignTracker' folder to correct location..."
+  cp -rf /tmp/extract/UrlCampaignTracker/* /opt/url-system/
+  cp -rf /tmp/extract/UrlCampaignTracker/.* /opt/url-system/ 2>/dev/null || true
+else
+  echo "Moving files from ZIP root to correct location..."
+  cp -rf /tmp/extract/* /opt/url-system/
+  cp -rf /tmp/extract/.* /opt/url-system/ 2>/dev/null || true
 fi
 
-VPS_IP=$1
-SSH_PORT=${2:-22}
-SSH_USER=${3:-root}
-BACKUP_FREQUENCY=${4:-"daily"} # Options: hourly, daily, weekly, monthly
+rm -rf /tmp/extract
 
-show_progress "Starting one-click deployment to VPS: $VPS_IP"
+echo "==== STEP 10: IMPORTING DATABASE ===="
+# Create a modified version of the database file - fixing Neon DB specific parts
+cat /root/database.sql | grep -v "neondb_owner" | grep -v "neon_superuser" > /root/fixed_database.sql
 
-# Step 1: Deploy the application
-show_progress "Step 1/3: Deploying application to VPS..."
-./deploy-to-vps.sh $VPS_IP $SSH_PORT $SSH_USER
+# Import database
+cat /root/fixed_database.sql | sudo -u postgres psql urlapp
 
-# Check if deployment was successful
-if [ $? -ne 0 ]; then
-  show_error "Deployment failed. Please check the errors above and try again."
-fi
+echo "==== STEP 11: BUILDING THE APPLICATION ===="
+cd /opt/url-system
+npm install
+npm run build
 
-# Step 2: Set up automated backups
-show_progress "Step 2/3: Setting up automated backups..."
-./setup-automated-backups.sh $VPS_IP $SSH_PORT $SSH_USER $BACKUP_FREQUENCY
+echo "==== STEP 12: STARTING THE SERVICE ===="
+systemctl enable url-system
+systemctl start url-system
 
-# Step 3: Perform an initial backup
-show_progress "Step 3/3: Performing initial backup..."
-./backup-vps.sh $VPS_IP $SSH_PORT $SSH_USER "./backups"
-
-show_progress "One-click deployment completed successfully!"
-show_progress "Your application is now running on http://$VPS_IP"
-show_progress "Automated $BACKUP_FREQUENCY backups have been configured"
-show_progress "An initial backup has been created in the ./backups directory"
-show_progress ""
-show_progress "For more information on managing your deployment, please refer to VPS-DEPLOYMENT.md"
+echo "==== DEPLOYMENT COMPLETE ===="
+echo ""
+echo "Your application should now be running at: http://YOUR_SERVER_IP"
+echo ""
+echo "If there are any issues, check the logs with:"
+echo "journalctl -u url-system -n 100"

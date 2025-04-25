@@ -1,0 +1,80 @@
+root@vultr:~# cd /root
+cp database.sql database.sql.original
+sed -i 's/role "neondb_owner" does not exist//' database.sql
+sed -i 's/role "neon_superuser" does not exist//' database.sql
+sed -i '/neondb_owner/d' database.sql
+sed -i '/neon_superuser/d' database.sql
+root@vultr:~# cat /root/database.sql | sudo -u postgres psql urlapp
+could not change directory to "/root": Permission denied
+SET
+SET
+SET
+SET
+SET
+ set_config
+------------
+
+(1 row)
+
+SET
+SET
+SET
+SET
+ERROR:  type "url_status" already exists
+SET
+SET
+ERROR:  relation "campaigns" already exists
+ERROR:  relation "campaigns_id_seq" already exists
+ALTER SEQUENCE
+ERROR:  relation "trafficstar_campaigns" already exists
+ERROR:  relation "trafficstar_campaigns_id_seq" already exists
+ALTER SEQUENCE
+ERROR:  relation "trafficstar_credentials" already exists
+ERROR:  relation "trafficstar_credentials_id_seq" already exists
+ALTER SEQUENCE
+ERROR:  relation "urls" already exists
+ERROR:  relation "urls_id_seq" already exists
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ERROR:  duplicate key value violates unique constraint "campaigns_custom_path_unique"
+DETAIL:  Key (custom_path)=(sdwwd) already exists.
+CONTEXT:  COPY campaigns, line 1
+ERROR:  duplicate key value violates unique constraint "trafficstar_campaigns_pkey"
+DETAIL:  Key (id)=(9) already exists.
+CONTEXT:  COPY trafficstar_campaigns, line 1
+ERROR:  duplicate key value violates unique constraint "trafficstar_credentials_pkey"
+DETAIL:  Key (id)=(1) already exists.
+CONTEXT:  COPY trafficstar_credentials, line 1
+ERROR:  duplicate key value violates unique constraint "urls_pkey"
+DETAIL:  Key (id)=(1481) already exists.
+CONTEXT:  COPY urls, line 1
+ setval
+--------
+     26
+(1 row)
+
+ setval
+--------
+     10
+(1 row)
+
+ setval
+--------
+      1
+(1 row)
+
+ setval
+--------
+   1495
+(1 row)
+
+ERROR:  relation "campaigns_custom_path_unique" already exists
+ERROR:  multiple primary keys for table "campaigns" are not allowed
+ERROR:  multiple primary keys for table "trafficstar_campaigns" are not allowed
+ERROR:  relation "trafficstar_campaigns_trafficstar_id_unique" already exists
+ERROR:  multiple primary keys for table "trafficstar_credentials" are not allowed
+ERROR:  multiple primary keys for table "urls" are not allowed
+root@vultr:~#
