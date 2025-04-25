@@ -5,33 +5,25 @@ import crypto from 'crypto';
 
 class AuthService {
   /**
-   * Verify if a password matches the stored hash
+   * Verify if a password matches the stored hash using simpler pbkdf2 method
    */
-  private async verifyPassword(password: string, storedHash: string, storedSalt: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      crypto.scrypt(password, storedSalt, 64, (err, derivedKey) => {
-        if (err) reject(err);
-        const hashBuffer = Buffer.from(storedHash, 'hex');
-        resolve(crypto.timingSafeEqual(hashBuffer, derivedKey));
-      });
-    });
+  private verifyPassword(password: string, hash: string, salt: string): boolean {
+    try {
+      const verify = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+      return verify === hash;
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      return false;
+    }
   }
 
   /**
-   * Hash a password for storage
+   * Hash a password for storage using simpler pbkdf2 method
    */
-  private async hashPassword(password: string): Promise<{ hash: string, salt: string }> {
+  private hashPassword(password: string): { hash: string, salt: string } {
     const salt = crypto.randomBytes(16).toString('hex');
-    
-    return new Promise((resolve, reject) => {
-      crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-        if (err) reject(err);
-        resolve({
-          hash: derivedKey.toString('hex'),
-          salt
-        });
-      });
-    });
+    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    return { hash, salt };
   }
 
   /**
@@ -57,7 +49,7 @@ class AuthService {
       }
       
       // Verify password
-      const isValidPassword = await this.verifyPassword(
+      const isValidPassword = this.verifyPassword(
         password, 
         user.passwordHash || '', 
         user.passwordSalt || ''
@@ -95,7 +87,7 @@ class AuthService {
    */
   async createAdminUser(username: string, password: string, role: string = 'admin'): Promise<User> {
     // Hash the password
-    const { hash, salt } = await this.hashPassword(password);
+    const { hash, salt } = this.hashPassword(password);
     
     // Insert the user
     const [user] = await db

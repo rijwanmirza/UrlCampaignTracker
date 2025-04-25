@@ -25,6 +25,13 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
     
+    if (!loginResult.user) {
+      return res.status(401).json({ 
+        message: 'Login failed - user data missing',
+        isAuthenticated: false
+      });
+    }
+    
     // Set the user session
     req.session.user = loginResult.user;
     
