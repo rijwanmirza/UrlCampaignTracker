@@ -1879,9 +1879,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // New endpoint specifically using advertiser/custom/report/by-day API
   app.get("/api/debug/trafficstar/custom-report/:id", async (req: Request, res: Response) => {
-    // Use the isolated debug endpoint implementation
-    const { testCustomReport } = await import('./debug-endpoint');
-    await testCustomReport(req, res);
+    try {
+      // Use the isolated debug endpoint implementation
+      const { testCustomReport } = await import('./debug-endpoint');
+      await testCustomReport(req, res);
+    } catch (error) {
+      // Handle any errors in the custom report function
+      console.error('Error in custom report endpoint:', error);
+      
+      // Return a fallback response
+      const campaignId = parseInt(req.params.id);
+      const todayUtc = new Date().toISOString().split('T')[0];
+      
+      return res.json({
+        id: campaignId,
+        daily: 0,
+        date: todayUtc,
+        maxDaily: 0,
+        message: "Using fallback data due to error",
+        authenticated: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 
   // Debug endpoint to get daily spending for all campaigns

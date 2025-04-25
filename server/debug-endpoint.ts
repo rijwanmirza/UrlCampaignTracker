@@ -140,74 +140,114 @@ export async function testCustomReport(req: Request, res: Response) {
     }
 
     // Get the API token
-    const token = await getToken();
+    let token;
+    try {
+      token = await getToken();
+    } catch (tokenError) {
+      console.error("Failed to get API token:", tokenError);
+      // Return a meaningful response with fallback data
+      return res.json({
+        id: parseInt(campaignId),
+        daily: 0,
+        date: new Date().toISOString().split('T')[0],
+        maxDaily: 0,
+        message: "Using fallback data due to auth error",
+        authenticated: false
+      });
+    }
     
     // Get current date in YYYY-MM-DD format for UTC
     const now = new Date();
     const todayUtc = now.toISOString().split('T')[0];
     
-    // Request data from the custom report endpoint
-    const statsResponse = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      params: {
-        campaign_id: campaignId,
-        date_from: todayUtc,
-        date_to: todayUtc
-      },
-      timeout: 30000 // 30 second timeout
-    });
-    
-    // Log the response
-    console.log(`Custom report response:`, JSON.stringify(statsResponse.data || {}).substring(0, 500));
-    
-    // Process the response data
-    let daily = 0;
-    if (statsResponse.data && Array.isArray(statsResponse.data)) {
-      statsResponse.data.forEach((item: any) => {
-        if (item.day === todayUtc && item.amount) {
-          daily += parseFloat(item.amount || '0');
-        }
-      });
-    }
-    
-    // Also get max daily budget
-    let maxDaily = 0;
     try {
-      const campaignResponse = await axios.get(`https://api.trafficstars.com/v1.1/campaigns/${campaignId}`, {
+      // Request data from the custom report endpoint
+      const statsResponse = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        timeout: 10000
+        params: {
+          campaign_id: campaignId,
+          date_from: todayUtc,
+          date_to: todayUtc
+        },
+        timeout: 30000 // 30 second timeout
       });
       
-      if (campaignResponse.data && campaignResponse.data.max_daily) {
-        maxDaily = parseFloat(campaignResponse.data.max_daily.toString());
+      // Log the response
+      console.log(`Custom report response:`, JSON.stringify(statsResponse.data || {}).substring(0, 500));
+      
+      // Process the response data
+      let daily = 0;
+      if (statsResponse.data && Array.isArray(statsResponse.data)) {
+        statsResponse.data.forEach((item: any) => {
+          if (item.day === todayUtc && item.amount) {
+            daily += parseFloat(item.amount || '0');
+          }
+        });
       }
-    } catch (error) {
-      console.error(`Failed to get campaign details:`, error);
+      
+      // Also get max daily budget
+      let maxDaily = 0;
+      try {
+        const campaignResponse = await axios.get(`https://api.trafficstars.com/v1.1/campaigns/${campaignId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
+        
+        if (campaignResponse.data && campaignResponse.data.max_daily) {
+          maxDaily = parseFloat(campaignResponse.data.max_daily.toString());
+        }
+      } catch (error) {
+        console.error(`Failed to get campaign details:`, error);
+      }
+      
+      // Return the processed data
+      const spendingData = {
+        id: parseInt(campaignId),
+        daily,
+        date: todayUtc,
+        maxDaily,
+        message: "Used TrafficStar service to get spending data",
+        authenticated: true
+      };
+      
+      console.log(`DEBUG: Got spending data from service:`, {
+        id: parseInt(campaignId),
+        daily,
+        date: todayUtc,
+        maxDaily
+      });
+      
+      return res.json(spendingData);
+    } catch (apiError) {
+      console.error('Error in TrafficStar API call:', apiError);
+      
+      // Check if it's an authentication error
+      const isAuthError = apiError.response && (apiError.response.status === 401 || apiError.response.status === 403);
+      
+      if (isAuthError) {
+        // Return a response with fallback data for auth errors
+        return res.json({
+          id: parseInt(campaignId),
+          daily: 0,
+          date: todayUtc,
+          maxDaily: 0,
+          message: "Using fallback data due to auth error",
+          authenticated: false
+        });
+      }
+      
+      // For other errors, return an error response
+      return res.status(500).json({ 
+        error: 'Failed to get campaign spending data',
+        message: apiError instanceof Error ? apiError.message : String(apiError)
+      });
     }
-    
-    // Return the processed data
-    const spendingData = {
-      id: parseInt(campaignId),
-      daily,
-      date: todayUtc,
-      maxDaily,
-      message: "Used TrafficStar service to get spending data"
-    };
-    
-    console.log(`DEBUG: Got spending data from service:`, {
-      id: parseInt(campaignId),
-      daily,
-      date: todayUtc,
-      maxDaily
-    });
-    
-    return res.json(spendingData);
   } catch (error) {
     console.error('Error in testCustomReport:', error);
     return res.status(500).json({ 
