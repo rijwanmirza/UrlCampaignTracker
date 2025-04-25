@@ -62,9 +62,10 @@ interface CampaignUrlsProps {
   campaignId: number;
   urls: UrlWithActiveStatus[];
   onRefresh: () => void;
+  campaign?: Campaign; // Make campaign optional
 }
 
-export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUrlsProps) {
+export default function CampaignUrls({ campaignId, urls, onRefresh, campaign }: CampaignUrlsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -77,11 +78,6 @@ export default function CampaignUrls({ campaignId, urls, onRefresh }: CampaignUr
   const [statusFilter, setStatusFilter] = useState("all");
   const [displayLimit, setDisplayLimit] = useState(10);
   const [selectedUrls, setSelectedUrls] = useState<number[]>([]);
-  
-  // Fetch campaign details to get the price information
-  const { data: campaign } = useQuery<Campaign>({
-    queryKey: [`/api/campaigns/${campaignId}`],
-  });
   
   // Filter URLs based on search term and status
   const filteredUrls = urls.filter(url => {
