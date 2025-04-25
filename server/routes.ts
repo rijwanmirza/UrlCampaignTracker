@@ -23,6 +23,7 @@ import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import Imap from "imap";
+import axios from "axios";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
@@ -1959,6 +1960,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error(`DEBUG: Error getting spending for campaign:`, error);
       res.status(500).json({ 
         error: "Failed to get campaign spending", 
+        details: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // New endpoint specifically using advertiser/custom/report/by-day API
+  app.get("/api/debug/trafficstar/custom-report/:id", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ error: "Invalid campaign ID" });
+      }
+      
+      // Get token
+      const token = await trafficStarService.ensureToken();
+      if (!token) {
+        return res.status(500).json({ error: "Failed to get TrafficStar API token" });
+      }
+      
+      // Get current date in YYYY-MM-DD format for UTC
+      const now = new Date();
+      const todayUtc = now.toISOString().split('T')[0];
+      
+      console.log(`Using custom report API for campaign ${campaignId} on date ${todayUtc}`);
+      
+      // Make the API request
+      const response = await axios.get(`https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          campaign_id: campaignId.toString(),
+          date_from: todayUtc,
+          date_to: todayUtc
+        },
+        timeout: 10000 // 10 second timeout
+      });
+      
+      // Process the response data
+      let dailySpend = 0;
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Log raw response
+        console.log(`Raw custom report response:`, JSON.stringify(response.data));
+        
+        // Sum up all spending for this campaign on this date
+        response.data.forEach((item: any) => {
+          if (item.day === todayUtc && item.amount) {
+            console.log(`Found spending entry: ${item.day} = ${item.amount}`);
+            dailySpend += parseFloat(item.amount || '0');
+          }
+        });
+      }
+      
+      // Get campaign details for max_daily
+      const campaignResponse = await axios.get(`https://api.trafficstars.com/v1.1/campaigns/${campaignId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      const maxDaily = campaignResponse.data && campaignResponse.data.max_daily 
+        ? parseFloat(campaignResponse.data.max_daily.toString()) 
+        : 0;
+      
+      // Return the data
+      const result = {
+        id: campaignId,
+        daily: dailySpend,
+        date: todayUtc,
+        maxDaily,
+        rawData: response.data
+      };
+      
+      console.log(`Returning custom report data:`, result);
+      res.json(result);
+    } catch (error) {
+      console.error(`Error getting custom report for campaign:`, error);
+      res.status(500).json({ 
+        error: "Failed to get campaign custom report", 
         details: error instanceof Error ? error.message : String(error) 
       });
     }
