@@ -86,8 +86,11 @@ export default function CampaignList() {
   const isMobile = useIsMobile();
 
   // Fetch all campaigns
-  const { data: campaigns = [], isLoading } = useQuery<CampaignWithUrls[]>({
+  const { data: campaigns = [], isLoading, refetch } = useQuery<CampaignWithUrls[]>({
     queryKey: ['/api/campaigns'],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    retry: 3,
   });
 
   // Filter campaigns by search term
