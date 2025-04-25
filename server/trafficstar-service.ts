@@ -1300,6 +1300,38 @@ class TrafficStarService {
     const [credential] = await db.select().from(trafficstarCredentials).limit(1);
     return !!credential;
   }
+  
+  /**
+   * Get campaign daily spending from TrafficStar API
+   * @param id The TrafficStar campaign ID
+   * @returns An object with the campaign spending data { id: number, total: number }
+   */
+  async getCampaignSpending(id: number): Promise<{ id: number, total: number }> {
+    try {
+      const token = await this.ensureToken();
+      
+      console.log(`Fetching spending for campaign ${id} from TrafficStar API`);
+      
+      // Use the v1.1 API endpoint
+      const response = await axios.get(
+        `https://api.trafficstars.com/v1.1/campaigns/${id}/spending`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000 // 10 second timeout
+        }
+      );
+      
+      console.log(`Successfully fetched spending for campaign ${id}`);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error fetching spending for campaign ${id}:`, error.message);
+      throw new Error(`Failed to fetch spending for campaign ${id}: ${error.message}`);
+    }
+  }
 }
 
 // Export a singleton instance

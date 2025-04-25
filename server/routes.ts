@@ -1389,6 +1389,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get campaign daily spending data from TrafficStar API
+  app.get("/api/trafficstar/campaigns/:id/spending", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      const spending = await trafficStarService.getCampaignSpending(id);
+      res.json(spending);
+    } catch (error) {
+      console.error(`Error fetching TrafficStar campaign ${req.params.id} spending:`, error);
+      res.status(500).json({ 
+        message: `Failed to fetch spending for TrafficStar campaign ${req.params.id}`,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Get saved TrafficStar campaigns from database
   app.get("/api/trafficstar/saved-campaigns", async (_req: Request, res: Response) => {
     try {
