@@ -453,32 +453,45 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 <FormField
                   control={form.control}
                   name="budgetUpdateTime"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Daily Budget Update Time (UTC)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="time"
-                          {...field}
-                          value={field.value || "00:00:00"}
-                          onChange={(e) => {
-                            const timeValue = e.target.value;
-                            // Add seconds if not already included
-                            const timeWithSeconds = timeValue.includes(':') && 
-                              timeValue.split(':').length === 2 ? 
-                              `${timeValue}:00` : timeValue;
-                            
-                            field.onChange(timeWithSeconds);
-                          }}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Set the exact UTC time (HH:MM:SS) when the $10.15 budget will be applied daily.
-                        Current UTC time is shown in the field.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Calculate current UTC time
+                    const now = new Date();
+                    const utcHours = now.getUTCHours().toString().padStart(2, '0');
+                    const utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
+                    const currentUtcTime = `${utcHours}:${utcMinutes}`;
+                    
+                    return (
+                      <FormItem className="mt-4">
+                        <FormLabel>Daily Budget Update Time (UTC)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="time"
+                              {...field}
+                              value={field.value ? field.value.substring(0, 5) : "00:00"}
+                              onChange={(e) => {
+                                const timeValue = e.target.value;
+                                // Add seconds if not already included
+                                const timeWithSeconds = timeValue.includes(':') && 
+                                  timeValue.split(':').length === 2 ? 
+                                  `${timeValue}:00` : timeValue;
+                                
+                                field.onChange(timeWithSeconds);
+                              }}
+                            />
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                              Current UTC: {currentUtcTime}
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Set the exact UTC time when the $10.15 budget will be applied daily.
+                          The system will automatically update the campaign budget at this time.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               )}
             </div>
