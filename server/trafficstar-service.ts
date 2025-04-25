@@ -1705,14 +1705,8 @@ class TrafficStarService {
     date: string
   }> {
     try {
-      // Get the access token
-      let token = '';
-      try {
-        token = await getToken();
-      } catch (tokenError) {
-        console.error('Failed to get token, attempting refresh', tokenError);
-        token = await refreshToken();
-      }
+      // Get token using the existing method
+      const token = await this.ensureToken();
       
       if (!token) {
         throw new Error('Failed to get TrafficStar API token');
@@ -1779,7 +1773,8 @@ class TrafficStarService {
           });
           
           // Now create the final result array with campaign details
-          for (const [campaignId, daily] of campaignSpendingMap.entries()) {
+          // Use Array.from to avoid Map iterator issues
+          Array.from(campaignSpendingMap.entries()).forEach(([campaignId, daily]) => {
             const campaign = campaignsMap.get(campaignId);
             const maxDaily = campaign && campaign.max_daily 
               ? parseFloat(campaign.max_daily.toString()) 
@@ -1790,7 +1785,7 @@ class TrafficStarService {
               daily,
               maxDaily
             });
-          }
+          });
         }
         
         // If we got no data from custom report, try to get data from other sources
