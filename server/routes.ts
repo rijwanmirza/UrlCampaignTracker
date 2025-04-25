@@ -1609,6 +1609,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Check migration status - Find out if migrations are needed
+  app.get("/api/system/check-migrations", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration check functions
+      const { 
+        isBudgetUpdateTimeMigrationNeeded, 
+        isTrafficStarFieldsMigrationNeeded 
+      } = await import("./migrations/check-migration-needed");
+      
+      // Check migration status
+      const budgetUpdateTimeMigrationNeeded = await isBudgetUpdateTimeMigrationNeeded();
+      const trafficStarFieldsMigrationNeeded = await isTrafficStarFieldsMigrationNeeded();
+      
+      // Return migration status
+      res.status(200).json({
+        budgetUpdateTimeMigrationNeeded,
+        trafficStarFieldsMigrationNeeded,
+        migrationNeeded: budgetUpdateTimeMigrationNeeded || trafficStarFieldsMigrationNeeded,
+        message: "Migration status checked successfully"
+      });
+    } catch (error) {
+      console.error("Failed to check migration status:", error);
+      res.status(500).json({ 
+        message: "Failed to check migration status", 
+        error: error instanceof Error ? error.message : String(error),
+        // Assume migrations are needed if check fails
+        migrationNeeded: true,
+        budgetUpdateTimeMigrationNeeded: true,
+        trafficStarFieldsMigrationNeeded: true
+      });
+    }
+  });
+
   // Database migration - add budget update time field to campaigns table
   app.post("/api/system/migrate-budget-update-time", async (_req: Request, res: Response) => {
     try {

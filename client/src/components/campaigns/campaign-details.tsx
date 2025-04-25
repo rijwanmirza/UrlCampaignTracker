@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Clipboard, ExternalLink, AlertCircle } from "lucide-react";
 import { FormattedCampaign } from "@/lib/types";
 import { RedirectMethod } from "@shared/schema";
@@ -21,6 +21,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [, navigate] = useLocation();
+  const [migrationNeeded, setMigrationNeeded] = useState<boolean>(false);
 
   const redirectMethodLabels: Record<string, string> = {
     [RedirectMethod.DIRECT]: "Direct Redirect",
@@ -57,12 +58,33 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
       });
   };
 
-  // Check if the budgetUpdateTime field is populated and the campaign is already using TrafficStar
-  const migrationComplete = !!campaign.budgetUpdateTime;
+  // Check if migrations are needed when component mounts
+  useEffect(() => {
+    const checkMigrations = async () => {
+      try {
+        const response = await fetch('/api/system/check-migrations');
+        const data = await response.json();
+        
+        if (data.migrationNeeded) {
+          console.log('Database migrations are needed:', data);
+          setMigrationNeeded(true);
+        } else {
+          console.log('No database migrations needed');
+          setMigrationNeeded(false);
+        }
+      } catch (error) {
+        console.error('Failed to check migration status:', error);
+        // If check fails, assume migration is needed
+        setMigrationNeeded(true);
+      }
+    };
+    
+    checkMigrations();
+  }, []);
   
   return (
     <div className="space-y-4 mb-6">
-      {!migrationComplete && (
+      {migrationNeeded && (
         <Alert className="border-amber-300 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertTitle className="text-amber-800">Database Migration Required</AlertTitle>
@@ -144,6 +166,29 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                       ({campaign.remainingClicks.toLocaleString()} clicks remaining)
                     </span>
                   </p>
+                </div>
+              )}
+              
+              {campaign.budgetUpdateTime && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Budget Update Time (UTC):</span>
+                  <p className="text-gray-900">
+                    {campaign.budgetUpdateTime}
+                  </p>
+                </div>
+              )}
+              
+              {campaign.trafficstarCampaignId && campaign.autoManageTrafficstar && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500">TrafficStar Integration:</span>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
+                      Auto-Managed
+                    </Badge>
+                    <span className="text-xs text-gray-500">
+                      Campaign #{campaign.trafficstarCampaignId}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
