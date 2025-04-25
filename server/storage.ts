@@ -407,6 +407,12 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting autoManageTrafficstar to:', updateData.autoManageTrafficstar);
     }
     
+    // Handle budgetUpdateTime field
+    if (updateCampaign.budgetUpdateTime !== undefined) {
+      updateData.budgetUpdateTime = updateCampaign.budgetUpdateTime;
+      console.log('🔍 DEBUG: Setting budgetUpdateTime to:', updateData.budgetUpdateTime);
+    }
+    
     // If auto-management is enabled, record the time of change
     if (updateData.autoManageTrafficstar === true) {
       updateData.lastTrafficstarSync = new Date();
