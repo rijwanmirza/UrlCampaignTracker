@@ -1555,7 +1555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate all campaign IDs are numbers
-      const validIds = campaignIds.filter(id => !isNaN(Number(id)));
+      const validIds = campaignIds.filter(id => !isNaN(Number(id))).map(id => Number(id));
       if (validIds.length === 0) {
         return res.status(400).json({ message: "No valid campaign IDs provided" });
       }
@@ -1568,40 +1568,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString()
       });
       
-      // Process activations in background
+      // Process activations in background using the batch API method
       setTimeout(async () => {
-        const results = {
-          success: [] as number[],
-          failed: [] as number[],
-          total: validIds.length
-        };
-        
-        // Process campaigns in parallel for faster execution
-        await Promise.all(validIds.map(async (id) => {
-          try {
-            // Activate the campaign via TrafficStar API
-            await trafficStarService.activateCampaign(Number(id));
-            
-            // Update database record for immediate UI feedback on refresh
-            await db.update(trafficstarCampaigns)
-              .set({ 
-                active: true,
-                status: 'enabled',
-                lastRequestedAction: 'activate',
-                lastRequestedActionAt: new Date(),
-                updatedAt: new Date() 
-              })
-              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-              
-            results.success.push(Number(id));
-            console.log(`✅ Successfully activated campaign ${id}`);
-          } catch (error) {
-            results.failed.push(Number(id));
-            console.error(`❌ Failed to activate campaign ${id}:`, error);
+        try {
+          console.log(`Starting batch activation of ${validIds.length} campaigns using V2 API...`);
+          
+          // Use the new batch activation method
+          const result = await trafficStarService.activateMultipleCampaigns(validIds);
+          
+          // Log the complete results
+          console.log(`Completed batch activation of ${validIds.length} campaigns.`);
+          console.log(`Success: ${result.success.length} campaigns - ${result.success.join(', ')}`);
+          
+          if (result.failed.length > 0) {
+            console.log(`Failed: ${result.failed.length} campaigns - ${result.failed.join(', ')}`);
+          } else {
+            console.log(`No failures reported.`);
           }
-        }));
-        
-        console.log(`Campaign batch activation complete: ${results.success.length} succeeded, ${results.failed.length} failed`);
+        } catch (batchError) {
+          // If the batch activation fails, fall back to individual activation
+          console.error(`Batch activation failed, falling back to individual activations:`, batchError);
+          
+          const results = {
+            success: [] as number[],
+            failed: [] as number[],
+            total: validIds.length
+          };
+          
+          // Process campaigns in parallel as a fallback
+          await Promise.all(validIds.map(async (id) => {
+            try {
+              // Activate the campaign via TrafficStar API (individual method)
+              await trafficStarService.activateCampaign(id);
+              
+              // Update database record for immediate UI feedback on refresh
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  active: true,
+                  status: 'active',
+                  lastRequestedAction: 'activate',
+                  lastRequestedActionAt: new Date(),
+                  lastRequestedActionSuccess: true,
+                  updatedAt: new Date() 
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+                
+              results.success.push(id);
+              console.log(`✅ Successfully activated campaign ${id} (fallback method)`);
+            } catch (error) {
+              results.failed.push(id);
+              console.error(`❌ Failed to activate campaign ${id}:`, error);
+              
+              // Update database record with failure
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  lastRequestedAction: 'activate',
+                  lastRequestedActionAt: new Date(),
+                  lastRequestedActionSuccess: false,
+                  updatedAt: new Date()
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            }
+          }));
+          
+          console.log(`Completed fallback activation of ${validIds.length} campaigns. Success: ${results.success.length}, Failed: ${results.failed.length}`);
+        }
       }, 100); // Start processing after response is sent
       
     } catch (error) {
