@@ -35,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { Edit2 } from "lucide-react";
 
 // Form validation schema
 const campaignEditSchema = z.object({
@@ -123,7 +122,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 gap-1">
-          <Edit2 className="h-3.5 w-3.5" />
+          <Edit className="h-3.5 w-3.5" />
           Edit Campaign
         </Button>
       </DialogTrigger>
