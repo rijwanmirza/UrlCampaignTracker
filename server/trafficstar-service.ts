@@ -249,7 +249,9 @@ class TrafficStarService {
       }
       
       // Store campaigns in local database for reference
-      await this.syncCampaignsToDatabase(campaignsResponse);
+      if (campaignsResponse && campaignsResponse.length > 0) {
+        await this.syncCampaignsToDatabase(campaignsResponse);
+      }
       
       return campaignsResponse;
     }, {
