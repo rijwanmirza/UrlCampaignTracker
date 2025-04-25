@@ -1,6 +1,5 @@
-import { Request, Response, Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { authService } from '../services/auth-service';
-import { isAuthenticated } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,6 +15,7 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
     
+    console.log(`Login attempt for user: ${username}`);
     const loginResult = await authService.login(username, password);
     
     if (!loginResult.success) {

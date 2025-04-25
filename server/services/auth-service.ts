@@ -1,26 +1,28 @@
 import { db } from '../db';
-import { users, User } from '@shared/schema';
+import { users, type User } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
 class AuthService {
   /**
-   * Verify if a password matches the stored hash using simpler pbkdf2 method
+   * Very simple password verification with no async/await to avoid timing issues
    */
-  private verifyPassword(password: string, hash: string, salt: string): boolean {
+  verifyPassword(password: string, hashedPassword: string, salt: string): boolean {
     try {
-      const verify = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-      return verify === hash;
+      // Generate hash with the same parameters
+      const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+      // Compare the hashes directly
+      return hash === hashedPassword;
     } catch (error) {
-      console.error('Error verifying password:', error);
+      console.error('Password verification error:', error);
       return false;
     }
   }
 
   /**
-   * Hash a password for storage using simpler pbkdf2 method
+   * Simple password hashing using pbkdf2
    */
-  private hashPassword(password: string): { hash: string, salt: string } {
+  hashPassword(password: string): { hash: string, salt: string } {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
     return { hash, salt };
@@ -42,6 +44,7 @@ class AuthService {
         .where(eq(users.username, username));
       
       if (!user) {
+        console.log(`Login attempt failed: User '${username}' not found`);
         return {
           success: false,
           message: 'Invalid username or password'
@@ -49,13 +52,14 @@ class AuthService {
       }
       
       // Verify password
-      const isValidPassword = this.verifyPassword(
+      const passwordMatches = this.verifyPassword(
         password, 
         user.passwordHash || '', 
         user.passwordSalt || ''
       );
       
-      if (!isValidPassword) {
+      if (!passwordMatches) {
+        console.log(`Login attempt failed: Invalid password for user '${username}'`);
         return {
           success: false,
           message: 'Invalid username or password'
@@ -68,6 +72,7 @@ class AuthService {
         .set({ lastLogin: new Date() })
         .where(eq(users.id, user.id));
       
+      console.log(`User '${username}' logged in successfully`);
       return {
         success: true,
         message: 'Login successful',
@@ -86,23 +91,52 @@ class AuthService {
    * Create a new admin user
    */
   async createAdminUser(username: string, password: string, role: string = 'admin'): Promise<User> {
-    // Hash the password
-    const { hash, salt } = this.hashPassword(password);
-    
-    // Insert the user
-    const [user] = await db
-      .insert(users)
-      .values({
-        username,
-        passwordHash: hash,
-        passwordSalt: salt,
-        role,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
-    
-    return user;
+    try {
+      console.log(`Creating admin user '${username}'...`);
+      
+      // Hash the password
+      const { hash, salt } = this.hashPassword(password);
+      
+      // Check if user already exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username));
+        
+      if (existingUser) {
+        console.log(`User '${username}' already exists, updating password`);
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            passwordHash: hash,
+            passwordSalt: salt,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, existingUser.id))
+          .returning();
+          
+        return updatedUser;
+      }
+      
+      // Insert the user
+      const [user] = await db
+        .insert(users)
+        .values({
+          username,
+          passwordHash: hash,
+          passwordSalt: salt,
+          role,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`Admin user '${username}' created successfully`);
+      return user;
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      throw new Error(`Failed to create admin user: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**

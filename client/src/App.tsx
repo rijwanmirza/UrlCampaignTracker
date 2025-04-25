@@ -16,7 +16,7 @@ import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AuthProvider } from "@/hooks/useAuth";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function Router() {
   const [location] = useLocation();
