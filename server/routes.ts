@@ -1388,6 +1388,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Get TrafficStar campaign spent value
+  app.get("/api/trafficstar/campaigns/:id/spent", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      // Get date range from query parameters
+      const dateFrom = req.query.dateFrom as string | undefined;
+      const dateUntil = req.query.dateUntil as string | undefined;
+      
+      // Validate date format if provided (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (dateFrom && !dateRegex.test(dateFrom)) {
+        return res.status(400).json({ message: "Invalid dateFrom format. Use YYYY-MM-DD" });
+      }
+      if (dateUntil && !dateRegex.test(dateUntil)) {
+        return res.status(400).json({ message: "Invalid dateUntil format. Use YYYY-MM-DD" });
+      }
+
+      const stats = await trafficStarService.getCampaignSpentValue(id, dateFrom, dateUntil);
+      res.json(stats);
+    } catch (error) {
+      console.error(`Error fetching spent value for TrafficStar campaign ${req.params.id}:`, error);
+      res.status(500).json({ 
+        message: `Failed to fetch spent value for TrafficStar campaign ${req.params.id}`,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Get saved TrafficStar campaigns from database
   app.get("/api/trafficstar/saved-campaigns", async (_req: Request, res: Response) => {

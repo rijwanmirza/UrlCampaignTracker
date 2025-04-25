@@ -1286,6 +1286,91 @@ class TrafficStarService {
   async getSavedCampaigns() {
     return db.select().from(trafficstarCampaigns).orderBy(trafficstarCampaigns.name);
   }
+  
+  /**
+   * Get campaign spent value by date range
+   * @param id Campaign ID
+   * @param dateFrom Optional start date in YYYY-MM-DD format (defaults to 7 days ago)
+   * @param dateUntil Optional end date in YYYY-MM-DD format (defaults to today)
+   * @returns Campaign stats including daily costs
+   */
+  async getCampaignSpentValue(id: number, dateFrom?: string, dateUntil?: string): Promise<any> {
+    try {
+      const token = await this.ensureToken();
+      
+      // Set default date range if not provided (last 7 days)
+      const today = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      const fromDate = dateFrom || sevenDaysAgo.toISOString().split('T')[0];
+      const untilDate = dateUntil || today.toISOString().split('T')[0];
+      
+      // Add one day to untilDate as the API excludes the end date from the range
+      const untilPlusOneDay = new Date(untilDate);
+      untilPlusOneDay.setDate(untilPlusOneDay.getDate() + 1);
+      const untilPlusOneDayFormatted = untilPlusOneDay.toISOString().split('T')[0];
+      
+      console.log(`Fetching spent value for campaign ${id} from ${fromDate} to ${untilDate}`);
+      
+      // Use the stats API to get campaign costs by day
+      const response = await axios.get(
+        `${API_BASE_URL}/stats/advertiser/day`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            campaign_id: id,
+            date_from: fromDate,
+            date_until: untilPlusOneDayFormatted,
+            total: true
+          },
+          timeout: 30000 // 30 second timeout
+        }
+      );
+      
+      console.log(`Successfully retrieved spent value for campaign ${id}`);
+      
+      // Process the response to calculate totals and return detailed stats
+      let totalSpent = 0;
+      let totalImpressions = 0;
+      let totalClicks = 0;
+      let totalLeads = 0;
+      
+      if (response.data && response.data.response) {
+        response.data.response.forEach((day: any) => {
+          totalSpent += parseFloat(day.price || 0);
+          totalImpressions += parseInt(day.impressions || 0, 10);
+          totalClicks += parseInt(day.clicks || 0, 10);
+          totalLeads += parseInt(day.leads || 0, 10);
+        });
+      }
+      
+      return {
+        campaignId: id,
+        dateRange: {
+          from: fromDate,
+          to: untilDate
+        },
+        dailyStats: response.data.response || [],
+        totals: {
+          spent: parseFloat(totalSpent.toFixed(4)),
+          impressions: totalImpressions,
+          clicks: totalClicks,
+          leads: totalLeads,
+          ecpm: totalImpressions > 0 ? parseFloat((totalSpent * 1000 / totalImpressions).toFixed(4)) : 0,
+          ecpc: totalClicks > 0 ? parseFloat((totalSpent / totalClicks).toFixed(4)) : 0,
+          ecpa: totalLeads > 0 ? parseFloat((totalSpent / totalLeads).toFixed(4)) : 0,
+          ctr: totalImpressions > 0 ? parseFloat((totalClicks * 100 / totalImpressions).toFixed(2)) : 0
+        }
+      };
+    } catch (error: any) {
+      console.error(`Error getting spent value for campaign ${id}:`, error.response?.data || error.message);
+      throw new Error(`Failed to get spent value for campaign ${id}: ${error.response?.data?.msg || error.message}`);
+    }
+  }
 
   /**
    * Check if API key is set (either in environment variables or database)

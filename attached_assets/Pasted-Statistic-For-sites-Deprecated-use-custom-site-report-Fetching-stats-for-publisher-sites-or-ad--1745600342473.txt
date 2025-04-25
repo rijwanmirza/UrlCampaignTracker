@@ -1,0 +1,95 @@
+Statistic
+For sites
+Deprecated use custom site report
+
+Fetching stats for publisher sites or ad spot. Publisher can choose a parameter for data grouping by sending this parameter in the URL. The response structure can be slightly modified depending on which parameter was chosen.
+
+curl "https://api.trafficstars.com/v1/stats/publisher/day" \
+  -H "Authorization: bearer your_access_token" \
+  --get \
+  -d "application_id=1" \
+  -d "date_from=2015-01-01" \
+  -d "date_until=2015-01-02"
+Click to copy
+The above command returns JSON structured like this:
+
+{
+  "count": 123,
+  "page": 1,
+  "page_count": 7,
+  "response":[
+    {
+      "clicks": 3523,
+      "impressions": 613977,
+      "leads": 76,
+      "price": 553.634719,
+      "shows": 613977,
+      "ctr": 0.57,
+      "ecpa": 7.2846,
+      "ecpc": 0.15,
+      "ecpm": 0.9017,
+      "date": "2015-01-01T00:00:00Z"
+    }
+  ]
+}
+Click to copy
+HTTP Request
+> GET /v1/stats/publisher/{section}
+
+Publisher must replace {section} with one of the following option: day/spot/browser/os/device/country/lang/geospot
+Query parameters
+Parameter	Data type	Options	Description
+application_id	number	required	Application ID
+date_from	string	default: today	Date from (YYYY-MM-DD format)
+date_until	string	default: tomorrow	Date until (YYYY-MM-DD format) this day is excluded from time interval
+page	number		Page number
+size	number		Size of page
+total	bool	default: false	Return total of results
+order	string		Order by: price/impressions/clicks/leads or "section" dependent of the section part (if start with '-' then in descending order)
+For campaigns
+Deprecated use custom campaigns report
+
+Fetching stats for advertiser campaigns. Advertiser can choose a parameter for data grouping by sending this parameter in the URL. The response structure can be slightly modified depending on which parameter was chosen.
+
+curl "https://api.trafficstars.com/v1/stats/advertiser/day" \
+  -H "Authorization: bearer your_access_token" \
+  --get \
+  -d "campaign_id=1" \
+  -d "date_from=2015-01-01" \
+  -d "date_until=2015-01-02"
+Click to copy
+The above command returns JSON structured like this:
+
+{
+  "count": 123,
+  "page": 1,
+  "page_count": 7,
+  "response":[
+    {
+      "clicks": 3523,
+      "impressions": 613977,
+      "leads": 76,
+      "price": 553.634719,
+      "shows": 613977,
+      "ecpa": 7.2846,
+      "ecpc": 0.15,
+      "ecpm": 0.9017,
+      "ctr": 0.57,
+      "date": "2015-01-01T00:00:00Z"
+    }
+  ]
+}
+Click to copy
+HTTP Request
+> GET /v1/stats/advertiser/{section}
+
+Advertiser must replace {section} with one of the following option: day/carrier/device/country/lang/os/browser/creative/application
+Query parameters
+Parameter	Data type	Options	Description
+campaign_id	number	required	Campaign ID
+date_from	string	default: today	Date from (YYYY-MM-DD format)
+date_until	string	default: tomorrow	Date to (YYYY-MM-DD format) this day is excluded from time interval
+page	number		Page number
+size	number		Size of page
+total	bool	default: false	Return total of results
+order	string		Order by: price/impressions/clicks/leads or "section" dependent of the section part (if start with '-' then in descending order)
