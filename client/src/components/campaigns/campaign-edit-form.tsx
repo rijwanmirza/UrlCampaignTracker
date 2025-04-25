@@ -501,27 +501,71 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                     const utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
                     const currentUtcTime = `${utcHours}:${utcMinutes}`;
                     
+                    // Split current time value into hours and minutes
+                    const timeValue = field.value || "00:00:00";
+                    const [hours, minutes] = timeValue.split(':');
+                    
+                    // Create hours array with 24-hour format (00-23)
+                    const hoursOptions = Array.from({ length: 24 }, (_, i) => 
+                      i.toString().padStart(2, '0')
+                    );
+                    
+                    // Create minutes array (00-59)
+                    const minutesOptions = Array.from({ length: 60 }, (_, i) => 
+                      i.toString().padStart(2, '0')
+                    );
+                    
                     return (
                       <FormItem className="mt-4">
                         <FormLabel>Daily Budget Update Time (UTC)</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input
-                              type="time"
-                              {...field}
-                              value={field.value ? field.value.substring(0, 5) : "00:00"}
-                              onChange={(e) => {
-                                const timeValue = e.target.value;
-                                // Add seconds if not already included
-                                const timeWithSeconds = timeValue.includes(':') && 
-                                  timeValue.split(':').length === 2 ? 
-                                  `${timeValue}:00` : timeValue;
-                                
-                                field.onChange(timeWithSeconds);
-                              }}
-                            />
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-                              Current UTC: {currentUtcTime}
+                            <div className="flex items-center space-x-2">
+                              {/* Hours dropdown (24-hour format) */}
+                              <Select
+                                value={hours || "00"}
+                                onValueChange={(value) => {
+                                  const newTime = `${value}:${minutes || "00"}:00`;
+                                  field.onChange(newTime);
+                                }}
+                              >
+                                <SelectTrigger className="w-20">
+                                  <SelectValue placeholder="Hour" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {hoursOptions.map((hour) => (
+                                    <SelectItem key={hour} value={hour}>
+                                      {hour}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              <span className="text-lg">:</span>
+                              
+                              {/* Minutes dropdown */}
+                              <Select
+                                value={minutes || "00"}
+                                onValueChange={(value) => {
+                                  const newTime = `${hours || "00"}:${value}:00`;
+                                  field.onChange(newTime);
+                                }}
+                              >
+                                <SelectTrigger className="w-20">
+                                  <SelectValue placeholder="Min" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {minutesOptions.map((min) => (
+                                    <SelectItem key={min} value={min}>
+                                      {min}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              <div className="ml-3 text-xs text-gray-500">
+                                Current UTC: {currentUtcTime}
+                              </div>
                             </div>
                           </div>
                         </FormControl>
