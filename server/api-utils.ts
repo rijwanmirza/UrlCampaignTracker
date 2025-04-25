@@ -2,10 +2,27 @@
  * API Utilities
  * Common functions for API operations
  */
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { db } from './db';
 import { apiErrorLogs } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+
+/**
+ * Retry options for API operations
+ */
+interface RetryOptions {
+  // Type of action being performed (for logging)
+  actionType: string;
+  // ID of the campaign involved (optional)
+  campaignId?: number;
+  // Request details for logging
+  endpoint?: string;
+  method?: string;
+  requestBody?: any;
+  // Maximum number of retry attempts
+  maxAttempts?: number;
+  // Initial delay between retries in milliseconds
+  delayMs?: number;
+}
 
 /**
  * Retry an API operation multiple times with exponential backoff
@@ -15,117 +32,63 @@ import { eq } from 'drizzle-orm';
  */
 export async function retryOperation<T>(
   operation: () => Promise<T>,
-  options: {
-    actionType: string;
-    maxAttempts?: number;
-    delayMs?: number;
-    campaignId?: string | number;
-    endpoint?: string;
-    method?: string;
-    requestBody?: any;
-  }
+  options: RetryOptions
 ): Promise<T> {
-  const {
-    actionType,
-    maxAttempts = 5,
-    delayMs = 2000,
-    campaignId,
-    endpoint,
-    method,
-    requestBody
-  } = options;
-
+  const maxAttempts = options.maxAttempts || 3;
+  const initialDelayMs = options.delayMs || 2000;
+  
+  let attempt = 1;
   let lastError: any = null;
-  let retryCount = 0;
-  let errorLogId: number | null = null;
-
-  while (retryCount < maxAttempts) {
+  
+  while (attempt <= maxAttempts) {
     try {
       // Try the operation
-      const result = await operation();
-      
-      // If we get here, operation succeeded
-      
-      // If an error was previously logged, mark it as resolved
-      if (errorLogId) {
-        await db.update(apiErrorLogs)
-          .set({
-            resolved: true,
-            resolvedAt: new Date(),
-            updatedAt: new Date(),
-            retryCount: retryCount,
-          })
-          .where(eq(apiErrorLogs.id, errorLogId));
-      }
-      
-      return result;
+      return await operation();
     } catch (error: any) {
       lastError = error;
-      retryCount++;
+      console.error(`Attempt ${attempt}/${maxAttempts} failed:`, error.message || error);
       
-      // Format error message
-      const errorMessage = error?.message || 'Unknown error';
-      const statusCode = error?.response?.status;
-      
-      // Format campaign ID for logging
-      const formattedCampaignId = campaignId ? String(campaignId) : undefined;
-      
-      console.error(`[API Error] ${actionType} failed (attempt ${retryCount}/${maxAttempts}): ${errorMessage}`);
-      
-      if (retryCount === 1) {
-        // On first error, log to database
+      // Log the error if this is the first attempt or the last attempt
+      if (attempt === 1 || attempt === maxAttempts) {
         try {
-          const [insertedLog] = await db.insert(apiErrorLogs)
-            .values({
-              endpoint: endpoint || 'unknown',
-              method: method || 'unknown',
-              requestBody: requestBody || null,
-              errorMessage: errorMessage,
-              errorDetails: formatErrorDetails(error),
-              statusCode: statusCode || null,
-              campaignId: formattedCampaignId,
-              actionType: actionType,
-              retryCount: retryCount,
-              resolved: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            })
-            .returning();
-            
-          errorLogId = insertedLog.id;
+          await db.insert(apiErrorLogs).values({
+            actionType: options.actionType,
+            campaignId: options.campaignId?.toString(),
+            endpoint: options.endpoint,
+            method: options.method,
+            requestBody: options.requestBody ? JSON.stringify(options.requestBody) : null,
+            errorMessage: error.message || 'Unknown error',
+            errorDetails: formatErrorDetails(error),
+            retryCount: attempt,
+            resolved: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
         } catch (logError) {
-          console.error('Failed to log API error to database:', logError);
-        }
-      } else if (errorLogId) {
-        // Update existing log with new retry count
-        try {
-          await db.update(apiErrorLogs)
-            .set({
-              retryCount: retryCount,
-              updatedAt: new Date(),
-              errorMessage: errorMessage, // Update with latest error
-              errorDetails: formatErrorDetails(error),
-              statusCode: statusCode || null,
-            })
-            .where(eq(apiErrorLogs.id, errorLogId));
-        } catch (logError) {
-          console.error('Failed to update API error log:', logError);
+          console.error('Failed to log API error:', logError);
         }
       }
       
-      // Continue retrying if we haven't hit max attempts
-      if (retryCount < maxAttempts) {
-        console.log(`Retrying after ${delayMs}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-        
-        // Exponential backoff - increase delay for next attempt
-        delayMs *= 1.5;
+      // If we've reached max attempts, throw the last error
+      if (attempt >= maxAttempts) {
+        throw error;
       }
+      
+      // Calculate delay with exponential backoff
+      // Each retry waits longer than the previous one
+      const nextDelayMs = initialDelayMs * Math.pow(2, attempt - 1);
+      console.log(`Waiting ${nextDelayMs}ms before retry ${attempt + 1}/${maxAttempts}...`);
+      
+      // Wait for the calculated delay
+      await new Promise(resolve => setTimeout(resolve, nextDelayMs));
+      
+      // Increment attempt counter
+      attempt++;
     }
   }
   
-  // If we get here, all attempts failed
-  throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError?.message || 'Unknown error'}`);
+  // This should never be reached, but TypeScript requires a return
+  throw lastError;
 }
 
 /**
@@ -134,18 +97,40 @@ export async function retryOperation<T>(
 function formatErrorDetails(error: any): any {
   if (!error) return null;
   
-  // Extract useful information from the error
-  return {
-    message: error.message,
-    name: error.name,
-    stack: error.stack,
-    response: error.response ? {
-      status: error.response.status,
-      statusText: error.response.statusText,
-      data: error.response.data,
-      headers: error.response.headers
-    } : null
-  };
+  // Return a structured object with useful error information
+  const details: any = {};
+  
+  // Include response data if available
+  if (error.response) {
+    details.status = error.response.status;
+    details.statusText = error.response.statusText;
+    details.data = error.response.data;
+    details.headers = {};
+    
+    // Only include essential headers
+    const headerKeys = ['content-type', 'date', 'request-id', 'x-request-id'];
+    for (const key of headerKeys) {
+      if (error.response.headers[key]) {
+        details.headers[key] = error.response.headers[key];
+      }
+    }
+  }
+  
+  // Include request information if available
+  if (error.config) {
+    details.request = {
+      url: error.config.url,
+      method: error.config.method,
+      timeout: error.config.timeout
+    };
+  }
+  
+  // Include any stack trace for debugging
+  if (error.stack) {
+    details.stack = error.stack.split('\n').slice(0, 3).join('\n');
+  }
+  
+  return JSON.stringify(details);
 }
 
 /**
@@ -155,44 +140,36 @@ export async function makeApiRequestWithRetry<T>(
   url: string,
   options: {
     method: string;
-    headers?: Record<string, string>;
     data?: any;
+    params?: any;
     actionType: string;
-    campaignId?: string | number;
+    campaignId?: number;
     maxAttempts?: number;
-    timeout?: number;
+    timeoutMs?: number;
   }
-): Promise<T> {
-  const {
-    method,
-    headers = {},
-    data,
-    actionType,
-    campaignId,
-    maxAttempts = 5,
-    timeout = 10000
-  } = options;
-
-  return retryOperation<T>(
+): Promise<AxiosResponse<T>> {
+  const { method, data, params, actionType, campaignId, maxAttempts, timeoutMs } = options;
+  
+  return retryOperation(
     async () => {
       const config: AxiosRequestConfig = {
         method,
         url,
-        headers,
-        timeout,
-        data
+        data,
+        params,
+        timeout: timeoutMs || 30000 // Default 30 second timeout
       };
       
-      const response = await axios(config);
-      return response.data;
+      return await axios.request<T>(config);
     },
     {
       actionType,
-      maxAttempts,
       campaignId,
       endpoint: url,
       method,
-      requestBody: data
+      requestBody: data,
+      maxAttempts: maxAttempts || 3,
+      delayMs: 2000
     }
   );
 }

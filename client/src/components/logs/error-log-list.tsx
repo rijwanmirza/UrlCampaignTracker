@@ -31,9 +31,7 @@ export function ErrorLogList() {
 
   const markAsResolved = async (id: number) => {
     try {
-      await apiRequest(`/api/logs/trafficstar-errors/${id}/resolve`, {
-        method: "POST"
-      });
+      await apiRequest(`/api/logs/trafficstar-errors/${id}/resolve`, "POST");
       toast({
         title: "Success",
         description: "Error log marked as resolved",
@@ -51,9 +49,7 @@ export function ErrorLogList() {
 
   const clearResolved = async () => {
     try {
-      await apiRequest("/api/logs/trafficstar-errors/resolved", {
-        method: "DELETE"
-      });
+      await apiRequest("/api/logs/trafficstar-errors/resolved", "DELETE");
       toast({
         title: "Success",
         description: "Resolved error logs cleared",

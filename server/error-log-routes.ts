@@ -2,13 +2,13 @@
  * Error Log Routes
  * This file contains the routes for accessing and managing API error logs
  */
-import { Request, Response, Router } from 'express';
+
+import express, { Request, Response } from 'express';
 import { db } from './db';
 import { apiErrorLogs } from '@shared/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
-// Create a router for error log routes
-const router = Router();
+const router = express.Router();
 
 /**
  * Get paginated error logs
@@ -17,17 +17,10 @@ const router = Router();
 router.get('/trafficstar-errors', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
     
-    // Get the total count
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(apiErrorLogs);
-    
-    const total = countResult?.count || 0;
-    
-    // Get the paginated logs ordered by newest first
+    // Get logs with pagination
     const logs = await db
       .select()
       .from(apiErrorLogs)
@@ -35,18 +28,25 @@ router.get('/trafficstar-errors', async (req: Request, res: Response) => {
       .limit(limit)
       .offset(offset);
     
+    // Get total count for pagination
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(apiErrorLogs);
+    
+    const totalPages = Math.ceil(count / limit);
+    
     res.json({
       logs,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit)
+        totalItems: count,
+        totalPages
       }
     });
   } catch (error) {
-    console.error("Error retrieving API error logs:", error);
-    res.status(500).json({ error: "Failed to retrieve API error logs" });
+    console.error('Error fetching error logs:', error);
+    res.status(500).json({ message: 'Failed to fetch error logs' });
   }
 });
 
@@ -56,21 +56,24 @@ router.get('/trafficstar-errors', async (req: Request, res: Response) => {
  */
 router.post('/trafficstar-errors/:id/resolve', async (req: Request, res: Response) => {
   try {
-    const logId = parseInt(req.params.id);
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
     
-    // Update the log regardless of whether it exists
-    const result = await db.update(apiErrorLogs)
+    await db
+      .update(apiErrorLogs)
       .set({
         resolved: true,
         resolvedAt: new Date(),
         updatedAt: new Date()
       })
-      .where(eq(apiErrorLogs.id, logId));
+      .where(eq(apiErrorLogs.id, id));
     
-    res.json({ success: true, message: "Log marked as resolved" });
+    res.json({ message: 'Error log marked as resolved' });
   } catch (error) {
-    console.error("Error resolving API error log:", error);
-    res.status(500).json({ error: "Failed to resolve API error log" });
+    console.error('Error marking log as resolved:', error);
+    res.status(500).json({ message: 'Failed to mark error log as resolved' });
   }
 });
 
@@ -80,17 +83,17 @@ router.post('/trafficstar-errors/:id/resolve', async (req: Request, res: Respons
  */
 router.delete('/trafficstar-errors/resolved', async (_req: Request, res: Response) => {
   try {
-    await db
+    const result = await db
       .delete(apiErrorLogs)
       .where(eq(apiErrorLogs.resolved, true));
     
     res.json({ 
-      success: true, 
-      message: "Cleared all resolved error logs"
+      message: 'Resolved error logs cleared',
+      count: result.count || 0
     });
   } catch (error) {
-    console.error("Error clearing resolved API error logs:", error);
-    res.status(500).json({ error: "Failed to clear resolved API error logs" });
+    console.error('Error clearing resolved logs:', error);
+    res.status(500).json({ message: 'Failed to clear resolved error logs' });
   }
 });
 
