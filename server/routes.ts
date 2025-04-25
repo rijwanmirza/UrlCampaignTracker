@@ -23,11 +23,8 @@ import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import Imap from "imap";
-import errorLogRoutes from "./error-log-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Register error log routes
-  app.use('/api/logs', errorLogRoutes);
   // Just create a regular HTTP server for now
   // We'll handle HTTP/2 headers in the route handlers
   const server = createServer(app);
