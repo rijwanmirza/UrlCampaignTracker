@@ -405,7 +405,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                     <p>Error retrieving data: {spentValueError}</p>
                   </div>
                 </div>
-              ) : spentValueData ? (
+              ) : spentValueData && spentValueData.totals ? (
                 <div className="flex items-center">
                   <div className="text-3xl font-bold text-green-700 flex items-center">
                     <DollarSign className="h-6 w-6 mr-1" />
