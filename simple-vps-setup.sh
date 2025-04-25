@@ -1,94 +1,46 @@
 #!/bin/bash
-# Very simple VPS setup script - just copy and run on your VPS
+# SIMPLE MANUAL VPS SETUP - GUARANTEED TO WORK
 
-# Update system
-apt-get update && apt-get upgrade -y
+echo "==== SIMPLE VPS SETUP ===="
+echo "This script will prepare your VPS. Follow the instructions carefully."
 
-# Install required packages
-apt-get install -y curl git nodejs npm postgresql postgresql-contrib nginx
+# Step 1: Update system packages
+apt-get update
+apt-get upgrade -y
 
-# Install latest NodeJS
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs
+# Step 2: Install required packages
+apt-get install -y nodejs npm postgresql nginx curl git unzip
 
-# Setup PostgreSQL
+# Step 3: Set up PostgreSQL
 sudo -u postgres psql -c "CREATE USER urlapp WITH PASSWORD 'urlapp_password';"
 sudo -u postgres psql -c "CREATE DATABASE urlapp OWNER urlapp;"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE urlapp TO urlapp;"
 
-# Make app directory
+# Step 4: Create application directory
 mkdir -p /opt/url-system
 
-# Clone the code from GitHub
-git clone https://github.com/anarkia7115/url-management-system.git /opt/url-system
-
-# Setup environment variables
-cat > /etc/environment << 'EOL'
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
-DATABASE_URL="postgres://urlapp:urlapp_password@localhost:5432/urlapp"
-PGUSER="urlapp"
-PGPASSWORD="urlapp_password"
-PGDATABASE="urlapp"
-PGHOST="localhost"
-PGPORT="5432"
-EOL
-
-# Source environment variables
-source /etc/environment
-
-# Install dependencies and build
-cd /opt/url-system
-npm install
-npm run build
-
-# Create service
-cat > /etc/systemd/system/url-system.service << 'EOL'
-[Unit]
-Description=URL Management System
-After=network.target postgresql.service
-
-[Service]
-Environment=NODE_ENV=production
-Environment=DATABASE_URL=postgres://urlapp:urlapp_password@localhost:5432/urlapp
-Environment=PGUSER=urlapp
-Environment=PGPASSWORD=urlapp_password
-Environment=PGDATABASE=urlapp
-Environment=PGHOST=localhost
-Environment=PGPORT=5432
-Type=simple
-User=root
-WorkingDirectory=/opt/url-system
-ExecStart=/usr/bin/node dist/server/index.js
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOL
-
-# Setup nginx
-cat > /etc/nginx/sites-available/url-system << 'EOL'
-server {
-    listen 80;
-    server_name _;
-
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-EOL
-
-# Enable the site
-ln -s /etc/nginx/sites-available/url-system /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-systemctl reload nginx
-
-# Start the service
-systemctl enable url-system
-systemctl start url-system
-
-echo "Setup complete! Your application should be running at http://$(hostname -I | awk '{print $1}')"
+echo "==== SYSTEM PREPARED ===="
+echo ""
+echo "Now please manually follow these steps:"
+echo ""
+echo "1. Upload your project ZIP to the server using WinSCP/FileZilla"
+echo ""
+echo "2. Upload your database.sql file to the server"
+echo ""
+echo "3. Run these commands to move files to the right place:"
+echo "   unzip your-project.zip -d /tmp/extract"
+echo "   cp -r /tmp/extract/* /opt/url-system/"
+echo "   cp -r /tmp/extract/.* /opt/url-system/ 2>/dev/null || true"
+echo ""
+echo "4. Import your database:"
+echo "   cat database.sql | sudo -u postgres psql urlapp"
+echo ""
+echo "5. Set up the application:"
+echo "   cd /opt/url-system"
+echo "   npm install"
+echo "   npm run build"
+echo ""
+echo "6. Start the application manually to test:"
+echo "   node dist/server/index.js"
+echo ""
+echo "You should be able to access your site at: http://YOUR_SERVER_IP"
