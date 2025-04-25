@@ -75,9 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Also trigger a refetch to ensure we have fresh data
       refetch();
       
-      // Navigate to campaigns after successful login
-      // We use setTimeout to ensure the auth state is properly updated before navigation
-      setTimeout(() => setLocation('/campaigns'), 300);
+      // We don't need navigation here anymore since LoginForm handles it with a hard redirect
     },
   });
   

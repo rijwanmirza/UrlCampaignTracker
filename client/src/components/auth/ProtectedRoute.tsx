@@ -1,7 +1,7 @@
 import React from 'react';
-import { Redirect, Route } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
+import { Route, useLocation } from 'wouter';
 import { Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 type ProtectedRouteProps = {
   path: string;
@@ -9,7 +9,30 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [, setLocation] = useLocation();
+
+  React.useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await axios.get('/api/auth/me');
+        if (res.data && res.data.isAuthenticated) {
+          setIsAuthenticated(true);
+        } else {
+          // Redirect to login if not authenticated
+          setLocation('/login');
+        }
+      } catch (error) {
+        // Redirect to login on error
+        setLocation('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    checkAuth();
+  }, [setLocation]);
 
   return (
     <Route path={path}>
@@ -23,7 +46,7 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
         }
         
         if (!isAuthenticated) {
-          return <Redirect to="/login" />;
+          return null; // Already redirecting in useEffect
         }
         
         return <Component {...params} />;

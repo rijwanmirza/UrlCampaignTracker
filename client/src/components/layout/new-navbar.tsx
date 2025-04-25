@@ -17,12 +17,23 @@ export default function Navbar() {
   
   // Handle logout
   const handleLogout = async () => {
-    await logout();
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-    setMenuOpen(false);
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      setMenuOpen(false);
+      
+      // Force navigation with page refresh to ensure clean state
+      window.location.href = '/login';
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Header with hamburger menu button

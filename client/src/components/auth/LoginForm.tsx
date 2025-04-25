@@ -35,7 +35,9 @@ export function LoginForm() {
         description: 'You have been successfully logged in',
         variant: 'default',
       });
-      // Navigation is handled by the parent LoginPage component via useEffect
+      
+      // Force a hard redirect instead of using React navigation
+      window.location.href = '/campaigns';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during login');
       toast({
