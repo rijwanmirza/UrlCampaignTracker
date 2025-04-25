@@ -105,6 +105,33 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     );
   }, 100);
   
+  // Force budget update mutation - will be used when budgetUpdateTime changes
+  const forceBudgetUpdateMutation = useMutation({
+    mutationFn: async (campaignId: number) => {
+      console.log("Forcing immediate budget update for campaign:", campaignId);
+      return await apiRequest(
+        "POST",
+        `/api/trafficstar/campaigns/force-budget-update`,
+        { campaignId }
+      );
+    },
+    onSuccess: () => {
+      // Show success toast
+      toast({
+        title: "Budget Update Triggered",
+        description: "Budget update has been applied immediately.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Budget Update Failed",
+        description: "Failed to trigger immediate budget update. The scheduled update will still apply.",
+        variant: "destructive",
+      });
+      console.error("Failed to force budget update:", error);
+    }
+  });
+
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (values: CampaignEditValues) => {
@@ -116,16 +143,30 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         values
       );
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       // Invalidate cached campaign data
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
+      
+      // Track if budgetUpdateTime has changed
+      const budgetUpdateTimeChanged = variables.budgetUpdateTime !== campaign.budgetUpdateTime;
       
       // Show success toast
       toast({
         title: "Campaign Updated",
         description: "Your campaign has been updated successfully.",
       });
+      
+      // If budgetUpdateTime changed and TrafficStar integration is enabled,
+      // trigger immediate budget update
+      if (
+        budgetUpdateTimeChanged && 
+        variables.autoManageTrafficstar && 
+        variables.trafficstarCampaignId
+      ) {
+        console.log("Budget update time changed - triggering immediate update");
+        forceBudgetUpdateMutation.mutate(campaign.id);
+      }
       
       // Close the dialog
       setOpen(false);

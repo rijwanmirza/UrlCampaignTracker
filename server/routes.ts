@@ -12,14 +12,15 @@ import {
   insertTrafficstarCredentialSchema,
   trafficstarCampaignActionSchema,
   trafficstarCampaignBudgetSchema,
-  trafficstarCampaignEndTimeSchema
+  trafficstarCampaignEndTimeSchema,
+  trafficstarCampaigns,
+  campaigns 
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
-import { trafficstarCampaigns } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import Imap from "imap";
 
@@ -1557,7 +1558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           10.15
         );
         
-        // Update last sync time
+        // Update last sync time in campaigns table
         await db.update(campaigns)
           .set({
             lastTrafficstarSync: new Date(),
