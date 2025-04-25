@@ -409,12 +409,20 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                 <div className="flex items-center">
                   <div className="text-3xl font-bold text-green-700 flex items-center">
                     <DollarSign className="h-6 w-6 mr-1" />
-                    {spentValueData.totals.spent.toFixed(2)}
+                    {typeof spentValueData.totals.spent === 'number' 
+                      ? spentValueData.totals.spent.toFixed(2) 
+                      : '0.00'}
                   </div>
                   <div className="ml-6 text-sm text-gray-500">
-                    <div>Impressions: {spentValueData.totals.impressions.toLocaleString()}</div>
-                    <div>Clicks: {spentValueData.totals.clicks.toLocaleString()}</div>
-                    <div>eCPM: ${spentValueData.totals.ecpm.toFixed(4)}</div>
+                    <div>Impressions: {typeof spentValueData.totals.impressions === 'number' 
+                      ? spentValueData.totals.impressions.toLocaleString() 
+                      : '0'}</div>
+                    <div>Clicks: {typeof spentValueData.totals.clicks === 'number' 
+                      ? spentValueData.totals.clicks.toLocaleString() 
+                      : '0'}</div>
+                    <div>eCPM: ${typeof spentValueData.totals.ecpm === 'number' 
+                      ? spentValueData.totals.ecpm.toFixed(4) 
+                      : '0.0000'}</div>
                   </div>
                 </div>
               ) : (

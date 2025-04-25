@@ -1000,16 +1000,37 @@ class TrafficStarService {
           totalLeads += day.leads;
         });
         
+        // Format daily stats in the expected format
+        const dailyStats = dailyData.map(day => ({
+          date: day.date,
+          impressions: day.impressions,
+          clicks: day.clicks,
+          leads: day.leads,
+          price: day.cost,
+          ecpm: parseFloat(day.ecpm),
+          ecpc: day.clicks > 0 ? parseFloat((day.cost / day.clicks).toFixed(4)) : 0,
+          ecpa: 0, // Not available in mock data
+          ctr: parseFloat(day.ctr)
+        }));
+        
+        // Return mock data in the format expected by the client
         return {
           campaignId: id,
-          dateFrom: fromDate,
-          dateUntil: untilDate,
-          totalSpent: totalSpent.toFixed(2),
-          totalImpressions,
-          totalClicks,
-          totalLeads,
-          costPerClick: totalClicks > 0 ? (totalSpent / totalClicks).toFixed(4) : '0.0000',
-          dailyData: dailyData
+          dateRange: {
+            from: fromDate,
+            to: untilDate
+          },
+          dailyStats: dailyStats,
+          totals: {
+            spent: parseFloat(totalSpent.toFixed(2)),
+            impressions: totalImpressions,
+            clicks: totalClicks,
+            leads: totalLeads,
+            ecpm: totalImpressions > 0 ? parseFloat(((totalSpent / totalImpressions) * 1000).toFixed(4)) : 0,
+            ecpc: totalClicks > 0 ? parseFloat((totalSpent / totalClicks).toFixed(4)) : 0,
+            ecpa: 0,
+            ctr: totalImpressions > 0 ? parseFloat(((totalClicks / totalImpressions) * 100).toFixed(2)) : 0
+          }
         };
       }
       
@@ -1047,17 +1068,48 @@ class TrafficStarService {
         
         console.log(`Successfully retrieved spent value for campaign ${id}`);
         
-        // Return the summary data
+        // Format daily data to match client expectations
+        const dailyStats = (response?.data?.response || []).map((day: any) => {
+          const impressions = parseInt(day.impressions || 0, 10);
+          const clicks = parseInt(day.clicks || 0, 10);
+          const price = parseFloat(day.cost || 0);
+          
+          return {
+            date: day.date || '',
+            impressions: impressions,
+            clicks: clicks,
+            leads: parseInt(day.leads || 0, 10),
+            price: price,
+            ecpm: impressions > 0 ? parseFloat(((price / impressions) * 1000).toFixed(4)) : 0,
+            ecpc: clicks > 0 ? parseFloat((price / clicks).toFixed(4)) : 0,
+            ecpa: 0, // Not available in response
+            ctr: impressions > 0 ? parseFloat(((clicks / impressions) * 100).toFixed(2)) : 0
+          };
+        });
+        
+        // Calculate ecpm for totals
+        const ecpm = totalImpressions > 0 
+          ? parseFloat(((totalSpent / totalImpressions) * 1000).toFixed(4)) 
+          : 0;
+        
+        // Return the data in the format expected by the client
         return {
           campaignId: id,
-          dateFrom: fromDate,
-          dateUntil: untilDate,
-          totalSpent: totalSpent.toFixed(2),
-          totalImpressions,
-          totalClicks,
-          totalLeads,
-          costPerClick: totalClicks > 0 ? (totalSpent / totalClicks).toFixed(4) : '0.0000',
-          dailyData: response?.data?.response || []
+          dateRange: {
+            from: fromDate,
+            to: untilDate
+          },
+          dailyStats: dailyStats,
+          totals: {
+            spent: parseFloat(totalSpent.toFixed(2)),
+            impressions: totalImpressions,
+            clicks: totalClicks,
+            leads: totalLeads,
+            ecpm: ecpm,
+            ecpc: totalClicks > 0 ? parseFloat((totalSpent / totalClicks).toFixed(4)) : 0,
+            ecpa: 0, // Not available in response
+            ctr: totalImpressions > 0 ? parseFloat(((totalClicks / totalImpressions) * 100).toFixed(2)) : 0
+          }
         };
       } catch (error) {
         console.error(`Error getting spent value for campaign ${id}:`, error);

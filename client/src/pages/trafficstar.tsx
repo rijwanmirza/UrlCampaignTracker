@@ -554,7 +554,7 @@ export default function TrafficstarPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Total Spent</div>
-                  <div className="text-2xl font-bold">${spentValueData.totals.spent.toFixed(2)}</div>
+                  <div className="text-2xl font-bold">${typeof spentValueData.totals.spent === 'number' ? spentValueData.totals.spent.toFixed(2) : '0.00'}</div>
                 </div>
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Impressions</div>
