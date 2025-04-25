@@ -4,9 +4,11 @@
  */
 import axios from 'axios';
 import { db } from './db';
-import { trafficstarCredentials, trafficstarCampaigns, campaigns } from '@shared/schema';
-import { eq, sql } from 'drizzle-orm';
+import { trafficstarCredentials, trafficstarCampaigns, campaigns, apiErrorLogs } from '@shared/schema';
+import { eq, sql, desc } from 'drizzle-orm';
 import { storage } from './storage';
+import fs from 'fs';
+import path from 'path';
 
 // Try a few different API base URLs
 // Different TrafficStar API versions might have different URL structures
@@ -66,6 +68,150 @@ interface CampaignsResponse {
 class TrafficStarService {
   private accessToken: string | null = null;
   private tokenExpiry: Date | null = null;
+  private MAX_RETRY_ATTEMPTS = 5; // Maximum number of retry attempts
+  private RETRY_DELAY_MS = 2000; // Delay between retries in milliseconds
+
+  /**
+   * Retry mechanism for API operations
+   * Will retry the operation until it succeeds or reaches max attempts
+   * @param operation Function that performs the API operation
+   * @param actionType Type of action being performed (for logging)
+   * @param campaignId Campaign ID (if applicable)
+   * @param endpoint API endpoint being called
+   * @param method HTTP method being used
+   * @param requestBody Request body (if applicable)
+   * @param maxAttempts Maximum number of retry attempts
+   * @param delayMs Delay between retries in milliseconds
+   * @returns Result of the successful operation
+   */
+  private async retryOperation<T>(
+    operation: () => Promise<T>,
+    actionType: string,
+    campaignId?: string | number,
+    endpoint?: string,
+    method?: string,
+    requestBody?: any,
+    maxAttempts: number = this.MAX_RETRY_ATTEMPTS,
+    delayMs: number = this.RETRY_DELAY_MS
+  ): Promise<T> {
+    let lastError: any = null;
+    let retryCount = 0;
+    let errorLogId: number | null = null;
+
+    while (retryCount < maxAttempts) {
+      try {
+        // Try the operation
+        const result = await operation();
+        
+        // If we get here, operation succeeded
+        
+        // If an error was previously logged, mark it as resolved
+        if (errorLogId) {
+          await db.update(apiErrorLogs)
+            .set({
+              resolved: true,
+              resolvedAt: new Date(),
+              updatedAt: new Date(),
+              retryCount: retryCount,
+            })
+            .where(eq(apiErrorLogs.id, errorLogId));
+        }
+        
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        retryCount++;
+        
+        // Format error message
+        const errorMessage = error?.message || 'Unknown error';
+        const statusCode = error?.response?.status;
+        
+        // Format campaign ID for logging
+        const formattedCampaignId = campaignId ? String(campaignId) : undefined;
+        
+        console.error(`[API Error] ${actionType} failed (attempt ${retryCount}/${maxAttempts}): ${errorMessage}`);
+        
+        if (retryCount === 1) {
+          // On first error, log to database
+          try {
+            const [insertedLog] = await db.insert(apiErrorLogs)
+              .values({
+                endpoint: endpoint || 'unknown',
+                method: method || 'unknown',
+                requestBody: requestBody || null,
+                errorMessage: errorMessage,
+                errorDetails: this.formatErrorDetails(error),
+                statusCode: statusCode || null,
+                campaignId: formattedCampaignId,
+                actionType: actionType,
+                retryCount: retryCount,
+                resolved: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .returning();
+              
+            errorLogId = insertedLog.id;
+          } catch (logError) {
+            console.error('Failed to log API error to database:', logError);
+          }
+        } else if (errorLogId) {
+          // Update existing log with new retry count
+          try {
+            await db.update(apiErrorLogs)
+              .set({
+                retryCount: retryCount,
+                updatedAt: new Date(),
+                errorMessage: errorMessage, // Update with latest error
+                errorDetails: this.formatErrorDetails(error),
+                statusCode: statusCode || null,
+              })
+              .where(eq(apiErrorLogs.id, errorLogId));
+          } catch (logError) {
+            console.error('Failed to update API error log:', logError);
+          }
+        }
+        
+        // Continue retrying if we haven't hit max attempts
+        if (retryCount < maxAttempts) {
+          console.log(`Retrying after ${delayMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          
+          // Exponential backoff - increase delay for next attempt
+          delayMs *= 1.5;
+        }
+      }
+    }
+    
+    // If we get here, all attempts failed
+    throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError?.message || 'Unknown error'}`);
+  }
+  
+  /**
+   * Format error details for storage
+   */
+  private formatErrorDetails(error: any): any {
+    if (!error) return null;
+    
+    // Extract useful information from the error
+    return {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      response: error.response ? {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers,
+      } : null,
+      request: error.request ? {
+        method: error.request.method,
+        path: error.request.path,
+        headers: error.request.headers,
+      } : null,
+      config: error.config,
+    };
+  }
   
   /**
    * Check if current time is within a window of minutes after target time

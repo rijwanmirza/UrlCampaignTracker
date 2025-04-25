@@ -220,3 +220,23 @@ export type TrafficstarCampaign = typeof trafficstarCampaigns.$inferSelect;
 export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignActionSchema>;
 export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
 export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;
+
+// API Error Logs table - for tracking failed API requests
+export const apiErrorLogs = pgTable("api_error_logs", {
+  id: serial("id").primaryKey(),
+  endpoint: text("endpoint").notNull(), // API endpoint that was called
+  method: text("method").notNull(), // HTTP method used (GET, POST, PUT, PATCH, DELETE)
+  requestBody: json("request_body"), // Request body (if any)
+  errorMessage: text("error_message").notNull(), // Error message
+  errorDetails: json("error_details"), // Full error details
+  statusCode: integer("status_code"), // HTTP status code if available
+  campaignId: text("campaign_id"), // TrafficStar campaign ID if applicable
+  actionType: text("action_type").notNull(), // Type of action (e.g., 'pause_campaign', 'update_budget', 'get_spent')
+  retryCount: integer("retry_count").default(0).notNull(), // Number of retry attempts
+  resolved: boolean("resolved").default(false).notNull(), // Whether this error was eventually resolved
+  resolvedAt: timestamp("resolved_at"), // When the error was resolved
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ApiErrorLog = typeof apiErrorLogs.$inferSelect;
