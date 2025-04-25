@@ -35,8 +35,7 @@ export function LoginForm() {
         description: 'You have been successfully logged in',
         variant: 'default',
       });
-      // Navigate to campaigns after successful login
-      setLocation('/campaigns');
+      // Navigation is handled by the parent LoginPage component via useEffect
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during login');
       toast({

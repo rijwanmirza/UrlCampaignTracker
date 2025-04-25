@@ -1,16 +1,19 @@
-import React from 'react';
-import { Redirect } from 'wouter';
+import React, { useEffect } from 'react';
+import { Redirect, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // If already authenticated, redirect to home
-  if (isAuthenticated) {
-    return <Redirect to="/" />;
-  }
+  // If already authenticated, redirect to campaigns
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/campaigns');
+    }
+  }, [isAuthenticated, setLocation]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { useLocation } from 'wouter';
 
 // Types
 type User = {
@@ -24,39 +25,59 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   // Get current user
   const { 
     data, 
     error, 
-    isLoading 
+    isLoading,
+    refetch 
   } = useQuery({
     queryKey: ['auth', 'user'],
     queryFn: async () => {
       try {
+        console.log('Checking auth status...');
         const response = await axios.get('/api/auth/me');
+        console.log('Auth response:', response.data);
         return response.data;
       } catch (error) {
         // If unauthorized, return null without throwing error
         if (axios.isAxiosError(error) && error.response?.status === 401) {
+          console.log('User is not authenticated');
           return { user: null, isAuthenticated: false };
         }
+        console.error('Auth check error:', error);
         throw error;
       }
     },
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true,
   });
   
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string, password: string }) => {
+      console.log('Attempting login with credentials:', credentials.username);
       const response = await axios.post('/api/auth/login', credentials);
+      console.log('Login response:', response.data);
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate and refetch user data
-      queryClient.invalidateQueries({ queryKey: ['auth', 'user'] });
+    onSuccess: (data) => {
+      console.log('Login successful, user:', data.user);
+      // Set the user data directly
+      queryClient.setQueryData(['auth', 'user'], { 
+        user: data.user, 
+        isAuthenticated: true 
+      });
+      
+      // Also trigger a refetch to ensure we have fresh data
+      refetch();
+      
+      // Navigate to campaigns after successful login
+      // We use setTimeout to ensure the auth state is properly updated before navigation
+      setTimeout(() => setLocation('/campaigns'), 300);
     },
   });
   
@@ -71,6 +92,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       queryClient.setQueryData(['auth', 'user'], { user: null, isAuthenticated: false });
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['auth', 'user'] });
+      // Redirect to login
+      setLocation('/login');
     },
   });
   
