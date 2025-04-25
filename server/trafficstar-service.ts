@@ -1397,7 +1397,7 @@ class TrafficStarService {
             await this.pauseCampaign(trafficstarId);
             
             // Set end time to current UTC time
-            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+            await this.updateCampaignEndTime(trafficstarId, currentUtcDateTime);
             
             // Update campaign's last sync timestamp
             await db.update(campaigns)
@@ -1407,7 +1407,7 @@ class TrafficStarService {
               })
               .where(eq(campaigns.id, campaign.id));
               
-            console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${formattedCurrentDateTime}`);
+            console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${currentUtcDateTime}`);
           } catch (error) {
             console.error(`Error pausing campaign with no active URLs:`, error);
           }
