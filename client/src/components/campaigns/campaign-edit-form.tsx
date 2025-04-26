@@ -474,7 +474,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                     <div className="space-y-0.5">
                       <FormLabel>Auto-Manage TrafficStar</FormLabel>
                       <FormDescription>
-                        Automatically start campaign when remaining clicks exceed 15,000<br />
+                        Automatically pause campaign when there are no active URLs<br />
                         Automatically set daily budget to $10.15 at specified UTC time
                       </FormDescription>
                     </div>

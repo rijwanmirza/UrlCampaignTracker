@@ -1288,7 +1288,7 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
         new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
       
-      // Check if we have no active URLs - NEW FEATURE
+      // Check if we have no active URLs - KEEPING THIS FEATURE
       if (urls.length === 0) {
         console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
         
@@ -1326,7 +1326,7 @@ class TrafficStarService {
         return; // No need to continue with regular auto-management when there are no active URLs
       }
       
-      // Calculate remaining clicks across all active URLs
+      // Calculate remaining clicks across all active URLs (for logging purposes only)
       const totalRemainingClicks = urls.reduce((total, url) => {
         const remainingClicks = url.clickLimit - url.clicks;
         return total + (remainingClicks > 0 ? remainingClicks : 0);
@@ -1381,45 +1381,9 @@ class TrafficStarService {
         }
       }
       
-      // Check if we need to activate the campaign (remaining clicks > 15,000)
-      if (totalRemainingClicks > 15000) {
-        // Only call activateCampaign if campaign is not already active or a recent activation was unsuccessful
-        if (!currentTrafficstarStatus || 
-            currentTrafficstarStatus.active === false || 
-            currentTrafficstarStatus.status === 'paused' || 
-            (currentTrafficstarStatus.lastRequestedAction === 'activate' && 
-             currentTrafficstarStatus.lastRequestedActionSuccess === false)) {
-          
-          console.log(`Activating TrafficStar campaign ${trafficstarId} (${totalRemainingClicks} remaining clicks > 15,000)`);
-          
-          try {
-            // Activate the campaign
-            await this.activateCampaign(trafficstarId);
-            console.log(`Successfully activated TrafficStar campaign ${trafficstarId}`);
-          } catch (error) {
-            console.error(`Error activating TrafficStar campaign ${trafficstarId}:`, error);
-          }
-        } else {
-          console.log(`TrafficStar campaign ${trafficstarId} is already active (${currentTrafficstarStatus.status}) - no API call needed`);
-        }
-      } else {
-        console.log(`Campaign ${campaign.id} has only ${totalRemainingClicks} remaining clicks, which is less than 15,000 threshold`);
-        
-        // If total remaining clicks <= 15000, ensure the campaign is paused
-        if (currentTrafficstarStatus && 
-            (currentTrafficstarStatus.active === true || 
-             currentTrafficstarStatus.status === 'enabled')) {
-          
-          console.log(`Pausing TrafficStar campaign ${trafficstarId} due to insufficient remaining clicks (${totalRemainingClicks} <= 15,000)`);
-          
-          try {
-            await this.pauseCampaign(trafficstarId);
-            console.log(`Successfully paused TrafficStar campaign ${trafficstarId} due to low remaining clicks`);
-          } catch (error) {
-            console.error(`Error pausing TrafficStar campaign ${trafficstarId}:`, error);
-          }
-        }
-      }
+      // REMOVED 15,000 CLICKS THRESHOLD CODE
+      // The activation/deactivation based on remaining clicks threshold has been removed as requested
+      
     } catch (error) {
       console.error(`Error auto-managing campaign ${campaign.id}:`, error);
     }
