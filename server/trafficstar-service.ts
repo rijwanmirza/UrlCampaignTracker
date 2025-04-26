@@ -1505,9 +1505,9 @@ class TrafficStarService {
     
     // Check if we've reached the recheck time
     if (new Date() >= pauseInfo.recheckAt) {
-      console.log(`Campaign ${campaignId} has reached recheck time after being paused due to spent value - will check again`);
-      // We'll recheck the spent value now, so clear this entry
-      this.spentValuePausedCampaigns.delete(campaignId);
+      console.log(`Campaign ${campaignId} has reached recheck time after being paused due to spent value - starting budget adjustment process`);
+      // Trigger the budget adjustment and reactivation process
+      this.handlePauseRecheckAndBudgetAdjustment(campaignId, currentUtcDate);
       return false;
     }
     
@@ -1515,6 +1515,96 @@ class TrafficStarService {
     const minutesRemaining = Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000));
     console.log(`Campaign ${campaignId} remains paused due to spent value - ${minutesRemaining} minutes until recheck`);
     return true;
+  }
+
+  /**
+   * Handle the 10-minute recheck for a campaign paused due to spent value
+   * This will check current spent value, add pending click pricing, 
+   * and set as new daily budget before reactivating
+   * @param campaignId The TrafficStar campaign ID
+   * @param currentUtcDate The current UTC date
+   */
+  private async handlePauseRecheckAndBudgetAdjustment(campaignId: number, currentUtcDate: string): Promise<void> {
+    try {
+      console.log(`⏱️ 10-minute pause period completed for campaign ${campaignId} - handling budget adjustment...`);
+      
+      // Remove from paused campaigns map (already removed in shouldRemainPausedDueToSpentValue method)
+      
+      // 1. Get current spent value for today
+      console.log(`Checking current spent value for campaign ${campaignId} on ${currentUtcDate}`);
+      const spentValue = await this.getCampaignSpentValue(campaignId, currentUtcDate, currentUtcDate);
+      const currentSpentValue = spentValue?.totalSpent || 0;
+      console.log(`Current spent value for campaign ${campaignId}: $${currentSpentValue.toFixed(4)}`);
+      
+      // 2. Calculate pending click pricing for the campaign
+      // First, get the campaign from our database to find the related campaign ID
+      const [dbTrafficstarCampaign] = await db
+        .select()
+        .from(trafficstarCampaigns)
+        .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
+        
+      if (!dbTrafficstarCampaign || !dbTrafficstarCampaign.campaignId) {
+        console.log(`⚠️ Cannot find related campaign ID for TrafficStar campaign ${campaignId} - skipping budget adjustment`);
+        return;
+      }
+      
+      // Now get our campaign and its URLs
+      const [campaign] = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.id, dbTrafficstarCampaign.campaignId));
+        
+      if (!campaign) {
+        console.log(`⚠️ Cannot find campaign with ID ${dbTrafficstarCampaign.campaignId} - skipping budget adjustment`);
+        return;
+      }
+      
+      // Get all URLs for the campaign to calculate pending click pricing
+      const urlsData = await db
+        .select()
+        .from(urls)
+        .where(
+          and(
+            eq(urls.campaignId, campaign.id),
+            eq(urls.status, 'active')
+          )
+        );
+        
+      // Calculate the pending click pricing
+      let pendingClickPricing = 0;
+      for (const url of urlsData) {
+        const remainingClicks = url.clickLimit - url.clicks;
+        if (remainingClicks > 0) {
+          // Calculate the value of remaining clicks using the price per click
+          // We need to convert from price per 1000 clicks to price per click
+          const pricePerClick = campaign.pricePerThousandClicks / 1000;
+          pendingClickPricing += remainingClicks * pricePerClick;
+        }
+      }
+      
+      console.log(`Pending click pricing for campaign ${campaignId}: $${pendingClickPricing.toFixed(4)}`);
+      
+      // 3. Calculate new daily budget (current spent + pending clicks)
+      const newDailyBudget = currentSpentValue + pendingClickPricing;
+      console.log(`New daily budget for campaign ${campaignId}: $${newDailyBudget.toFixed(4)}`);
+      
+      // 4. Update the campaign's daily budget
+      await this.updateCampaignDailyBudget(campaignId, newDailyBudget);
+      
+      // 5. Reactivate the campaign with end date set to current UTC date 23:59
+      const endDateStr = `${currentUtcDate} 23:59:00`;
+      console.log(`Reactivating campaign ${campaignId} with end date ${endDateStr}`);
+      
+      // Set end date first
+      await this.updateCampaignEndTime(campaignId, endDateStr);
+      
+      // Then activate the campaign
+      await this.activateCampaign(campaignId);
+      
+      console.log(`✅ Campaign ${campaignId} reactivated with new daily budget $${newDailyBudget.toFixed(4)} and end date ${endDateStr}`);
+    } catch (error) {
+      console.error(`Error handling pause recheck and budget adjustment for campaign ${campaignId}:`, error);
+    }
   }
   
   /**
