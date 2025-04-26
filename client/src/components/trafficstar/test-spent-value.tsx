@@ -58,18 +58,25 @@ export function TestSpentValue() {
     setResults(null);
 
     try {
+      console.log("Starting spent value monitoring test...");
       const response = await apiRequest("/api/system/test-spent-value-monitoring", "POST");
+      console.log("Test response:", response);
 
       if (response.success) {
         setSuccess("Test completed successfully!");
         setResults(response.results);
+        console.log("Test results:", response.results);
       } else {
         setError(response.message || "Unknown error occurred during test");
+        console.error("Test error:", response.message);
       }
     } catch (err) {
-      setError("Failed to run test: " + (err instanceof Error ? err.message : String(err)));
+      const errorMessage = "Failed to run test: " + (err instanceof Error ? err.message : String(err));
+      setError(errorMessage);
+      console.error("Test exception:", err);
     } finally {
       setIsLoading(false);
+      console.log("Test completed");
     }
   };
   
@@ -81,18 +88,25 @@ export function TestSpentValue() {
     setBudgetTestResults(null);
 
     try {
+      console.log("Starting budget adjustment test...");
       const response = await apiRequest("/api/system/test-budget-adjustment", "POST");
+      console.log("Budget test response:", response);
 
       if (response.success) {
         setBudgetTestSuccess("Budget adjustment test completed successfully!");
         setBudgetTestResults(response);
+        console.log("Budget test results:", response);
       } else {
         setBudgetTestError(response.message || "Unknown error occurred during test");
+        console.error("Budget test error:", response.message);
       }
     } catch (err) {
-      setBudgetTestError("Failed to run test: " + (err instanceof Error ? err.message : String(err)));
+      const errorMessage = "Failed to run test: " + (err instanceof Error ? err.message : String(err));
+      setBudgetTestError(errorMessage);
+      console.error("Budget test exception:", err);
     } finally {
       setIsBudgetTestLoading(false);
+      console.log("Budget test completed");
     }
   };
 
