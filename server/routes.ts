@@ -1765,7 +1765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   /**
-   * Test route for verifying spent value monitoring functionality
+   * Comprehensive test route for verifying both click threshold and spent value monitoring functionality
    */
   app.post("/api/system/test-spent-value-monitoring", async (_req: Request, res: Response) => {
     try {
@@ -1785,11 +1785,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`TEST: Found ${campaignsToCheck.length} campaigns with auto-management enabled`);
       
+      // Test URL counts - to verify click threshold functionality
+      const urlCounts = await Promise.all(campaignsToCheck.map(async (campaign) => {
+        // Get all active URLs for the campaign
+        const activeUrls = await db
+          .select()
+          .from(urls)
+          .where(
+            and(
+              eq(urls.campaignId, campaign.id),
+              eq(urls.status, 'active')
+            )
+          );
+        
+        // Get all paused URLs for the campaign
+        const pausedUrls = await db
+          .select()
+          .from(urls)
+          .where(
+            and(
+              eq(urls.campaignId, campaign.id),
+              eq(urls.status, 'paused')
+            )
+          );
+        
+        // Calculate total active clicks
+        const activeClicksTotal = activeUrls.reduce((sum, url) => sum + (url.clickLimit - url.clicks), 0);
+        
+        return {
+          campaignId: campaign.id,
+          activeUrlCount: activeUrls.length,
+          pausedUrlCount: pausedUrls.length,
+          activeClicksRemaining: activeClicksTotal,
+          // Would this campaign be activated/paused based on click threshold?
+          wouldActivateByClicks: activeClicksTotal >= 15000,
+          wouldPauseByClicks: activeClicksTotal <= 5000
+        };
+      }));
+      
       // Manually run the spent value check function
       await trafficStarService.checkCampaignsSpentValue();
       
       // Check the results of the spent value check
-      const results = await Promise.all(campaignsToCheck.map(async (campaign) => {
+      const results = await Promise.all(campaignsToCheck.map(async (campaign, index) => {
         if (!campaign.trafficstarCampaignId) return null;
         
         // Get TrafficStar campaign ID converted to number
@@ -1808,18 +1846,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Get pause info from TrafficStar service
         const pauseInfo = trafficStarService.getSpentValuePauseInfo(trafficstarId, currentUtcDate);
+
+        // Get spent value for today (this will return test mock data since we're in test mode)
+        const spentValueData = await trafficStarService.getCampaignSpentValue(trafficstarId, currentUtcDate, currentUtcDate);
+        
+        // Get related URL count data
+        const urlData = urlCounts[index];
         
         return {
           campaignId: campaign.id,
           trafficstarId,
+          // TrafficStar status
           currentStatus: dbCampaign ? dbCampaign.status : 'unknown',
           isActive: dbCampaign ? dbCampaign.active : false,
+          
+          // Spent value data
+          dailySpentValue: spentValueData?.totalSpent || 0,
+          spentThresholdExceeded: (spentValueData?.totalSpent || 0) > 10,
           isPausedDueToSpentValue: Boolean(pauseInfo),
           spentValuePauseInfo: pauseInfo ? {
             pausedAt: pauseInfo.pausedAt.toISOString(),
             recheckAt: pauseInfo.recheckAt.toISOString(),
             minutesRemaining: Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000))
-          } : null
+          } : null,
+          
+          // URL and click data
+          urlData: urlData || {
+            activeUrlCount: 0,
+            pausedUrlCount: 0,
+            activeClicksRemaining: 0,
+            wouldActivateByClicks: false,
+            wouldPauseByClicks: true
+          },
+          
+          // Overall status of which mechanism is controlling the campaign
+          clickThresholdActive: pauseInfo === null, // Click threshold only works when not paused due to spent value
+          controllingFactor: pauseInfo 
+            ? 'spent_value_threshold' 
+            : (urlData?.wouldPauseByClicks 
+              ? 'click_threshold_pause'
+              : (urlData?.wouldActivateByClicks 
+                ? 'click_threshold_activate' 
+                : 'other'))
         };
       }));
       
@@ -1828,14 +1896,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         success: true,
-        message: 'Spent value test completed',
+        message: 'Comprehensive test completed for both spent value and click threshold functionality',
         results: results.filter(Boolean)
       });
     } catch (error) {
       console.error('Error in test-spent-value-monitoring:', error);
       res.status(500).json({
         success: false,
-        message: 'Error testing spent value monitoring',
+        message: 'Error testing auto-management functionality',
         error: String(error)
       });
     }

@@ -12,6 +12,7 @@ import RedirectTest from "@/pages/redirect-test";
 import GmailSettingsPage from "@/pages/gmail-settings";
 import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
+import TestSpentValuePage from "@/pages/test-spent-value";
 import AppLayout from "@/components/layout/app-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -65,6 +66,9 @@ function Router() {
         </Route>
         <Route path="/redirect-test">
           <RedirectTest />
+        </Route>
+        <Route path="/test-spent-value">
+          <TestSpentValuePage />
         </Route>
         <Route>
           <NotFound />
