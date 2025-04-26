@@ -1537,36 +1537,25 @@ class TrafficStarService {
       console.log(`Current spent value for campaign ${campaignId}: $${currentSpentValue.toFixed(4)}`);
       
       // 2. Calculate pending click pricing for the campaign
-      // First, get the campaign from our database to find the related campaign ID
-      const [dbTrafficstarCampaign] = await db
-        .select()
-        .from(trafficstarCampaigns)
-        .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
-        
-      if (!dbTrafficstarCampaign || !dbTrafficstarCampaign.campaignId) {
-        console.log(`⚠️ Cannot find related campaign ID for TrafficStar campaign ${campaignId} - skipping budget adjustment`);
-        return;
-      }
-      
-      // Now get our campaign and its URLs
+      // First, find our campaign that is linked to this TrafficStar ID
       const [campaign] = await db
         .select()
         .from(campaigns)
-        .where(eq(campaigns.id, dbTrafficstarCampaign.campaignId));
+        .where(eq(campaigns.trafficstarCampaignId, campaignId.toString()));
         
       if (!campaign) {
-        console.log(`⚠️ Cannot find campaign with ID ${dbTrafficstarCampaign.campaignId} - skipping budget adjustment`);
+        console.log(`⚠️ Cannot find local campaign for TrafficStar campaign ${campaignId} - skipping budget adjustment`);
         return;
       }
       
       // Get all URLs for the campaign to calculate pending click pricing
       const urlsData = await db
         .select()
-        .from(this.urlsTable)
+        .from(urls)
         .where(
           and(
-            eq(this.urlsTable.campaignId, campaign.id),
-            eq(this.urlsTable.status, 'active')
+            eq(urls.campaignId, campaign.id),
+            eq(urls.status, 'active')
           )
         );
         

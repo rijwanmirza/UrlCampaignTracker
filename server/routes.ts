@@ -1806,12 +1806,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pausedAt = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes ago
       const recheckAt = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago (so it's ready for recheck)
       
-      // Store in the service
-      trafficStarService.spentValuePausedCampaigns.set(trafficstarId, {
-        pausedAt,
-        recheckAt,
-        disabledThresholdForDate: currentUtcDate
-      });
+      // We need to simulate a pause due to spent value
+      // Since spentValuePausedCampaigns is private in the service,
+      // let's directly adjust the date and run the auto-management to test
+      
+      // First, pause the campaign to simulate spent value pause
+      await trafficStarService.pauseCampaign(trafficstarId);
+      
+      // Then we'll activate the test mode to simulate a pause that happened in the past
+      process.env.TEST_MODE_SPENT_VALUE_PAUSE = 'true';
+      process.env.TEST_CAMPAIGN_ID = trafficstarId.toString();
+      process.env.TEST_PAUSE_TIME = pausedAt.toISOString();
+      process.env.TEST_RECHECK_TIME = recheckAt.toISOString();
+      process.env.TEST_UTC_DATE = currentUtcDate;
       
       console.log(`Set pause info for campaign ${trafficstarId} with recheck time in the past`);
       
