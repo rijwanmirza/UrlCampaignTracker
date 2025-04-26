@@ -21,7 +21,7 @@ import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1761,6 +1761,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to add budget update time field:", error);
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
+    }
+  });
+  
+  /**
+   * Test route for verifying spent value monitoring functionality
+   */
+  app.post("/api/system/test-spent-value-monitoring", async (_req: Request, res: Response) => {
+    try {
+      // Temporarily set test mode environment variable
+      process.env.TEST_MODE = 'true';
+      
+      // Get all campaigns with auto-management enabled
+      const campaignsToCheck = await db
+        .select()
+        .from(campaigns)
+        .where(
+          and(
+            eq(campaigns.autoManageTrafficstar, true),
+            isNotNull(campaigns.trafficstarCampaignId)
+          )
+        );
+      
+      console.log(`TEST: Found ${campaignsToCheck.length} campaigns with auto-management enabled`);
+      
+      // Manually run the spent value check function
+      await trafficStarService.checkCampaignsSpentValue();
+      
+      // Check the results of the spent value check
+      const results = await Promise.all(campaignsToCheck.map(async (campaign) => {
+        if (!campaign.trafficstarCampaignId) return null;
+        
+        // Get TrafficStar campaign ID converted to number
+        const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
+          parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+          Number(campaign.trafficstarCampaignId);
+        
+        // Get current date in UTC
+        const currentUtcDate = new Date().toISOString().split('T')[0];
+        
+        // Get current status
+        const [dbCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
+        
+        // Get pause info from TrafficStar service
+        const pauseInfo = trafficStarService.getSpentValuePauseInfo(trafficstarId, currentUtcDate);
+        
+        return {
+          campaignId: campaign.id,
+          trafficstarId,
+          currentStatus: dbCampaign ? dbCampaign.status : 'unknown',
+          isActive: dbCampaign ? dbCampaign.active : false,
+          isPausedDueToSpentValue: Boolean(pauseInfo),
+          spentValuePauseInfo: pauseInfo ? {
+            pausedAt: pauseInfo.pausedAt.toISOString(),
+            recheckAt: pauseInfo.recheckAt.toISOString(),
+            minutesRemaining: Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000))
+          } : null
+        };
+      }));
+      
+      // Reset test mode
+      process.env.TEST_MODE = 'false';
+      
+      res.json({
+        success: true,
+        message: 'Spent value test completed',
+        results: results.filter(Boolean)
+      });
+    } catch (error) {
+      console.error('Error in test-spent-value-monitoring:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error testing spent value monitoring',
+        error: String(error)
+      });
     }
   });
 

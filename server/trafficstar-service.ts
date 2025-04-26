@@ -1486,6 +1486,7 @@ class TrafficStarService {
   /**
    * Check if a campaign was paused due to high spent value and should still be paused
    * @param campaignId The campaign ID to check
+   * @param currentUtcDate The current UTC date in YYYY-MM-DD format
    * @returns true if the campaign should remain paused due to spent value
    */
   private shouldRemainPausedDueToSpentValue(campaignId: number, currentUtcDate: string): boolean {
@@ -1514,6 +1515,37 @@ class TrafficStarService {
     const minutesRemaining = Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000));
     console.log(`Campaign ${campaignId} remains paused due to spent value - ${minutesRemaining} minutes until recheck`);
     return true;
+  }
+  
+  /**
+   * Get pause info for a campaign paused due to high spent value
+   * @param campaignId The campaign ID to check
+   * @param currentUtcDate The current UTC date in YYYY-MM-DD format
+   * @returns The pause info or null if not paused due to spent value
+   */
+  public getSpentValuePauseInfo(campaignId: number, currentUtcDate: string): { 
+    pausedAt: Date; 
+    recheckAt: Date; 
+    disabledThresholdForDate: string;
+  } | null {
+    const pauseInfo = this.spentValuePausedCampaigns.get(campaignId);
+    
+    if (!pauseInfo) {
+      return null;
+    }
+    
+    // If this is for a different date, we shouldn't return pause info
+    if (pauseInfo.disabledThresholdForDate !== currentUtcDate) {
+      return null;
+    }
+    
+    // Check if we've reached the recheck time
+    if (new Date() >= pauseInfo.recheckAt) {
+      return null;
+    }
+    
+    // Still within the pause period - return pause info
+    return pauseInfo;
   }
   
   /**
@@ -1554,7 +1586,7 @@ class TrafficStarService {
   /**
    * Check all campaigns for their spent value and pause if over threshold
    */
-  private async checkCampaignsSpentValue(): Promise<void> {
+  public async checkCampaignsSpentValue(): Promise<void> {
     try {
       // Get all campaigns with auto-management enabled
       const campaignsToCheck = await db
@@ -1702,6 +1734,43 @@ class TrafficStarService {
       
       console.log(`Fetching spent value for campaign ${id} from ${fromDate} to ${untilDate}`);
       
+      // Check if we are in test mode
+      if (process.env.NODE_ENV === 'test' || process.env.TEST_MODE === 'true') {
+        console.log(`TEST MODE: Returning test spent value data for campaign ${id}`);
+        
+        // Return test data when in test mode
+        // This will simulate a spent value over $10 for testing the pausing logic
+        const currentUtcDate = new Date().toISOString().split('T')[0];
+        
+        return {
+          campaignId: id,
+          dateRange: {
+            from: fromDate,
+            to: untilDate
+          },
+          dailyStats: [
+            {
+              date: currentUtcDate,
+              price: "10.50", // Over $10 to trigger the spent value threshold
+              impressions: "500000",
+              clicks: "15000",
+              leads: "100"
+            }
+          ],
+          totalSpent: 10.50, // This is the key value that will trigger the pause
+          totals: {
+            spent: 10.50,
+            impressions: 500000,
+            clicks: 15000,
+            leads: 100,
+            ecpm: 21.00,
+            ecpc: 0.7000,
+            ecpa: 105.00,
+            ctr: 3.00
+          }
+        };
+      }
+      
       // Use the stats API to get campaign costs by day
       const response = await axios.get(
         `${API_BASE_URL}/stats/advertiser/day`,
@@ -1744,6 +1813,7 @@ class TrafficStarService {
           to: untilDate
         },
         dailyStats: response.data.response || [],
+        totalSpent: parseFloat(totalSpent.toFixed(4)), // Add this field for direct access
         totals: {
           spent: parseFloat(totalSpent.toFixed(4)),
           impressions: totalImpressions,
