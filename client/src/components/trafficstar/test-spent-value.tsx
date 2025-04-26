@@ -70,10 +70,13 @@ export function TestSpentValue() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Test Spent Value Monitoring</CardTitle>
+        <CardTitle>Campaign Auto-Management Test</CardTitle>
         <CardDescription>
-          This test simulates high spent values to verify that campaigns are paused
-          when daily spent exceeds $10. The test runs in simulation mode and doesn't affect real data.
+          This comprehensive test verifies both auto-management mechanisms:
+          1. Click threshold (activate at 15,000 clicks, pause at 5,000 clicks)
+          2. Daily spent value (pause when exceeds $10, overriding click thresholds)
+          
+          The test runs in simulation mode and won't affect real data or make actual API calls.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -119,23 +122,107 @@ export function TestSpentValue() {
                     </span>
                   </div>
                   
-                  <div className="font-medium">Paused Due to Spent Value:</div>
+                  <div className="font-medium">Controlling Factor:</div>
                   <div>
-                    {result.isPausedDueToSpentValue ? (
-                      <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-medium">
-                        Yes - High Spent Value
+                    {result.controllingFactor === 'spent_value_threshold' ? (
+                      <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs font-medium">
+                        Spent Value ($10 Threshold)
+                      </span>
+                    ) : result.controllingFactor === 'click_threshold_pause' ? (
+                      <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-medium">
+                        Click Threshold (Pause)
+                      </span>
+                    ) : result.controllingFactor === 'click_threshold_activate' ? (
+                      <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-medium">
+                        Click Threshold (Activate)
                       </span>
                     ) : (
                       <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-medium">
-                        No
+                        Other
                       </span>
                     )}
+                  </div>
+                  
+                  <div className="font-medium">Daily Spent Value:</div>
+                  <div>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.spentThresholdExceeded ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      ${result.dailySpentValue.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="font-medium">Spent Threshold Exceeded:</div>
+                  <div>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.spentThresholdExceeded ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {result.spentThresholdExceeded ? "Yes (> $10)" : "No (< $10)"}
+                    </span>
+                  </div>
+                  
+                  <div className="font-medium">Click Threshold Active:</div>
+                  <div>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.clickThresholdActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {result.clickThresholdActive ? "Yes" : "No - Overridden by Spent Value"}
+                    </span>
+                  </div>
+                  
+                  <div className="font-medium">Active URLs:</div>
+                  <div>{result.urlData.activeUrlCount}</div>
+                  
+                  <div className="font-medium">Paused URLs:</div>
+                  <div>{result.urlData.pausedUrlCount}</div>
+                  
+                  <div className="font-medium">Active Clicks Remaining:</div>
+                  <div>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.urlData.activeClicksRemaining >= 15000 
+                          ? "bg-green-100 text-green-800" 
+                          : result.urlData.activeClicksRemaining <= 5000
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {result.urlData.activeClicksRemaining.toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  <div className="font-medium">Would Activate by Clicks:</div>
+                  <div>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.urlData.wouldActivateByClicks ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {result.urlData.wouldActivateByClicks ? "Yes (≥ 15,000)" : "No (< 15,000)"}
+                    </span>
+                  </div>
+                  
+                  <div className="font-medium">Would Pause by Clicks:</div>
+                  <div>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.urlData.wouldPauseByClicks ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {result.urlData.wouldPauseByClicks ? "Yes (≤ 5,000)" : "No (> 5,000)"}
+                    </span>
                   </div>
                   
                   {result.isPausedDueToSpentValue && result.spentValuePauseInfo && (
                     <>
                       <div className="font-medium">Paused Until:</div>
-                      <div>{new Date(result.spentValuePauseInfo.pausedUntil).toLocaleTimeString()}</div>
+                      <div>{new Date(result.spentValuePauseInfo.recheckAt).toLocaleTimeString()}</div>
                       
                       <div className="font-medium">Minutes Remaining:</div>
                       <div>

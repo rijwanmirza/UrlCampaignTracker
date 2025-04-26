@@ -14,7 +14,8 @@ import {
   trafficstarCampaignBudgetSchema,
   trafficstarCampaignEndTimeSchema,
   trafficstarCampaigns,
-  campaigns 
+  campaigns,
+  urls
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
