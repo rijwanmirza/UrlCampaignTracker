@@ -4,52 +4,52 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
 
-const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
+const apiKeySchema = z.object({
+  apiKey: z.string().min(1, 'API key is required'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type ApiKeyFormValues = z.infer<typeof apiKeySchema>;
 
-export default function LoginPage() {
+export default function ApiKeyLogin() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<ApiKeyFormValues>({
+    resolver: zodResolver(apiKeySchema),
     defaultValues: {
-      username: '',
-      password: '',
+      apiKey: '',
     },
   });
 
-  async function onSubmit(data: LoginFormValues) {
+  // Import useAuth
+  const { verifyApiKey } = useAuth();
+  
+  async function onSubmit(data: ApiKeyFormValues) {
     setIsLoading(true);
     
     try {
-      const response = await axios.post('/api/auth/login', data);
+      await verifyApiKey(data.apiKey);
       
       toast({
-        title: 'Login successful',
-        description: 'You are now logged in',
+        title: 'Access granted',
+        description: 'API key accepted',
       });
       
-      // Redirect to main page after successful login
+      // Redirect to main page after successful API key verification
       navigate('/');
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('API key verification error:', error);
       
       toast({
-        title: 'Login failed',
-        description: error.response?.data?.message || 'An error occurred during login',
+        title: 'Invalid API key',
+        description: error.response?.data?.message || 'The API key is not valid',
         variant: 'destructive',
       });
     } finally {
@@ -63,7 +63,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">TrafficStar Manager</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the application
+            Enter your API key to access the application
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -71,26 +71,17 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="username"
+                name="apiKey"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>API Key</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin" {...field} disabled={isLoading} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
+                      <Input 
+                        placeholder="Enter secret keyword" 
+                        {...field} 
+                        disabled={isLoading} 
+                        autoComplete="off"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -98,17 +89,17 @@ export default function LoginPage() {
               />
               
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Logging in...' : 'Log in'}
+                {isLoading ? 'Verifying...' : 'Access Application'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-muted-foreground text-center">
-            Default credentials: admin / TrafficStarAdmin123!
+          <div className="text-xs text-muted-foreground text-center">
+            Enter the secret keyword to access the application
           </div>
           <div className="text-xs text-muted-foreground text-center">
-            Secured with 24-hour session token
+            Your API key will be remembered for 30 days
           </div>
         </CardFooter>
       </Card>

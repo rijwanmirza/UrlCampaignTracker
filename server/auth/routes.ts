@@ -1,94 +1,83 @@
 import { Express, Request, Response } from 'express';
-import { generateToken, requireAuth } from './middleware';
-import bcrypt from 'bcryptjs';
+import { validateApiKey, requireAuth } from './middleware';
 import { log } from '../vite';
-
-// Hard-coded admin credentials for demo purposes
-// In a production app, these would be stored in a database with hashed passwords
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD_HASH = '$2a$10$nOwsYRKuAjLNcXpDzX3SyuX8P/aKn0bhkL.r1PQUwh5k7aZ0fk9im'; // Hash for 'TrafficStarAdmin123!'
 
 // Register authentication routes
 export function registerAuthRoutes(app: Express) {
-  // Login route - generates JWT token
-  app.post('/api/auth/login', async (req: Request, res: Response) => {
-    const { username, password } = req.body;
+  // API key verification route
+  app.post('/api/auth/verify-key', (req: Request, res: Response) => {
+    const { apiKey } = req.body;
     
     try {
       // Simple validation
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required' });
+      if (!apiKey) {
+        return res.status(400).json({ message: 'API key is required' });
       }
       
-      // Check username
-      if (username !== ADMIN_USERNAME) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+      // Validate the API key
+      const isValid = validateApiKey(apiKey);
+      
+      if (!isValid) {
+        log(`API key verification failed - invalid key provided`, 'auth');
+        return res.status(401).json({ 
+          message: 'Invalid API key', 
+          authenticated: false 
+        });
       }
       
-      // Check password using bcrypt
-      const passwordMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
-      if (!passwordMatch) {
-        log(`Login attempt failed for user ${username} - password mismatch`, 'auth');
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-      
-      // Generate JWT token
-      const token = generateToken(username);
-      
-      // Set token in HttpOnly cookie
-      res.cookie('authToken', token, {
+      // Set API key in cookie for future requests
+      res.cookie('apiKey', apiKey, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'strict'
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        sameSite: 'lax'
       });
       
-      log(`User ${username} authenticated successfully`, 'auth');
+      log(`API key verification successful`, 'auth');
       
-      // Send response without exposing token in body
+      // Success response
       res.json({ 
-        message: 'Authentication successful',
-        user: { username }
+        message: 'API key verified',
+        authenticated: true
       });
     } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: 'An error occurred during login' });
+      console.error('API key verification error:', error);
+      res.status(500).json({ message: 'An error occurred during verification' });
     }
   });
   
-  // Verify authentication status
+  // Check authentication status
   app.get('/api/auth/status', (req: Request, res: Response) => {
     try {
-      // Get token from cookie or authorization header
-      const token = req.cookies?.authToken || 
-                   (req.headers.authorization?.startsWith('Bearer ') ? 
-                    req.headers.authorization.substring(7) : null);
+      // Get API key from cookie, header, or query param
+      const apiKey = req.cookies?.apiKey || 
+                    req.headers['x-api-key'] || 
+                    req.query.apiKey;
       
-      if (!token) {
+      if (!apiKey) {
         return res.json({ authenticated: false });
       }
       
-      // Don't verify token here - just check if it exists
-      // This is a lightweight check for the front-end
-      // The requireAuth middleware will do the full verification for protected routes
-      res.json({ authenticated: true });
+      // Validate the API key
+      const isValid = validateApiKey(apiKey as string);
+      
+      res.json({ authenticated: isValid });
     } catch (error) {
       console.error('Auth status error:', error);
       res.json({ authenticated: false });
     }
   });
   
-  // Logout route - clears the auth cookie
+  // Clear API key cookie (logout)
   app.post('/api/auth/logout', (req: Request, res: Response) => {
-    res.clearCookie('authToken');
-    res.json({ message: 'Logout successful' });
+    res.clearCookie('apiKey');
+    res.json({ message: 'API key cleared' });
   });
   
-  // Protected route example to verify auth is working
-  app.get('/api/auth/verify', requireAuth, (req: Request, res: Response) => {
+  // Test route to verify auth is working
+  app.get('/api/auth/test', requireAuth, (req: Request, res: Response) => {
     res.json({ 
-      message: 'Authentication verified',
-      user: (req as any).user
+      message: 'Authentication successful - API key is valid'
     });
   });
 }

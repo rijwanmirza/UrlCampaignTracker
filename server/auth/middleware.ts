@@ -1,55 +1,44 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { log } from '../vite';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'trafficstar-api-secret-key'; // Default for development
-
-// Define the structure of our JWT payload
-interface AuthTokenPayload {
-  username: string;
-  exp: number;
-  iat: number;
-}
+// Simple API key authentication
+const API_SECRET_KEY = 'TraffiCS10928'; // Simple secret keyword for access
 
 // Middleware to require authentication
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    // Get token from cookie or Authorization header
-    const token = req.cookies?.authToken || 
-                 (req.headers.authorization?.startsWith('Bearer ') ? 
-                  req.headers.authorization.substring(7) : null);
+    // Get API key from cookie, header, or query param
+    const apiKey = req.cookies?.apiKey || 
+                  req.headers['x-api-key'] || 
+                  req.query.apiKey;
     
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+    if (!apiKey) {
+      return res.status(401).json({ message: 'API key required' });
     }
     
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
+    // Simple check - just compare the API key with our secret
+    if (apiKey !== API_SECRET_KEY) {
+      log(`Authentication failed - invalid API key provided: ${apiKey}`, 'auth');
+      return res.status(401).json({ message: 'Invalid API key' });
+    }
     
-    // Add user info to request object for use in route handlers
-    (req as any).user = {
-      username: decoded.username
-    };
-    
+    // Authentication successful
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-    res.status(401).json({ message: 'Invalid or expired authentication token' });
+    res.status(401).json({ message: 'Authentication error' });
   }
 }
 
-// Generate a JWT token for a user
-export function generateToken(username: string): string {
-  return jwt.sign(
-    { username },
-    JWT_SECRET,
-    { expiresIn: '24h' } // Token expires in 24 hours
-  );
+// Validate an API key
+export function validateApiKey(apiKey: string): boolean {
+  return apiKey === API_SECRET_KEY;
 }
 
 // Middleware for CORS and preflight requests
 export function corsMiddleware(_req: Request, res: Response, next: NextFunction) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-API-Key');
   next();
 }
