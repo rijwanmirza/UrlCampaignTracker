@@ -1766,6 +1766,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   /**
+   * Test route for verifying the new budget adjustment feature after 10-minute spent value pause
+   */
+  app.post("/api/system/test-budget-adjustment", async (_req: Request, res: Response) => {
+    try {
+      console.log('🧪 TEST: Budget Adjustment After Spent Value Pause');
+      
+      // Get a campaign with auto-management enabled
+      const [campaign] = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.autoManageTrafficstar, true));
+      
+      if (!campaign) {
+        return res.status(400).json({
+          success: false,
+          message: 'No auto-managed campaign found for testing'
+        });
+      }
+      
+      console.log(`Found campaign ${campaign.id} for testing`);
+      
+      if (!campaign.trafficstarCampaignId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campaign does not have TrafficStar ID'
+        });
+      }
+      
+      const trafficstarId = Number(campaign.trafficstarCampaignId);
+      
+      // 1. Manually trigger the budget adjustment process
+      console.log(`Manually triggering budget adjustment process for campaign ${trafficstarId}`);
+      
+      // Get current UTC date
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
+      // Create a pause state in the past (10 min ago)
+      const pausedAt = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes ago
+      const recheckAt = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago (so it's ready for recheck)
+      
+      // Store in the service
+      trafficStarService.spentValuePausedCampaigns.set(trafficstarId, {
+        pausedAt,
+        recheckAt,
+        disabledThresholdForDate: currentUtcDate
+      });
+      
+      console.log(`Set pause info for campaign ${trafficstarId} with recheck time in the past`);
+      
+      // Make sure we have some URLs with clicks
+      const existingUrls = await db
+        .select()
+        .from(urls)
+        .where(eq(urls.campaignId, campaign.id));
+      
+      if (existingUrls.length === 0) {
+        // Create a test URL
+        await db.insert(urls).values({
+          campaignId: campaign.id,
+          name: 'Test URL for Budget Adjustment',
+          targetUrl: 'https://example.com/test',
+          clickLimit: 5000,
+          clicks: 0,
+          status: 'active',
+          originalClickLimit: 5000,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        console.log('Created test URL with 5000 clicks for budget adjustment test');
+      } else {
+        // Update existing URLs to be active with clicks
+        await db.update(urls)
+          .set({
+            clickLimit: 5000,
+            clicks: 0,
+            status: 'active',
+            updatedAt: new Date()
+          })
+          .where(eq(urls.campaignId, campaign.id));
+          
+        console.log('Updated existing URLs to be active with 5000 clicks');
+      }
+      
+      // 2. Enable test mode to simulate spent value
+      process.env.TEST_MODE = 'true';
+      
+      // 3. Trigger the spent value check, which should detect the recheck time has passed
+      //    and invoke the budget adjustment process
+      console.log('Running spent value check to trigger budget adjustment...');
+      await trafficStarService.checkCampaignsSpentValue();
+      
+      // 4. Clean up
+      process.env.TEST_MODE = 'false';
+      
+      res.json({
+        success: true,
+        message: 'Budget adjustment test completed - check logs for results'
+      });
+    } catch (error) {
+      console.error('Error in test-budget-adjustment:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error testing budget adjustment functionality',
+        error: String(error)
+      });
+    }
+  });
+  
+  /**
    * Comprehensive test route for verifying both click threshold and spent value monitoring functionality
    */
   app.post("/api/system/test-spent-value-monitoring", async (_req: Request, res: Response) => {

@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 import { db } from './db';
-import { trafficstarCredentials, trafficstarCampaigns, campaigns } from '@shared/schema';
+import { trafficstarCredentials, trafficstarCampaigns, campaigns, urls } from '@shared/schema';
 import { eq, sql, and, isNotNull } from 'drizzle-orm';
 import { storage } from './storage';
 
@@ -1562,11 +1562,11 @@ class TrafficStarService {
       // Get all URLs for the campaign to calculate pending click pricing
       const urlsData = await db
         .select()
-        .from(urls)
+        .from(this.urlsTable)
         .where(
           and(
-            eq(urls.campaignId, campaign.id),
-            eq(urls.status, 'active')
+            eq(this.urlsTable.campaignId, campaign.id),
+            eq(this.urlsTable.status, 'active')
           )
         );
         
@@ -1577,7 +1577,7 @@ class TrafficStarService {
         if (remainingClicks > 0) {
           // Calculate the value of remaining clicks using the price per click
           // We need to convert from price per 1000 clicks to price per click
-          const pricePerClick = campaign.pricePerThousandClicks / 1000;
+          const pricePerClick = parseFloat(campaign.pricePerThousand) / 1000;
           pendingClickPricing += remainingClicks * pricePerClick;
         }
       }
