@@ -1,19 +1,6 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import * as crypto from "crypto";
-
-// Password utilities
-export function hashPassword(password: string): { hash: string, salt: string } {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return { hash, salt };
-}
-
-export function verifyPassword(password: string, hash: string, salt: string): boolean {
-  const hashVerify = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return hash === hashVerify;
-}
 
 // Redirect method enum
 export const RedirectMethod = {
@@ -36,40 +23,6 @@ export const urlStatusEnum = pgEnum('url_status', [
   'rejected'   // URL was rejected due to duplicate name
 ]);
 
-// User role enum
-export const userRoleEnum = pgEnum('user_role', [
-  'admin',     // Admin with full access
-  'user',      // Regular user with limited access
-]);
-
-// User schema for authentication
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  passwordSalt: text("password_salt").notNull(),
-  role: text("role").default('admin').notNull(),
-  lastLogin: timestamp("last_login"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  passwordHash: true,
-  passwordSalt: true, 
-  lastLogin: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-export const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
 // Campaign schema
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
@@ -82,10 +35,6 @@ export const campaigns = pgTable("campaigns", {
   autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // Auto-manage TrafficStar campaign
   budgetUpdateTime: text("budget_update_time").default("00:00:00"), // Daily budget update time in UTC (HH:MM:SS format)
   lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
-  // Daily spent tracking fields
-  dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent amount in dollars with 4 decimal places
-  dailySpentDate: timestamp("daily_spent_date").defaultNow(), // Date of the daily spent amount
-  lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time we checked the daily spent
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -130,10 +79,6 @@ export const updateCampaignSchema = z.object({
   autoManageTrafficstar: z.boolean().optional(),
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
-  // Daily spent tracking fields
-  dailySpent: z.number().min(0).optional(),
-  dailySpentDate: z.date().optional(),
-  lastSpentCheck: z.date().optional(),
 });
 
 // URL schema
@@ -181,6 +126,25 @@ export const bulkUrlActionSchema = z.object({
   action: z.enum(['pause', 'activate', 'delete', 'permanent_delete'])
 });
 
+// Types
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
+export type UpdateCampaign = z.infer<typeof updateCampaignSchema>;
+
+export type Url = typeof urls.$inferSelect;
+export type InsertUrl = z.infer<typeof insertUrlSchema>;
+export type UpdateUrl = z.infer<typeof updateUrlSchema>;
+export type BulkUrlAction = z.infer<typeof bulkUrlActionSchema>;
+
+// Extended schemas with campaign relationship
+export type UrlWithActiveStatus = Url & {
+  isActive: boolean;
+};
+
+export type CampaignWithUrls = Campaign & {
+  urls: UrlWithActiveStatus[];
+};
+
 // TrafficStar API schema
 export const trafficstarCredentials = pgTable("trafficstar_credentials", {
   id: serial("id").primaryKey(),
@@ -212,10 +176,6 @@ export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   lastBudgetUpdateValue: numeric("last_budget_update_value", { precision: 10, scale: 2 }), // The value set
   lastEndTimeUpdate: timestamp("last_end_time_update"), // When end time was last updated
   lastEndTimeUpdateValue: text("last_end_time_update_value"), // The value set
-  
-  // Store current day spent amount
-  dailySpent: numeric("daily_spent", { precision: 10, scale: 2 }), // Current day's spent amount for budget control
-  dailySpentUpdatedAt: timestamp("daily_spent_updated_at"), // When we last updated the spent amount
   
   campaignData: json("campaign_data"), // Store full campaign data
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -252,19 +212,6 @@ export const trafficstarCampaignEndTimeSchema = z.object({
 });
 
 // Types
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type LoginCredentials = z.infer<typeof loginSchema>;
-
-export type Campaign = typeof campaigns.$inferSelect;
-export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
-export type UpdateCampaign = z.infer<typeof updateCampaignSchema>;
-
-export type Url = typeof urls.$inferSelect;
-export type InsertUrl = z.infer<typeof insertUrlSchema>;
-export type UpdateUrl = z.infer<typeof updateUrlSchema>;
-export type BulkUrlAction = z.infer<typeof bulkUrlActionSchema>;
-
 export type TrafficstarCredential = typeof trafficstarCredentials.$inferSelect;
 export type InsertTrafficstarCredential = z.infer<typeof insertTrafficstarCredentialSchema>;
 export type UpdateTrafficstarCredential = z.infer<typeof updateTrafficstarCredentialSchema>;
@@ -273,12 +220,3 @@ export type TrafficstarCampaign = typeof trafficstarCampaigns.$inferSelect;
 export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignActionSchema>;
 export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
 export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;
-
-// Extended schemas with campaign relationship
-export type UrlWithActiveStatus = Url & {
-  isActive: boolean;
-};
-
-export type CampaignWithUrls = Campaign & {
-  urls: UrlWithActiveStatus[];
-};

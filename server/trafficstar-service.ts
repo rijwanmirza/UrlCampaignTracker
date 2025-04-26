@@ -599,7 +599,7 @@ class TrafficStarService {
   /**
    * Activate a campaign - SIMPLIFIED IMPLEMENTATION
    */
-  async activateCampaign(id: number, customEndTime?: string): Promise<void> {
+  async activateCampaign(id: number): Promise<void> {
     try {
       console.log(`USING V2 API: Checking campaign ${id} status before activating...`);
       
@@ -656,15 +656,10 @@ class TrafficStarService {
         return;
       }
       
-      // Set end date to current UTC date at 23:59:00 (with seconds for API) or use the passed customEndTime
-      let endTimeFormatted;
-      if (customEndTime) {
-        endTimeFormatted = customEndTime;
-      } else {
-        const now = new Date();
-        const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-        endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
-      }
+      // Set end date to current UTC date at 23:59:00 (with seconds for API)
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
       
       console.log(`Setting campaign ${id} end time to end of current UTC day: ${endTimeFormatted}`);
       
@@ -1231,7 +1226,6 @@ class TrafficStarService {
       
       // Get current TrafficStar campaign status
       let currentTrafficstarStatus;
-      let currentDbCampaign;
       try {
         // Get the current TrafficStar campaign status from database first (faster)
         const [dbCampaign] = await db
@@ -1239,16 +1233,13 @@ class TrafficStarService {
           .from(trafficstarCampaigns)
           .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
         
-        currentDbCampaign = dbCampaign;
-        
         if (dbCampaign) {
           currentTrafficstarStatus = {
             active: dbCampaign.active,
             status: dbCampaign.status,
             lastRequestedAction: dbCampaign.lastRequestedAction,
             lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
-            lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess,
-            dailySpent: dbCampaign.dailySpent ? Number(dbCampaign.dailySpent) : 0
+            lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
           };
           
           console.log(`Using cached status for campaign ${trafficstarId}: ${JSON.stringify(currentTrafficstarStatus)}`);
@@ -1261,8 +1252,7 @@ class TrafficStarService {
             status: apiCampaign.status,
             lastRequestedAction: null,
             lastRequestedActionAt: null,
-            lastRequestedActionSuccess: null,
-            dailySpent: 0
+            lastRequestedActionSuccess: null
           };
         }
       } catch (error) {
@@ -1287,8 +1277,7 @@ class TrafficStarService {
       
       // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
       // TrafficStar API requires YYYY-MM-DD HH:MM:SS format with seconds
-      const currentUtcDateTime = `${currentUtcDate} ${currentUtcTime}`;
-      const endOfDayDateTime = `${currentUtcDate} 23:59:00`;
+      const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
       
       // Get the campaign's budget update time setting (default to midnight if not set)
       const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
@@ -1299,211 +1288,7 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
         new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
       
-      // Calculate total pending clicks
-      let totalPendingClicks = 0;
-      for (const url of urls) {
-        const pendingClicks = url.clickLimit - url.clicks;
-        if (pendingClicks > 0) {
-          totalPendingClicks += pendingClicks;
-        }
-      }
-      
-      // Check if daily spent has reached or exceeded $10
-      let dailySpentAmount = 0;
-      
-      // First check if daily spent is already recorded in the campaign table
-      if (campaign.dailySpent) {
-        // Check if the last spent check date is from today (UTC)
-        const lastSpentDate = campaign.dailySpentDate ? new Date(campaign.dailySpentDate) : null;
-        const today = new Date();
-        const isSameDay = lastSpentDate && 
-          lastSpentDate.getUTCFullYear() === today.getUTCFullYear() &&
-          lastSpentDate.getUTCMonth() === today.getUTCMonth() &&
-          lastSpentDate.getUTCDate() === today.getUTCDate();
-        
-        if (isSameDay) {
-          // Use the existing daily spent value if it's from today
-          dailySpentAmount = Number(campaign.dailySpent);
-        } else {
-          // Reset daily spent since it's from a different day
-          dailySpentAmount = 0;
-        }
-      }
-      
-      // If daily spent is zero or from a different day, fetch latest from API
-      if (dailySpentAmount === 0) {
-        try {
-          const campaignStats = await this.getCampaignSpentValue(trafficstarId);
-          if (campaignStats && campaignStats.daily_costs && campaignStats.daily_costs.length > 0) {
-            // Get today's stats only
-            const todayStats = campaignStats.daily_costs.find((day: any) => day.date === currentUtcDate);
-            if (todayStats) {
-              dailySpentAmount = Number(todayStats.total_cost);
-              
-              // Update the campaign table with the current daily spent
-              await db.update(campaigns)
-                .set({ 
-                  dailySpent: dailySpentAmount.toString(),
-                  dailySpentDate: new Date(),
-                  lastSpentCheck: new Date(),
-                  updatedAt: new Date() 
-                })
-                .where(eq(campaigns.id, campaign.id));
-            }
-          }
-        } catch (error) {
-          console.error(`Error fetching daily spent for campaign ${trafficstarId}:`, error);
-          // Continue with 0 as the default value if we can't fetch it
-        }
-      }
-      
-      console.log(`Campaign ${campaign.id} stats: Total pending clicks: ${totalPendingClicks}, Daily spent: $${dailySpentAmount}`);
-      
-      // Calculate total pending click value by summing up URL pricing
-      const totalPendingClickValue = urls.reduce((total, url) => {
-        const pendingClicks = Math.max(0, url.clickLimit - url.clicks);
-        // Calculate price per URL: (pendingClicks / 1000) * pricePerThousand
-        const clickPrice = (pendingClicks / 1000) * Number(campaign.pricePerThousand || 0);
-        return total + clickPrice;
-      }, 0);
-      
-      console.log(`Campaign ${campaign.id}: Total pending clicks: ${totalPendingClicks}, Pending clicks value: $${totalPendingClickValue.toFixed(2)}, Daily spent: $${dailySpentAmount}`);
-
-      // CASE 1: More than 15,000 pending clicks and daily spent is less than $10
-      if (totalPendingClicks > 15000 && dailySpentAmount < 10) {
-        console.log(`Campaign ${campaign.id} has ${totalPendingClicks} pending clicks and daily spent $${dailySpentAmount} - activating TrafficStar campaign`);
-        
-        if (!currentTrafficstarStatus || !currentTrafficstarStatus.active || currentTrafficstarStatus.status !== 'enabled') {
-          // Set end time to end of current day in UTC (23:59)
-          const today = new Date();
-          const endTime = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')} 23:59`;
-          
-          console.log(`Activating campaign ${trafficstarId} with end time set to ${endTime}`);
-          
-          // Activate the campaign with end time set to end of current day (23:59 UTC)
-          await this.activateCampaign(trafficstarId, endTime);
-          
-          // Update the campaign's sync status and last activation time
-          await storage.updateCampaign(campaign.id, {
-            lastTrafficstarSync: new Date()
-          });
-          
-          console.log(`✅ Successfully activated campaign ${trafficstarId} (${totalPendingClicks} pending clicks > 15,000 threshold)`);
-        } else {
-          console.log(`TrafficStar campaign ${trafficstarId} is already active - no action needed`);
-        }
-      }
-      // CASE 2: Pending clicks have dropped to 5,000 or below (but aren't 0), or daily spent has reached $10
-      else if ((totalPendingClicks <= 5000 && totalPendingClicks > 0) || dailySpentAmount >= 10) {
-        const reason = dailySpentAmount >= 10 ? 
-          `daily spent ($${dailySpentAmount}) reached $10 threshold` : 
-          `pending clicks (${totalPendingClicks}) dropped to 5,000 or below`;
-        
-        console.log(`Campaign ${campaign.id} needs to be paused: ${reason}`);
-        
-        if (currentTrafficstarStatus && currentTrafficstarStatus.active && currentTrafficstarStatus.status !== 'paused') {
-          // Pause the campaign
-          await this.pauseCampaign(trafficstarId);
-          
-          // Set the current date/time as the end time
-          const now = new Date();
-          const currentTime = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')} ${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}`;
-          await this.updateCampaignEndTime(trafficstarId, currentTime);
-          
-          // Update the campaign's sync status
-          await storage.updateCampaign(campaign.id, {
-            lastTrafficstarSync: new Date(),
-            dailySpentDate: new Date() // Mark that we've processed the daily spent for today
-          });
-          
-          console.log(`✅ Successfully paused campaign ${trafficstarId} due to: ${reason}`);
-          
-          // CASE 3: If we paused due to daily spent >= $10, wait 10 minutes and then update budget and restart
-          if (dailySpentAmount >= 10 && totalPendingClickValue > 0) {
-            const tenMinutesInMs = 10 * 60 * 1000;
-            const lastPausedTime = new Date();
-            
-            // Store the pause time so we can check later if 10 minutes have passed
-            await db.update(campaigns)
-              .set({
-                dailySpent: dailySpentAmount.toString(),
-                dailySpentDate: new Date(),
-                lastSpentCheck: lastPausedTime,
-                updatedAt: new Date()
-              })
-              .where(eq(campaigns.id, campaign.id));
-            
-            console.log(`Campaign ${campaign.id} reached $10 daily spent limit - will re-evaluate in 10 minutes`);
-          }
-        } else {
-          console.log(`TrafficStar campaign ${trafficstarId} is already paused - no action needed`);
-          
-          // Check if campaign was paused due to $10 threshold and it's been 10+ minutes
-          const lastPausedTime = campaign.lastSpentCheck ? new Date(campaign.lastSpentCheck) : null;
-          const now = new Date();
-          const tenMinutesInMs = 10 * 60 * 1000;
-          
-          if (dailySpentAmount >= 10 && lastPausedTime && (now.getTime() - lastPausedTime.getTime() >= tenMinutesInMs)) {
-            console.log(`It's been 10+ minutes since campaign ${campaign.id} was paused due to $10 threshold - calculating new budget`);
-            
-            // Get the current campaign to check its budget
-            let currentTrafficstarCampaign;
-            try {
-              currentTrafficstarCampaign = await this.getCampaign(trafficstarId);
-            } catch (error) {
-              console.error(`Error fetching current campaign budget: ${error}`);
-            }
-            
-            if (currentTrafficstarCampaign) {
-              const currentBudget = currentTrafficstarCampaign.max_daily || 0;
-              
-              // Special case for high-budget campaigns (≥ $50)
-              if (currentBudget >= 50 && dailySpentAmount >= 40) {
-                const remainingBudget = currentBudget - dailySpentAmount;
-                
-                if (remainingBudget <= 1) {
-                  // Less than $1 remaining, add all pending click value
-                  const newBudget = Math.ceil((dailySpentAmount + totalPendingClickValue) * 100) / 100;
-                  console.log(`High-budget campaign with < $1 remaining ($${remainingBudget.toFixed(2)}) - updating budget from $${currentBudget} to $${newBudget}`);
-                  
-                  // Update budget
-                  await this.updateCampaignDailyBudget(trafficstarId, newBudget);
-                  
-                  // Activate campaign with end time of current day at 23:59 UTC
-                  const today = new Date();
-                  const endTime = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')} 23:59`;
-                  await this.activateCampaign(trafficstarId, endTime);
-                  
-                  console.log(`✅ Updated budget and reactivated high-budget campaign ${trafficstarId}`);
-                } else {
-                  console.log(`High-budget campaign ($${currentBudget}) has $${remainingBudget.toFixed(2)} remaining - waiting until less than $1 remains before adding new URLs`);
-                }
-              } else {
-                // Regular case - add the pending click value to current daily spent
-                const newBudget = Math.ceil((dailySpentAmount + totalPendingClickValue) * 100) / 100;
-                console.log(`Updating daily budget from $${currentBudget} to $${newBudget} (current spent $${dailySpentAmount} + pending $${totalPendingClickValue.toFixed(2)})`);
-                
-                // Update budget
-                await this.updateCampaignDailyBudget(trafficstarId, newBudget);
-                
-                // Activate campaign with end time of current day at 23:59 UTC
-                const today = new Date();
-                const endTime = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')} 23:59`;
-                await this.activateCampaign(trafficstarId, endTime);
-                
-                // Update the campaign's sync status
-                await storage.updateCampaign(campaign.id, {
-                  lastTrafficstarSync: new Date()
-                });
-                
-                console.log(`✅ Successfully updated budget and reactivated campaign ${trafficstarId}`);
-              }
-            }
-          }
-        }
-      }
-      
-      // Check if we have no active URLs - should pause the campaign
+      // Check if we have no active URLs - NEW FEATURE
       if (urls.length === 0) {
         console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
         
@@ -1520,7 +1305,7 @@ class TrafficStarService {
             await this.pauseCampaign(trafficstarId);
             
             // Set end time to current UTC time
-            await this.updateCampaignEndTime(trafficstarId, currentUtcDateTime);
+            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
             
             // Update campaign's last sync timestamp
             await db.update(campaigns)
@@ -1530,7 +1315,7 @@ class TrafficStarService {
               })
               .where(eq(campaigns.id, campaign.id));
               
-            console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${currentUtcDateTime}`);
+            console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${formattedCurrentDateTime}`);
           } catch (error) {
             console.error(`Error pausing campaign with no active URLs:`, error);
           }
@@ -1669,12 +1454,7 @@ class TrafficStarService {
    * Get saved campaigns from database
    */
   async getSavedCampaigns() {
-    try {
-      return await db.select().from(trafficstarCampaigns).orderBy(trafficstarCampaigns.name);
-    } catch (error) {
-      console.error("Error fetching saved TrafficStar campaigns:", error);
-      return []; // Return empty array on error to prevent frontend crashes
-    }
+    return db.select().from(trafficstarCampaigns).orderBy(trafficstarCampaigns.name);
   }
   
   /**

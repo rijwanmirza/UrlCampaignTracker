@@ -1704,56 +1704,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Migration to add daily spent tracking fields
-  app.post("/api/system/migrate-daily-spent-fields", async (_req: Request, res: Response) => {
-    try {
-      // Import the migration function
-      const { addDailySpentFields } = await import("./migrations/add-daily-spent-fields");
-      
-      // Execute the migration
-      const result = await addDailySpentFields();
-      
-      if (result) {
-        console.log("✅ Daily spent fields migration successful");
-        res.status(200).json({
-          message: "Daily spent fields migration completed successfully"
-        });
-      } else {
-        console.error("❌ Daily spent fields migration failed");
-        res.status(500).json({
-          message: "Daily spent fields migration failed"
-        });
-      }
-    } catch (error) {
-      console.error("Error in daily spent fields migration:", error);
-      res.status(500).json({
-        message: "Daily spent fields migration failed unexpectedly",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
   // Check migration status - Find out if migrations are needed
   app.get("/api/system/check-migrations", async (_req: Request, res: Response) => {
     try {
       // Import the migration check functions
       const { 
         isBudgetUpdateTimeMigrationNeeded, 
-        isTrafficStarFieldsMigrationNeeded,
-        isDailySpentFieldsMigrationNeeded
+        isTrafficStarFieldsMigrationNeeded 
       } = await import("./migrations/check-migration-needed");
       
       // Check migration status
       const budgetUpdateTimeMigrationNeeded = await isBudgetUpdateTimeMigrationNeeded();
       const trafficStarFieldsMigrationNeeded = await isTrafficStarFieldsMigrationNeeded();
-      const dailySpentFieldsMigrationNeeded = await isDailySpentFieldsMigrationNeeded();
       
       // Return migration status
       res.status(200).json({
         budgetUpdateTimeMigrationNeeded,
         trafficStarFieldsMigrationNeeded,
-        dailySpentFieldsMigrationNeeded,
-        migrationNeeded: budgetUpdateTimeMigrationNeeded || trafficStarFieldsMigrationNeeded || dailySpentFieldsMigrationNeeded,
+        migrationNeeded: budgetUpdateTimeMigrationNeeded || trafficStarFieldsMigrationNeeded,
         message: "Migration status checked successfully"
       });
     } catch (error) {
@@ -1764,8 +1732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Assume migrations are needed if check fails
         migrationNeeded: true,
         budgetUpdateTimeMigrationNeeded: true,
-        trafficStarFieldsMigrationNeeded: true,
-        dailySpentFieldsMigrationNeeded: true
+        trafficStarFieldsMigrationNeeded: true
       });
     }
   });
@@ -1794,64 +1761,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to add budget update time field:", error);
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
-    }
-  });
-  
-  // Database migration - add daily spent fields to campaigns table
-  app.post("/api/system/migrate-daily-spent-fields", async (_req: Request, res: Response) => {
-    try {
-      // Import the migration function
-      const { addDailySpentFields } = await import("./migrations/add-daily-spent-fields");
-      
-      // Execute the migration
-      const result = await addDailySpentFields();
-      
-      if (result) {
-        console.log("✅ Daily spent fields migration successful");
-        res.status(200).json({
-          message: "Daily spent fields migration completed successfully"
-        });
-      } else {
-        console.error("❌ Daily spent fields migration failed");
-        res.status(500).json({
-          message: "Daily spent fields migration failed"
-        });
-      }
-    } catch (error) {
-      console.error("Failed to add daily spent fields:", error);
-      res.status(500).json({ 
-        message: "Failed to add daily spent fields to campaigns table",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Comprehensive migration to fix all missing columns
-  app.post("/api/system/migrate-all-columns", async (_req: Request, res: Response) => {
-    try {
-      // Import the migration function
-      const { addMissingColumns } = await import("./migrations/add-missing-columns");
-      
-      // Execute the migration
-      const result = await addMissingColumns();
-      
-      if (result) {
-        console.log("✅ Comprehensive column migration successful");
-        res.status(200).json({
-          message: "All missing columns added successfully"
-        });
-      } else {
-        console.error("❌ Comprehensive column migration failed");
-        res.status(500).json({
-          message: "Failed to add missing columns"
-        });
-      }
-    } catch (error) {
-      console.error("Failed to add missing columns:", error);
-      res.status(500).json({ 
-        message: "Failed to add missing columns to tables",
-        error: error instanceof Error ? error.message : String(error)
-      });
     }
   });
 

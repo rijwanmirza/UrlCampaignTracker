@@ -6,11 +6,6 @@ import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
 import { trafficStarService } from "./trafficstar-service";
-import { initializeAuth } from "./init-auth";
-import { configureSession } from "./session";
-import { pool } from "./db";
-import cookieParser from "cookie-parser";
-import authRouter from "./routes/auth-routes";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -19,12 +14,6 @@ const app = express();
 
 // Enable compression for all responses
 app.use(compression());
-
-// Cookie parser middleware
-app.use(cookieParser());
-
-// Session middleware
-app.use(configureSession(pool));
 
 // High-performance JSON parsing with limits to prevent DoS attacks
 app.use(express.json({ limit: '1mb' }));
@@ -38,57 +27,6 @@ app.use((req, res, next) => {
     res.setHeader('Cache-Control', 'public, max-age=0');
   }
   next();
-});
-
-// Site security check middleware for admin sections (not for public routes like redirects)
-app.use((req: Request, res: Response, next: NextFunction) => {
-  // Allow all redirect routes without security check
-  if (req.path.startsWith('/c/') || 
-      req.path.startsWith('/r/') || 
-      req.path.startsWith('/views/') || 
-      req.path.startsWith('/api/auth/') ||
-      req.path === '/login' ||
-      // Allow OPTIONS requests for CORS
-      req.method === 'OPTIONS') {
-    return next();
-  }
-  
-  console.log(`🔒 Security check for path: ${req.path}`); // Debug logging
-  
-  // API security key check
-  const apiKey = req.headers['x-api-key'] || req.query.apiKey || req.cookies.apiKey;
-  
-  // The API key is hardcoded here for simplicity and speed
-  const validApiKey = 'rijwa487mirza';
-  
-  if (apiKey === validApiKey) {
-    // Key matches - set cookie for future requests
-    res.cookie('apiKey', validApiKey, { 
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
-    
-    // Automatically set admin user in session
-    // This ensures all auth checks will pass internally
-    if (!req.session.user) {
-      req.session.user = {
-        id: 2,
-        username: 'rijwamirza',
-        role: 'admin'
-      };
-    }
-    
-    return next();
-  }
-  
-  // If no API key is found and this is an API request, return 401
-  if (req.path.startsWith('/api/')) {
-    return res.status(401).json({ message: 'Unauthorized - API key required' });
-  }
-  
-  // For web UI access, redirect to login page rather than showing a white screen
-  return res.redirect('/login');
 });
 
 app.use((req, res, next) => {
@@ -119,29 +57,6 @@ app.use((req, res, next) => {
   });
 
   next();
-});
-
-// Register authentication routes
-app.use("/api/auth", authRouter);
-
-// Root route redirect to direct login if not authenticated
-app.get("/login", (req: Request, res: Response) => {
-  // Check if we're coming back from a failed authentication
-  const apiKey = req.cookies.apiKey || req.query.apiKey || req.headers['x-api-key'];
-  const validApiKey = 'rijwa487mirza';
-  
-  // If we already have the correct API key in the cookie, go directly to campaigns
-  if (apiKey === validApiKey) {
-    return res.redirect("/campaigns");
-  }
-  
-  // Otherwise go to login page
-  // If there was an invalid API key, add the error parameter
-  if (apiKey && apiKey !== validApiKey) {
-    return res.redirect("/api/auth/direct-login?error=invalid");
-  }
-  
-  return res.redirect("/api/auth/direct-login");
 });
 
 (async () => {
@@ -210,20 +125,6 @@ app.get("/login", (req: Request, res: Response) => {
         log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
       }
       
-      // Run database migrations
-      try {
-        // Import and run the daily spent fields migration
-        const { addDailySpentFields } = await import("./migrations/add-daily-spent-fields");
-        const migrationResult = await addDailySpentFields();
-        if (migrationResult) {
-          log('✅ Daily spent fields migration completed successfully');
-        } else {
-          log('❌ Daily spent fields migration failed');
-        }
-      } catch (migrationError) {
-        log(`Error running migrations: ${migrationError}`);
-      }
-
       // Initialize TrafficStar with API key from environment variable
       try {
         await initializeTrafficStar();
@@ -238,14 +139,6 @@ app.get("/login", (req: Request, res: Response) => {
         }
       } catch (trafficstarError) {
         log(`Error initializing TrafficStar API: ${trafficstarError}`);
-      }
-
-      // Initialize authentication system (admin users)
-      try {
-        await initializeAuth();
-        log('Authentication system initialized successfully');
-      } catch (authError) {
-        log(`Error initializing authentication system: ${authError}`);
       }
     } catch (error) {
       log(`Error auto-configuring integrations: ${error}`, 'startup');
