@@ -1,81 +1,60 @@
 #!/bin/bash
 
-# Test URL Budget Functionality
-# This script tests the URL budget handling functionality with 10-minute waiting period
-
-# Usage instructions
-function usage() {
-  echo "Usage: $0 -c <campaign-id> -u <url-id> [-v <click-value>] [-i]"
-  echo "  -c: Campaign ID"
-  echo "  -u: URL ID"
-  echo "  -v: Click value (optional, if not provided, URL's click limit will be used)"
-  echo "  -i: Process immediately (skip 10-minute waiting period)"
-  echo ""
-  echo "Example: $0 -c 1 -u 1 -v 1000 -i"
-  exit 1
-}
+# Default values
+CAMPAIGN_ID=27
+URL_ID=""
+CLICK_VALUE=""
+IMMEDIATE=false
 
 # Parse command line arguments
-campaign_id=""
-url_id=""
-click_value=""
-immediate=false
-
-while getopts "c:u:v:i" opt; do
-  case $opt in
-    c) campaign_id="$OPTARG" ;;
-    u) url_id="$OPTARG" ;;
-    v) click_value="$OPTARG" ;;
-    i) immediate=true ;;
-    *) usage ;;
+while getopts ":c:u:v:i" opt; do
+  case ${opt} in
+    c )
+      CAMPAIGN_ID=$OPTARG
+      ;;
+    u )
+      URL_ID=$OPTARG
+      ;;
+    v )
+      CLICK_VALUE=$OPTARG
+      ;;
+    i )
+      IMMEDIATE=true
+      ;;
+    \? )
+      echo "Invalid option: $OPTARG" 1>&2
+      exit 1
+      ;;
+    : )
+      echo "Invalid option: $OPTARG requires an argument" 1>&2
+      exit 1
+      ;;
   esac
 done
 
-# Validate required parameters
-if [ -z "$campaign_id" ] || [ -z "$url_id" ]; then
-  echo "Error: Campaign ID and URL ID are required"
-  usage
-fi
-
-# Build JSON payload
-json_payload="{"
-json_payload+='"campaignId":'"$campaign_id"','
-json_payload+='"urlId":'"$url_id"
-
-# Add click value if provided
-if [ -n "$click_value" ]; then
-  json_payload+=',"clickValue":'"$click_value"
-fi
-
-# Add immediate flag if provided
-if [ "$immediate" = true ]; then
-  json_payload+=',"immediate":true'
-fi
-
-json_payload+="}"
-
-# Print test parameters
 echo "Running URL Budget Test with the following parameters:"
-echo "Campaign ID: $campaign_id"
-echo "URL ID: $url_id"
-if [ -n "$click_value" ]; then
-  echo "Click Value: $click_value"
-else
-  echo "Click Value: Using URL's click limit"
-fi
-if [ "$immediate" = true ]; then
-  echo "Processing: Immediate"
-else
-  echo "Processing: After 10-minute wait"
-fi
-
-# Execute the test
+echo "Campaign ID: $CAMPAIGN_ID"
+echo "URL ID: $URL_ID"
+echo "Click Value: $CLICK_VALUE"
+echo "Processing: $([ "$IMMEDIATE" = true ] && echo "Immediate" || echo "Delayed")"
 echo ""
 echo "Executing test..."
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d "$json_payload" \
-  "http://localhost:3000/api/system/test-url-budget-update" | json_pp
+
+# Execute the test
+if [ -n "$URL_ID" ] && [ -n "$CLICK_VALUE" ]; then
+  # Test single URL with specific click value
+  RESULT=$(curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer TraffiCS10928" \
+    -d "{\"campaignId\": $CAMPAIGN_ID, \"urlId\": $URL_ID, \"clickValue\": $CLICK_VALUE, \"immediate\": $IMMEDIATE}" \
+    "http://localhost:3000/api/system/test-url-budget-update")
+else
+  # Use Node.js script for more comprehensive test
+  node test-url-budget.js
+fi
+
+# Format and display the result if it's JSON
+echo $RESULT | json_pp 2>/dev/null || echo $RESULT
 
 echo ""
 echo "Test complete. Check server logs for detailed information."
