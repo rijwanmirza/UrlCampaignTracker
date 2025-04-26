@@ -67,6 +67,29 @@ class TrafficStarService {
   private accessToken: string | null = null;
   private tokenExpiry: Date | null = null;
   
+  // Map to track campaign IDs that have had budget adjustments
+  // This prevents multiple adjustments on the same UTC date
+  private budgetAdjustedCampaigns: Map<number, string> = new Map();
+  
+  // Map to track campaigns paused due to high spent value
+  // Records when it was paused and when recheck is due (10 min later)
+  private spentValuePausedCampaigns: Map<number, {
+    pausedAt: Date;
+    recheckAt: Date; 
+    disabledThresholdForDate: string;
+  }> = new Map();
+  
+  // Map to track pending URL budget updates by campaign ID
+  // Records URL IDs, click values, and when they were received
+  private pendingUrlBudgets: Map<number, Array<{
+    urlId: number;
+    campaignId: number;
+    receivedAt: Date;
+    updateAt: Date; // 10 minutes after receivedAt
+    clickValue: number;
+    processed: boolean;
+  }>> = new Map();
+  
   /**
    * Check if current time is within a window of minutes after target time
    * @param currentTime Current time in HH:MM:SS format
