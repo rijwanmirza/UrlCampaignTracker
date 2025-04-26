@@ -260,3 +260,6 @@ export function TestUrlBudget() {
     </Card>
   );
 }
+
+// Default export for compatibility
+export default TestUrlBudget;
