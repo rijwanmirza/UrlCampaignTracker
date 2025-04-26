@@ -1990,6 +1990,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Found campaign ${campaign.id} for testing`);
       
+      // Make sure we test with a fresh state - activate the campaign first
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = campaign.trafficstarCampaignId;
+        
+        // Make sure campaign is active to start
+        await trafficStarService.activateCampaign(Number(trafficstarId));
+        console.log(`Activated TrafficStar campaign ${trafficstarId} for testing`);
+      }
+      
+      // Step 1: Make sure spent value pause mechanism is not active
+      // This ensures click threshold checks will run
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        const pauseInfo = trafficStarService.getSpentValuePauseInfo(trafficstarId, currentUtcDate);
+        if (pauseInfo) {
+          console.log(`Campaign was paused due to spent value - clearing this state for testing`);
+          trafficStarService.clearSpentValuePause(trafficstarId);
+        }
+      }
+      
+      // Step 2: Test scenario 1 - Less than 5000 clicks remaining
       // Get existing URLs for the campaign
       const existingUrls = await db
         .select()
@@ -1998,41 +2020,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Campaign has ${existingUrls.length} URLs`);
       
-      // Create test URLs with different click scenarios
+      // Setting click limit to exactly 3000 (well below the 5000 threshold)
       if (existingUrls.length === 0) {
-        // Test scenario 1: Less than 5000 clicks remaining
+        // Create a test URL with less than 5000 clicks
         await db.insert(urls).values({
           campaignId: campaign.id,
           name: 'Test URL 1 - Below Threshold',
           targetUrl: 'https://example.com/test1',
-          clickLimit: 4000,
+          clickLimit: 3000,
           clicks: 0,
           status: 'active',
-          originalClickLimit: 4000,
+          originalClickLimit: 3000,
           createdAt: new Date(),
           updatedAt: new Date()
         });
         
-        console.log('Created test URL with 4000 clicks remaining (below 5000 threshold)');
+        console.log('Created test URL with 3000 clicks remaining (well below 5000 threshold)');
       } else {
         // Update existing URLs for testing
         await db.update(urls)
           .set({
-            clickLimit: 4000,
+            clickLimit: 3000,
             clicks: 0,
             status: 'active',
             updatedAt: new Date()
           })
           .where(eq(urls.campaignId, campaign.id));
           
-        console.log('Updated existing URLs to have 4000 clicks remaining (below 5000 threshold)');
+        console.log('Updated existing URLs to have 3000 clicks remaining (well below 5000 threshold)');
       }
       
-      // Trigger auto-management
-      console.log('Triggering auto-management to test pause due to low clicks...');
+      // Trigger auto-management to see the pause due to low clicks
+      console.log('✅ TEST CASE: Campaign with less than 5000 clicks should PAUSE');
+      console.log('Triggering auto-management to test pause due to low clicks (<5000)...');
       await trafficStarService.autoManageCampaigns();
       
-      // Now test the scenario with more than 15000 clicks
+      // Wait a moment to let the API call complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Check campaign status after pause attempt
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        const campaignStatus = await trafficStarService.getCachedCampaignStatus(trafficstarId);
+        console.log(`Campaign status after low clicks test: ${JSON.stringify(campaignStatus)}`);
+      }
+      
+      // Step 3: Test scenario 2 - More than 15000 clicks remaining
       await db.update(urls)
         .set({
           clickLimit: 20000,
@@ -2042,15 +2075,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(urls.campaignId, campaign.id));
         
-      console.log('Updated URLs to have 20000 clicks remaining (above 15000 threshold)');
+      console.log('Updated URLs to have 20000 clicks remaining (well above 15000 threshold)');
       
-      // Trigger auto-management again
-      console.log('Triggering auto-management to test activation due to high clicks...');
+      // Trigger auto-management to see the activation due to high clicks
+      console.log('✅ TEST CASE: Campaign with more than 15000 clicks should ACTIVATE');
+      console.log('Triggering auto-management to test activation due to high clicks (>15000)...');
       await trafficStarService.autoManageCampaigns();
+      
+      // Wait a moment to let the API call complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Check campaign status after activation attempt
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        const campaignStatus = await trafficStarService.getCachedCampaignStatus(trafficstarId);
+        console.log(`Campaign status after high clicks test: ${JSON.stringify(campaignStatus)}`);
+      }
+      
+      // Step 4: Now test spent value overriding click threshold
+      console.log('✅ TEST CASE: Spent value over $10 should OVERRIDE click threshold mechanism');
+      
+      // Enable test mode to simulate high spent values
+      process.env.TEST_MODE = 'true';
+      
+      // Make sure campaign is active
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        await trafficStarService.activateCampaign(Number(trafficstarId));
+      }
+      
+      // Run spent value check (in test mode, should report >$10 and pause)
+      console.log('Running spent value check with clicks still >15000...');
+      await trafficStarService.checkCampaignsSpentValue();
+      
+      // Wait a moment to let the API call complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Even though clicks are high, campaign should be paused due to spent value
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        const campaignStatus = await trafficStarService.getCachedCampaignStatus(trafficstarId);
+        console.log(`Campaign status after spent value override test: ${JSON.stringify(campaignStatus)}`);
+        
+        const pauseInfo = trafficStarService.getSpentValuePauseInfo(trafficstarId, currentUtcDate);
+        if (pauseInfo) {
+          console.log(`Spent value mechanism properly overrode click threshold mechanism`);
+          console.log(`Campaign paused with spent value > $10 even though clicks > 15000`);
+          console.log(`Recheck scheduled for: ${pauseInfo.recheckAt.toISOString()}`);
+          console.log(`Minutes until recheck: ${Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000))}`);
+        } else {
+          console.log(`ERROR: Campaign was NOT paused due to high spent value despite clicks > 15000`);
+        }
+      }
+      
+      // Step 5: Verify that the spent value mechanism disables click threshold
+      console.log('✅ TEST CASE: Click threshold should be DISABLED until next UTC date change');
+      console.log('Trying to reactivate campaign by updating clicks...');
+      
+      // Trigger auto-management to verify click threshold is disabled
+      // Even with lots of clicks, campaign should remain paused
+      console.log('Triggering auto-management with spent value pause active...');
+      await trafficStarService.autoManageCampaigns();
+      
+      // Wait a moment to let the API call complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Campaign should still be paused despite high clicks
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        const campaignStatus = await trafficStarService.getCachedCampaignStatus(trafficstarId);
+        console.log(`Final campaign status: ${JSON.stringify(campaignStatus)}`);
+        console.log(`Campaign should still be paused despite high clicks (${campaignStatus?.active === false ? 'CORRECT' : 'WRONG'})`);
+      }
+      
+      // Step 6: Test that mechanism resets after UTC date change
+      console.log('✅ TEST CASE: Click threshold should REACTIVATE after UTC date change');
+      
+      if (campaign.trafficstarCampaignId) {
+        const trafficstarId = Number(campaign.trafficstarCampaignId);
+        // Simulate a date change
+        const newUtcDate = new Date();
+        newUtcDate.setDate(newUtcDate.getDate() + 1);
+        const newUtcDateStr = newUtcDate.toISOString().split('T')[0];
+        
+        console.log(`Current UTC date: ${currentUtcDate}, Simulating next UTC date: ${newUtcDateStr}`);
+        
+        // Check if pause info is cleared with new date
+        const pauseInfo = trafficStarService.getSpentValuePauseInfo(trafficstarId, newUtcDateStr);
+        console.log(`Pause info for new UTC date: ${pauseInfo ? 'Still active (WRONG)' : 'Cleared (CORRECT)'}`);
+      }
+      
+      // Clean up
+      process.env.TEST_MODE = 'false';
       
       res.json({
         success: true,
-        message: 'Click threshold test completed - check logs for results'
+        message: 'Click threshold test completed - check logs for all test results'
       });
     } catch (error) {
       console.error('Error in test-click-threshold:', error);

@@ -1549,6 +1549,52 @@ class TrafficStarService {
   }
   
   /**
+   * Clear the spent value pause state for a campaign (for testing purposes)
+   * @param campaignId The campaign ID to clear
+   */
+  public clearSpentValuePause(campaignId: number): void {
+    if (this.spentValuePausedCampaigns.has(campaignId)) {
+      console.log(`Clearing spent value pause state for campaign ${campaignId}`);
+      this.spentValuePausedCampaigns.delete(campaignId);
+    }
+  }
+  
+  /**
+   * Get the cached campaign status from database
+   * @param campaignId The campaign ID to get status for
+   * @returns The current campaign status or null if not found
+   */
+  public async getCachedCampaignStatus(campaignId: number): Promise<{
+    active: boolean;
+    status: string;
+    lastRequestedAction?: string;
+    lastRequestedActionAt?: Date;
+    lastRequestedActionSuccess?: boolean;
+  } | null> {
+    try {
+      const [dbCampaign] = await db
+        .select()
+        .from(trafficstarCampaigns)
+        .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
+      
+      if (dbCampaign) {
+        return {
+          active: dbCampaign.active,
+          status: dbCampaign.status,
+          lastRequestedAction: dbCampaign.lastRequestedAction,
+          lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
+          lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error getting cached status for campaign ${campaignId}:`, error);
+      return null;
+    }
+  }
+  
+  /**
    * Scheduled function to run daily budget updates and start campaigns as needed
    * This should be called on application startup and at appropriate intervals
    */
