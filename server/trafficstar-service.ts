@@ -1816,6 +1816,177 @@ class TrafficStarService {
    * Scheduled function to run daily budget updates and start campaigns as needed
    * This should be called on application startup and at appropriate intervals
    */
+  /**
+   * Track a newly received URL for budget updates
+   * This records the URL's click value for updating the campaign's 
+   * daily budget after 10 minutes
+   * 
+   * @param urlId The ID of the URL
+   * @param campaignId The campaign ID that the URL belongs to
+   * @param tsTrafficstarId The TrafficStar campaign ID
+   * @param clickLimit The click limit for the URL
+   * @param pricePerThousand The price per thousand clicks
+   */
+  public async trackNewUrlForBudgetUpdate(
+    urlId: number, 
+    campaignId: number, 
+    tsTrafficstarId: string, 
+    clickLimit: number, 
+    pricePerThousand: number
+  ): Promise<void> {
+    try {
+      // Convert TrafficStar ID to number
+      const tsId = parseInt(tsTrafficstarId);
+      if (isNaN(tsId)) {
+        console.log(`Invalid TrafficStar campaign ID: ${tsTrafficstarId}`);
+        return;
+      }
+      
+      // Calculate the click value using price per thousand
+      const pricePerClick = parseFloat(pricePerThousand?.toString() || '1000') / 1000;
+      const clickValue = clickLimit * pricePerClick;
+      
+      console.log(`Tracking new URL ${urlId} for budget update in campaign ${campaignId} (TrafficStar ID: ${tsId})`);
+      console.log(`  - Click limit: ${clickLimit}`);
+      console.log(`  - Price per thousand: $${pricePerThousand}`);
+      console.log(`  - Click value: $${clickValue.toFixed(4)}`);
+      
+      // Create received time and update time (10 minutes later)
+      const receivedAt = new Date();
+      const updateAt = new Date(receivedAt.getTime() + 10 * 60 * 1000);
+      
+      console.log(`  - Received at: ${receivedAt.toISOString()}`);
+      console.log(`  - Will update budget at: ${updateAt.toISOString()}`);
+      
+      // Get or create the array for this campaign
+      if (!this.pendingUrlBudgets.has(tsId)) {
+        this.pendingUrlBudgets.set(tsId, []);
+      }
+      
+      // Add this URL to the pending updates
+      const pendingUrls = this.pendingUrlBudgets.get(tsId)!;
+      pendingUrls.push({
+        urlId,
+        campaignId,
+        receivedAt,
+        updateAt,
+        clickValue,
+        processed: false
+      });
+      
+      console.log(`Added URL ${urlId} to pending budget updates for campaign ${tsId}`);
+      console.log(`Total pending URLs for campaign ${tsId}: ${pendingUrls.length}`);
+    } catch (error) {
+      console.error(`Error tracking URL ${urlId} for budget update:`, error);
+    }
+  }
+  
+  /**
+   * Process pending URL budget updates
+   * This checks for URLs that have passed their 10-minute wait period
+   * and updates the campaign's daily budget accordingly
+   */
+  private async processPendingUrlBudgets(): Promise<void> {
+    try {
+      console.log('Processing pending URL budget updates');
+      
+      // Get current time for comparison
+      const now = new Date();
+      
+      // Get current UTC date for tracking updates
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
+      // Track campaigns that need updates
+      const campaignsToUpdate = new Set<number>();
+      
+      // Check each campaign for pending updates
+      for (const [tsId, pendingUrls] of this.pendingUrlBudgets.entries()) {
+        // Filter URLs that need updating (past their update time and not processed)
+        const urlsToUpdate = pendingUrls.filter(url => 
+          !url.processed && now >= url.updateAt
+        );
+        
+        if (urlsToUpdate.length > 0) {
+          console.log(`Found ${urlsToUpdate.length} URLs ready for budget update in campaign ${tsId}`);
+          campaignsToUpdate.add(tsId);
+          
+          // Mark these URLs as being processed
+          urlsToUpdate.forEach(url => {
+            console.log(`  - URL ${url.urlId} ready for budget update (received ${url.receivedAt.toISOString()})`);
+            url.processed = true;
+          });
+        }
+      }
+      
+      // Process each campaign that needs updates
+      for (const tsId of campaignsToUpdate) {
+        try {
+          console.log(`Processing budget update for campaign ${tsId}`);
+          
+          // Get all pending URLs for this campaign
+          const pendingUrls = this.pendingUrlBudgets.get(tsId) || [];
+          const processedUrls = pendingUrls.filter(url => url.processed);
+          
+          // Skip if no URLs to process
+          if (processedUrls.length === 0) {
+            console.log(`No processed URLs found for campaign ${tsId}`);
+            continue;
+          }
+          
+          // Calculate total click value for processed URLs
+          let totalClickValue = 0;
+          processedUrls.forEach(url => {
+            totalClickValue += url.clickValue;
+          });
+          
+          console.log(`Total click value for ${processedUrls.length} URLs: $${totalClickValue.toFixed(4)}`);
+          
+          // Get current spent value for today
+          const spentValue = await this.getCampaignSpentValue(tsId, currentUtcDate, currentUtcDate);
+          const currentSpentValue = spentValue?.totalSpent || 0;
+          console.log(`Current spent value for campaign ${tsId}: $${currentSpentValue.toFixed(4)}`);
+          
+          // Get current daily budget
+          const campaign = await this.getCampaign(tsId);
+          const currentBudget = campaign?.max_daily || 0;
+          console.log(`Current daily budget for campaign ${tsId}: $${currentBudget.toFixed(4)}`);
+          
+          // Calculate new daily budget (current budget + total click value)
+          const newDailyBudget = currentBudget + totalClickValue;
+          console.log(`New daily budget for campaign ${tsId}: $${newDailyBudget.toFixed(4)}`);
+          
+          // Update the campaign's daily budget
+          await this.updateCampaignDailyBudget(tsId, newDailyBudget);
+          console.log(`Updated daily budget for campaign ${tsId} to $${newDailyBudget.toFixed(4)}`);
+          
+          // Remove processed URLs from pending updates
+          this.pendingUrlBudgets.set(
+            tsId, 
+            pendingUrls.filter(url => !url.processed)
+          );
+          
+          console.log(`Removed ${processedUrls.length} processed URLs from pending updates for campaign ${tsId}`);
+        } catch (error) {
+          console.error(`Error processing budget update for campaign ${tsId}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing pending URL budget updates:', error);
+    }
+  }
+  
+  /**
+   * Clear pending URL budget updates for a campaign
+   * This can be used for testing or debugging
+   * @param tsId The TrafficStar campaign ID
+   */
+  public clearPendingUrlBudgets(tsId: number): void {
+    if (this.pendingUrlBudgets.has(tsId)) {
+      console.log(`Clearing pending URL budget updates for campaign ${tsId}`);
+      this.pendingUrlBudgets.delete(tsId);
+    }
+  }
+  
   async scheduleAutoManagement(): Promise<void> {
     try {
       // Run initial auto-management
@@ -1838,6 +2009,16 @@ class TrafficStarService {
           await this.autoManageCampaigns();
         } catch (error) {
           console.error('Error in scheduled auto-management:', error);
+        }
+      }, 60 * 1000); // Every minute
+      
+      // Schedule processing of pending URL budget updates every minute
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled processing of pending URL budget updates');
+          await this.processPendingUrlBudgets();
+        } catch (error) {
+          console.error('Error in scheduled processing of pending URL budget updates:', error);
         }
       }, 60 * 1000); // Every minute
       

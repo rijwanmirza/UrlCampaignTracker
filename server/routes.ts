@@ -309,6 +309,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Track this URL for budget updates if it was created successfully and the campaign is linked to TrafficStar
+      if (campaign.trafficstarCampaignId) {
+        try {
+          console.log(`URL created in campaign ${campaignId} with TrafficStar campaign ID ${campaign.trafficstarCampaignId}`);
+          console.log(`Scheduling budget update for this URL in 10 minutes`);
+          
+          // Add to the pending URL budgets tracking
+          await trafficStarService.trackNewUrlForBudgetUpdate(
+            url.id,
+            campaignId,
+            campaign.trafficstarCampaignId,
+            calculatedClickLimit,
+            campaign.pricePerThousand || 1000
+          );
+          
+          console.log(`URL budget tracking scheduled for URL ID ${url.id}`);
+        } catch (error) {
+          console.error(`Error scheduling URL budget update:`, error);
+          // Don't fail the request - just log the error
+        }
+      }
+      
       // Normal case - URL created successfully without duplication
       res.status(201).json(url);
     } catch (error) {
@@ -371,6 +393,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const url = await storage.updateUrl(id, result.data);
       if (!url) {
         return res.status(404).json({ message: "URL not found" });
+      }
+
+      // If the click limit was updated and the campaign is linked to TrafficStar,
+      // track the difference for budget update
+      if (updateData.clickLimit && existingUrl.campaignId) {
+        try {
+          // Get the campaign to check if it's linked to TrafficStar
+          const campaign = await storage.getCampaign(existingUrl.campaignId);
+          if (campaign && campaign.trafficstarCampaignId) {
+            console.log(`URL ${id} updated in campaign ${existingUrl.campaignId} with TrafficStar campaign ID ${campaign.trafficstarCampaignId}`);
+            
+            // Calculate the click limit difference (if positive)
+            const clickDifference = updateData.clickLimit - existingUrl.clickLimit;
+            if (clickDifference > 0) {
+              console.log(`URL click limit increased by ${clickDifference} clicks`);
+              console.log(`Scheduling budget update for this URL in 10 minutes`);
+              
+              // Add to the pending URL budgets tracking using only the difference
+              await trafficStarService.trackNewUrlForBudgetUpdate(
+                url.id,
+                existingUrl.campaignId,
+                campaign.trafficstarCampaignId,
+                clickDifference, // Only track the additional clicks
+                campaign.pricePerThousand || 1000
+              );
+              
+              console.log(`URL budget tracking scheduled for URL ID ${url.id} with ${clickDifference} additional clicks`);
+            } else {
+              console.log(`URL click limit decreased or unchanged - no budget update needed`);
+            }
+          }
+        } catch (error) {
+          console.error(`Error scheduling URL budget update:`, error);
+          // Don't fail the request - just log the error
+        }
       }
 
       res.json(url);
