@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import axios from 'axios';
 
-export default function TestUrlBudgetComponent() {
+export function TestUrlBudget() {
   const { toast } = useToast();
   const [campaignId, setCampaignId] = useState('27');
   const [urlId, setUrlId] = useState('');
