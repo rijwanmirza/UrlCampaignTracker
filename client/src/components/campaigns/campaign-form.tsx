@@ -377,7 +377,8 @@ export default function CampaignForm({ open, onOpenChange, onSuccess }: Campaign
                     <div className="space-y-0.5">
                       <FormLabel>Auto-Manage TrafficStar</FormLabel>
                       <FormDescription>
-                        Automatically pause campaign when there are no active URLs<br />
+                        Pause campaign when UTC date changes or when remaining clicks ≤ 5,000<br />
+                        Activate campaign when remaining clicks exceed 15,000<br />
                         Automatically set daily budget to $10.15 when UTC date changes
                       </FormDescription>
                     </div>

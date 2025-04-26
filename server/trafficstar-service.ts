@@ -1288,7 +1288,7 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
         new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
       
-      // Check if we have no active URLs - KEEPING THIS FEATURE
+      // Check if we have no active URLs
       if (urls.length === 0) {
         console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
         
@@ -1326,7 +1326,7 @@ class TrafficStarService {
         return; // No need to continue with regular auto-management when there are no active URLs
       }
       
-      // Calculate remaining clicks across all active URLs (for logging purposes only)
+      // Calculate remaining clicks across all active URLs
       const totalRemainingClicks = urls.reduce((total, url) => {
         const remainingClicks = url.clickLimit - url.clicks;
         return total + (remainingClicks > 0 ? remainingClicks : 0);
@@ -1360,12 +1360,33 @@ class TrafficStarService {
         (this.isWithinTimeWindow(currentUtcTime, budgetUpdateTime, 5) && 
          (!lastUpdateTime || !this.isWithinTimeWindow(lastUpdateTime, budgetUpdateTime, 5)));
       
+      // NEW BEHAVIOR: If UTC date has changed, first pause the campaign, then check remaining clicks
       if (isTimeForBudgetUpdate) {
         console.log(`Setting daily budget for campaign ${campaign.id} to $10.15 (UTC time: ${currentUtcTime}, configured time: ${budgetUpdateTime})`);
         
         // Set daily budget to $10.15 as per requirements
         try {
           await this.updateCampaignDailyBudget(trafficstarId, 10.15);
+          
+          // First pause the campaign when UTC date changes
+          if (currentUtcDate !== lastSyncDate && 
+              (!currentTrafficstarStatus || 
+               currentTrafficstarStatus.active === true || 
+               currentTrafficstarStatus.status === 'enabled')) {
+            
+            console.log(`New UTC date detected - first pausing TrafficStar campaign ${trafficstarId}`);
+            await this.pauseCampaign(trafficstarId);
+            console.log(`✅ TrafficStar campaign ${trafficstarId} paused due to new UTC date`);
+            
+            // Update current status after pause
+            currentTrafficstarStatus = {
+              active: false,
+              status: 'paused',
+              lastRequestedAction: 'pause',
+              lastRequestedActionAt: new Date(),
+              lastRequestedActionSuccess: true
+            };
+          }
           
           // Update last sync time in the database
           await db.update(campaigns)
@@ -1381,8 +1402,58 @@ class TrafficStarService {
         }
       }
       
-      // REMOVED 15,000 CLICKS THRESHOLD CODE
-      // The activation/deactivation based on remaining clicks threshold has been removed as requested
+      // NOW IMPLEMENT NEW CLICK THRESHOLD LOGIC
+      
+      // If total remaining clicks > 15000, activate the campaign
+      if (totalRemainingClicks > 15000) {
+        // Only call activateCampaign if campaign is not already active
+        if (!currentTrafficstarStatus || 
+            currentTrafficstarStatus.active === false || 
+            currentTrafficstarStatus.status === 'paused' || 
+            (currentTrafficstarStatus.lastRequestedAction === 'activate' && 
+             currentTrafficstarStatus.lastRequestedActionSuccess === false)) {
+          
+          console.log(`Activating TrafficStar campaign ${trafficstarId} (${totalRemainingClicks} remaining clicks > 15,000)`);
+          
+          try {
+            // Activate the campaign
+            await this.activateCampaign(trafficstarId);
+            console.log(`✅ Successfully activated TrafficStar campaign ${trafficstarId}`);
+          } catch (error) {
+            console.error(`Error activating TrafficStar campaign ${trafficstarId}:`, error);
+          }
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already active (${currentTrafficstarStatus.status}) - no API call needed`);
+        }
+      } 
+      // Only pause if remaining clicks <= 5000 (lower threshold)
+      else if (totalRemainingClicks <= 5000) {
+        // If remaining clicks <= 5000, ensure the campaign is paused
+        if (currentTrafficstarStatus && 
+            (currentTrafficstarStatus.active === true || 
+             currentTrafficstarStatus.status === 'enabled')) {
+          
+          console.log(`Pausing TrafficStar campaign ${trafficstarId} due to low remaining clicks (${totalRemainingClicks} <= 5,000)`);
+          
+          try {
+            // Pause the campaign
+            await this.pauseCampaign(trafficstarId);
+            
+            // Set end time to current UTC time
+            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+            
+            console.log(`✅ Successfully paused TrafficStar campaign ${trafficstarId} due to low remaining clicks`);
+          } catch (error) {
+            console.error(`Error pausing TrafficStar campaign ${trafficstarId}:`, error);
+          }
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already paused (${currentTrafficstarStatus?.status}) - no API call needed`);
+        }
+      } 
+      // For clicks between 5000 and 15000, maintain current status (hysteresis)
+      else {
+        console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} remaining clicks (between 5,000 and 15,000) - maintaining current status`);
+      }
       
     } catch (error) {
       console.error(`Error auto-managing campaign ${campaign.id}:`, error);
