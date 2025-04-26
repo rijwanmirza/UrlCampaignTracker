@@ -1490,6 +1490,46 @@ class TrafficStarService {
    * @returns true if the campaign should remain paused due to spent value
    */
   private shouldRemainPausedDueToSpentValue(campaignId: number, currentUtcDate: string): boolean {
+    // Handle test mode specifically for budget adjustment testing
+    if (process.env.TEST_MODE_SPENT_VALUE_PAUSE === 'true' &&
+        process.env.TEST_CAMPAIGN_ID === campaignId.toString()) {
+      
+      console.log(`🧪 TEST MODE: Checking spent value pause for test campaign ${campaignId}`);
+      
+      // If we're in test mode with specific campaign ID, simulate a pause that
+      // just reached the recheck time
+      const pauseTime = process.env.TEST_PAUSE_TIME ? new Date(process.env.TEST_PAUSE_TIME) : new Date(Date.now() - 15 * 60 * 1000);
+      const recheckTime = process.env.TEST_RECHECK_TIME ? new Date(process.env.TEST_RECHECK_TIME) : new Date(Date.now() - 5 * 60 * 1000);
+      const testDate = process.env.TEST_UTC_DATE || currentUtcDate;
+      
+      console.log(`🧪 TEST MODE: Campaign ${campaignId} has a simulated pause at ${pauseTime.toISOString()}`);
+      console.log(`🧪 TEST MODE: Recheck time is ${recheckTime.toISOString()} (${new Date() >= recheckTime ? 'ELAPSED' : 'not elapsed'})`);
+      
+      // Check if recheck time has passed
+      if (new Date() >= recheckTime) {
+        console.log(`🧪 TEST MODE: Campaign ${campaignId} 10-minute pause has elapsed, time to recheck`);
+        
+        // Run the recheck process to adjust budget and reactivate
+        this.handlePauseRecheckAndBudgetAdjustment(campaignId, testDate)
+          .catch(err => console.error(`Error running pause recheck for campaign ${campaignId}:`, err));
+          
+        // Clean up test environment variables
+        process.env.TEST_MODE_SPENT_VALUE_PAUSE = 'false';
+        delete process.env.TEST_CAMPAIGN_ID;
+        delete process.env.TEST_PAUSE_TIME;
+        delete process.env.TEST_RECHECK_TIME;
+        delete process.env.TEST_UTC_DATE;
+        
+        return false;
+      }
+      
+      // Still within the pause period
+      const remainingMinutes = Math.ceil((recheckTime.getTime() - new Date().getTime()) / (60 * 1000));
+      console.log(`🧪 TEST MODE: Campaign ${campaignId} is paused due to high spent value - ${remainingMinutes} minutes remaining until recheck`);
+      return true;
+    }
+    
+    // Normal (non-test) mode
     const pauseInfo = this.spentValuePausedCampaigns.get(campaignId);
     
     if (!pauseInfo) {
@@ -1607,6 +1647,30 @@ class TrafficStarService {
     recheckAt: Date; 
     disabledThresholdForDate: string;
   } | null {
+    // Handle test mode
+    if (process.env.TEST_MODE_SPENT_VALUE_PAUSE === 'true' && 
+        process.env.TEST_CAMPAIGN_ID === campaignId.toString()) {
+      
+      // If in test mode with specific campaign ID, return simulated pause info
+      const pauseTime = process.env.TEST_PAUSE_TIME ? new Date(process.env.TEST_PAUSE_TIME) : new Date(Date.now() - 15 * 60 * 1000);
+      const recheckTime = process.env.TEST_RECHECK_TIME ? new Date(process.env.TEST_RECHECK_TIME) : new Date(Date.now() - 5 * 60 * 1000);
+      const testDate = process.env.TEST_UTC_DATE || currentUtcDate;
+      
+      // If recheck time has elapsed, don't return pause info
+      if (new Date() >= recheckTime) {
+        return null;
+      }
+      
+      // Still within simulated pause period
+      console.log(`🧪 TEST MODE: Returning simulated pause info for campaign ${campaignId}`);
+      return {
+        pausedAt: pauseTime,
+        recheckAt: recheckTime,
+        disabledThresholdForDate: testDate
+      };
+    }
+    
+    // Normal mode
     const pauseInfo = this.spentValuePausedCampaigns.get(campaignId);
     
     if (!pauseInfo) {
@@ -1841,6 +1905,41 @@ class TrafficStarService {
    * @returns Campaign stats including daily costs
    */
   async getCampaignSpentValue(id: number, dateFrom?: string, dateUntil?: string): Promise<any> {
+    // In test mode, return consistent test data so we can verify the logic
+    if (process.env.TEST_MODE === 'true') {
+      console.log(`🧪 TEST MODE: Returning mock spent value data for campaign ${id}`);
+      
+      // Set default date range if not provided (last 7 days)
+      const today = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      const fromDate = dateFrom || sevenDaysAgo.toISOString().split('T')[0];
+      const untilDate = dateUntil || today.toISOString().split('T')[0];
+      
+      // Use a fixed test value of $10.30 for today (above threshold)
+      const testTotalSpent = 10.30;
+      
+      // Create daily costs with $10.30 for today, different values for other days
+      const dailyCosts: {date: string, cost: number}[] = [];
+      
+      // Add current date with test cost
+      dailyCosts.push({
+        date: untilDate,
+        cost: testTotalSpent
+      });
+      
+      return {
+        campaignId: id,
+        totalSpent: testTotalSpent,
+        dailyCosts,
+        dateFrom: fromDate,
+        dateUntil: untilDate,
+        testMode: true
+      };
+    }
+    
+    // Normal operation (non-test mode)
     try {
       const token = await this.ensureToken();
       
@@ -1859,42 +1958,8 @@ class TrafficStarService {
       
       console.log(`Fetching spent value for campaign ${id} from ${fromDate} to ${untilDate}`);
       
-      // Check if we are in test mode
-      if (process.env.NODE_ENV === 'test' || process.env.TEST_MODE === 'true') {
-        console.log(`TEST MODE: Returning test spent value data for campaign ${id}`);
-        
-        // Return test data when in test mode
-        // This will simulate a spent value over $10 for testing the pausing logic
-        const currentUtcDate = new Date().toISOString().split('T')[0];
-        
-        return {
-          campaignId: id,
-          dateRange: {
-            from: fromDate,
-            to: untilDate
-          },
-          dailyStats: [
-            {
-              date: currentUtcDate,
-              price: "10.50", // Over $10 to trigger the spent value threshold
-              impressions: "500000",
-              clicks: "15000",
-              leads: "100"
-            }
-          ],
-          totalSpent: 10.50, // This is the key value that will trigger the pause
-          totals: {
-            spent: 10.50,
-            impressions: 500000,
-            clicks: 15000,
-            leads: 100,
-            ecpm: 21.00,
-            ecpc: 0.7000,
-            ecpa: 105.00,
-            ctr: 3.00
-          }
-        };
-      }
+      // We already handled TEST_MODE at the beginning of the method,
+      // so we just proceed with normal API call here
       
       // Use the stats API to get campaign costs by day
       const response = await axios.get(
