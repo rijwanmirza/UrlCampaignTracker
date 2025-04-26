@@ -1497,6 +1497,19 @@ class TrafficStarService {
    * @returns true if the campaign should remain paused due to spent value
    */
   private shouldRemainPausedDueToSpentValue(campaignId: number, currentUtcDate: string): boolean {
+    // First check if the campaign already had a budget adjustment today
+    // If so, we don't need to do another one
+    if (this.budgetAdjustedCampaigns.has(campaignId)) {
+      const adjustedDate = this.budgetAdjustedCampaigns.get(campaignId);
+      if (adjustedDate === currentUtcDate) {
+        console.log(`Campaign ${campaignId} already had budget adjustment on ${currentUtcDate} - skipping further checks`);
+        return false;
+      } else {
+        // Clear the adjustment status for a new day
+        this.budgetAdjustedCampaigns.delete(campaignId);
+      }
+    }
+    
     // Handle test mode specifically for budget adjustment testing
     if (process.env.TEST_MODE_SPENT_VALUE_PAUSE === 'true' &&
         process.env.TEST_CAMPAIGN_ID === campaignId.toString()) {
@@ -1573,9 +1586,20 @@ class TrafficStarService {
    */
   private async handlePauseRecheckAndBudgetAdjustment(campaignId: number, currentUtcDate: string): Promise<void> {
     try {
+      // First check if the campaign already had a budget adjustment today
+      // If so, we don't need to do another one
+      if (this.budgetAdjustedCampaigns.has(campaignId)) {
+        const adjustedDate = this.budgetAdjustedCampaigns.get(campaignId);
+        if (adjustedDate === currentUtcDate) {
+          console.log(`Campaign ${campaignId} already had budget adjustment on ${currentUtcDate} - skipping duplicate adjustment`);
+          return;
+        }
+      }
+      
       console.log(`⏱️ 10-minute pause period completed for campaign ${campaignId} - handling budget adjustment...`);
       
-      // Remove from paused campaigns map (already removed in shouldRemainPausedDueToSpentValue method)
+      // Remove from paused campaigns map if it exists
+      this.spentValuePausedCampaigns.delete(campaignId);
       
       // 1. Get current spent value for today
       console.log(`Checking current spent value for campaign ${campaignId} on ${currentUtcDate}`);
@@ -1613,7 +1637,7 @@ class TrafficStarService {
         if (remainingClicks > 0) {
           // Calculate the value of remaining clicks using the price per click
           // We need to convert from price per 1000 clicks to price per click
-          const pricePerClick = parseFloat(campaign.pricePerThousand) / 1000;
+          const pricePerClick = parseFloat(campaign.pricePerThousand?.toString() || '1000') / 1000;
           pendingClickPricing += remainingClicks * pricePerClick;
         }
       }
@@ -1637,7 +1661,12 @@ class TrafficStarService {
       // Then activate the campaign
       await this.activateCampaign(campaignId);
       
+      // Mark this campaign as having had its budget adjusted for today
+      // This prevents multiple budget adjustments for the same campaign on the same day
+      this.budgetAdjustedCampaigns.set(campaignId, currentUtcDate);
+      
       console.log(`✅ Campaign ${campaignId} reactivated with new daily budget $${newDailyBudget.toFixed(4)} and end date ${endDateStr}`);
+      console.log(`✅ Campaign ${campaignId} marked as having budget adjusted for ${currentUtcDate} - will not repeat today`);
     } catch (error) {
       console.error(`Error handling pause recheck and budget adjustment for campaign ${campaignId}:`, error);
     }
@@ -1654,6 +1683,16 @@ class TrafficStarService {
     recheckAt: Date; 
     disabledThresholdForDate: string;
   } | null {
+    // First check if the campaign already had a budget adjustment today
+    // If so, return null to indicate no pause info (budget was already adjusted)
+    if (this.budgetAdjustedCampaigns.has(campaignId)) {
+      const adjustedDate = this.budgetAdjustedCampaigns.get(campaignId);
+      if (adjustedDate === currentUtcDate) {
+        console.log(`Campaign ${campaignId} already had budget adjustment on ${currentUtcDate} - budget adjustment completed`);
+        return null;
+      }
+    }
+    
     // Handle test mode
     if (process.env.TEST_MODE_SPENT_VALUE_PAUSE === 'true' && 
         process.env.TEST_CAMPAIGN_ID === campaignId.toString()) {
@@ -1706,6 +1745,12 @@ class TrafficStarService {
     if (this.spentValuePausedCampaigns.has(campaignId)) {
       console.log(`Clearing spent value pause state for campaign ${campaignId}`);
       this.spentValuePausedCampaigns.delete(campaignId);
+    }
+    
+    // Also clear budget adjustment tracking
+    if (this.budgetAdjustedCampaigns.has(campaignId)) {
+      console.log(`Clearing budget adjustment tracking for campaign ${campaignId}`);
+      this.budgetAdjustedCampaigns.delete(campaignId);
     }
   }
   
