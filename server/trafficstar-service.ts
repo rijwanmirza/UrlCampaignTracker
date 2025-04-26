@@ -5,7 +5,7 @@
 import axios from 'axios';
 import { db } from './db';
 import { trafficstarCredentials, trafficstarCampaigns, campaigns } from '@shared/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and, isNotNull } from 'drizzle-orm';
 import { storage } from './storage';
 
 // Try a few different API base URLs
@@ -1224,6 +1224,16 @@ class TrafficStarService {
         parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
         Number(campaign.trafficstarCampaignId);
       
+      // Get current date in UTC
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
+      // Check if this campaign is paused due to spent value
+      // If it is, skip the click threshold management for today
+      if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
+        console.log(`Campaign ${campaign.id} is paused due to high spent value - skipping click threshold management`);
+        return;
+      }
+      
       // Get current TrafficStar campaign status
       let currentTrafficstarStatus;
       try {
@@ -1264,8 +1274,6 @@ class TrafficStarService {
       const urlsResult = await storage.getUrls(campaign.id);
       const urls = urlsResult.filter(url => url.isActive);
       
-      // Get current date in UTC to check if it's a new day
-      const currentUtcDate = new Date().toISOString().split('T')[0];
       const lastSyncDate = campaign.lastTrafficstarSync ? 
         new Date(campaign.lastTrafficstarSync).toISOString().split('T')[0] : null;
       
@@ -1288,7 +1296,7 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
         new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
       
-      // Check if we have no active URLs
+      // Check if we have no active URLs - this always takes precedence
       if (urls.length === 0) {
         console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
         
@@ -1402,6 +1410,15 @@ class TrafficStarService {
         }
       }
       
+      // Check if campaign is registered as paused due to spent value
+      const pauseInfo = this.spentValuePausedCampaigns.get(trafficstarId);
+      
+      // If campaign is registered as paused by spent value for today, skip the threshold logic
+      if (pauseInfo && pauseInfo.disabledThresholdForDate === currentUtcDate) {
+        console.log(`Campaign ${campaign.id} clicks threshold management is disabled for today (${currentUtcDate}) due to high spent value`);
+        return;
+      }
+      
       // NOW IMPLEMENT NEW CLICK THRESHOLD LOGIC
       
       // If total remaining clicks > 15000, activate the campaign
@@ -1461,6 +1478,45 @@ class TrafficStarService {
   }
   
   /**
+   * Track when campaigns were paused due to spent value exceeding the threshold
+   * Maps campaign ID to the time when it was paused due to spent value (and time to recheck)
+   */
+  private spentValuePausedCampaigns: Map<number, { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string }> = new Map();
+  
+  /**
+   * Check if a campaign was paused due to high spent value and should still be paused
+   * @param campaignId The campaign ID to check
+   * @returns true if the campaign should remain paused due to spent value
+   */
+  private shouldRemainPausedDueToSpentValue(campaignId: number, currentUtcDate: string): boolean {
+    const pauseInfo = this.spentValuePausedCampaigns.get(campaignId);
+    
+    if (!pauseInfo) {
+      return false;
+    }
+    
+    // If this is for a different date, we can clear the pause status
+    if (pauseInfo.disabledThresholdForDate !== currentUtcDate) {
+      console.log(`Campaign ${campaignId} was paused due to spent value on ${pauseInfo.disabledThresholdForDate}, but current date is ${currentUtcDate} - clearing pause status`);
+      this.spentValuePausedCampaigns.delete(campaignId);
+      return false;
+    }
+    
+    // Check if we've reached the recheck time
+    if (new Date() >= pauseInfo.recheckAt) {
+      console.log(`Campaign ${campaignId} has reached recheck time after being paused due to spent value - will check again`);
+      // We'll recheck the spent value now, so clear this entry
+      this.spentValuePausedCampaigns.delete(campaignId);
+      return false;
+    }
+    
+    // Still within the pause period
+    const minutesRemaining = Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000));
+    console.log(`Campaign ${campaignId} remains paused due to spent value - ${minutesRemaining} minutes until recheck`);
+    return true;
+  }
+  
+  /**
    * Scheduled function to run daily budget updates and start campaigns as needed
    * This should be called on application startup and at appropriate intervals
    */
@@ -1469,7 +1525,17 @@ class TrafficStarService {
       // Run initial auto-management
       await this.autoManageCampaigns();
       
-      // Schedule to run every minute for immediate effect
+      // Schedule spent value check to run every 2 minutes
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled spent value check for TrafficStar campaigns');
+          await this.checkCampaignsSpentValue();
+        } catch (error) {
+          console.error('Error in scheduled spent value check:', error);
+        }
+      }, 2 * 60 * 1000); // Every 2 minutes
+      
+      // Schedule to run regular auto-management every minute for immediate effect
       setInterval(async () => {
         try {
           console.log('Running scheduled auto-management for TrafficStar campaigns');
@@ -1482,6 +1548,124 @@ class TrafficStarService {
       console.log('TrafficStar auto-management scheduler initialized');
     } catch (error) {
       console.error('Error scheduling auto-management:', error);
+    }
+  }
+  
+  /**
+   * Check all campaigns for their spent value and pause if over threshold
+   */
+  private async checkCampaignsSpentValue(): Promise<void> {
+    try {
+      // Get all campaigns with auto-management enabled
+      const campaignsToCheck = await db
+        .select()
+        .from(campaigns)
+        .where(
+          and(
+            eq(campaigns.autoManageTrafficstar, true),
+            isNotNull(campaigns.trafficstarCampaignId)
+          )
+        );
+      
+      console.log(`Found ${campaignsToCheck.length} campaigns with auto-management enabled for spent value check`);
+      
+      // Check each campaign
+      for (const campaign of campaignsToCheck) {
+        if (!campaign.trafficstarCampaignId) continue;
+        
+        // Get TrafficStar campaign ID
+        const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
+          parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+          Number(campaign.trafficstarCampaignId);
+          
+        // Get current date in UTC
+        const currentUtcDate = new Date().toISOString().split('T')[0];
+        
+        // Skip if campaign should remain paused due to spent value
+        if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
+          continue;
+        }
+        
+        // Get current campaign status
+        let currentTrafficstarStatus;
+        try {
+          const [dbCampaign] = await db
+            .select()
+            .from(trafficstarCampaigns)
+            .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
+          
+          if (dbCampaign) {
+            currentTrafficstarStatus = {
+              active: dbCampaign.active,
+              status: dbCampaign.status,
+              lastRequestedAction: dbCampaign.lastRequestedAction,
+              lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
+              lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
+            };
+          }
+        } catch (error) {
+          console.error(`Error getting status for campaign ${trafficstarId}:`, error);
+        }
+        
+        // Skip if campaign is already paused
+        if (currentTrafficstarStatus && 
+            (currentTrafficstarStatus.active === false || 
+             currentTrafficstarStatus.status === 'paused')) {
+          console.log(`Campaign ${trafficstarId} is already paused - skipping spent value check`);
+          continue;
+        }
+        
+        // Get current spent value for today only
+        console.log(`Checking spent value for campaign ${trafficstarId} on ${currentUtcDate}`);
+        try {
+          const spentValue = await this.getCampaignSpentValue(trafficstarId, currentUtcDate, currentUtcDate);
+          
+          // Check if spent value exceeds $10
+          if (spentValue && spentValue.totalSpent > 10) {
+            console.log(`⚠️ Campaign ${trafficstarId} has spent $${spentValue.totalSpent.toFixed(2)}, which exceeds $10 threshold`);
+            
+            // Pause the campaign
+            console.log(`Pausing campaign ${trafficstarId} due to high spent value ($${spentValue.totalSpent.toFixed(2)} > $10)`);
+            
+            // Format current date and time
+            const now = new Date();
+            const currentUtcTime = now.getUTCHours().toString().padStart(2, '0') + ':' + 
+                                  now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
+                                  now.getUTCSeconds().toString().padStart(2, '0');
+            const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
+            
+            // Pause the campaign and set end time
+            try {
+              await this.pauseCampaign(trafficstarId);
+              await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+              
+              // Mark this campaign as paused due to spent value
+              // Schedule recheck after 10 minutes
+              const pausedAt = new Date();
+              const recheckAt = new Date(pausedAt.getTime() + 10 * 60 * 1000); // 10 minutes later
+              this.spentValuePausedCampaigns.set(trafficstarId, {
+                pausedAt,
+                recheckAt,
+                disabledThresholdForDate: currentUtcDate
+              });
+              
+              console.log(`✅ Campaign ${trafficstarId} paused due to high spent value. Will recheck at ${recheckAt.toISOString()}`);
+              
+              // Disable click threshold checks for this campaign until next UTC date
+              console.log(`Click threshold checks for campaign ${trafficstarId} disabled until next UTC date change`);
+            } catch (error) {
+              console.error(`Error pausing campaign ${trafficstarId} due to high spent value:`, error);
+            }
+          } else {
+            const spentAmount = spentValue ? spentValue.totalSpent.toFixed(2) : '0.00';
+            console.log(`Campaign ${trafficstarId} spent value: $${spentAmount} (below $10 threshold)`);
+          }
+        } catch (error) {
+          console.error(`Error checking spent value for campaign ${trafficstarId}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking campaigns spent value:', error);
     }
   }
 
