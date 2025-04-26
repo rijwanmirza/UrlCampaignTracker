@@ -1484,6 +1484,13 @@ class TrafficStarService {
   private spentValuePausedCampaigns: Map<number, { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string }> = new Map();
   
   /**
+   * Track campaigns that have already had budget adjustment performed
+   * Maps campaign ID to the UTC date when budget adjustment was performed
+   * Prevents multiple budget adjustments for the same campaign on the same day
+   */
+  private budgetAdjustedCampaigns: Map<number, string> = new Map();
+  
+  /**
    * Check if a campaign was paused due to high spent value and should still be paused
    * @param campaignId The campaign ID to check
    * @param currentUtcDate The current UTC date in YYYY-MM-DD format
