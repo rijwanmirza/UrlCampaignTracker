@@ -1,38 +1,33 @@
-import React, { useEffect, ReactNode } from 'react';
-import { useLocation, useNavigate } from 'wouter';
-import { useAuth } from '../contexts/AuthContext';
-import { Spinner } from './ui/spinner';
+import React, { ReactNode, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/contexts/AuthContext';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, checkAuthStatus } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      const authenticated = await checkAuthStatus();
-      if (!authenticated) {
-        navigate('/login');
-      }
-    };
-
-    verifyAuth();
-  }, [checkAuthStatus, navigate]);
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner size="lg" />
-        <span className="ml-2">Checking authentication...</span>
+        <span className="ml-2 text-lg">Loading...</span>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return null; // Don't render children while redirecting
+    return null; // Will be redirected by the useEffect hook
   }
 
   return <>{children}</>;

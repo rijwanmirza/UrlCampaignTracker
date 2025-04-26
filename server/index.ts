@@ -2,10 +2,13 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
 import { trafficStarService } from "./trafficstar-service";
+import { requireAuth } from "./auth/middleware";
+import { registerAuthRoutes } from "./auth/routes";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -18,6 +21,9 @@ app.use(compression());
 // High-performance JSON parsing with limits to prevent DoS attacks
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+// Parse cookies for authentication
+app.use(cookieParser());
 
 // Add performance and caching headers for redirect URLs
 app.use((req, res, next) => {
@@ -60,6 +66,25 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register authentication routes first
+  registerAuthRoutes(app);
+  
+  // Apply authentication middleware to protect API routes
+  app.use('/api', (req, res, next) => {
+    // Skip auth for login/status routes and redirect routes
+    if (req.path === '/auth/login' || 
+        req.path === '/auth/verify' || 
+        req.path === '/auth/status' ||
+        req.path.startsWith('/campaigns/') && (req.method === 'GET' || req.method === 'OPTIONS') ||
+        req.path.startsWith('/gmail-reader/') ||
+        req.path.startsWith('/system/')) {
+      return next();
+    }
+    
+    // Apply authentication
+    requireAuth(req, res, next);
+  });
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
