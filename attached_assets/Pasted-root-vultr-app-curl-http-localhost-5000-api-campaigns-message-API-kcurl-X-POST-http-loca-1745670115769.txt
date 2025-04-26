@@ -1,0 +1,701 @@
+root@vultr:/app# curl http://localhost:5000/api/campaigns
+{"message":"API kcurl -X POST http://localhost:5000/api/campaigns \localhost:5000/api/campaigns \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test Campaign","description":"Test Description"}'
+{"message":"API kpm2 logs url-managerltr:/app# pm2 logs url-manager
+[TAILING] Tailing last 15 lines for [url-manager] process (change the value with --lines option)
+/root/.pm2/logs/url-manager-error.log last 15 lines:
+0|url-mana |     _autoPong: true,
+0|url-mana |     _url: 'wss://localhost/v2',
+0|url-mana |     _req: null,
+0|url-mana |     [Symbol(shapeMode)]: false,
+0|url-mana |     [Symbol(kCapture)]: false
+0|url-mana |   },
+0|url-mana |   [Symbol(kType)]: 'error',
+0|url-mana |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-mana |       at internalConnectMultiple (node:net:1122:18)
+0|url-mana |       at afterConnectMultiple (node:net:1689:7) {
+0|url-mana |     code: 'ECONNREFUSED',
+0|url-mana |     [errors]: [ [Error], [Error] ]
+0|url-mana |   },
+0|url-mana |   [Symbol(kMessage)]: ''
+0|url-mana | }
+
+/root/.pm2/logs/url-manager-out.log last 15 lines:
+0|url-mana | 12:13:57 PM [express] GET /api/auth/status 304 in 2ms :: {"authenticated":true}
+0|url-mana | 12:13:57 PM [express] GET /api/auth/status 304 in 2ms :: {"authenticated":true}
+0|url-mana | 12:13:58 PM [express] GET /api/trafficstar/saved-campaigns 500 in 16ms :: {"message":"Failed to fetch…
+0|url-mana | 12:13:58 PM [express] GET /api/campaigns 500 in 15ms :: {"message":"Failed to fetch campaigns","error…
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 60
+0|url-mana | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 60
+0|url-mana | 12:16:13 PM [gmail-reader] Loaded 4 previously processed email IDs
+0|url-mana | 12:16:13 PM [express] serving on port 5000
+0|url-mana | 12:16:13 PM [startup] Error auto-configuring integrations: [object Object]
+0|url-mana | 12:17:09 PM [express] GET /api/campaigns 401 in 6ms :: {"message":"API key required"}
+0|url-mana | 12:17:28 PM [express] POST /api/campaigns 401 in 3ms :: {"message":"API key required"}
+
+0|url-manager  | Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+0|url-manager  |   npx update-browserslist-db@latest
+0|url-manager  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+0|url-manager  | 12:18:07 PM [express] GET /api/auth/status 304 in 2ms :: {"authenticated":true}
+0|url-manager  | 12:18:07 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+0|url-manager  | Error fetching campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:18:07 PM [express] GET /api/campaigns 500 in 24ms :: {"message":"Failed to fetch campaigns","error…
+0|url-manager  | Error fetching saved TrafficStar campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:18:07 PM [express] GET /api/trafficstar/saved-campaigns 500 in 28ms :: {"message":"Failed to fetch…
+0|url-manager  | 12:18:12 PM [express] GET /api/urls 500 in 7ms :: {"message":"Failed to fetch URLs"}
+0|url-manager  | 12:18:15 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+0|url-manager  | 12:18:15 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+0|url-manager  | 12:18:15 PM [express] GET /api/urls 500 in 10ms :: {"message":"Failed to fetch URLs"}
+0|url-manager  | 12:18:33 PM [express] GET /api/auth/status 200 in 1ms :: {"authenticated":false}
+0|url-manager  | 12:18:33 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+0|url-manager  | 12:18:55 PM [auth] API key verification successful
+0|url-manager  | 12:18:55 PM [express] POST /api/auth/verify-key 200 in 7ms :: {"message":"API key verified","authenti…
+0|url-manager  | Error fetching saved TrafficStar campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:18:56 PM [express] GET /api/trafficstar/saved-campaigns 500 in 34ms :: {"message":"Failed to fetch…
+0|url-manager  | Error fetching campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:18:56 PM [express] GET /api/campaigns 500 in 44ms :: {"message":"Failed to fetch campaigns","error…
+0|url-manager  | 12:18:59 PM [express] GET /api/urls 500 in 7ms :: {"message":"Failed to fetch URLs"}
+0|url-manager  | Error fetching campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:14 PM [express] GET /api/campaigns 500 in 63ms :: {"message":"Failed to fetch campaigns","error…
+0|url-manager  | Error fetching saved TrafficStar campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:14 PM [express] GET /api/trafficstar/saved-campaigns 500 in 64ms :: {"message":"Failed to fetch…
+0|url-manager  | 🔍 DEBUG: Campaign creation request received: {
+0|url-manager  |   "name": "qsqasaq",
+0|url-manager  |   "redirectMethod": "double_meta_refresh",
+0|url-manager  |   "customPath": "aqqaqa",
+0|url-manager  |   "multiplier": 1,
+0|url-manager  |   "pricePerThousand": 0,
+0|url-manager  |   "trafficstarCampaignId": "",
+0|url-manager  |   "autoManageTrafficstar": false
+0|url-manager  | }
+0|url-manager  | 🔍 DEBUG: Validated campaign data: {
+0|url-manager  |   "name": "qsqasaq",
+0|url-manager  |   "redirectMethod": "double_meta_refresh",
+0|url-manager  |   "customPath": "aqqaqa",
+0|url-manager  |   "multiplier": 1,
+0|url-manager  |   "pricePerThousand": 0,
+0|url-manager  |   "trafficstarCampaignId": "",
+0|url-manager  |   "autoManageTrafficstar": false
+0|url-manager  | }
+0|url-manager  | 🔍 DEBUG: Multiplier type: number
+0|url-manager  | 🔍 DEBUG: Multiplier value: 1
+0|url-manager  | Error creating campaign: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:30 PM [express] POST /api/campaigns 500 in 32ms :: {"message":"Failed to create campaign"}
+0|url-manager  | 12:19:33 PM [express] GET /api/auth/status 200 in 4ms :: {"authenticated":true}
+0|url-manager  | 12:19:33 PM [express] GET /api/auth/status 304 in 2ms :: {"authenticated":true}
+0|url-manager  | Error fetching saved TrafficStar campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:33 PM [express] GET /api/trafficstar/saved-campaigns 500 in 12ms :: {"message":"Failed to fetch…
+0|url-manager  | Error fetching campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:33 PM [express] GET /api/campaigns 500 in 18ms :: {"message":"Failed to fetch campaigns","error…
+0|url-manager  | 12:19:36 PM [express] GET /api/urls 500 in 5ms :: {"message":"Failed to fetch URLs"}
+0|url-manager  | Error fetching saved TrafficStar campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:38 PM [express] GET /api/trafficstar/saved-campaigns 500 in 23ms :: {"message":"Failed to fetch…
+0|url-manager  | Error fetching campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:19:38 PM [express] GET /api/campaigns 500 in 27ms :: {"message":"Failed to fetch campaigns","error…
+0|url-manager  | 🔍 DEBUG: Campaign creation request received: {
+0|url-manager  |   "name": "ddsds",
+0|url-manager  |   "redirectMethod": "http2_307_temporary",
+0|url-manager  |   "customPath": "fchfvjgvjuj",
+0|url-manager  |   "multiplier": 767,
+0|url-manager  |   "pricePerThousand": 0,
+0|url-manager  |   "trafficstarCampaignId": "",
+0|url-manager  |   "autoManageTrafficstar": false
+0|url-manager  | }
+0|url-manager  | 🔍 DEBUG: Validated campaign data: {
+0|url-manager  |   "name": "ddsds",
+0|url-manager  |   "redirectMethod": "http2_307_temporary",
+0|url-manager  |   "customPath": "fchfvjgvjuj",
+0|url-manager  |   "multiplier": 767,
+0|url-manager  |   "pricePerThousand": 0,
+0|url-manager  |   "trafficstarCampaignId": "",
+0|url-manager  |   "autoManageTrafficstar": false
+0|url-manager  | }
+0|url-manager  | 🔍 DEBUG: Multiplier type: number
+0|url-manager  | 🔍 DEBUG: Multiplier value: 767
+0|url-manager  | Error creating campaign: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:21:19 PM [express] POST /api/campaigns 500 in 32ms :: {"message":"Failed to create campaign"}
+0|url-manager  | 12:21:22 PM [express] GET /api/auth/status 304 in 2ms :: {"authenticated":true}
+0|url-manager  | 12:21:22 PM [express] GET /api/auth/status 304 in 3ms :: {"authenticated":true}
+0|url-manager  | Error fetching campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:21:22 PM [express] GET /api/campaigns 500 in 64ms :: {"message":"Failed to fetch campaigns","error…
+0|url-manager  | Error fetching saved TrafficStar campaigns: ErrorEvent {
+0|url-manager  |   [Symbol(kTarget)]: WebSocket {
+0|url-manager  |     _events: [Object: null prototype] {
+0|url-manager  |       error: [Function],
+0|url-manager  |       message: [Function],
+0|url-manager  |       close: [Function],
+0|url-manager  |       open: [Function]
+0|url-manager  |     },
+0|url-manager  |     _eventsCount: 4,
+0|url-manager  |     _maxListeners: undefined,
+0|url-manager  |     _binaryType: 'arraybuffer',
+0|url-manager  |     _closeCode: 1006,
+0|url-manager  |     _closeFrameReceived: false,
+0|url-manager  |     _closeFrameSent: false,
+0|url-manager  |     _closeMessage: <Buffer >,
+0|url-manager  |     _closeTimer: null,
+0|url-manager  |     _errorEmitted: true,
+0|url-manager  |     _extensions: {},
+0|url-manager  |     _paused: false,
+0|url-manager  |     _protocol: '',
+0|url-manager  |     _readyState: 3,
+0|url-manager  |     _receiver: null,
+0|url-manager  |     _sender: null,
+0|url-manager  |     _socket: null,
+0|url-manager  |     _bufferedAmount: 0,
+0|url-manager  |     _isServer: false,
+0|url-manager  |     _redirects: 0,
+0|url-manager  |     _autoPong: true,
+0|url-manager  |     _url: 'wss://localhost/v2',
+0|url-manager  |     _req: null,
+0|url-manager  |     [Symbol(shapeMode)]: false,
+0|url-manager  |     [Symbol(kCapture)]: false
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kType)]: 'error',
+0|url-manager  |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-manager  |       at internalConnectMultiple (node:net:1122:18)
+0|url-manager  |       at afterConnectMultiple (node:net:1689:7) {
+0|url-manager  |     code: 'ECONNREFUSED',
+0|url-manager  |     [errors]: [ [Error], [Error] ]
+0|url-manager  |   },
+0|url-manager  |   [Symbol(kMessage)]: ''
+0|url-manager  | }
+0|url-manager  | 12:21:23 PM [express] GET /api/trafficstar/saved-campaigns 500 in 74ms :: {"message":"Failed to fetch…

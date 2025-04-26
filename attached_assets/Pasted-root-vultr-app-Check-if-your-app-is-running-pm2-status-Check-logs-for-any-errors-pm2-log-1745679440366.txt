@@ -1,0 +1,186 @@
+root@vultr:/app#
+# Check if your app is running
+pm2 status
+
+# Check logs for any errors
+pm2 logs url-manager
+
+# Check if Nginx is running
+sudo systemctl status nginx^C
+root@vultr:/app# # Check if your app is running
+pm2 status
+
+# Check logs for any errors
+pm2 logs url-manager
+
+# Check if Nginx is running
+sudo systemctl status nginx
+┌────┬────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name           │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-manager    │ default     │ 1.0.0   │ fork    │ 23733    │ 80s    │ 1    │ online    │ 0%       │ 50.5mb   │ root     │ disabled │
+└────┴────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[TAILING] Tailing last 15 lines for [url-manager] process (change the value with --lines option)
+/root/.pm2/logs/url-manager-out.log last 15 lines:
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+0|url-mana | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+0|url-mana | 2:55:38 PM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-mana | 2:55:38 PM [express] serving on port 5000
+0|url-mana | 2:55:38 PM [startup] Error auto-configuring integrations: [object Object]
+0|url-mana | 2:56:05 PM [express] GET /api/auth/status 200 in 11ms :: {"authenticated":false}
+0|url-mana | 2:56:06 PM [express] GET /api/auth/status 304 in 4ms :: {"authenticated":false}
+0|url-mana | 2:56:26 PM [express] GET /api/auth/status 304 in 2ms :: {"authenticated":false}
+0|url-mana | 2:56:26 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+0|url-mana | 2:56:28 PM [express] POST /api/auth/verify-key 500 in 3ms :: {"message":"An error occurred during ve…
+0|url-mana | 2:56:30 PM [express] POST /api/auth/verify-key 500 in 4ms :: {"message":"An error occurred during ve…
+
+/root/.pm2/logs/url-manager-error.log last 15 lines:
+0|url-mana |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-mana |     at urlencodedParser (/app/node_modules/body-parser/lib/types/urlencoded.js:85:7)
+0|url-mana |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-mana |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-mana |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-mana |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-mana |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-mana |     at /app/node_modules/body-parser/lib/read.js:137:5
+0|url-mana |     at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+0|url-mana |     at invokeCallback (/app/node_modules/raw-body/index.js:238:16)
+0|url-mana |     at done (/app/node_modules/raw-body/index.js:227:7)
+0|url-mana |     at IncomingMessage.onEnd (/app/node_modules/raw-body/index.js:287:7)
+0|url-mana |     at IncomingMessage.emit (node:events:524:28)
+0|url-mana |     at endReadableNT (node:internal/streams/readable:1698:12)
+0|url-mana |     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+0|url-manager  | API key verification error: TypeError: next is not a function
+0|url-manager  |     at validateApiKey (/app/server/auth/middleware.ts:12:10)
+0|url-manager  |     at <anonymous> (/app/server/auth/routes.ts:18:23)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/route.js:149:13)
+0|url-manager  |     at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:284:15
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at <anonymous> (/app/server/index.ts:65:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at <anonymous> (/app/server/index.ts:35:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at cookieParser (/app/node_modules/cookie-parser/index.js:57:14)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at urlencodedParser (/app/node_modules/body-parser/lib/types/urlencoded.js:85:7)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at /app/node_modules/body-parser/lib/read.js:137:5
+0|url-manager  |     at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+0|url-manager  |     at invokeCallback (/app/node_modules/raw-body/index.js:238:16)
+0|url-manager  |     at done (/app/node_modules/raw-body/index.js:227:7)
+0|url-manager  |     at IncomingMessage.onEnd (/app/node_modules/raw-body/index.js:287:7)
+0|url-manager  |     at IncomingMessage.emit (node:events:524:28)
+0|url-manager  |     at endReadableNT (node:internal/streams/readable:1698:12)
+0|url-manager  |     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+0|url-manager  | 2:57:01 PM [express] POST /api/auth/verify-key 500 in 5ms :: {"message":"An error occurred during ve…
+0|url-manager  | API key verification error: TypeError: next is not a function
+0|url-manager  |     at validateApiKey (/app/server/auth/middleware.ts:12:10)
+0|url-manager  |     at <anonymous> (/app/server/auth/routes.ts:18:23)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/route.js:149:13)
+0|url-manager  |     at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:284:15
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at <anonymous> (/app/server/index.ts:65:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at <anonymous> (/app/server/index.ts:35:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at cookieParser (/app/node_modules/cookie-parser/index.js:57:14)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at urlencodedParser (/app/node_modules/body-parser/lib/types/urlencoded.js:85:7)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at /app/node_modules/body-parser/lib/read.js:137:5
+0|url-manager  |     at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+0|url-manager  |     at invokeCallback (/app/node_modules/raw-body/index.js:238:16)
+0|url-manager  |     at done (/app/node_modules/raw-body/index.js:227:7)
+0|url-manager  |     at IncomingMessage.onEnd (/app/node_modules/raw-body/index.js:287:7)
+0|url-manager  |     at IncomingMessage.emit (node:events:524:28)
+0|url-manager  |     at endReadableNT (node:internal/streams/readable:1698:12)
+0|url-manager  |     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+0|url-manager  | 2:57:07 PM [express] POST /api/auth/verify-key 500 in 7ms :: {"message":"An error occurred during ve…
+0|url-manager  | API key verification error: TypeError: next is not a function
+0|url-manager  |     at validateApiKey (/app/server/auth/middleware.ts:12:10)
+0|url-manager  |     at <anonymous> (/app/server/auth/routes.ts:18:23)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/route.js:149:13)
+0|url-manager  |     at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:284:15
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at <anonymous> (/app/server/index.ts:65:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at <anonymous> (/app/server/index.ts:35:3)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at cookieParser (/app/node_modules/cookie-parser/index.js:57:14)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at urlencodedParser (/app/node_modules/body-parser/lib/types/urlencoded.js:85:7)
+0|url-manager  |     at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+0|url-manager  |     at trim_prefix (/app/node_modules/express/lib/router/index.js:328:13)
+0|url-manager  |     at /app/node_modules/express/lib/router/index.js:286:9
+0|url-manager  |     at Function.process_params (/app/node_modules/express/lib/router/index.js:346:12)
+0|url-manager  |     at next (/app/node_modules/express/lib/router/index.js:280:10)
+0|url-manager  |     at /app/node_modules/body-parser/lib/read.js:137:5
+0|url-manager  |     at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+0|url-manager  |     at invokeCallback (/app/node_modules/raw-body/index.js:238:16)
+0|url-manager  |     at done (/app/node_modules/raw-body/index.js:227:7)
+0|url-manager  |     at IncomingMessage.onEnd (/app/node_modules/raw-body/index.js:287:7)
+0|url-manager  |     at IncomingMessage.emit (node:events:524:28)
+0|url-manager  |     at endReadableNT (node:internal/streams/readable:1698:12)
+0|url-manager  |     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+0|url-manager  | 2:57:09 PM [express] POST /api/auth/verify-key 500 in 7ms :: {"message":"An error occurred during ve…

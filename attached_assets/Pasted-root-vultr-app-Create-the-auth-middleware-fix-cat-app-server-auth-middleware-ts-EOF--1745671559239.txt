@@ -1,0 +1,292 @@
+root@vultr:/app# # Create the auth middleware fix
+cat > /app/server/auth/middleware.ts << 'EOF'
+// Temporary fix to disable authentication
+export const requireAuth = (req, res, next) => {
+  // Skip authentication for testing
+  return next();
+};
+EOF
+
+# Make sure the file has the correct permissions
+chmod 644 /app/server/auth/middleware.ts
+root@vultr:/app# # Search for WebSocketServer in routes.ts
+grep -n "WebSocketServer" /app/server/routes.ts
+
+# If found, create a fix for the WebSocket server
+cat > /app/server/routes.ts.fix << 'EOF'
+// Find this code in routes.ts:
+// const wss = new WebSocketServer({ server: httpServer, path: '/v2' });
+// wss.on('connection', ...)
+
+// And comment it out or replace it with:
+// Disable WebSocket server temporarily
+// const wss = new WebSocketServer({ server: httpServer, path: '/v2' });
+// console.log('WebSocket server disabled for debugging');
+EOF
+
+echo "Check /app/server/routes.ts.fix for instructions on fixing the WebSocket server"
+Check /app/server/routes.ts.fix for instructions on fixing the WebSocket server
+root@vultr:/app# # Find client-side WebSocket usage
+find /app/client -type f -exec grep -n "WebSocket" {} \; 2>/dev/null
+
+# Create a client fix script
+cat > /app/client-fix.sh << 'EOF'
+#!/bin/bash
+# This script will attempt to fix any WebSocket connections in client files
+
+# Search for WebSocket in client files
+FILES=$(find /app/client -type f -exec grep -l "WebSocket" {} \; 2>/dev/null)
+
+# For each file with WebSocket
+for FILE in $FILES; do
+  echo "Fixing WebSocket in $FILE"
+
+  # Replace the WebSocket connection with a placeholder
+  sed -i 's/new WebSocket/\/\* DISABLED: new WebSocket/g' $FILE
+  sed -i 's/\(const\|let\|var\) socket = .*WebSocket.*/\1 socket = { send: () => {}, onmessage: () => {}, onopen: () => {}, onclose: () => {} };/g' $FILE
+
+  echo "Fixed $FILE"
+done
+
+echo "Client WebSocket fixes applied"
+EOF
+
+# Make the script executable
+chmod +x /app/client-fix.sh
+
+# Run the script
+/app/client-fix.sh
+Client WebSocket fixes applied
+root@vultr:/app# # Check package.json for WebSocket dependencies
+grep -n "ws" /app/package.json
+96:    "ws": "^8.18.0",
+112:    "@types/ws": "^8.5.13",
+root@vultr:/app# # Restart the application
+pm2 restart url-manager
+
+# Wait a moment for it to start
+sleep 5
+
+# Test basic endpoints
+curl -v http://localhost/api/campaigns
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-manager](ids: [ 2 ])
+[PM2] [url-manager](2) ✓
+┌────┬────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name           │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 1  │ simple-app     │ default     │ 1.0.0   │ fork    │ 22946    │ 7m     │ 0    │ online    │ 0%       │ 57.8mb   │ root     │ disabled │
+│ 2  │ url-manager    │ default     │ 1.0.0   │ fork    │ 24113    │ 0s     │ 61   │ online    │ 0%       │ 17.0mb   │ root     │ disabled │
+└────┴────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+*   Trying 127.0.0.1:80...
+* Connected to localhost (127.0.0.1) port 80 (#0)
+> GET /api/campaigns HTTP/1.1
+> Host: localhost
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< Server: nginx/1.18.0 (Ubuntu)
+< Date: Sat, 26 Apr 2025 12:44:58 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 373
+< Connection: keep-alive
+< X-Powered-By: Express
+< ETag: W/"175-+yevlGuxJWKfyow9fYKTFz9B7xo"
+<
+* Connection #0 to host localhost left intact
+[{"id":1,"name":"Test Campaign","description":"This is a test campaign","trafficstar_id":null,"custom_path":null,"active":true,"click_threshold_activate":15000,"click_threshold_pause":5000,"created_at":"2025-04-26T12:23:34.520Z","updated_at":"2025-04-26T12:23:34.520Z","last_budget_update":null,"budget_adjusted_today":false,"last_# Check PM2 logs for more details0.0000"}]root@vultr:/app# # Check PM2 logs for more details
+pm2 logs url-manager --lines 50
+
+# Try adding a simple test API route to see if server is handling requests
+echo "
+// Add this to the end of server/routes.ts before registerRoutes exports
+app.get('/api/test-simple', (_req, res) => {
+  res.json({ message: 'API is working', timestamp: new Date().toISOString() });
+});
+" > /app/test-route.txt
+
+echo "Add the test route from /app/test-route.txt to your server/routes.ts file"
+[TAILING] Tailing last 50 lines for [url-manager] process (change the value with --lines option)
+/root/.pm2/logs/url-manager-out.log last 50 lines:
+2|url-mana | > NODE_ENV=development tsx server/index.ts
+2|url-mana |
+2|url-mana | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 60
+2|url-mana | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 60
+2|url-mana | 12:34:25 PM [gmail-reader] Loaded 8 previously processed email IDs
+2|url-mana | Re-optimizing dependencies because lockfile has changed
+2|url-mana | 12:34:25 PM [express] serving on port 5000
+2|url-mana | 12:34:25 PM [startup] Error auto-configuring integrations: [object Object]
+2|url-mana |
+2|url-mana | > rest-express@1.0.0 dev
+2|url-mana | > NODE_ENV=development tsx server/index.ts
+2|url-mana |
+2|url-mana | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 60
+2|url-mana | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 60
+2|url-mana | 12:36:10 PM [gmail-reader] Loaded 8 previously processed email IDs
+2|url-mana | 12:36:11 PM [express] serving on port 5000
+2|url-mana | 12:36:11 PM [startup] Error auto-configuring integrations: [object Object]
+2|url-mana | 12:37:10 PM [express] GET /api/auth/status 304 in 11ms :: {"authenticated":true}
+2|url-mana | 12:37:10 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+2|url-mana | 12:37:10 PM [express] GET /api/urls 500 in 22ms :: {"message":"Failed to fetch URLs"}
+2|url-mana | 12:37:13 PM [express] GET /api/campaigns 500 in 24ms :: {"message":"Failed to fetch campaigns","error…
+2|url-mana | 12:37:13 PM [express] GET /api/trafficstar/saved-campaigns 500 in 31ms :: {"message":"Failed to fetch…
+2|url-mana | 🔍 DEBUG: Campaign creation request received: {
+2|url-mana |   "name": "tgth",
+2|url-mana |   "redirectMethod": "direct",
+2|url-mana |   "customPath": "",
+2|url-mana |   "multiplier": 1,
+2|url-mana |   "pricePerThousand": 0,
+2|url-mana |   "trafficstarCampaignId": "",
+2|url-mana |   "autoManageTrafficstar": false
+2|url-mana | }
+2|url-mana | 🔍 DEBUG: Validated campaign data: {
+2|url-mana |   "name": "tgth",
+2|url-mana |   "redirectMethod": "direct",
+2|url-mana |   "customPath": "",
+2|url-mana |   "multiplier": 1,
+2|url-mana |   "pricePerThousand": 0,
+2|url-mana |   "trafficstarCampaignId": "",
+2|url-mana |   "autoManageTrafficstar": false
+2|url-mana | }
+2|url-mana | 🔍 DEBUG: Multiplier type: number
+2|url-mana | 🔍 DEBUG: Multiplier value: 1
+2|url-mana | 12:37:17 PM [express] POST /api/campaigns 500 in 24ms :: {"message":"Failed to create campaign"}
+2|url-mana | 12:37:21 PM [express] GET /api/auth/status 304 in 7ms :: {"authenticated":true}
+2|url-mana | 12:37:21 PM [express] GET /api/auth/status 304 in 4ms :: {"authenticated":true}
+2|url-mana | 12:37:21 PM [express] GET /api/campaigns 500 in 19ms :: {"message":"Failed to fetch campaigns","error…
+2|url-mana | 12:37:21 PM [express] GET /api/trafficstar/saved-campaigns 500 in 22ms :: {"message":"Failed to fetch…
+2|url-mana | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 60
+2|url-mana | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 60
+2|url-mana | 12:38:38 PM [gmail-reader] Loaded 8 previously processed email IDs
+
+/root/.pm2/logs/url-manager-error.log last 50 lines:
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-mana | /app/server/auth/routes.ts:2
+2|url-mana | import { validateApiKey, requireAuth } from './middleware';
+2|url-mana |          ^
+2|url-mana |
+2|url-mana | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-mana | /app/server/auth/routes.ts:2
+2|url-mana | import { validateApiKey, requireAuth } from './middleware';
+2|url-mana |          ^
+2|url-mana |
+2|url-mana | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-mana | /app/server/auth/routes.ts:2
+2|url-mana | import { validateApiKey, requireAuth } from './middleware';
+2|url-mana |          ^
+2|url-mana |
+2|url-mana | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-mana | /app/server/auth/routes.ts:2
+2|url-mana | import { validateApiKey, requireAuth } from './middleware';
+2|url-mana |          ^
+2|url-mana |
+2|url-mana | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-mana | /app/server/auth/routes.ts:2
+2|url-mana | import { validateApiKey, requireAuth } from './middleware';
+2|url-mana |          ^
+2|url-mana |
+2|url-mana | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-mana | /app/server/auth/routes.ts:2
+2|url-mana | import { validateApiKey, requireAuth } from './middleware';
+2|url-mana |          ^
+2|url-mana |
+2|url-mana | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+2|url-manager  | /app/server/auth/routes.ts:2
+2|url-manager  | import { validateApiKey, requireAuth } from './middleware';
+2|url-manager  |          ^
+2|url-manager  | SyntaxError: The requested module './middleware' does not provide an export named 'validateApiKey'
+2|url-manager  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+2|url-manager  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+2|url-manager  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)

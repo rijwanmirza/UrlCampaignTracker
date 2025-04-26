@@ -1,0 +1,101 @@
+root@vultr:/app# cat > /app/fix-auth.js << 'EOF'
+// This is a fix for the authentication middleware
+// Find the file that contains isAuthenticated function and replace it with this:
+
+/*
+export const isAuthenticated = (req, res, next) => {
+  // Skip authentication checks for testing
+  return next();
+};
+*/
+EOF
+
+echo "The auth fix is in /app/fix-auth.js. Find your authentication middleware file and apply the fix."
+The auth fix is in /app/fix-auth.js. Find your authentication middleware file and apply the fix.
+root@vultr:/app# cat > /app/fix-websocket.js << 'EOF'
+// This script fixes the WebSocket issues in your client code
+// Find files in your client code that use WebSocket and replace with this approach:
+
+/*
+// Instead of WebSocket connection:
+// const socket = new WebSocket('wss://localhost/v2');
+
+// Use regular fetch API:
+function fetchAPI(endpoint, method = 'GET', data = null) {
+  return fetch(`/api/${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: data ? JSON.stringify(data) : null
+  }).then(res => res.json());
+}
+
+// Example usage:
+// fetchAPI('campaigns').then(campaigns => console.log(campaigns));
+// fetchAPI('campaigns', 'POST', { name: 'New Campaign', description: 'Test' });
+*/
+EOF
+
+echo "The WebSocket fix is in /app/fix-websocket.js. Find your client code files that use WebSocket and apply the fix."
+The WebSocket fix is in /app/fix-websocket.js. Find your client code files that use WebSocket and apply the fix.
+root@vultr:/app# # Reset the Nginx config to point back to port 5000 where your app is running
+cat > /etc/nginx/sites-available/url-manager << 'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name _;
+
+    # Regular HTTP routes
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+# Apply the new configuration
+nginx -t
+systemctl restart nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@vultr:/app# # See where the WebSocketServer is used in your server code
+find /app/server -type f -exec grep -l "WebSocketServer" {} \;
+root@vultr:/app# echo "Edit the file that contains WebSocketServer to disable it temporarily"
+Edit the file that contains WebSocketServer to disable it temporarily
+root@vultr:/app# # Find where authentication middleware is defined
+find /app/server -type f -exec grep -l "isAuthenticated" {} \;
+root@vultr:/app# # Restart your application
+pm2 restart url-manager
+
+# Test basic API endpoints
+curl http://localhost/api/test
+curl http://localhost/api/campaigns
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-manager](ids: [ 0 ])
+[PM2] [url-manager](0) ✓
+┌────┬────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name           │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-manager    │ default     │ 1.0.0   │ fork    │ 22856    │ 0s     │ 9    │ online    │ 0%       │ 504.0kb  │ root     │ disabled │
+└────┴────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.18.0 (Ubuntu)</center>
+</body>
+</html>
+<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.18.0 (Ubuntu)</center>
+</body>
+</html>
+root@vultr:/app#
