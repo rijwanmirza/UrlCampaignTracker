@@ -1885,8 +1885,9 @@ class TrafficStarService {
    * Process pending URL budget updates
    * This checks for URLs that have passed their 10-minute wait period
    * and updates the campaign's daily budget accordingly
+   * Made public for testing purposes
    */
-  private async processPendingUrlBudgets(): Promise<void> {
+  public async processPendingUrlBudgets(): Promise<void> {
     try {
       console.log('Processing pending URL budget updates');
       
