@@ -2509,6 +2509,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  /**
+   * Test route for verifying the URL budget handling functionality
+   * This route allows testing the URL budget tracking and update functionality
+   */
+  app.post("/api/system/test-url-budget-update", async (req: Request, res: Response) => {
+    try {
+      const { campaignId, urlId, clickValue } = req.body;
+      
+      if (!campaignId || !urlId) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Missing required parameters: campaignId and urlId"
+        });
+      }
+      
+      // Get the campaign to check if it's linked to TrafficStar
+      const campaign = await storage.getCampaign(parseInt(campaignId));
+      if (!campaign) {
+        return res.status(404).json({ 
+          success: false,
+          message: "Campaign not found"
+        });
+      }
+      
+      if (!campaign.trafficstarCampaignId) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Campaign is not linked to TrafficStar"
+        });
+      }
+      
+      // Get the URL to use its click limit
+      const url = await storage.getUrl(parseInt(urlId));
+      if (!url) {
+        return res.status(404).json({ 
+          success: false,
+          message: "URL not found"
+        });
+      }
+      
+      console.log(`🧪 TEST: Tracking URL ${urlId} for budget update in campaign ${campaignId}`);
+      
+      // Track the URL for budget update
+      const clicksToTrack = clickValue ? parseInt(clickValue) : url.clickLimit;
+      await trafficStarService.trackNewUrlForBudgetUpdate(
+        url.id,
+        parseInt(campaignId),
+        campaign.trafficstarCampaignId,
+        clicksToTrack,
+        campaign.pricePerThousand || 1000
+      );
+      
+      // If immediate parameter is provided, instantly process the pending URL budgets
+      if (req.body.immediate === true) {
+        console.log(`🧪 TEST: Immediately processing pending URL budgets`);
+        await trafficStarService.processPendingUrlBudgets();
+      }
+      
+      res.json({
+        success: true,
+        message: `URL ${urlId} tracked for budget update in campaign ${campaignId}`,
+        clicksTracked: clicksToTrack,
+        processingTime: req.body.immediate ? 'Immediate' : '10 minutes'
+      });
+    } catch (error) {
+      console.error('Error testing URL budget update:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Error testing URL budget update functionality",
+        error: String(error)
+      });
+    }
+  });
 
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
