@@ -1,195 +1,131 @@
 #!/bin/bash
 
-# Fix for persistent login across page refreshes
-echo "===== Fixing Login Persistence ====="
-echo "This script will fix the issue with login prompt appearing on refresh"
+# Create a proper login system with cookie persistence
+echo "===== Creating Persistent Login System ====="
 
-# Directory where application is located
-APP_DIR="/var/www/url-campaign"
-cd $APP_DIR
+# Stop url-campaign if it's running
+echo "1. Stopping URL Campaign service if running..."
+pm2 stop url-campaign
 
-echo "1. Creating an improved auth-guard.js file..."
-
-# Create an improved version of auth-guard.js
-cat > $APP_DIR/dist/public/auth-guard.js << 'EOF'
-// Improved Auth Guard - runs immediately
-(function() {
-  console.log("Auth guard running");
-
-  // Check if user is authenticated
-  function isAuthenticated() {
-    try {
-      const apiKey = localStorage.getItem('apiKey');
-      return apiKey === 'TraffiCS10928';
-    } catch (e) {
-      console.error("Error checking authentication:", e);
-      return false;
-    }
-  }
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated()) {
-    console.log("Not authenticated, redirecting to login");
-    window.location.replace('/login');
-  } else {
-    console.log("User is authenticated");
-
-    // Set up request interceptors to add API key
-    const apiKey = 'TraffiCS10928';
-
-    // Intercept XMLHttpRequest
-    const originalXHROpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function() {
-      const result = originalXHROpen.apply(this, arguments);
-      this.setRequestHeader('X-API-Key', apiKey);
-      return result;
-    };
-
-    // Intercept fetch
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
-      options = options || {};
-      options.headers = options.headers || {};
-      options.headers['X-API-Key'] = apiKey;
-      return originalFetch.call(this, url, options);
-    };
-  }
-})();
-EOF
-
-echo "2. Improving the login page to ensure persistent login..."
-
-# Update the login page with better localStorage handling
-cat > $APP_DIR/dist/public/login/index.html << 'EOF'
+# Create login page with proper cookie handling
+echo "2. Creating login page..."
+mkdir -p /var/www/login-system
+cat > /var/www/login-system/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrafficStar Manager Login</title>
+    <title>URL Campaign Manager - Login</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f5f5f7;
-            margin: 0;
-            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            margin: 0;
         }
         .login-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            width: 100%;
-            max-width: 400px;
+            background-color: #161b22;
+            border-radius: 8px;
+            padding: 40px;
+            width: 350px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
         h1 {
-            color: #333;
+            text-align: center;
+            color: #58a6ff;
             margin-top: 0;
-            text-align: center;
+            margin-bottom: 30px;
         }
-        .logo {
-            text-align: center;
+        .form-group {
             margin-bottom: 20px;
-        }
-        .input-group {
-            margin-bottom: 1.5rem;
         }
         label {
             display: block;
-            margin-bottom: 0.5rem;
-            color: #555;
+            margin-bottom: 8px;
+            font-weight: bold;
         }
         input {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
+            padding: 12px;
+            border: 1px solid #30363d;
             border-radius: 4px;
-            font-size: 1rem;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-size: 16px;
             box-sizing: border-box;
         }
         button {
-            background-color: #0066cc;
+            width: 100%;
+            padding: 12px;
+            background-color: #238636;
             color: white;
             border: none;
             border-radius: 4px;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
+            font-size: 16px;
             cursor: pointer;
-            width: 100%;
             transition: background-color 0.2s;
         }
         button:hover {
-            background-color: #0055aa;
+            background-color: #2ea043;
         }
         .error-message {
-            color: #e00;
-            margin-top: 1rem;
+            color: #f85149;
             text-align: center;
+            margin-top: 20px;
             display: none;
         }
     </style>
-    <script>
-        // Check if user is already authenticated (run immediately)
-        (function checkAuth() {
-            try {
-                const storedKey = localStorage.getItem('apiKey');
-                if (storedKey === 'TraffiCS10928') {
-                    console.log("Already authenticated, redirecting to app");
-                    window.location.replace('/');
-                }
-            } catch (e) {
-                console.error("Error checking localStorage:", e);
-            }
-        })();
-    </script>
 </head>
 <body>
     <div class="login-container">
-        <div class="logo">
-            <h1>TrafficStar Manager</h1>
+        <h1>URL Campaign Manager</h1>
+        <div class="form-group">
+            <label for="api-key">API Key</label>
+            <input type="password" id="api-key" placeholder="Enter your API key">
         </div>
-        <form id="login-form">
-            <div class="input-group">
-                <label for="api-key">API Key</label>
-                <input type="password" id="api-key" name="api-key" placeholder="Enter your API key" required>
-            </div>
-            <button type="submit">Access Application</button>
-        </form>
-        <div id="error-message" class="error-message">
-            Invalid API key. Please try again.
-        </div>
+        <button onclick="login()">Login</button>
+        <div id="error-message" class="error-message">Invalid API key</div>
     </div>
 
     <script>
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-
+        // Check if already logged in
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        
+        // Redirect if already logged in
+        const apiKey = getCookie('auth_token');
+        if (apiKey === 'TraffiCS10928') {
+            window.location.href = '/app/';
+        }
+        
+        function login() {
             const apiKey = document.getElementById('api-key').value;
-            const errorElement = document.getElementById('error-message');
-
             if (apiKey === 'TraffiCS10928') {
-                try {
-                    // Store API key in localStorage
-                    localStorage.setItem('apiKey', apiKey);
-                    console.log("API key stored successfully");
-
-                    // Set a cookie as backup
-                    document.cookie = "apiKey=" + apiKey + "; path=/; max-age=31536000";
-
-                    // Redirect to home page
-                    window.location.replace('/');
-                } catch (e) {
-                    console.error("Error saving to localStorage:", e);
-                    errorElement.innerText = "Error saving login. Please enable cookies.";
-                    errorElement.style.display = 'block';
-                }
+                // Set secure cookie with 30-day expiration
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                document.cookie = `auth_token=${apiKey}; expires=${expiryDate.toUTCString()}; path=/; secure; samesite=strict`;
+                
+                // Redirect to app
+                window.location.href = '/app/';
             } else {
-                // Show error message
-                errorElement.style.display = 'block';
+                document.getElementById('error-message').style.display = 'block';
+            }
+        }
+        
+        // Allow pressing Enter to submit
+        document.getElementById('api-key').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                login();
             }
         });
     </script>
@@ -197,77 +133,249 @@ cat > $APP_DIR/dist/public/login/index.html << 'EOF'
 </html>
 EOF
 
-echo "3. Updating main application to ensure it doesn't lose authentication..."
+# Create authentication check script
+cat > /var/www/login-system/auth.js << 'EOF'
+// This script injects API key headers for authenticated users
+(function() {
+    // Get auth token from cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+    
+    const apiKey = getCookie('auth_token');
+    
+    // If we have a valid token, add it to all requests
+    if (apiKey === 'TraffiCS10928') {
+        // Add to XHR
+        const originalOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function() {
+            const result = originalOpen.apply(this, arguments);
+            this.setRequestHeader('X-API-Key', apiKey);
+            return result;
+        };
+        
+        // Add to fetch
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            options = options || {};
+            options.headers = options.headers || {};
+            options.headers['X-API-Key'] = apiKey;
+            return originalFetch.call(this, url, options);
+        };
+        
+        console.log('API key headers added to all requests');
+    } else {
+        // User not authenticated, redirect to login
+        if (!window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login/';
+        }
+    }
+})();
+EOF
 
-# Create a script to inject the auth check into the main index.html
-cat > $APP_DIR/fix-main-app.cjs << 'EOF'
-const fs = require('fs');
-const path = require('path');
+# Configure nginx with proper auth handling
+echo "3. Configuring Nginx for auth..."
+cat > /etc/nginx/sites-available/views.yoyoprime.com << 'EOF'
+# Map to check if auth token cookie exists and has correct value
+map $cookie_auth_token $is_authenticated {
+    default 0;
+    "TraffiCS10928" 1;
+}
 
-try {
-  const indexPath = path.join(__dirname, 'dist/public/index.html');
-  if (fs.existsSync(indexPath)) {
-    let html = fs.readFileSync(indexPath, 'utf8');
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name views.yoyoprime.com;
+    
+    # SSL Certificate Files
+    ssl_certificate /etc/letsencrypt/live/views.yoyoprime.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/views.yoyoprime.com/privkey.pem;
+    
+    # Login page
+    location /login/ {
+        alias /var/www/login-system/;
+        index index.html;
+        try_files $uri $uri/ /login/index.html;
+    }
+    
+    # Auth script access
+    location = /auth.js {
+        alias /var/www/login-system/auth.js;
+    }
+    
+    # Root redirect to either login or app
+    location = / {
+        if ($is_authenticated = 0) {
+            return 302 /login/;
+        }
+        return 302 /app/;
+    }
+    
+    # API requests require auth header
+    location /api/ {
+        if ($is_authenticated = 0) {
+            return 401;
+        }
+        
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    # App needs auth check and script injection
+    location /app/ {
+        if ($is_authenticated = 0) {
+            return 302 /login/;
+        }
+        
+        # Modify HTML responses to inject auth script
+        sub_filter '<head>' '<head><script src="/auth.js"></script>';
+        sub_filter_once on;
+        sub_filter_types text/html;
+        
+        # Rewrite path and proxy
+        rewrite ^/app/(.*)$ /$1 break;
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    # All other paths require auth
+    location / {
+        if ($is_authenticated = 0) {
+            return 302 /login/;
+        }
+        
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
 
-    // Remove any existing script tags for auth-guard to avoid duplicates
-    html = html.replace(/<script src="\/auth-guard.js"><\/script>/g, '');
-
-    // Add auth-guard script at the top of head for early execution
-    html = html.replace('<head>', '<head>\n<script src="/auth-guard.js"></script>');
-
-    fs.writeFileSync(indexPath, html);
-    console.log('Updated index.html to include auth-guard at the top');
-  } else {
-    console.log('index.html not found at expected path');
-  }
-} catch (error) {
-  console.error('Error updating index.html:', error);
+server {
+    listen 80;
+    listen [::]:80;
+    server_name views.yoyoprime.com;
+    
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 EOF
 
-echo "4. Applying the fixes..."
-node $APP_DIR/fix-main-app.cjs
+# Make sure Nginx has the modules
+echo "4. Making sure Nginx has required modules..."
+apt-get update
+apt-get install -y nginx-extras
 
-echo "5. Testing local storage access..."
-# Create a simple script to test localStorage functionality
-cat > $APP_DIR/dist/public/test-storage.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-  <title>LocalStorage Test</title>
-</head>
-<body>
-  <h1>LocalStorage Test</h1>
-  <div id="result"></div>
+# Update server files to fix the __dirname issue
+echo "5. Fixing the __dirname issue in server..."
+cd /var/www/url-campaign
 
-  <script>
-    try {
-      // Test writing to localStorage
-      localStorage.setItem('test', 'working');
+# Create path utils if they don't exist
+mkdir -p /var/www/url-campaign/server/utils
+cat > /var/www/url-campaign/server/utils/path-utils.js << 'EOF'
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import * as path from 'path';
 
-      // Read it back
-      const value = localStorage.getItem('test');
+// This fixes __dirname for ESM modules
+export function getDirname(importMetaUrl) {
+  return dirname(fileURLToPath(importMetaUrl));
+}
 
-      document.getElementById('result').innerHTML = 
-        `<p>LocalStorage Test: ${value === 'working' ? 'PASSED' : 'FAILED'}</p>
-         <p>Value read: ${value}</p>
-         <p>API Key value: ${localStorage.getItem('apiKey') || 'not set'}</p>`;
-    } catch (e) {
-      document.getElementById('result').innerHTML = 
-        `<p>LocalStorage Error: ${e.message}</p>`;
-    }
-  </script>
-</body>
-</html>
+// This fixes path.join with __dirname equivalent
+export function getPath(...pathSegments) {
+  const currentDirname = dirname(fileURLToPath(import.meta.url));
+  return path.join(currentDirname, '..', '..', ...pathSegments);
+}
 EOF
 
-echo "===== Login Persistence Fix Complete ====="
-echo "Your application should now maintain login state across page refreshes."
-echo "To test:"
-echo "1. Visit https://views.yoyoprime.com"
-echo "2. Log in with API key: TraffiCS10928"
-echo "3. Refresh the page - you should stay logged in"
-echo ""
-echo "If you still have issues, you can test localStorage functionality at:"
-echo "https://views.yoyoprime.com/test-storage.html"
-echo "==============================="
+# Fix server/index.ts
+cp -f server/index.ts server/index.ts.bak
+
+# Add the import at the top
+sed -i '1s/^/import { getPath } from ".\/utils\/path-utils.js";\n/' server/index.ts
+
+# Replace __dirname usage
+sed -i 's|path.join(__dirname, "..\/dist\/public")|getPath("dist\/public")|g' server/index.ts
+sed -i 's|path.join(__dirname, "..\/client\/dist")|getPath("client\/dist")|g' server/index.ts
+
+# Create startup script
+cat > /var/www/url-campaign/start.cjs << 'EOF'
+// This CJS script handles the initial server startup with proper path resolution
+const { spawn } = require('child_process');
+const path = require('path');
+
+console.log('Starting URL Campaign Manager with path compatibility');
+
+// Environment variables that might be needed
+process.env.NODE_PATH = path.join(__dirname, 'node_modules');
+process.env.PUBLIC_DIR = path.join(__dirname, 'dist/public');
+process.env.CLIENT_DIST = path.join(__dirname, 'client/dist');
+
+// Start the application
+const child = spawn('node', ['dist/index.js'], {
+  stdio: 'inherit',
+  env: process.env
+});
+
+child.on('exit', (code) => {
+  console.log(`Child process exited with code ${code}`);
+  process.exit(code);
+});
+EOF
+
+# Update PM2 config
+cat > /var/www/url-campaign/ecosystem.config.cjs << 'EOF'
+module.exports = {
+  apps: [{
+    name: "url-campaign",
+    script: "./start.cjs",
+    watch: false,
+    env: {
+      NODE_ENV: "production",
+      PORT: 5000
+    }
+  }]
+}
+EOF
+
+# Rebuild and start
+echo "6. Building and starting the application..."
+cd /var/www/url-campaign
+npm run build
+pm2 start ecosystem.config.cjs
+
+# Reload Nginx
+echo "7. Reloading Nginx..."
+nginx -t && systemctl reload nginx
+
+echo "===== Login System Setup Complete ====="
+echo "The site now requires login but keeps you logged in for 30 days"
+echo "To test, visit: https://views.yoyoprime.com"
+echo "You should be redirected to the login page if not already logged in"
+echo "Login with: TraffiCS10928"
+echo "======================================="
