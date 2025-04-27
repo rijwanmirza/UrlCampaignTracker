@@ -35,16 +35,16 @@ function log(message: string, context: string = 'auth') {
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   // Get API key from headers or query
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-  
+
   if (!apiKey) {
     return res.status(401).json({ message: 'API key required' });
   }
-  
+
   if (apiKey !== API_SECRET_KEY) {
     log(`Authentication failed - invalid API key provided`);
     return res.status(401).json({ message: 'Invalid API key' });
   }
-  
+
   // Authentication successful
   next();
 }
@@ -59,11 +59,11 @@ export function corsMiddleware(_req: Request, res: Response, next: NextFunction)
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-API-Key, Authorization');
-  
+
   if (_req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   next();
 }
 EOF
@@ -82,16 +82,16 @@ const indexPath = path.join(__dirname, 'dist/public/index.html');
 try {
   // Read the HTML file
   let html = fs.readFileSync(indexPath, 'utf8');
-  
+
   // Remove any existing auth scripts
   html = html.replace(/<script id="api-key-script">[\s\S]*?<\/script>/g, '');
-  
+
   // Create a simple script that adds the API key to all requests
   const authScript = `<script id="api-key-script">
   // Add API key to all requests
   (function() {
     const API_KEY = 'TraffiCS10928';
-    
+
     // Add to XMLHttpRequest
     const originalXHROpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function() {
@@ -99,7 +99,7 @@ try {
       this.setRequestHeader('X-API-Key', API_KEY);
       return result;
     };
-    
+
     // Add to fetch
     const originalFetch = window.fetch;
     window.fetch = function(url, options = {}) {
@@ -108,14 +108,14 @@ try {
       options.headers['X-API-Key'] = API_KEY;
       return originalFetch.call(this, url, options);
     };
-    
+
     console.log('API key automatically added to all requests');
   })();
 </script>`;
-  
+
   // Add the script right before the closing head tag
   html = html.replace('</head>', authScript + '</head>');
-  
+
   // Write the updated HTML back to the file
   fs.writeFileSync(indexPath, html);
   console.log('Simple authentication script added to index.html');
