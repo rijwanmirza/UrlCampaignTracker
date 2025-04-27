@@ -2415,18 +2415,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Applying original URL records migration...");
       
       // Read the migration file
-      const fs = require('fs');
-      const path = require('path');
+      const fs = await import('fs/promises');
+      const path = await import('path');
       const migrationPath = path.join(process.cwd(), 'migrations', 'original_url_records.sql');
       
-      if (!fs.existsSync(migrationPath)) {
+      let migrationSQL;
+      try {
+        migrationSQL = await fs.readFile(migrationPath, 'utf8');
+      } catch (err) {
         return res.status(404).json({ 
           success: false,
           message: "Migration file not found"
         });
       }
-      
-      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
       
       // Execute the migration
       await db.execute(migrationSQL);
@@ -3237,6 +3238,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Error testing URL budget update functionality",
         error: String(error)
       });
+    }
+  });
+
+  // Original URL Records operations
+  app.get("/api/original-url-records", async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string | undefined;
+      
+      const { records, total } = await storage.getOriginalUrlRecords(page, limit, search);
+      
+      res.json({
+        records,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      });
+    } catch (error) {
+      console.error("Error fetching original URL records:", error);
+      res.status(500).json({ message: "Failed to fetch original URL records" });
+    }
+  });
+  
+  app.get("/api/original-url-records/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const record = await storage.getOriginalUrlRecord(id);
+      
+      if (!record) {
+        return res.status(404).json({ message: "Original URL record not found" });
+      }
+      
+      res.json(record);
+    } catch (error) {
+      console.error("Error fetching original URL record:", error);
+      res.status(500).json({ message: "Failed to fetch original URL record" });
+    }
+  });
+  
+  app.post("/api/original-url-records", async (req: Request, res: Response) => {
+    try {
+      const validationResult = insertOriginalUrlRecordSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid input data", 
+          errors: validationResult.error.errors 
+        });
+      }
+      
+      const record = await storage.createOriginalUrlRecord(validationResult.data);
+      
+      res.status(201).json(record);
+    } catch (error) {
+      console.error("Error creating original URL record:", error);
+      
+      if (error instanceof Error && error.message.includes("duplicate key")) {
+        return res.status(400).json({ message: "A record with this name already exists" });
+      }
+      
+      res.status(500).json({ message: "Failed to create original URL record" });
+    }
+  });
+  
+  app.put("/api/original-url-records/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const validationResult = updateOriginalUrlRecordSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid input data", 
+          errors: validationResult.error.errors 
+        });
+      }
+      
+      const updatedRecord = await storage.updateOriginalUrlRecord(id, validationResult.data);
+      
+      if (!updatedRecord) {
+        return res.status(404).json({ message: "Original URL record not found" });
+      }
+      
+      res.json(updatedRecord);
+    } catch (error) {
+      console.error("Error updating original URL record:", error);
+      
+      if (error instanceof Error && error.message.includes("duplicate key")) {
+        return res.status(400).json({ message: "A record with this name already exists" });
+      }
+      
+      res.status(500).json({ message: "Failed to update original URL record" });
+    }
+  });
+  
+  app.delete("/api/original-url-records/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const success = await storage.deleteOriginalUrlRecord(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Original URL record not found" });
+      }
+      
+      res.json({ message: "Original URL record deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting original URL record:", error);
+      res.status(500).json({ message: "Failed to delete original URL record" });
+    }
+  });
+  
+  app.post("/api/original-url-records/:id/sync", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const record = await storage.getOriginalUrlRecord(id);
+      
+      if (!record) {
+        return res.status(404).json({ message: "Original URL record not found" });
+      }
+      
+      const updatedUrlCount = await storage.syncUrlsWithOriginalRecord(id);
+      
+      res.json({ 
+        message: "Original URL record synced successfully",
+        updatedUrlCount,
+        record
+      });
+    } catch (error) {
+      console.error("Error syncing original URL record:", error);
+      res.status(500).json({ message: "Failed to sync original URL record" });
     }
   });
 
