@@ -245,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT value FROM protection_settings WHERE key = 'click_protection_enabled'
       `);
       
-      const protectionEnabled = protectionSetting.length > 0 && protectionSetting[0].value === true;
+      const protectionEnabled = protectionSetting.length > 0 && (protectionSetting[0].value === true || protectionSetting[0].value === 't');
       console.log(`Click protection is ${protectionEnabled ? 'enabled' : 'disabled'}`);
 
       if (!protectionEnabled) {
