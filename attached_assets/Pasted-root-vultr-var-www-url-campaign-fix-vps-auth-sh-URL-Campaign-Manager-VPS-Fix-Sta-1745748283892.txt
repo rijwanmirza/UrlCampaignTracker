@@ -1,0 +1,124 @@
+root@vultr:/var/www/url-campaign# ./fix-vps-auth.sh
+====== URL Campaign Manager VPS Fix ======
+Starting fixes for authentication and database issues...
+======================================
+1. Fixing database connection...
+Database connection fixed!
+2. Fixing authentication middleware...
+Authentication middleware fixed!
+3. Fixing auth routes...
+Authentication routes fixed!
+4. Adding client-side authentication fix...
+Client-side authentication fix created!
+5. Create a main.tsx patch to include the auth fix
+6. Installing required dependencies...
+
+added 1 package, changed 1 package, and audited 619 packages in 5s
+
+78 packages are looking for funding
+  run `npm fund` for details
+
+15 vulnerabilities (8 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+7. Building and patching the application...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+transforming (4) src/App.tsxBrowserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2225 modules transformed.
+../dist/public/index.html                   2.02 kB │ gzip:   0.86 kB
+../dist/public/assets/index-QtgH0n0Y.css   65.99 kB │ gzip:  11.46 kB
+../dist/public/assets/index-_240UcJD.js   710.95 kB │ gzip: 207.18 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 14.67s
+✘ [ERROR] Could not resolve "../utils/logger"
+
+    server/auth/routes.ts:3:20:
+      3 │ import { log } from '../utils/logger';
+        ╵                     ~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "spentValuePausedCampaigns" in class body [duplicate-class-member]
+
+    server/trafficstar-service.ts:1507:10:
+      1507 │   private spentValuePausedCampaigns: Map<number, { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string }> = new Map();
+           ╵           ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "spentValuePausedCampaigns" is here:
+
+    server/trafficstar-service.ts:76:10:
+      76 │   private spentValuePausedCampaigns: Map<number, {
+         ╵           ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "budgetAdjustedCampaigns" in class body [duplicate-class-member]
+
+    server/trafficstar-service.ts:1514:10:
+      1514 │   private budgetAdjustedCampaigns: Map<number, string> = new Map();
+           ╵           ~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "budgetAdjustedCampaigns" is here:
+
+    server/trafficstar-service.ts:72:10:
+      72 │   private budgetAdjustedCampaigns: Map<number, string> = new Map();
+         ╵           ~~~~~~~~~~~~~~~~~~~~~~~
+
+✘ [ERROR] Could not resolve "../utils/logger"
+
+    server/auth/middleware.ts:2:20:
+      2 │ import { log } from '../utils/logger';
+        ╵                     ~~~~~~~~~~~~~~~~~
+
+2 warnings and 2 errors
+file:///var/www/url-campaign/patch-html.js:1
+const fs = require('fs');
+           ^
+
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/www/url-campaign/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/www/url-campaign/patch-html.js:1:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.1
+file:///var/www/url-campaign/patch-main.js:1
+const fs = require('fs');
+           ^
+
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/www/url-campaign/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/www/url-campaign/patch-main.js:1:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.1
+8. Restarting the application...
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 22437    │ 0s     │ 4    │ online    │ 0%       │ 3.4mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+====== Fix Complete ======
+Your application should now work correctly with authentication persistence
+If you still have issues, try rebuilding the application with: npm run build
+Then restart the application with: pm2 restart url-campaign
+==============================
+root@vultr:/var/www/url-campaign#
