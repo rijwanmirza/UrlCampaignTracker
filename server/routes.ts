@@ -265,18 +265,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT id FROM campaigns LIMIT 1
       `);
       
+      console.log('Campaigns check result:', JSON.stringify(campaignsCheck));
+      
       if (campaignsCheck.length === 0) {
         console.log('No campaigns found. Creating a test campaign...');
         await db.execute(`
-          INSERT INTO campaigns (name, redirect_domain, created_at, updated_at)
-          VALUES ('Test Campaign', 'example.com', NOW(), NOW())
+          INSERT INTO campaigns (name, redirect_domain, created_at, updated_at, redirect_method)
+          VALUES ('Test Campaign', 'example.com', NOW(), NOW(), 'http_307')
         `);
+        
+        console.log('Test campaign created');
       }
       
       // Get campaign ID for the test URL
       const campaigns = await db.execute(`
-        SELECT id FROM campaigns LIMIT 1
+        SELECT id FROM campaigns ORDER BY id ASC LIMIT 1
       `);
+      
+      console.log('Available campaigns:', JSON.stringify(campaigns));
       
       if (campaigns.length === 0) {
         return res.status(500).json({ 
@@ -287,6 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const campaignId = campaigns[0].id;
+      console.log(`Selected campaign ID: ${campaignId}`);
       console.log(`Using campaign ID: ${campaignId} for test`);
       
       // Now look for a URL to test with
@@ -300,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (testUrls.length === 0) {
         console.log('No URLs found for testing. Creating a test URL...');
         await db.execute(`
-          INSERT INTO urls (name, url, campaign_id, clicks, click_limit, original_click_limit, status)
+          INSERT INTO urls (name, target_url, campaign_id, clicks, click_limit, original_click_limit, status)
           VALUES ('Test URL', 'https://example.com', ${campaignId}, 0, 100, 100, 'active')
         `);
         
