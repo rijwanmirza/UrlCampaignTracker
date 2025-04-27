@@ -1,0 +1,77 @@
+root@vultr:~# pm2 logs url-campaign
+[TAILING] Tailing last 15 lines for [url-campaign] process (change the value wit                                                                             h --lines option)
+/root/.pm2/logs/url-campaign-out.log last 15 lines:
+0|url-camp |             Date: 2025-04-26T18:25:44.000Z
+0|url-camp | 11:58:22 AM [gmail-reader] Skipping email from non-whitelisted send                                                                             er: "Google One" <googleone-noreply@google.com>
+0|url-camp | 11:58:22 AM [gmail-reader] Finished processing batch of 9 emails
+0|url-camp | 11:58:22 AM [gmail-reader] Initial email scan complete. Future scan                                                                             s will only process new emails.
+0|url-camp | <= '+ idling'
+0|url-camp | Running scheduled auto-management for TrafficStar campaigns
+0|url-camp | Running scheduled processing of pending URL budget updates
+0|url-camp | Processing pending URL budget updates
+0|url-camp | No campaigns with auto-management enabled found
+0|url-camp | Running scheduled spent value check for TrafficStar campaigns
+0|url-camp | Running scheduled auto-management for TrafficStar campaigns
+0|url-camp | Running scheduled processing of pending URL budget updates
+0|url-camp | Processing pending URL budget updates
+0|url-camp | Found 0 campaigns with auto-management enabled for spent value chec                                                                             k
+0|url-camp | No campaigns with auto-management enabled found
+
+/root/.pm2/logs/url-campaign-error.log last 15 lines:
+0|url-camp |     at Function.process_params (/var/www/url-campaign/node_modules/                                                                             express/lib/router/index.js:346:12)
+0|url-camp |     at next (/var/www/url-campaign/node_modules/express/lib/router/                                                                             index.js:280:10)
+0|url-camp |     at file:///var/www/url-campaign/dist/index.js:3957:3
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node                                                                             _modules/express/lib/router/layer.js:95:5)
+0|url-camp | ReferenceError: __dirname is not defined
+0|url-camp |     at file:///var/www/url-campaign/dist/index.js:1103:32
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node                                                                             _modules/express/lib/router/layer.js:95:5)
+0|url-camp |     at next (/var/www/url-campaign/node_modules/express/lib/router/                                                                             route.js:149:13)
+0|url-camp |     at Route.dispatch (/var/www/url-campaign/node_modules/express/l                                                                             ib/router/route.js:119:3)
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node                                                                             _modules/express/lib/router/layer.js:95:5)
+0|url-camp |     at /var/www/url-campaign/node_modules/express/lib/router/index.                                                                             js:284:15
+0|url-camp |     at Function.process_params (/var/www/url-campaign/node_modules/                                                                             express/lib/router/index.js:346:12)
+0|url-camp |     at next (/var/www/url-campaign/node_modules/express/lib/router/                                                                             index.js:280:10)
+0|url-camp |     at file:///var/www/url-campaign/dist/index.js:3957:3
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node                                                                             _modules/express/lib/router/layer.js:95:5)
+
+0|url-campaign  | Running scheduled auto-management for TrafficStar campaigns
+0|url-campaign  | No campaigns with auto-management enabled found
+0|url-campaign  | Running scheduled processing of pending URL budget updates
+0|url-campaign  | Processing pending URL budget updates
+0|url-campaign  | 12:01:20 PM [gmail-reader] Running scheduled auto-delete check (3 minute threshold)
+0|url-campaign  | 12:01:20 PM [gmail-reader] Running email auto-delete check with interval set to 3 minutes
+0|url-campaign  | 12:01:20 PM [gmail-reader] Current IMAP connection state: authenticated
+0|url-campaign  | 12:01:20 PM [gmail-reader] Scanning for processed emails older than 2025-04-27T11:58:20.720Z (3 minutes ago)
+0|url-campaign  | 12:01:20 PM [gmail-reader] Email ID 14049 processed at 2025-04-27T11:57:22.755Z with status "duplicate" is older than 3 minutes, marking for deletion
+0|url-campaign  | 12:01:20 PM [gmail-reader] [Email Auto-Delete] Found 1 emails that qualify for deletion (older than 3 minutes)
+0|url-campaign  | 12:01:20 PM [gmail-reader] Saved 1 processed email IDs to log file
+0|url-campaign  | 12:01:20 PM [gmail-reader] [Email Auto-Delete] Removed 1 emails from tracking system
+0|url-campaign  | => DONE
+0|url-campaign  | <= 'IDLE OK IDLE terminated (Success)'
+0|url-campaign  | => 'A7 SELECT "INBOX" (CONDSTORE)'
+0|url-campaign  | <= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+0|url-campaign  | <= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+0|url-campaign  | <= '* OK [UIDVALIDITY 1] UIDs valid.'
+0|url-campaign  | <= '* 9 EXISTS'
+0|url-campaign  | <= '* 0 RECENT'
+0|url-campaign  | <= '* OK [UIDNEXT 14050] Predicted next UID.'
+0|url-campaign  | <= '* OK [HIGHESTMODSEQ 7234782]'
+0|url-campaign  | <= 'A7 OK [READ-WRITE] INBOX selected. (Success)'
+0|url-campaign  | => 'IDLE IDLE'
+0|url-campaign  | 12:01:21 PM [gmail-reader] [Email Auto-Delete] Deleting 1 processed emails as per settings
+0|url-campaign  | <= '+ idling'
+0|url-campaign  | => DONE
+0|url-campaign  | <= 'IDLE OK IDLE terminated (Success)'
+0|url-campaign  | => 'A8 UID STORE 14049 +FLAGS.SILENT (\\Deleted)'
+0|url-campaign  | <= '* 9 EXPUNGE'
+0|url-campaign  | <= '* 8 EXISTS'
+0|url-campaign  | <= 'A8 OK Success'
+0|url-campaign  | 12:01:23 PM [gmail-reader] [Email Auto-Delete] Successfully marked 1 emails for deletion
+0|url-campaign  | => 'IDLE IDLE'
+0|url-campaign  | <= '+ idling'
+0|url-campaign  | => DONE
+0|url-campaign  | <= 'IDLE OK IDLE terminated (Success)'
+0|url-campaign  | => 'A9 EXPUNGE'
+0|url-campaign  | <= 'A9 OK Success'
+0|url-campaign  | 12:01:24 PM [gmail-reader] [Email Auto-Delete] ✅ Successfully deleted 1 emails in bulk operation
+0|url-campaign  | => 'IDLE IDLE'
