@@ -457,22 +457,26 @@ export default function OriginalUrlRecordsPage() {
                     {recordsData?.records?.map((record: any) => (
                       <TableRow key={record.id}>
                         <TableCell className="font-medium">{record.id}</TableCell>
-                        <TableCell>{record.name}</TableCell>
+                        <TableCell>{record.name || 'Unnamed'}</TableCell>
                         <TableCell className="truncate max-w-xs">
-                          <a 
-                            href={record.target_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          >
-                            {record.target_url}
-                          </a>
+                          {record.target_url ? (
+                            <a 
+                              href={record.target_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            >
+                              {record.target_url}
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">No URL</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          {record.original_click_limit.toLocaleString()}
+                          {record.original_click_limit ? record.original_click_limit.toLocaleString() : 0}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {formatDistanceToNow(new Date(record.updated_at), { addSuffix: true })}
+                          {record.updated_at ? formatDistanceToNow(new Date(record.updated_at), { addSuffix: true }) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
