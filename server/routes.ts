@@ -86,8 +86,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           -- Calculate multiplier if any exists
           multiplier := 1;
           IF current_url.original_click_limit > 0 AND current_url.click_limit > current_url.original_click_limit THEN
-            multiplier := ROUND(current_url.click_limit::float / current_url.original_click_limit::float);
+            multiplier := ROUND(current_url.click_limit::float / current_url.original_click_limit::float, 1);
           END IF;
+          
+          -- Log what we're doing
+          RAISE NOTICE 'URL %: Changing original_click_limit from % to % with multiplier %', 
+            url_id, current_url.original_click_limit, new_original_click_limit, multiplier;
           
           -- Apply multiplier to new limit
           new_click_limit := new_original_click_limit * multiplier;
