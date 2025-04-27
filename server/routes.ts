@@ -21,7 +21,7 @@ import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, isNotNull } from "drizzle-orm";
 import Imap from "imap";
 
@@ -58,10 +58,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update original click value for a URL and propagate the change
+  // First, create a stored procedure to handle original click updates safely
+  app.post("/api/system/setup-click-update-function", async (_req: Request, res: Response) => {
+    try {
+      // Create a function that handles the original click update within the database
+      await pool.query(`
+        CREATE OR REPLACE FUNCTION update_original_click_value(
+          url_id INTEGER,
+          new_original_click_limit INTEGER
+        ) RETURNS JSONB AS $$
+        DECLARE
+          current_url RECORD;
+          multiplier FLOAT;
+          new_click_limit INTEGER;
+          result JSONB;
+        BEGIN
+          -- Get current URL
+          SELECT id, name, original_click_limit, click_limit
+          INTO current_url
+          FROM urls
+          WHERE id = url_id;
+          
+          IF current_url IS NULL THEN
+            RETURN jsonb_build_object('success', false, 'message', 'URL not found');
+          END IF;
+          
+          -- Calculate multiplier if any exists
+          multiplier := 1;
+          IF current_url.original_click_limit > 0 AND current_url.click_limit > current_url.original_click_limit THEN
+            multiplier := ROUND(current_url.click_limit::float / current_url.original_click_limit::float);
+          END IF;
+          
+          -- Apply multiplier to new limit
+          new_click_limit := new_original_click_limit * multiplier;
+          
+          -- Temporarily disable protection
+          UPDATE protection_settings
+          SET value = FALSE
+          WHERE key = 'click_protection_enabled';
+          
+          -- Update URL
+          UPDATE urls
+          SET original_click_limit = new_original_click_limit,
+              click_limit = new_click_limit,
+              updated_at = NOW()
+          WHERE id = url_id;
+          
+          -- Re-enable protection
+          UPDATE protection_settings
+          SET value = TRUE
+          WHERE key = 'click_protection_enabled';
+          
+          -- Return success
+          RETURN jsonb_build_object(
+            'success', true,
+            'message', 'Original click value updated',
+            'url', jsonb_build_object(
+              'id', url_id,
+              'name', current_url.name,
+              'original_click_limit', new_original_click_limit,
+              'click_limit', new_click_limit,
+              'multiplier', multiplier
+            )
+          );
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      
+      res.json({
+        success: true,
+        message: "Click update database function created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating click update function:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to create click update function",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Update original click value for a URL and propagate the change using the database function
   app.patch("/api/original-clicks/:id", async (req: Request, res: Response) => {
     try {
-      // Simplify to basic inputs
       const id = req.params.id;
       const original_click_limit = req.body.original_click_limit;
       
@@ -75,63 +155,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
-      console.log(`Requested new original click value: ${original_click_limit}`);
+      console.log(`New original click value: ${original_click_limit}`);
       
-      // First, get the URL info using db.execute to see if there's a multiplier
-      const urlResult = await pool.query(`SELECT name, original_click_limit, click_limit FROM urls WHERE id = $1`, [id]);
-      
-      if (!urlResult.rows || urlResult.rows.length === 0) {
-        return res.status(404).json({ message: "URL not found" });
-      }
-      
-      const currentUrl = urlResult.rows[0];
-      const currentOriginalLimit = parseInt(currentUrl.original_click_limit) || 0;
-      const currentLimit = parseInt(currentUrl.click_limit) || 0;
-      
-      // Calculate multiplier if any
-      let multiplier = 1;
-      if (currentOriginalLimit > 0 && currentLimit > currentOriginalLimit) {
-        multiplier = Math.round(currentLimit / currentOriginalLimit);
-      }
-      
-      // Calculate new click limit with multiplier
-      const newClickLimit = parseInt(original_click_limit) * multiplier;
-      
-      console.log(`Current values: Original limit=${currentOriginalLimit}, Limit=${currentLimit}`);
-      console.log(`Calculated multiplier: ${multiplier}x`);
-      console.log(`New values: Original limit=${original_click_limit}, Limit=${newClickLimit}`);
-      
-      // Disable protection
-      await pool.query(`UPDATE protection_settings SET value = false WHERE key = 'click_protection_enabled'`);
-      
-      // Simple direct update
-      const updateResult = await pool.query(
-        `UPDATE urls SET original_click_limit = $1, click_limit = $2, updated_at = NOW() WHERE id = $3 RETURNING id, name, original_click_limit, click_limit`,
-        [original_click_limit, newClickLimit, id]
+      // Call the database function directly
+      const result = await pool.query(
+        `SELECT update_original_click_value($1, $2) as result`, 
+        [parseInt(id), parseInt(original_click_limit)]
       );
       
-      // Re-enable protection
-      await pool.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
-      
-      if (!updateResult.rows || updateResult.rows.length === 0) {
-        return res.status(404).json({ message: "URL update failed" });
+      if (!result || !result.rows || result.rows.length === 0) {
+        return res.status(500).json({ message: "Failed to update original click value (no result)" });
       }
+      
+      const updateResult = result.rows[0].result;
+      
+      if (!updateResult.success) {
+        return res.status(404).json({ message: updateResult.message });
+      }
+      
+      console.log(`✅ Original click value updated successfully: ${JSON.stringify(updateResult.url)}`);
       
       // Return the updated URL
       res.json({
-        message: "Original click value updated successfully",
-        url: updateResult.rows[0]
+        message: updateResult.message,
+        url: updateResult.url
       });
     } catch (error) {
       console.error("Error updating original click value:", error);
-      
-      // Make sure protection is re-enabled in case of error
-      try {
-        await pool.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
-      } catch (settingError) {
-        console.error("Error re-enabling click protection:", settingError);
-      }
-      
       res.status(500).json({ 
         message: "Failed to update original click value", 
         error: error instanceof Error ? error.message : String(error) 
