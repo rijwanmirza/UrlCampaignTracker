@@ -211,6 +211,32 @@ export const trafficstarCampaignEndTimeSchema = z.object({
   scheduleEndTime: z.string(),
 });
 
+// Original URL Records schema
+export const originalUrlRecords = pgTable("original_url_records", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Unique name for reference
+  targetUrl: text("target_url").notNull(),
+  originalClickLimit: integer("original_click_limit").notNull(), // Master value for click limit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertOriginalUrlRecordSchema = createInsertSchema(originalUrlRecords).omit({
+  id: true,
+  createdAt: true, 
+  updatedAt: true,
+});
+
+export const updateOriginalUrlRecordSchema = createInsertSchema(originalUrlRecords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().optional(),
+  targetUrl: z.string().url().optional(),
+  originalClickLimit: z.number().int().min(1).optional(),
+});
+
 // Types
 export type TrafficstarCredential = typeof trafficstarCredentials.$inferSelect;
 export type InsertTrafficstarCredential = z.infer<typeof insertTrafficstarCredentialSchema>;
@@ -220,3 +246,7 @@ export type TrafficstarCampaign = typeof trafficstarCampaigns.$inferSelect;
 export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignActionSchema>;
 export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
 export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;
+
+export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
+export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
+export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;

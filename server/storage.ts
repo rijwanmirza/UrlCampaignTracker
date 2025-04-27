@@ -9,7 +9,11 @@ import {
   CampaignWithUrls,
   UrlWithActiveStatus,
   campaigns,
-  urls
+  urls,
+  OriginalUrlRecord,
+  InsertOriginalUrlRecord,
+  UpdateOriginalUrlRecord,
+  originalUrlRecords
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
@@ -32,6 +36,15 @@ export interface IStorage {
   deleteUrl(id: number): Promise<boolean>;
   permanentlyDeleteUrl(id: number): Promise<boolean>;
   bulkUpdateUrls(ids: number[], action: string): Promise<boolean>;
+  
+  // Original URL Records operations
+  getOriginalUrlRecords(page: number, limit: number, search?: string): Promise<{ records: OriginalUrlRecord[], total: number }>;
+  getOriginalUrlRecord(id: number): Promise<OriginalUrlRecord | undefined>;
+  getOriginalUrlRecordByName(name: string): Promise<OriginalUrlRecord | undefined>;
+  createOriginalUrlRecord(record: InsertOriginalUrlRecord): Promise<OriginalUrlRecord>;
+  updateOriginalUrlRecord(id: number, record: UpdateOriginalUrlRecord): Promise<OriginalUrlRecord | undefined>;
+  deleteOriginalUrlRecord(id: number): Promise<boolean>;
+  syncUrlsWithOriginalRecord(recordId: number): Promise<number>; // Returns number of URLs updated
   
   // Redirect operation
   incrementUrlClicks(id: number): Promise<Url | undefined>;
