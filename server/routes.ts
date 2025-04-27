@@ -83,8 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const urlDetails = await db.execute(`
           SELECT id, name, original_click_limit, click_limit
           FROM urls
-          WHERE id = $1
-        `, [parseInt(id)]);
+          WHERE id = $1::int
+        `, [id]);
         
         if (!urlDetails.rows || urlDetails.rows.length === 0) {
           await db.execute("ROLLBACK");
