@@ -1,20 +1,20 @@
-/**
- * Test Click Protection System
- * 
- * This script tests whether the click protection is working
- * by attempting to update click values in different ways.
- */
+import pg from 'pg';
+const { Pool } = pg;
 
-import { db } from './server/db.ts';
-import { sql } from 'drizzle-orm';
-import { withAutoSyncContext } from './server/utils/sync-context.js';
+// Connect to the database
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
 async function testClickProtection() {
-  console.log('===== TESTING CLICK PROTECTION SYSTEM =====');
+  const client = await pool.connect();
   
   try {
+    console.log('===== TESTING CLICK PROTECTION SYSTEM =====');
+    
     // Get a sample URL for testing
-    const [sampleUrl] = await db.execute(sql`SELECT id, click_limit, clicks FROM urls LIMIT 1`);
+    const sampleUrlResult = await client.query('SELECT id, click_limit, clicks FROM urls LIMIT 1');
+    const sampleUrl = sampleUrlResult.rows[0];
     
     if (!sampleUrl) {
       console.error('No URLs found for testing');
@@ -26,15 +26,16 @@ async function testClickProtection() {
     // TEST 1: Direct update (should succeed, not in auto-sync context)
     console.log('\n🔍 TEST 1: Manual update (should succeed)');
     const testValue1 = 123456;
-    await db.execute(sql`
+    await client.query(`
       UPDATE urls 
-      SET click_limit = ${testValue1}
-      WHERE id = ${sampleUrl.id}
-    `);
+      SET click_limit = $1
+      WHERE id = $2
+    `, [testValue1, sampleUrl.id]);
     
-    const [afterManual] = await db.execute(sql`
-      SELECT id, click_limit, clicks FROM urls WHERE id = ${sampleUrl.id}
-    `);
+    const afterManualResult = await client.query(`
+      SELECT id, click_limit, clicks FROM urls WHERE id = $1
+    `, [sampleUrl.id]);
+    const afterManual = afterManualResult.rows[0];
     
     console.log('After manual update:', afterManual);
     console.log('Manual update succeeded?', afterManual.click_limit === testValue1);
@@ -43,27 +44,42 @@ async function testClickProtection() {
     console.log('\n🔍 TEST 2: Automatic update (should be blocked)');
     const testValue2 = 999999;
     
-    await withAutoSyncContext(async () => {
-      await db.execute(sql`
-        UPDATE urls 
-        SET click_limit = ${testValue2}
-        WHERE id = ${sampleUrl.id}
-      `);
-    });
+    // Debugging: Check if we can set and retrieve the variable
+    await client.query(`SET LOCAL app.is_auto_sync = 'true'`);
+    const checkResult = await client.query(`SELECT current_setting('app.is_auto_sync', TRUE) AS value`);
+    console.log('Auto-sync value set to:', checkResult.rows[0].value);
+
+    // Also directly check the function
+    const syncFuncResult = await client.query(`SELECT check_auto_sync() AS is_auto_sync`);
+    console.log('check_auto_sync() returns:', syncFuncResult.rows[0].is_auto_sync);
     
-    const [afterAuto] = await db.execute(sql`
-      SELECT id, click_limit, clicks FROM urls WHERE id = ${sampleUrl.id}
-    `);
+    // Try to update in auto-sync context
+    const updateResult = await client.query(`
+      UPDATE urls 
+      SET click_limit = $1
+      WHERE id = $2
+      RETURNING *
+    `, [testValue2, sampleUrl.id]);
+    
+    console.log('Update in auto-sync returned:', updateResult.rows[0].click_limit);
+    
+    // Reset the auto-sync context flag
+    await client.query(`SET LOCAL app.is_auto_sync = 'false'`);
+    
+    const afterAutoResult = await client.query(`
+      SELECT id, click_limit, clicks FROM urls WHERE id = $1
+    `, [sampleUrl.id]);
+    const afterAuto = afterAutoResult.rows[0];
     
     console.log('After automatic update attempt:', afterAuto);
     console.log('Protection worked?', afterAuto.click_limit !== testValue2);
     
     // Restore original value
-    await db.execute(sql`
+    await client.query(`
       UPDATE urls 
-      SET click_limit = ${sampleUrl.click_limit}
-      WHERE id = ${sampleUrl.id}
-    `);
+      SET click_limit = $1
+      WHERE id = $2
+    `, [sampleUrl.click_limit, sampleUrl.id]);
     
     console.log('\n✅ Protection Test Results:');
     console.log('Manual updates: ' + (afterManual.click_limit === testValue1 ? 'ALLOWED ✓' : 'BLOCKED ✗'));
@@ -79,6 +95,8 @@ async function testClickProtection() {
     
   } catch (error) {
     console.error('Error testing click protection:', error);
+  } finally {
+    client.release();
   }
 }
 
