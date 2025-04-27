@@ -79,9 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute('BEGIN');
       
       try {
-        // Set the context flag to indicate this is an intentional update from our API
-        // Use a direct string instead of parameters for this query
-        await db.execute(`SET LOCAL app.original_click_update = 'true'`);
+        // We'll use a different approach to track this as an intentional update
         
         // First get the current URL details to check if there's a multiplier in effect
         const urlDetails = await db.execute(`
@@ -143,8 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "URL not found" });
         }
         
-        // Reset the context flag after we're done
-        await db.execute(`SET LOCAL app.original_click_update = 'false'`);
+        // No need to reset the context flag since we're not using it anymore
         
         // Commit the transaction
         await db.execute("COMMIT");
