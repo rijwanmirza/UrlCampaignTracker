@@ -2,7 +2,7 @@
  * Script to apply click protection to prevent automatic updates to click values
  */
 
-import { db } from './server/db.js';
+import { db } from './server/db.ts';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
