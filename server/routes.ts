@@ -76,6 +76,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute("BEGIN");
       
       try {
+        console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
+        console.log(`Requested new original click value: ${original_click_limit}`);
+        
         // Set the context flag to indicate this is an intentional update from our API
         await db.execute(`SELECT set_config('app.original_click_update', 'true', FALSE)`);
         
@@ -95,16 +98,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentOriginalClickLimit = parseInt(currentUrl.original_click_limit);
         const currentClickLimit = parseInt(currentUrl.click_limit);
         
+        console.log(`Current URL state: 
+        - ID: ${currentUrl.id}
+        - Name: ${currentUrl.name}
+        - Original click limit: ${currentOriginalClickLimit}
+        - Current click limit: ${currentClickLimit}`);
+        
         // Check if there's a multiplier in effect
         let multiplier = 1;
         if (currentOriginalClickLimit > 0 && currentClickLimit > currentOriginalClickLimit) {
-          multiplier = Math.round(currentClickLimit / currentOriginalClickLimit);
+          multiplier = currentClickLimit / currentOriginalClickLimit;
+          console.log(`Raw multiplier calculation: ${currentClickLimit} / ${currentOriginalClickLimit} = ${multiplier}`);
+          
+          // Round to the nearest whole number for cleaner values
+          multiplier = Math.round(multiplier);
+          console.log(`Detected multiplier: ${multiplier}x (rounded from ${currentClickLimit / currentOriginalClickLimit})`);
         }
         
-        console.log(`Updating URL ${id} original click value from ${currentOriginalClickLimit} to ${original_click_limit} with multiplier: ${multiplier}`);
-        
         // Apply the new original click limit AND preserve the multiplier ratio
+        // Important: We're only updating the click_limit with the multiplier - we should NOT apply the multiplier to original_click_limit
         const newClickLimit = original_click_limit * multiplier;
+        
+        console.log(`UPDATE CALCULATION:
+        - New original click limit: ${original_click_limit}
+        - Multiplier: ${multiplier}x 
+        - New click limit: ${original_click_limit} × ${multiplier} = ${newClickLimit}`);
+        console.log(`Click limit is changing from ${currentClickLimit} to ${newClickLimit}`);
+        
         
         // Update the original_click_limit and click_limit (with multiplier) in the URLs table
         const updateResult = await db.execute(`
