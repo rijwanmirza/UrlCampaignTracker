@@ -259,6 +259,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Test 1: Manual update (should succeed)
       console.log('\nTest 1: Manual update (should succeed)');
+      
+      // Check if campaigns table has entries first
+      const campaignsCheck = await db.execute(`
+        SELECT id FROM campaigns LIMIT 1
+      `);
+      
+      if (campaignsCheck.length === 0) {
+        console.log('No campaigns found. Creating a test campaign...');
+        await db.execute(`
+          INSERT INTO campaigns (name, redirect_domain, created_at, updated_at)
+          VALUES ('Test Campaign', 'example.com', NOW(), NOW())
+        `);
+      }
+      
+      // Get campaign ID for the test URL
+      const campaigns = await db.execute(`
+        SELECT id FROM campaigns LIMIT 1
+      `);
+      
+      if (campaigns.length === 0) {
+        return res.status(500).json({ 
+          success: false,
+          message: "Failed to get campaigns",
+          error: "No campaigns found"
+        });
+      }
+      
+      const campaignId = campaigns[0].id;
+      console.log(`Using campaign ID: ${campaignId} for test`);
+      
+      // Now look for a URL to test with
       const testUrls = await db.execute(`
         SELECT id, name, clicks, click_limit 
         FROM urls 
@@ -269,18 +300,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (testUrls.length === 0) {
         console.log('No URLs found for testing. Creating a test URL...');
         await db.execute(`
-          INSERT INTO urls (name, url, campaign_id, clicks, click_limit)
-          VALUES ('Test URL', 'https://example.com', 1, 0, 100)
+          INSERT INTO urls (name, url, campaign_id, clicks, click_limit, original_click_limit, status)
+          VALUES ('Test URL', 'https://example.com', ${campaignId}, 0, 100, 100, 'active')
         `);
         
-        const newUrl = await db.execute(`
+        const newUrls = await db.execute(`
           SELECT id, name, clicks, click_limit 
           FROM urls 
           ORDER BY id DESC
           LIMIT 1
         `);
         
-        testUrl = newUrl[0];
+        if (newUrls.length === 0) {
+          return res.status(500).json({ 
+            success: false,
+            message: "Failed to create test URL",
+            error: "Could not create test URL"
+          });
+        }
+        
+        testUrl = newUrls[0];
       } else {
         testUrl = testUrls[0];
       }
