@@ -620,6 +620,25 @@ export class DatabaseStorage implements IStorage {
     console.log('  - Click limit (after multiplier):', insertUrl.clickLimit);
     console.log('  - Original click limit (user input):', originalClickLimit);
     
+    // Check if we already have an original URL record for this name
+    const existingRecord = await this.getOriginalUrlRecordByName(insertUrl.name);
+    
+    // If no original record exists, create one to track the original click value
+    if (!existingRecord) {
+      try {
+        await this.createOriginalUrlRecord({
+          name: insertUrl.name,
+          targetUrl: insertUrl.targetUrl,
+          originalClickLimit: originalClickLimit
+        });
+        console.log('🔍 DEBUG: Created original URL record for', insertUrl.name);
+      } catch (error) {
+        // If there was an error creating the record, log it but continue
+        // This shouldn't block creating the URL itself
+        console.error('Error creating original URL record:', error);
+      }
+    }
+    
     // IMPORTANT: Check if a URL with this name already exists
     // This should apply globally to prevent all duplicate names, not just within the campaign
     const existingUrls = await db
@@ -763,6 +782,57 @@ export class DatabaseStorage implements IStorage {
       updateUrl.status = 'completed';
     }
     
+    // If click limit is being updated, check for original URL record
+    if (updateUrl.clickLimit !== undefined || updateUrl.originalClickLimit !== undefined) {
+      console.log('🔍 DEBUG: URL edit - updating click limit');
+      
+      // If we're changing the click limit, we need to determine if we should update the original record
+      const existingRecord = await this.getOriginalUrlRecordByName(existingUrl.name);
+      
+      // If we have an original click limit and the original record doesn't exist, create it
+      if (updateUrl.originalClickLimit !== undefined && !existingRecord) {
+        try {
+          await this.createOriginalUrlRecord({
+            name: existingUrl.name,
+            targetUrl: updateUrl.targetUrl || existingUrl.targetUrl,
+            originalClickLimit: updateUrl.originalClickLimit
+          });
+          console.log('🔍 DEBUG: Created original URL record for', existingUrl.name);
+        } catch (error) {
+          console.error('Error creating original URL record during update:', error);
+        }
+      }
+      // If record exists and we're changing original click limit, update the master record
+      else if (updateUrl.originalClickLimit !== undefined && existingRecord) {
+        try {
+          await this.updateOriginalUrlRecord(existingRecord.id, {
+            originalClickLimit: updateUrl.originalClickLimit
+          });
+          console.log('🔍 DEBUG: Updated original URL record for', existingUrl.name);
+        } catch (error) {
+          console.error('Error updating original URL record:', error);
+        }
+      }
+      
+      // Log details about the update
+      if (updateUrl.originalClickLimit !== undefined) {
+        const campaignMultiplier = existingUrl.campaignId ? 
+          await this.getCampaignMultiplier(existingUrl.campaignId) : 1;
+        
+        const calculatedLimit = Math.round(updateUrl.originalClickLimit * campaignMultiplier);
+        
+        console.log('🔍 DEBUG: URL updated with new limits:');
+        console.log(`  - Original user input: ${updateUrl.originalClickLimit}`);
+        console.log(`  - After multiplier (${campaignMultiplier}x): ${calculatedLimit}`);
+        console.log(`  - Calculation: ${updateUrl.originalClickLimit} × ${campaignMultiplier} = ${calculatedLimit}`);
+        
+        // If clickLimit isn't provided but originalClickLimit is, calculate the clickLimit
+        if (updateUrl.clickLimit === undefined) {
+          updateUrl.clickLimit = calculatedLimit;
+        }
+      }
+    }
+    
     const [updatedUrl] = await db
       .update(urls)
       .set({
@@ -778,6 +848,19 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedUrl;
+  }
+  
+  // Helper method to get campaign multiplier
+  private async getCampaignMultiplier(campaignId: number): Promise<number> {
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId));
+    if (!campaign) return 1;
+    
+    // Convert multiplier to number if it's a string
+    const multiplierValue = typeof campaign.multiplier === 'string'
+      ? parseFloat(campaign.multiplier)
+      : (campaign.multiplier || 1);
+      
+    return multiplierValue > 0.01 ? multiplierValue : 1;
   }
 
   async deleteUrl(id: number): Promise<boolean> {
@@ -1295,6 +1378,127 @@ export class DatabaseStorage implements IStorage {
       console.error("Error during full system cleanup:", error);
       throw error;
     }
+  }
+
+  // Original URL Records methods
+  async getOriginalUrlRecords(page: number, limit: number, search?: string): Promise<{ records: OriginalUrlRecord[], total: number }> {
+    const offset = (page - 1) * limit;
+    
+    let query = db.select().from(originalUrlRecords);
+    let countQuery = db.select({ count: sql`count(*)` }).from(originalUrlRecords);
+    
+    // Apply search filter if provided
+    if (search) {
+      const likeSearch = `%${search}%`;
+      query = query.where(or(
+        ilike(originalUrlRecords.name, likeSearch),
+        ilike(originalUrlRecords.targetUrl, likeSearch)
+      ));
+      countQuery = countQuery.where(or(
+        ilike(originalUrlRecords.name, likeSearch),
+        ilike(originalUrlRecords.targetUrl, likeSearch)
+      ));
+    }
+    
+    // Apply pagination
+    query = query.limit(limit).offset(offset).orderBy(desc(originalUrlRecords.createdAt));
+    
+    const [{ count }] = await countQuery;
+    const records = await query;
+    
+    return {
+      records,
+      total: Number(count)
+    };
+  }
+
+  async getOriginalUrlRecord(id: number): Promise<OriginalUrlRecord | undefined> {
+    const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, id));
+    return record;
+  }
+
+  async getOriginalUrlRecordByName(name: string): Promise<OriginalUrlRecord | undefined> {
+    const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.name, name));
+    return record;
+  }
+
+  async createOriginalUrlRecord(insertRecord: InsertOriginalUrlRecord): Promise<OriginalUrlRecord> {
+    const now = new Date();
+    
+    const recordData = {
+      ...insertRecord,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    const [record] = await db
+      .insert(originalUrlRecords)
+      .values(recordData)
+      .returning();
+    
+    return record;
+  }
+
+  async updateOriginalUrlRecord(id: number, updateRecord: UpdateOriginalUrlRecord): Promise<OriginalUrlRecord | undefined> {
+    const [existing] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, id));
+    if (!existing) return undefined;
+    
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+    
+    // Copy fields from updateRecord that are defined
+    if (updateRecord.name !== undefined) {
+      updateData.name = updateRecord.name;
+    }
+    
+    if (updateRecord.targetUrl !== undefined) {
+      updateData.targetUrl = updateRecord.targetUrl;
+    }
+    
+    if (updateRecord.originalClickLimit !== undefined) {
+      updateData.originalClickLimit = updateRecord.originalClickLimit;
+      
+      // We're updating the original click limit, so sync with all related URLs
+      await this.syncUrlsWithOriginalRecord(id);
+    }
+    
+    const [updated] = await db
+      .update(originalUrlRecords)
+      .set(updateData)
+      .where(eq(originalUrlRecords.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteOriginalUrlRecord(id: number): Promise<boolean> {
+    const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, id));
+    if (!record) return false;
+    
+    await db.delete(originalUrlRecords).where(eq(originalUrlRecords.id, id));
+    return true;
+  }
+
+  async syncUrlsWithOriginalRecord(recordId: number): Promise<number> {
+    const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, recordId));
+    if (!record) return 0;
+    
+    // Find all URLs with matching name
+    const matchingUrls = await db.select().from(urls).where(eq(urls.name, record.name));
+    if (matchingUrls.length === 0) return 0;
+    
+    // Update all matching URLs with the original click limit
+    await db
+      .update(urls)
+      .set({ 
+        originalClickLimit: record.originalClickLimit,
+        // Don't update the actual clickLimit since that could be modified by campaign multipliers
+        updatedAt: new Date()
+      })
+      .where(eq(urls.name, record.name));
+    
+    return matchingUrls.length;
   }
 }
 
