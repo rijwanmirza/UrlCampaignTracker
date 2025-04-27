@@ -33,19 +33,19 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
                   req.headers.authorization?.replace('Bearer ', '') || 
                   req.query.apiKey || 
                   req.cookies?.apiKey;
-    
+
     if (!apiKey) {
       return res.status(401).json({ message: 'API key required' });
     }
-    
+
     if (apiKey !== API_SECRET_KEY) {
       log(`Authentication failed - invalid API key provided`);
       return res.status(401).json({ message: 'Invalid API key' });
     }
-    
+
     // Store API key in req object for use in other middleware/routes
     req.headers['x-api-key'] = API_SECRET_KEY;
-    
+
     // Authentication successful
     next();
   } catch (error) {
@@ -64,12 +64,12 @@ export function corsMiddleware(_req: Request, res: Response, next: NextFunction)
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-API-Key, Authorization');
-  
+
   // Handle preflight
   if (_req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   next();
 }
 EOF
@@ -87,14 +87,14 @@ const indexPath = path.join(__dirname, 'dist/public/index.html');
 try {
   // Read the HTML file
   const html = fs.readFileSync(indexPath, 'utf8');
-  
+
   // Create a simple script that adds the API key to all requests automatically
   const authScript = `
 <script>
   // Simple authentication script
   (function() {
     const API_KEY = 'TraffiCS10928';
-    
+
     // Add API key to all API requests
     const originalXHROpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function() {
@@ -102,7 +102,7 @@ try {
       this.setRequestHeader('X-API-Key', API_KEY);
       return result;
     };
-    
+
     // Also add API key to all fetch requests
     const originalFetch = window.fetch;
     window.fetch = function(url, options = {}) {
@@ -111,14 +111,14 @@ try {
       options.headers['X-API-Key'] = API_KEY;
       return originalFetch.call(this, url, options);
     };
-    
+
     console.log('Simple authentication applied to all requests');
   })();
 </script>`;
-  
+
   // Add the script right after the opening body tag for earlier execution
   const updatedHtml = html.replace('<body>', '<body>' + authScript);
-  
+
   // Write the updated HTML back to the file
   fs.writeFileSync(indexPath, updatedHtml);
   console.log('Authentication script injected into index.html');
@@ -137,39 +137,39 @@ import { validateApiKey, corsMiddleware } from './middleware';
 export function registerAuthRoutes(app: express.Application) {
   // Apply CORS middleware to auth routes
   app.use('/api/auth', corsMiddleware);
-  
+
   // Check auth status
   app.get('/api/auth/status', (req: Request, res: Response) => {
     const apiKey = req.headers['x-api-key'] || 
                  req.headers.authorization?.replace('Bearer ', '') || 
                  req.query.apiKey || 
                  req.cookies?.apiKey;
-                 
+
     const authenticated = !!apiKey && validateApiKey(apiKey.toString());
     res.json({ authenticated });
   });
-  
+
   // Verify API key
   app.post('/api/auth/verify-key', (req: Request, res: Response) => {
     const apiKey = req.body?.apiKey || 
                  req.headers['x-api-key'] || 
                  req.headers.authorization?.replace('Bearer ', '') || 
                  req.query.apiKey;
-    
+
     if (!apiKey) {
       return res.status(400).json({ message: 'API key is required' });
     }
-    
+
     if (validateApiKey(apiKey.toString())) {
       // Set API key in response header to ensure it's available for future requests
       res.setHeader('X-API-Key', apiKey.toString());
-      
+
       return res.json({ 
         message: 'API key verified', 
         authenticated: true 
       });
     }
-    
+
     res.status(401).json({ message: 'Invalid API key', authenticated: false });
   });
 }
