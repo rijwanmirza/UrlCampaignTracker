@@ -86,17 +86,17 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name views.yoyoprime.com;
-    
+
     # SSL Certificate Files
     ssl_certificate /etc/letsencrypt/live/views.yoyoprime.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/views.yoyoprime.com/privkey.pem;
-    
+
     # Login page - direct access
     location = /login {
         alias /var/www/url-campaign/dist/public/login;
         index index.html;
     }
-    
+
     # API routes - always allow (they check auth themselves)
     location /api/ {
         proxy_pass http://localhost:5000;
@@ -109,13 +109,13 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
-    
+
     # Main app - check cookie
     location / {
         if ($auth_ok = 0) {
             return 302 /login;
         }
-        
+
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -132,7 +132,7 @@ server {
     listen 80;
     listen [::]:80;
     server_name views.yoyoprime.com;
-    
+
     location / {
         return 301 https://$host$request_uri;
     }

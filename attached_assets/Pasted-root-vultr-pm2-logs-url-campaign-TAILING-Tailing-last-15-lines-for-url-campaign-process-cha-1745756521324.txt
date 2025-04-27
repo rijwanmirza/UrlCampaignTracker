@@ -1,0 +1,35 @@
+root@vultr:~# pm2 logs url-campaign
+[TAILING] Tailing last 15 lines for [url-campaign] process (change the value with --lines option)
+/root/.pm2/logs/url-campaign-error.log last 15 lines:
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node_modules/express/lib/router/layer.js:95:5)
+0|url-camp | ReferenceError: __dirname is not defined
+0|url-camp |     at file:///var/www/url-campaign/dist/index.js:1103:32
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node_modules/express/lib/router/layer.js:95:5)
+0|url-camp |     at next (/var/www/url-campaign/node_modules/express/lib/router/route.js:149:13)
+0|url-camp |     at Route.dispatch (/var/www/url-campaign/node_modules/express/lib/router/route.js:119:3)
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node_modules/express/lib/router/layer.js:95:5)
+0|url-camp |     at /var/www/url-campaign/node_modules/express/lib/router/index.js:284:15
+0|url-camp |     at Function.process_params (/var/www/url-campaign/node_modules/express/lib/router/index.js:346:12)
+0|url-camp |     at next (/var/www/url-campaign/node_modules/express/lib/router/index.js:280:10)
+0|url-camp |     at file:///var/www/url-campaign/dist/index.js:3957:3
+0|url-camp |     at Layer.handle [as handle_request] (/var/www/url-campaign/node_modules/express/lib/router/layer.js:95:5)
+0|url-camp | Error: ENOENT: no such file or directory, stat '/var/www/url-campaign/dist/public/index.html'
+0|url-camp | Error: ENOENT: no such file or directory, stat '/var/www/url-campaign/dist/public/index.html'
+0|url-camp | Error: ENOENT: no such file or directory, stat '/var/www/url-campaign/dist/public/index.html'
+
+/root/.pm2/logs/url-campaign-out.log last 15 lines:
+0|url-camp | 12:19:24 PM [gmail-reader] Scanning for processed emails older than 2025-04-27T12:16:24.423Z (3 minutes ago)
+0|url-camp | 12:19:24 PM [gmail-reader] No emails found that are successfully processed and older than 3 minutes
+0|url-camp | 12:20:01 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+0|url-camp | 12:20:06 PM [express] POST /api/auth/verify-key 200 in 1ms :: {"message":"API key verified","authenti…
+0|url-camp | 12:20:07 PM [express] GET /api/campaigns 304 in 43ms :: [{"id":29,"name":"gdccccccccc","redirectMetho…
+0|url-camp | 12:20:07 PM [express] GET /api/trafficstar/saved-campaigns 304 in 56ms :: [{"id":10,"trafficstarId":"…
+0|url-camp | 12:20:09 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+0|url-camp | 12:20:15 PM [express] POST /api/auth/verify-key 200 in 1ms :: {"message":"API key verified","authenti…
+0|url-camp | 12:20:16 PM [express] GET /api/campaigns 304 in 5ms :: [{"id":29,"name":"gdccccccccc","redirectMethod…
+0|url-camp | 12:20:16 PM [express] GET /api/trafficstar/saved-campaigns 304 in 25ms :: [{"id":10,"trafficstarId":"…
+0|url-camp | 12:20:18 PM [express] GET /api/urls 200 in 7ms :: {"urls":[{"id":1630,"campaignId":29,"name":"6370253…
+0|url-camp | Running scheduled auto-management for TrafficStar campaigns
+0|url-camp | No campaigns with auto-management enabled found
+0|url-camp | Running scheduled processing of pending URL budget updates
+0|url-camp | Processing pending URL budget updates
