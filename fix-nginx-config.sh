@@ -19,11 +19,11 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name $DOMAIN;
-    
+
     # SSL Certificate Files
     ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-    
+
     # Application proxy settings
     location / {
         proxy_pass http://localhost:$APP_PORT;
@@ -43,7 +43,7 @@ server {
     listen 80;
     listen [::]:80;
     server_name $DOMAIN;
-    
+
     location / {
         return 301 https://\$host\$request_uri;
     }
