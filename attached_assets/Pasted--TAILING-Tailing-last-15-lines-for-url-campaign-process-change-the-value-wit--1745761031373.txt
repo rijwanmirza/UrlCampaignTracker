@@ -1,0 +1,34 @@
+[TAILING] Tailing last 15 lines for [url-campaign] process (change the value wit                                                                             h --lines option)
+/root/.pm2/logs/url-campaign-error.log last 15 lines:
+0|url-camp |   detail: undefined,
+0|url-camp |   hint: undefined,
+0|url-camp |   position: undefined,
+0|url-camp |   internalPosition: undefined,
+0|url-camp |   internalQuery: undefined,
+0|url-camp |   where: "unnamed portal parameter $3 = '...'",
+0|url-camp |   schema: undefined,
+0|url-camp |   table: undefined,
+0|url-camp |   column: undefined,
+0|url-camp |   dataType: undefined,
+0|url-camp |   constraint: undefined,
+0|url-camp |   file: 'numutils.c',
+0|url-camp |   line: '611',
+0|url-camp |   routine: 'pg_strtoint32_safe'
+0|url-camp | }
+
+/root/.pm2/logs/url-campaign-out.log last 15 lines:
+0|url-camp | Found 1 campaigns with auto-management enabled
+0|url-camp | Using cached status for campaign 1000866: {"active":true,"status":"                                                                             enabled","lastRequestedAction":"activate","lastRequestedActionAt":"2025-04-27T13                                                                             :33:13.082Z","lastRequestedActionSuccess":true}
+0|url-camp | Campaign 29 has 1947542743 total remaining clicks
+0|url-camp | Campaign 29 - Current UTC time: 13:35:13, Budget update time: 13:14                                                                             :00, Last sync time: 13:32:17
+0|url-camp | TrafficStar campaign 1000866 is already active (enabled) - no API c                                                                             all needed
+0|url-camp | Successfully retrieved spent value for campaign 1000866
+0|url-camp | Campaign 1000866 spent value: $0.00 (below $10 threshold)
+0|url-camp | 1:35:31 PM [express] GET /api/auth/status 304 in 5ms :: {"authentic                                                                             ated":true}
+0|url-camp | 1:35:31 PM [express] GET /api/campaigns 304 in 34ms :: [{"id":29,"n                                                                             ame":"gdccccccccc","redirectMetho…
+0|url-camp | 1:35:31 PM [express] GET /api/campaigns/29 304 in 35ms :: {"id":29,                                                                             "name":"gdccccccccc","redirectMet…
+0|url-camp | 1:35:31 PM [express] GET /api/trafficstar/saved-campaigns 304 in 14                                                                             ms :: [{"id":5,"trafficstarId":"9…
+0|url-camp | Fetching spent value for campaign 1000866 from 2025-04-27 to 2025-0                                                                             4-27
+0|url-camp | 1:35:31 PM [express] GET /api/system/check-migrations 304 in 14ms :                                                                             : {"budgetUpdateTimeMigrationNeed…
+0|url-camp | Successfully retrieved spent value for campaign 1000866
+0|url-camp | 1:35:32 PM [express] GET /api/trafficstar/campaigns/1000866/spent 3                                                                             04 in 997ms :: {"campaignId":1000…
