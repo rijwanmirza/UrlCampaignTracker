@@ -1,0 +1,95 @@
+root@vultr:/var/www/url-campaign# chmod +x fix-vps-auth-final.sh
+root@vultr:/var/www/url-campaign# ./fix-vps-auth-final.sh
+====== URL Campaign Manager VPS Fix (Final) ======
+Starting fixes for authentication and database issues...
+======================================
+1. Creating utils/logger.ts directory if it doesn't exist...
+Creating logger.ts file...
+2. Fixing database connection...
+Database connection fixed!
+3. Fixing authentication middleware...
+Authentication middleware fixed!
+4. Fixing auth routes...
+Authentication routes fixed!
+5. Creating client-side auth fix as CJS file...
+6. Installing required dependencies...
+
+up to date, audited 619 packages in 2s
+
+78 packages are looking for funding
+  run `npm fund` for details
+
+15 vulnerabilities (8 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+7. Building the application...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+transforming (9) ../node_modules/react/cjs/react-jsx-runtime.production.min.jsBrowserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2225 modules transformed.
+../dist/public/index.html                   2.02 kB │ gzip:   0.86 kB
+../dist/public/assets/index-QtgH0n0Y.css   65.99 kB │ gzip:  11.46 kB
+../dist/public/assets/index-_240UcJD.js   710.95 kB │ gzip: 207.18 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 13.80s
+▲ [WARNING] Duplicate member "spentValuePausedCampaigns" in class body [duplicate-class-member]
+
+    server/trafficstar-service.ts:1507:10:
+      1507 │   private spentValuePausedCampaigns: Map<number, { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string }> = new Map();
+           ╵           ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "spentValuePausedCampaigns" is here:
+
+    server/trafficstar-service.ts:76:10:
+      76 │   private spentValuePausedCampaigns: Map<number, {
+         ╵           ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "budgetAdjustedCampaigns" in class body [duplicate-class-member]
+
+    server/trafficstar-service.ts:1514:10:
+      1514 │   private budgetAdjustedCampaigns: Map<number, string> = new Map();
+           ╵           ~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "budgetAdjustedCampaigns" is here:
+
+    server/trafficstar-service.ts:72:10:
+      72 │   private budgetAdjustedCampaigns: Map<number, string> = new Map();
+         ╵           ~~~~~~~~~~~~~~~~~~~~~~~
+
+2 warnings
+
+  dist/index.js  247.3kb
+
+⚡ Done in 36ms
+8. Applying HTML patch...
+Authentication fix added to index.html
+Added authentication script to index.html
+9. Restarting the application...
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 22560    │ 0s     │ 5    │ online    │ 0%       │ 1.4mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+====== Fix Complete ======
+Your application should now work correctly with authentication persistence.
+If you still have issues, please check the PM2 logs with: pm2 logs url-campaign
+==============================
+root@vultr:/var/www/url-campaign#

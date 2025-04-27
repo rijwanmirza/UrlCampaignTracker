@@ -63,17 +63,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     // Get API key from header or query param
     const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-    
+
     if (!apiKey) {
       return res.status(401).json({ message: 'API key required' });
     }
-    
+
     // Simple check - just compare the API key with our secret
     if (apiKey !== API_SECRET_KEY) {
       log(`Authentication failed - invalid API key provided: ${apiKey}`, 'auth');
       return res.status(401).json({ message: 'Invalid API key' });
     }
-    
+
     // Authentication successful
     next();
   } catch (error) {
@@ -107,22 +107,22 @@ import { log } from '../utils/logger';
 export function registerAuthRoutes(app: express.Application) {
   // Apply CORS middleware to auth routes
   app.use('/api/auth', corsMiddleware);
-  
+
   // Route to check if user is authenticated
   app.get('/api/auth/status', (req: Request, res: Response) => {
     const apiKey = req.headers['x-api-key'] || req.query.apiKey;
     const authenticated = !!apiKey && validateApiKey(apiKey.toString());
     res.json({ authenticated });
   });
-  
+
   // Verify API key
   app.post('/api/auth/verify-key', (req: Request, res: Response) => {
     const { apiKey } = req.body;
-    
+
     if (!apiKey) {
       return res.status(400).json({ message: 'API key is required' });
     }
-    
+
     if (validateApiKey(apiKey)) {
       log('API key verification successful', 'auth');
       return res.json({ 
@@ -130,7 +130,7 @@ export function registerAuthRoutes(app: express.Application) {
         authenticated: true 
       });
     }
-    
+
     log(`Invalid API key attempt: ${apiKey}`, 'auth');
     res.status(401).json({ message: 'Invalid API key', authenticated: false });
   });
@@ -153,17 +153,17 @@ fs.readFile(htmlPath, 'utf8', (err, data) => {
     console.error('Error reading index.html:', err);
     return;
   }
-  
+
   // Insert our auth fix script right before the closing body tag
   const fixScript = `<script>
   // Authentication fix
   (function() {
     // The API key
     const API_KEY = 'TraffiCS10928';
-    
+
     // Store API key in localStorage
     localStorage.setItem('apiKey', API_KEY);
-    
+
     // Add the API key header to all fetch requests
     const originalFetch = window.fetch;
     window.fetch = function(url, options = {}) {
@@ -175,14 +175,14 @@ fs.readFile(htmlPath, 'utf8', (err, data) => {
       }
       return originalFetch.call(this, url, options);
     };
-    
+
     console.log('Authentication fix applied');
   })();
 </script>`;
-  
+
   // Insert before closing body tag
   const modified = data.replace('</body>', `${fixScript}\n</body>`);
-  
+
   // Write the modified HTML back to the file
   fs.writeFile(htmlPath, modified, 'utf8', (writeErr) => {
     if (writeErr) {
@@ -202,21 +202,21 @@ const path = require('path');
 // Direct modification to index.html to add the auth script
 try {
   const indexPath = path.join(__dirname, 'dist/public/index.html');
-  
+
   // Read the HTML file if it exists
   if (fs.existsSync(indexPath)) {
     let htmlContent = fs.readFileSync(indexPath, 'utf8');
-    
+
     // Insert the auth script before the end of the body tag
     const authScript = `
     <script>
       // Auto-authentication script
       (function() {
         const API_KEY = 'TraffiCS10928';
-        
+
         // Store API key in localStorage
         localStorage.setItem('apiKey', API_KEY);
-        
+
         // Patch fetch to include API key in headers
         const originalFetch = window.fetch;
         window.fetch = function(url, options = {}) {
@@ -227,11 +227,11 @@ try {
           }
           return originalFetch.call(this, url, options);
         };
-        
+
         console.log('API authentication patch applied');
       })();
     </script>`;
-    
+
     // Insert before closing body tag
     if (!htmlContent.includes('API authentication patch applied')) {
       htmlContent = htmlContent.replace('</body>', `${authScript}\n</body>`);

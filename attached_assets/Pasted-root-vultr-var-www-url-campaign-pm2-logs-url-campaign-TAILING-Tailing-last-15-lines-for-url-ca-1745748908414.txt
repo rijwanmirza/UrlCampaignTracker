@@ -1,0 +1,35 @@
+root@vultr:/var/www/url-campaign# pm2 logs url-campaign
+[TAILING] Tailing last 15 lines for [url-campaign] process (change the value with --lines option)
+/root/.pm2/logs/url-campaign-error.log last 15 lines:
+0|url-camp |     _autoPong: true,
+0|url-camp |     _url: 'wss://localhost/v2',
+0|url-camp |     _req: null,
+0|url-camp |     [Symbol(shapeMode)]: false,
+0|url-camp |     [Symbol(kCapture)]: false
+0|url-camp |   },
+0|url-camp |   [Symbol(kType)]: 'error',
+0|url-camp |   [Symbol(kError)]: AggregateError [ECONNREFUSED]:
+0|url-camp |       at internalConnectMultiple (node:net:1122:18)
+0|url-camp |       at afterConnectMultiple (node:net:1689:7) {
+0|url-camp |     code: 'ECONNREFUSED',
+0|url-camp |     [errors]: [ [Error], [Error] ]
+0|url-camp |   },
+0|url-camp |   [Symbol(kMessage)]: ''
+0|url-camp | }
+
+/root/.pm2/logs/url-campaign-out.log last 15 lines:
+0|url-camp |             Subject: Ask your questions in our office hours
+0|url-camp |             Date: 2025-04-18T19:40:41.000Z
+0|url-camp | 10:14:41 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+0|url-camp | <= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7233425) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+0|url-camp | <= 'A6 OK Success'
+0|url-camp | => 'IDLE IDLE'
+0|url-camp | 10:14:41 AM [gmail-reader] Processing email (ID: 13997)
+0|url-camp | 10:14:41 AM [gmail-reader] Email ID: 13997
+0|url-camp |             From: "Google One" <googleone-noreply@google.com>
+0|url-camp |             Subject: Come back to Google One today, Rijwan
+0|url-camp |             Date: 2025-04-26T18:25:44.000Z
+0|url-camp | 10:14:41 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+0|url-camp | 10:14:41 AM [gmail-reader] Finished processing batch of 8 emails
+0|url-camp | 10:14:41 AM [gmail-reader] Initial email scan complete. Future scans will only process new emails.
+0|url-camp | <= '+ idling'
