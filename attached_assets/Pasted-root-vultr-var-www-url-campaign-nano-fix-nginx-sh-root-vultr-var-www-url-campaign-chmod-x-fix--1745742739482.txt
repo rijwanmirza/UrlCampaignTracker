@@ -1,0 +1,67 @@
+root@vultr:/var/www/url-campaign# nano fix-nginx.sh
+root@vultr:/var/www/url-campaign# chmod +x fix-nginx.sh
+root@vultr:/var/www/url-campaign# sudo ./fix-nginx.sh
+Starting Nginx configuration fix...
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+Nginx configuration fixed. Your application should now be accessible.
+If you still see 502 errors, check if your Node.js app is running with: pm2 status url-campaign
+root@vultr:/var/www/url-campaign# pm2 status url-campaign
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 37   │ errored   │ 0%       │ 0b       │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@vultr:/var/www/url-campaign# sudo ufw status
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       Anywhere
+OpenSSH                    ALLOW       Anywhere
+Nginx Full                 ALLOW       Anywhere
+22/tcp (v6)                ALLOW       Anywhere (v6)
+OpenSSH (v6)               ALLOW       Anywhere (v6)
+Nginx Full (v6)            ALLOW       Anywhere (v6)
+
+root@vultr:/var/www/url-campaign# pm2 logs url-campaign
+[TAILING] Tailing last 15 lines for [url-campaign] process (change the value with --lines option)
+/root/.pm2/logs/url-campaign-out.log last 15 lines:
+0|url-camp |   "pricePerThousand": 0,
+0|url-camp |   "trafficstarCampaignId": "",
+0|url-camp |   "autoManageTrafficstar": false
+0|url-camp | }
+0|url-camp | 🔍 DEBUG: Multiplier type: number
+0|url-camp | 🔍 DEBUG: Multiplier value: 1
+0|url-camp | 8:20:55 AM [express] POST /api/campaigns 500 in 12ms :: {"message":"Failed to create campaign"}
+0|url-camp | 8:20:57 AM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+0|url-camp | 8:20:58 AM [express] GET /api/trafficstar/saved-campaigns 500 in 7ms :: {"message":"Failed to fetch …
+0|url-camp | 8:20:58 AM [express] GET /api/campaigns 500 in 4ms :: {"message":"Failed to fetch campaigns","error"…
+0|url-camp | 8:21:01 AM [express] GET /api/urls 500 in 3ms :: {"message":"Failed to fetch URLs"}
+0|url-camp | 8:21:40 AM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+0|url-camp | 8:21:40 AM [express] GET /api/urls 500 in 4ms :: {"message":"Failed to fetch URLs"}
+0|url-camp | 8:25:25 AM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+0|url-camp | 8:26:41 AM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+
+/root/.pm2/logs/url-campaign-error.log last 15 lines:
+0|url-camp | file:///var/www/url-campaign/dist/index.js:234
+0|url-camp | import { Pool } from "pg";
+0|url-camp |          ^^^^
+0|url-camp | SyntaxError: Named export 'Pool' not found. The requested module 'pg' is a CommonJS module, which may not support all module.exports as named exports.
+0|url-camp | CommonJS modules can always be imported via the default export, for example using:
+0|url-camp |
+0|url-camp | import pkg from 'pg';
+0|url-camp | const { Pool } = pkg;
+0|url-camp |
+0|url-camp |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-camp |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-camp |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-camp |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-camp |
+0|url-camp | Node.js v20.19.1
+
+curl http://localhost:5000/api/auth/status^C
+root@vultr:/var/www/url-campaign#
+root@vultr:/var/www/url-campaign# curl http://localhost:5000/api/auth/status
+curl: (7) Failed to connect to localhost port 5000 after 0 ms: Connection refused
+root@vultr:/var/www/url-campaign#

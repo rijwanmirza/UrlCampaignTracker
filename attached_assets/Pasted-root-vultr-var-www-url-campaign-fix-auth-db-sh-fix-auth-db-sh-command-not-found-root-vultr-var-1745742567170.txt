@@ -1,0 +1,73 @@
+root@vultr:/var/www/url-campaign# fix-auth-db.sh
+fix-auth-db.sh: command not found
+root@vultr:/var/www/url-campaign# nano fix-auth-db.sh
+root@vultr:/var/www/url-campaign# chmod +x fix-auth-db.sh
+root@vultr:/var/www/url-campaign# ./fix-auth-db.sh
+Starting URL Campaign Manager fix script...
+Creating server utility functions...
+Creating database fix...
+Creating database connection checker...
+Creating database table creator...
+Creating improved auth middleware...
+Creating auth routes...
+Creating index.html with authentication helper...
+Creating login fix for SPA routing...
+Updating TrafficStar initialization...
+Creating updated main server file...
+Building the application...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+✓ 2225 modules transformed.
+../dist/public/index.html                   2.02 kB │ gzip:   0.86 kB
+../dist/public/assets/index-QtgH0n0Y.css   65.99 kB │ gzip:  11.46 kB
+../dist/public/assets/index-CzKC7sr_.js   711.32 kB │ gzip: 207.34 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 13.83s
+▲ [WARNING] Duplicate member "spentValuePausedCampaigns" in class body [duplicate-class-member]
+
+    server/trafficstar-service.ts:1507:10:
+      1507 │   private spentValuePausedCampaigns: Map<number, { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string }> = new Map();
+           ╵           ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "spentValuePausedCampaigns" is here:
+
+    server/trafficstar-service.ts:76:10:
+      76 │   private spentValuePausedCampaigns: Map<number, {
+         ╵           ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "budgetAdjustedCampaigns" in class body [duplicate-class-member]
+
+    server/trafficstar-service.ts:1514:10:
+      1514 │   private budgetAdjustedCampaigns: Map<number, string> = new Map();
+           ╵           ~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "budgetAdjustedCampaigns" is here:
+
+    server/trafficstar-service.ts:72:10:
+      72 │   private budgetAdjustedCampaigns: Map<number, string> = new Map();
+         ╵           ~~~~~~~~~~~~~~~~~~~~~~~
+
+2 warnings
+
+  dist/index.js  253.6kb
+
+⚡ Done in 34ms
+Restarting the application with PM2...
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 24641    │ 0s     │ 22   │ online    │ 0%       │ 1.4mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+Fix script completed.
+Check application logs with: pm2 logs url-campaign
+root@vultr:/var/www/url-campaign#
