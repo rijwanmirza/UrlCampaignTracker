@@ -22,7 +22,7 @@ cat > /etc/nginx/sites-available/$DOMAIN << EOF
 server {
     listen 80;
     server_name $DOMAIN;
-    
+
     location / {
         proxy_pass http://localhost:$APP_PORT;
         proxy_http_version 1.1;
@@ -56,26 +56,26 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name $DOMAIN;
-    
+
     # SSL certificate settings - these were added by Certbot
     ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-    
+
     # Include Certbot's SSL params
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-    
+
     # Modern TLS configuration
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;
-    
+
     # HSTS
     add_header Strict-Transport-Security "max-age=63072000" always;
-    
+
     # OCSP stapling
     ssl_stapling on;
     ssl_stapling_verify on;
-    
+
     # Application proxy settings
     location / {
         proxy_pass http://localhost:$APP_PORT;
