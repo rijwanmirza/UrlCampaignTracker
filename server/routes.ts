@@ -13,9 +13,12 @@ import {
   trafficstarCampaignActionSchema,
   trafficstarCampaignBudgetSchema,
   trafficstarCampaignEndTimeSchema,
+  insertOriginalUrlRecordSchema,
+  updateOriginalUrlRecordSchema,
   trafficstarCampaigns,
   campaigns,
-  urls
+  urls,
+  originalUrlRecords
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
