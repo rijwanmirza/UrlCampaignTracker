@@ -269,22 +269,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         `);
         
-        // Create the click protection trigger on this test table
+        // Create a specific trigger function for our test table - separate the function creation
         await db.execute(`
-          DO $$
+          -- First create a specific trigger function for the test table
+          CREATE OR REPLACE FUNCTION prevent_test_auto_clicks_updates()
+          RETURNS TRIGGER AS $$
           BEGIN
-            -- Drop the trigger if it already exists
-            DROP TRIGGER IF EXISTS prevent_test_auto_click_update_trigger ON click_protection_test;
+            -- If we're in an auto-sync context and someone is trying to change the clicks value,
+            -- reject the update by returning NULL
+            IF (is_auto_sync() AND NEW.clicks IS DISTINCT FROM OLD.clicks) THEN
+              RAISE NOTICE 'Blocked auto-update of clicks: % -> %', OLD.clicks, NEW.clicks;
+              RETURN NULL;
+            END IF;
             
-            -- Create the trigger
-            CREATE TRIGGER prevent_test_auto_click_update_trigger
-            BEFORE UPDATE ON click_protection_test
-            FOR EACH ROW
-            EXECUTE FUNCTION prevent_auto_click_updates();
-            
-            RAISE NOTICE 'Created test click protection trigger successfully';
-          END
-          $$;
+            -- For any other case, allow the update
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+        `);
+        
+        // Now create the trigger
+        await db.execute(`
+          -- Drop the trigger if it already exists
+          DROP TRIGGER IF EXISTS prevent_test_auto_click_update_trigger ON click_protection_test;
+          
+          -- Create the trigger using our specific test function
+          CREATE TRIGGER prevent_test_auto_click_update_trigger
+          BEFORE UPDATE ON click_protection_test
+          FOR EACH ROW
+          EXECUTE FUNCTION prevent_test_auto_clicks_updates();
         `);
         
         console.log('Created test table and trigger for click protection testing');
@@ -370,7 +383,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Begin auto-sync context
       const syncOpResult = await db.execute(`SELECT start_auto_sync() AS operation_id`);
-      const syncOperationId = syncOpResult[0].operation_id;
+      console.log('Sync operation result:', JSON.stringify(syncOpResult));
+      const syncOperationId = syncOpResult.rows[0].operation_id;
       
       try {
         console.log(`Starting auto-sync operation ID: ${syncOperationId}`);
