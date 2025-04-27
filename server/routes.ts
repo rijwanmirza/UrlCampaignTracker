@@ -77,11 +77,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
       console.log(`Requested new original click value: ${original_click_limit}`);
       
-      // Just perform a direct SQL update as simply as possible
-      // First, get the URL info to see if there's a multiplier
-      const urlResult = await db.query(`SELECT name, original_click_limit, click_limit FROM urls WHERE id = $1`, [id]);
+      // First, get the URL info using db.execute to see if there's a multiplier
+      const urlResult = await pool.query(`SELECT name, original_click_limit, click_limit FROM urls WHERE id = $1`, [id]);
       
-      if (!urlResult.rowCount || urlResult.rowCount === 0) {
+      if (!urlResult.rows || urlResult.rows.length === 0) {
         return res.status(404).json({ message: "URL not found" });
       }
       
@@ -103,18 +102,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`New values: Original limit=${original_click_limit}, Limit=${newClickLimit}`);
       
       // Disable protection
-      await db.query(`UPDATE protection_settings SET value = false WHERE key = 'click_protection_enabled'`);
+      await pool.query(`UPDATE protection_settings SET value = false WHERE key = 'click_protection_enabled'`);
       
       // Simple direct update
-      const updateResult = await db.query(
+      const updateResult = await pool.query(
         `UPDATE urls SET original_click_limit = $1, click_limit = $2, updated_at = NOW() WHERE id = $3 RETURNING id, name, original_click_limit, click_limit`,
         [original_click_limit, newClickLimit, id]
       );
       
       // Re-enable protection
-      await db.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
+      await pool.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
       
-      if (!updateResult.rowCount || updateResult.rowCount === 0) {
+      if (!updateResult.rows || updateResult.rows.length === 0) {
         return res.status(404).json({ message: "URL update failed" });
       }
       
@@ -128,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Make sure protection is re-enabled in case of error
       try {
-        await db.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
+        await pool.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
       } catch (settingError) {
         console.error("Error re-enabling click protection:", settingError);
       }
