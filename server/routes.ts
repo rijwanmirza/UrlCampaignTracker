@@ -29,6 +29,342 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
   // We'll handle HTTP/2 headers in the route handlers
   const server = createServer(app);
+  
+  // API route to apply click protection
+  app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {
+    try {
+      console.log('=== Applying Click Protection ===');
+      console.log('This will install database triggers to prevent automatic updates to click values');
+      
+      // Create settings table for protection configuration
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS protection_settings (
+          key TEXT PRIMARY KEY,
+          value BOOLEAN NOT NULL
+        )
+      `);
+
+      // Initialize with default value if not exists
+      await db.execute(`
+        INSERT INTO protection_settings (key, value)
+        VALUES ('click_protection_enabled', TRUE)
+        ON CONFLICT (key) DO NOTHING
+      `);
+
+      // Create table to track sync operations
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS sync_operations (
+          id SERIAL PRIMARY KEY,
+          is_auto_sync BOOLEAN NOT NULL DEFAULT FALSE,
+          started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          completed_at TIMESTAMP WITH TIME ZONE
+        )
+      `);
+
+      // Function to check if click protection is enabled
+      await db.execute(`
+        CREATE OR REPLACE FUNCTION click_protection_enabled()
+        RETURNS BOOLEAN AS $$
+        BEGIN
+          RETURN (SELECT value FROM protection_settings WHERE key = 'click_protection_enabled');
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      // Function to check if an automatic sync is in progress
+      await db.execute(`
+        CREATE OR REPLACE FUNCTION is_auto_sync()
+        RETURNS BOOLEAN AS $$
+        BEGIN
+          RETURN EXISTS (
+            SELECT 1 FROM sync_operations 
+            WHERE is_auto_sync = TRUE AND completed_at IS NULL
+          );
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      // Function to start an auto-sync operation
+      await db.execute(`
+        CREATE OR REPLACE FUNCTION start_auto_sync()
+        RETURNS INTEGER AS $$
+        DECLARE
+          operation_id INTEGER;
+        BEGIN
+          INSERT INTO sync_operations (is_auto_sync) 
+          VALUES (TRUE) 
+          RETURNING id INTO operation_id;
+          
+          RETURN operation_id;
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      // Function to end an auto-sync operation
+      await db.execute(`
+        CREATE OR REPLACE FUNCTION end_auto_sync(operation_id INTEGER)
+        RETURNS VOID AS $$
+        BEGIN
+          UPDATE sync_operations
+          SET completed_at = NOW()
+          WHERE id = operation_id;
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      // Create a function that prevents automatic updates to click values in URLs
+      await db.execute(`
+        CREATE OR REPLACE FUNCTION prevent_auto_click_updates()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          -- If this is an automatic sync operation
+          IF click_protection_enabled() AND is_auto_sync() THEN
+            -- Restore the original click_limit value if it was changed
+            IF NEW.click_limit IS DISTINCT FROM OLD.click_limit THEN
+              RAISE WARNING 'Preventing automatic update to click_limit (from % to %) for URL %', 
+                OLD.click_limit, NEW.click_limit, NEW.id;
+              NEW.click_limit := OLD.click_limit;
+            END IF;
+            
+            -- Restore the original clicks value if it was changed
+            IF NEW.clicks IS DISTINCT FROM OLD.clicks THEN
+              RAISE WARNING 'Preventing automatic update to clicks (from % to %) for URL %', 
+                OLD.clicks, NEW.clicks, NEW.id;
+              NEW.clicks := OLD.clicks;
+            END IF;
+            
+            -- Restore the original original_click_limit value if it was changed
+            IF NEW.original_click_limit IS DISTINCT FROM OLD.original_click_limit THEN
+              RAISE WARNING 'Preventing automatic update to original_click_limit (from % to %) for URL %', 
+                OLD.original_click_limit, NEW.original_click_limit, NEW.id;
+              NEW.original_click_limit := OLD.original_click_limit;
+            END IF;
+          END IF;
+          
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      // Create a function that prevents automatic updates to click values in campaigns
+      await db.execute(`
+        CREATE OR REPLACE FUNCTION prevent_campaign_auto_click_updates()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          -- If this is an automatic sync operation
+          IF click_protection_enabled() AND is_auto_sync() THEN
+            -- Restore the original total_clicks value if it was changed
+            IF NEW.total_clicks IS DISTINCT FROM OLD.total_clicks THEN
+              RAISE WARNING 'Preventing automatic update to total_clicks (from % to %) for campaign %', 
+                OLD.total_clicks, NEW.total_clicks, NEW.id;
+              NEW.total_clicks := OLD.total_clicks;
+            END IF;
+          END IF;
+          
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      // Drop existing triggers if they exist (for idempotency)
+      await db.execute(`
+        DROP TRIGGER IF EXISTS prevent_auto_click_update_trigger ON urls
+      `);
+      
+      await db.execute(`
+        DROP TRIGGER IF EXISTS prevent_campaign_auto_click_update_trigger ON campaigns
+      `);
+
+      // Create the trigger for URLs
+      await db.execute(`
+        CREATE TRIGGER prevent_auto_click_update_trigger
+        BEFORE UPDATE ON urls
+        FOR EACH ROW
+        EXECUTE FUNCTION prevent_auto_click_updates()
+      `);
+
+      // Create the trigger for campaigns
+      await db.execute(`
+        CREATE TRIGGER prevent_campaign_auto_click_update_trigger
+        BEFORE UPDATE ON campaigns
+        FOR EACH ROW
+        EXECUTE FUNCTION prevent_campaign_auto_click_updates()
+      `);
+
+      // Check if the triggers were created
+      const urlTriggersResult = await db.execute(`
+        SELECT COUNT(*) AS count FROM pg_trigger 
+        WHERE tgname = 'prevent_auto_click_update_trigger'
+      `);
+      
+      const campaignTriggersResult = await db.execute(`
+        SELECT COUNT(*) AS count FROM pg_trigger 
+        WHERE tgname = 'prevent_campaign_auto_click_update_trigger'
+      `);
+      
+      // Extract count values safely with fallback to 0
+      const urlTriggers = parseInt(urlTriggersResult[0]?.count || '0');
+      const campaignTriggers = parseInt(campaignTriggersResult[0]?.count || '0');
+
+      if (urlTriggers > 0 && campaignTriggers > 0) {
+        return res.json({
+          success: true,
+          message: "Click protection installed successfully!",
+          details: {
+            urlTriggers: urlTriggers,
+            campaignTriggers: campaignTriggers
+          }
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to install click protection - triggers not found",
+          details: {
+            urlTriggers: urlTriggers,
+            campaignTriggers: campaignTriggers
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error applying click protection:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to apply click protection", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // API route to test click protection
+  app.post("/api/system/click-protection/test", async (_req: Request, res: Response) => {
+    try {
+      console.log('Starting Click Protection Test');
+
+      // First check if click protection is enabled
+      const protectionSetting = await db.execute(`
+        SELECT value FROM protection_settings WHERE key = 'click_protection_enabled'
+      `);
+      
+      const protectionEnabled = protectionSetting.length > 0 && protectionSetting[0].value === true;
+      console.log(`Click protection is ${protectionEnabled ? 'enabled' : 'disabled'}`);
+
+      if (!protectionEnabled) {
+        await db.execute(`
+          INSERT INTO protection_settings (key, value)
+          VALUES ('click_protection_enabled', TRUE)
+          ON CONFLICT (key) DO UPDATE SET value = TRUE
+        `);
+        console.log('Click protection enabled for testing');
+      }
+
+      // Test 1: Manual update (should succeed)
+      console.log('\nTest 1: Manual update (should succeed)');
+      const testUrls = await db.execute(`
+        SELECT id, name, clicks, click_limit 
+        FROM urls 
+        LIMIT 1
+      `);
+
+      let testUrl;
+      if (testUrls.length === 0) {
+        console.log('No URLs found for testing. Creating a test URL...');
+        await db.execute(`
+          INSERT INTO urls (name, url, campaign_id, clicks, click_limit)
+          VALUES ('Test URL', 'https://example.com', 1, 0, 100)
+        `);
+        
+        const newUrl = await db.execute(`
+          SELECT id, name, clicks, click_limit 
+          FROM urls 
+          ORDER BY id DESC
+          LIMIT 1
+        `);
+        
+        testUrl = newUrl[0];
+      } else {
+        testUrl = testUrls[0];
+      }
+
+      console.log(`Test URL: ${testUrl.name} (ID: ${testUrl.id})`);
+      console.log(`  - Current clicks: ${testUrl.clicks}`);
+      console.log(`  - Click limit: ${testUrl.click_limit}`);
+      
+      // Update the click value manually
+      const newClickLimit = testUrl.click_limit + 50;
+      await db.execute(`
+        UPDATE urls
+        SET click_limit = ${newClickLimit}
+        WHERE id = ${testUrl.id}
+      `);
+      
+      // Check if the update was successful
+      const updatedUrl = await db.execute(`
+        SELECT id, name, clicks, click_limit 
+        FROM urls 
+        WHERE id = ${testUrl.id}
+      `);
+      
+      const manualUpdateSucceeded = updatedUrl[0].click_limit === newClickLimit;
+
+      // Test 2: Automatic update within sync context (should be blocked)
+      console.log('\nTest 2: Automatic update (should be blocked)');
+      
+      // Try to update the click value automatically (within auto-sync context)
+      const autoClickLimit = updatedUrl[0].click_limit + 1000000;
+      
+      console.log(`Attempting to auto-update click limit to ${autoClickLimit} (should be blocked)...`);
+      
+      // Start a new auto-sync operation
+      const syncOpResult = await db.execute(`SELECT start_auto_sync() AS operation_id`);
+      const syncOperationId = syncOpResult[0].operation_id;
+      
+      try {
+        await db.execute(`
+          UPDATE urls
+          SET click_limit = ${autoClickLimit}
+          WHERE id = ${testUrl.id}
+        `);
+      } finally {
+        // Always end the auto-sync operation
+        await db.execute(`SELECT end_auto_sync(${syncOperationId})`);
+      }
+      
+      // Check if the update was blocked
+      const finalUrl = await db.execute(`
+        SELECT id, name, clicks, click_limit 
+        FROM urls 
+        WHERE id = ${testUrl.id}
+      `);
+      
+      const autoUpdateBlocked = finalUrl[0].click_limit !== autoClickLimit;
+
+      return res.json({
+        success: true,
+        protectionEnabled,
+        testUrl: {
+          id: testUrl.id,
+          name: testUrl.name,
+          initialClickLimit: testUrl.click_limit,
+          manualUpdateClickLimit: newClickLimit,
+          attemptedAutoUpdateClickLimit: autoClickLimit,
+          finalClickLimit: finalUrl[0].click_limit
+        },
+        testResults: {
+          manualUpdateSucceeded,
+          autoUpdateBlocked,
+          overallProtectionWorking: manualUpdateSucceeded && autoUpdateBlocked
+        }
+      });
+    } catch (error) {
+      console.error('Error testing click protection:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to test click protection", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // API route for campaigns
   app.get("/api/campaigns", async (_req: Request, res: Response) => {
     try {
