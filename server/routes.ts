@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`New original click value: ${original_click_limit}`);
       
       // Call the database function directly
-      const result = await pool.query(
+      const result = await db.execute(
         `SELECT update_original_click_value($1, $2) as result`, 
         [parseInt(id), parseInt(original_click_limit)]
       );
