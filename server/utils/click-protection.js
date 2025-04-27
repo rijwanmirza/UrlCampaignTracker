@@ -5,7 +5,7 @@
  * modified during TrafficStar or other external API synchronization processes.
  */
 
-import { db } from '../db.ts';
+import { db } from '../db.js';
 import { sql } from 'drizzle-orm';
 
 /**

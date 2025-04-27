@@ -1,107 +1,215 @@
-import pg from 'pg';
-const { Pool } = pg;
+/**
+ * Test Click Protection
+ * 
+ * This script tests the protection system that prevents automatic
+ * updates to URL click values.
+ */
 
-// Connect to the database
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-});
+// For ESM compatibility
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
-async function testClickProtection() {
-  const client = await pool.connect();
+// Import database and click protection utilities
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { sql } from 'drizzle-orm';
+
+// Use DATABASE_URL environment variable directly
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool);
+
+// Manually implement click protection functions for testing
+async function withAutoSyncContext(callback) {
+  let syncOperationId = null;
   
   try {
-    console.log('===== TESTING CLICK PROTECTION SYSTEM =====');
+    // Start a new auto-sync operation
+    const [result] = await db.execute(sql`SELECT start_auto_sync() AS operation_id`);
+    syncOperationId = result.operation_id;
     
-    // Get a sample URL for testing
-    const sampleUrlResult = await client.query('SELECT id, click_limit, clicks FROM urls LIMIT 1');
-    const sampleUrl = sampleUrlResult.rows[0];
+    console.log(`Started auto-sync operation with ID: ${syncOperationId}`);
     
-    if (!sampleUrl) {
-      console.error('No URLs found for testing');
-      return;
-    }
-    
-    console.log('Sample URL before test:', sampleUrl);
-    
-    // TEST 1: Direct update (should succeed, not in auto-sync context)
-    console.log('\n🔍 TEST 1: Manual update (should succeed)');
-    const testValue1 = 123456;
-    await client.query(`
-      UPDATE urls 
-      SET click_limit = $1
-      WHERE id = $2
-    `, [testValue1, sampleUrl.id]);
-    
-    const afterManualResult = await client.query(`
-      SELECT id, click_limit, clicks FROM urls WHERE id = $1
-    `, [sampleUrl.id]);
-    const afterManual = afterManualResult.rows[0];
-    
-    console.log('After manual update:', afterManual);
-    console.log('Manual update succeeded?', afterManual.click_limit === testValue1);
-    
-    // TEST 2: Update in auto-sync context (should be blocked)
-    console.log('\n🔍 TEST 2: Automatic update (should be blocked)');
-    const testValue2 = 999999;
-    
-    // Start an auto-sync operation
-    const startResult = await client.query(`SELECT start_auto_sync() AS operation_id`);
-    const operationId = startResult.rows[0].operation_id;
-    console.log('Started auto-sync operation with ID:', operationId);
-    
-    // Verify protection is enabled
-    const protectionResult = await client.query(`SELECT click_protection_enabled() AS enabled`);
-    console.log('Click protection enabled:', protectionResult.rows[0].enabled);
-    
-    // Check if auto-sync flag is properly set
-    const syncActiveResult = await client.query(`SELECT is_auto_sync() AS active`);
-    console.log('Auto-sync active:', syncActiveResult.rows[0].active);
-    
-    // Try to update in auto-sync context
-    const updateResult = await client.query(`
-      UPDATE urls 
-      SET click_limit = $1
-      WHERE id = $2
-      RETURNING *
-    `, [testValue2, sampleUrl.id]);
-    
-    console.log('Update in auto-sync returned:', updateResult.rows[0].click_limit);
-    
-    // End the auto-sync operation
-    await client.query(`SELECT end_auto_sync($1)`, [operationId]);
-    console.log('Ended auto-sync operation');
-    
-    const afterAutoResult = await client.query(`
-      SELECT id, click_limit, clicks FROM urls WHERE id = $1
-    `, [sampleUrl.id]);
-    const afterAuto = afterAutoResult.rows[0];
-    
-    console.log('After automatic update attempt:', afterAuto);
-    console.log('Protection worked?', afterAuto.click_limit !== testValue2);
-    
-    // Restore original value
-    await client.query(`
-      UPDATE urls 
-      SET click_limit = $1
-      WHERE id = $2
-    `, [sampleUrl.click_limit, sampleUrl.id]);
-    
-    console.log('\n✅ Protection Test Results:');
-    console.log('Manual updates: ' + (afterManual.click_limit === testValue1 ? 'ALLOWED ✓' : 'BLOCKED ✗'));
-    console.log('Automatic updates: ' + (afterAuto.click_limit !== testValue2 ? 'BLOCKED ✓' : 'ALLOWED ✗'));
-    
-    if (afterManual.click_limit === testValue1 && afterAuto.click_limit !== testValue2) {
-      console.log('\n🎉 CLICK PROTECTION SYSTEM IS WORKING CORRECTLY!');
-      console.log('Only manual updates are allowed, automatic updates are blocked.');
-    } else {
-      console.log('\n⚠️ CLICK PROTECTION SYSTEM IS NOT WORKING AS EXPECTED!');
-      console.log('Check the database triggers and sync context implementation.');
-    }
-    
-  } catch (error) {
-    console.error('Error testing click protection:', error);
+    // Execute the callback within this context
+    return await callback();
   } finally {
-    client.release();
+    // End the auto-sync operation if it was started
+    if (syncOperationId) {
+      await db.execute(sql`SELECT end_auto_sync(${syncOperationId})`);
+      console.log(`Ended auto-sync operation with ID: ${syncOperationId}`);
+    }
+  }
+}
+
+async function isClickProtectionEnabled() {
+  try {
+    const [result] = await db.execute(sql`SELECT click_protection_enabled() AS enabled`);
+    return result?.enabled === true;
+  } catch (error) {
+    console.log('Error checking if click protection is enabled:', error);
+    return false;
+  }
+}
+
+/**
+ * Run the test script
+ */
+async function testClickProtection() {
+  try {
+    console.log('Starting Click Protection Test');
+
+    // First check if click protection is enabled
+    const protectionEnabled = await isClickProtectionEnabled();
+    console.log(`Click protection is ${protectionEnabled ? 'enabled' : 'disabled'}`);
+
+    if (!protectionEnabled) {
+      console.log('Enabling click protection for test...');
+      await db.execute(sql`
+        INSERT INTO protection_settings (key, value)
+        VALUES ('click_protection_enabled', TRUE)
+        ON CONFLICT (key) DO UPDATE SET value = TRUE
+      `);
+      console.log('Click protection enabled');
+    }
+
+    // Test 1: Manual update (should succeed)
+    console.log('\nTest 1: Manual update (should succeed)');
+    try {
+      // Get a test URL to update
+      const [testUrl] = await db.execute(sql`
+        SELECT id, name, clicks, click_limit 
+        FROM urls 
+        LIMIT 1
+      `);
+
+      if (!testUrl) {
+        console.log('No URLs found for testing. Creating a test URL...');
+        await db.execute(sql`
+          INSERT INTO urls (name, url, campaign_id, clicks, click_limit)
+          VALUES ('Test URL', 'https://example.com', 1, 0, 100)
+        `);
+        
+        const [newUrl] = await db.execute(sql`
+          SELECT id, name, clicks, click_limit 
+          FROM urls 
+          ORDER BY id DESC
+          LIMIT 1
+        `);
+        
+        console.log(`Created test URL: ${newUrl.name} (ID: ${newUrl.id})`);
+        console.log(`  - Current clicks: ${newUrl.clicks}`);
+        console.log(`  - Click limit: ${newUrl.click_limit}`);
+        
+        // Update the click value manually
+        const newClickLimit = newUrl.click_limit + 50;
+        await db.execute(sql`
+          UPDATE urls
+          SET click_limit = ${newClickLimit}
+          WHERE id = ${newUrl.id}
+        `);
+        
+        // Check if the update was successful
+        const [updatedUrl] = await db.execute(sql`
+          SELECT id, name, clicks, click_limit 
+          FROM urls 
+          WHERE id = ${newUrl.id}
+        `);
+        
+        console.log(`Updated URL: ${updatedUrl.name} (ID: ${updatedUrl.id})`);
+        console.log(`  - New click limit: ${updatedUrl.click_limit}`);
+        
+        if (updatedUrl.click_limit === newClickLimit) {
+          console.log('✅ Manual update succeeded as expected');
+        } else {
+          console.log('❌ Manual update failed - value not updated');
+        }
+      } else {
+        console.log(`Found test URL: ${testUrl.name} (ID: ${testUrl.id})`);
+        console.log(`  - Current clicks: ${testUrl.clicks}`);
+        console.log(`  - Click limit: ${testUrl.click_limit}`);
+        
+        // Update the click value manually
+        const newClickLimit = testUrl.click_limit + 50;
+        await db.execute(sql`
+          UPDATE urls
+          SET click_limit = ${newClickLimit}
+          WHERE id = ${testUrl.id}
+        `);
+        
+        // Check if the update was successful
+        const [updatedUrl] = await db.execute(sql`
+          SELECT id, name, clicks, click_limit 
+          FROM urls 
+          WHERE id = ${testUrl.id}
+        `);
+        
+        console.log(`Updated URL: ${updatedUrl.name} (ID: ${updatedUrl.id})`);
+        console.log(`  - New click limit: ${updatedUrl.click_limit}`);
+        
+        if (updatedUrl.click_limit === newClickLimit) {
+          console.log('✅ Manual update succeeded as expected');
+        } else {
+          console.log('❌ Manual update failed - value not updated');
+        }
+      }
+    } catch (error) {
+      console.error('Error in Test 1:', error);
+    }
+
+    // Test 2: Automatic update (should be blocked)
+    console.log('\nTest 2: Automatic update (should be blocked)');
+    try {
+      // Get a test URL to update
+      const [testUrl] = await db.execute(sql`
+        SELECT id, name, clicks, click_limit 
+        FROM urls 
+        LIMIT 1
+      `);
+
+      if (!testUrl) {
+        console.log('No URLs found for testing. Skipping Test 2.');
+      } else {
+        console.log(`Found test URL: ${testUrl.name} (ID: ${testUrl.id})`);
+        console.log(`  - Current clicks: ${testUrl.clicks}`);
+        console.log(`  - Click limit: ${testUrl.click_limit}`);
+        
+        // Try to update the click value automatically (within auto-sync context)
+        const newClickLimit = testUrl.click_limit + 1000000;
+        
+        console.log(`Attempting to auto-update click limit to ${newClickLimit} (should be blocked)...`);
+        
+        await withAutoSyncContext(async () => {
+          await db.execute(sql`
+            UPDATE urls
+            SET click_limit = ${newClickLimit}
+            WHERE id = ${testUrl.id}
+          `);
+        });
+        
+        // Check if the update was blocked
+        const [updatedUrl] = await db.execute(sql`
+          SELECT id, name, clicks, click_limit 
+          FROM urls 
+          WHERE id = ${testUrl.id}
+        `);
+        
+        console.log(`URL after attempted auto-update: ${updatedUrl.name} (ID: ${updatedUrl.id})`);
+        console.log(`  - Click limit after auto-update attempt: ${updatedUrl.click_limit}`);
+        
+        if (updatedUrl.click_limit !== newClickLimit) {
+          console.log('✅ Automatic update was blocked as expected');
+        } else {
+          console.log('❌ Automatic update succeeded when it should have been blocked');
+        }
+      }
+    } catch (error) {
+      console.error('Error in Test 2:', error);
+    }
+
+    console.log('\nClick Protection Test completed');
+  } catch (error) {
+    console.error('Error running test:', error);
+  } finally {
+    process.exit(0);
   }
 }
 
