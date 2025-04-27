@@ -30,6 +30,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // We'll handle HTTP/2 headers in the route handlers
   const server = createServer(app);
   
+  // API routes for Original Click Values feature
+  // Get all URLs with their original click values and campaign associations
+  app.get("/api/original-clicks", async (_req: Request, res: Response) => {
+    try {
+      // Fetch all URLs with original click values
+      const urlsResult = await db.execute(`
+        SELECT u.id, u.name, u.target_url, u.original_click_limit, u.click_limit, u.clicks,
+               array_agg(c.name) FILTER (WHERE c.id IS NOT NULL) AS used_in_campaigns
+        FROM urls u
+        LEFT JOIN campaigns c ON u.campaign_id = c.id
+        GROUP BY u.id, u.name, u.target_url, u.original_click_limit, u.click_limit, u.clicks
+        ORDER BY u.id DESC
+      `);
+      
+      if (!urlsResult || !urlsResult.rows) {
+        return res.status(500).json({ message: "Failed to fetch URLs data" });
+      }
+      
+      res.json(urlsResult.rows);
+    } catch (error) {
+      console.error("Error fetching original click values:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch original click values", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Update original click value for a URL and propagate the change
+  app.patch("/api/original-clicks/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { original_click_limit } = req.body;
+      
+      if (!id || isNaN(parseInt(id))) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      if (original_click_limit === undefined || isNaN(parseInt(original_click_limit))) {
+        return res.status(400).json({ message: "Invalid original click limit value" });
+      }
+      
+      // Start a transaction
+      await db.execute("BEGIN");
+      
+      try {
+        // Set the context flag to indicate this is an intentional update from our API
+        await db.execute(`SELECT set_config('app.original_click_update', 'true', FALSE)`);
+        
+        // Update the original_click_limit in the URLs table
+        const updateResult = await db.execute(`
+          UPDATE urls
+          SET original_click_limit = $1,
+              click_limit = $1,
+              updated_at = NOW()
+          WHERE id = $2
+          RETURNING id, name, original_click_limit, click_limit
+        `, [original_click_limit, id]);
+        
+        if (!updateResult || !updateResult.rows || updateResult.rows.length === 0) {
+          // Rollback if update failed
+          await db.execute("ROLLBACK");
+          return res.status(404).json({ message: "URL not found" });
+        }
+        
+        // Reset the context flag after we're done
+        await db.execute(`SELECT set_config('app.original_click_update', 'false', FALSE)`);
+        
+        // Commit the transaction
+        await db.execute("COMMIT");
+        
+        // Return the updated URL
+        res.json({
+          message: "Original click value updated successfully",
+          url: updateResult.rows[0]
+        });
+      } catch (innerError) {
+        // Rollback in case of any error
+        await db.execute("ROLLBACK");
+        throw innerError;
+      }
+    } catch (error) {
+      console.error("Error updating original click value:", error);
+      res.status(500).json({ 
+        message: "Failed to update original click value", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // API route to apply click protection
   app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {
     try {

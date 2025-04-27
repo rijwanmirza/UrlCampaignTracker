@@ -13,6 +13,7 @@ import GmailSettingsPage from "@/pages/gmail-settings";
 import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
 import TestSpentValuePage from "@/pages/test-spent-value";
+import OriginalClicksPage from "@/pages/original-clicks";
 import LoginPage from "@/pages/login";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -85,6 +86,9 @@ function Router() {
           </Route>
           <Route path="/test-spent-value">
             <TestSpentValuePage />
+          </Route>
+          <Route path="/original-clicks">
+            <OriginalClicksPage />
           </Route>
           <Route>
             <NotFound />
