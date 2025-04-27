@@ -235,6 +235,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Simple API route to test click protection
+  app.post("/api/system/click-protection/simple-test", async (_req: Request, res: Response) => {
+    try {
+      console.log('Starting Simple Click Protection Test');
+      
+      // First check if click protection is enabled
+      const protectionSetting = await db.execute(`
+        SELECT value FROM protection_settings WHERE key = 'click_protection_enabled'
+      `);
+      
+      const protectionEnabled = protectionSetting.length > 0 && (protectionSetting[0].value === true || protectionSetting[0].value === 't');
+      console.log(`Click protection is ${protectionEnabled ? 'enabled' : 'disabled'}`);
+
+      if (!protectionEnabled) {
+        await db.execute(`
+          INSERT INTO protection_settings (key, value)
+          VALUES ('click_protection_enabled', TRUE)
+          ON CONFLICT (key) DO UPDATE SET value = TRUE
+        `);
+        console.log('Click protection enabled for testing');
+      }
+      
+      // Create a test table for this test only
+      console.log('Creating test table for click protection testing');
+      
+      try {
+        await db.execute(`
+          CREATE TABLE IF NOT EXISTS click_protection_test (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            clicks INTEGER NOT NULL DEFAULT 0
+          )
+        `);
+        
+        // Create the click protection trigger on this test table
+        await db.execute(`
+          DO $$
+          BEGIN
+            -- Drop the trigger if it already exists
+            DROP TRIGGER IF EXISTS prevent_test_auto_click_update_trigger ON click_protection_test;
+            
+            -- Create the trigger
+            CREATE TRIGGER prevent_test_auto_click_update_trigger
+            BEFORE UPDATE ON click_protection_test
+            FOR EACH ROW
+            EXECUTE FUNCTION prevent_auto_click_updates();
+            
+            RAISE NOTICE 'Created test click protection trigger successfully';
+          END
+          $$;
+        `);
+        
+        console.log('Created test table and trigger for click protection testing');
+      } catch (err) {
+        console.error('Error creating test table or trigger:', err);
+        throw err;
+      }
+      
+      // Insert a test record
+      await db.execute(`
+        INSERT INTO click_protection_test (name, clicks)
+        VALUES ('Test Record', 100)
+        ON CONFLICT DO NOTHING
+      `);
+      
+      // Get the test record
+      console.log('Getting test record from test table');
+      const testRecords = await db.execute(`
+        SELECT id, name, clicks FROM click_protection_test LIMIT 1
+      `);
+      
+      console.log('Test records result:', JSON.stringify(testRecords));
+      
+      // PostgreSQL results come back differently from the node-postgres driver
+      if (!testRecords || !testRecords.rows || testRecords.rows.length === 0) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create test record"
+        });
+      }
+      
+      console.log('First record:', JSON.stringify(testRecords.rows[0]));
+      const testRecord = testRecords.rows[0];
+      
+      if (!testRecord.id) {
+        console.error('Test record does not have an id property');
+        console.log('Test record properties:', Object.keys(testRecord));
+        return res.status(500).json({
+          success: false,
+          message: "Test record is missing id property",
+          details: { 
+            record: testRecord,
+            properties: Object.keys(testRecord)
+          }
+        });
+      }
+      
+      const testRecordId = testRecord.id;
+      
+      console.log(`Test record: ${testRecord.name} (ID: ${testRecordId})`);
+      console.log(`  - Current clicks: ${testRecord.clicks}`);
+      
+      // Test 1: Manual update (should succeed)
+      console.log('\nTest 1: Manual update (should succeed)');
+      const newClicks = testRecord.clicks + 50;
+      
+      await db.execute(`
+        UPDATE click_protection_test
+        SET clicks = ${newClicks}
+        WHERE id = ${testRecordId}
+      `);
+      
+      // Check if the update was successful
+      const updatedRecords = await db.execute(`
+        SELECT id, name, clicks FROM click_protection_test WHERE id = ${testRecordId}
+      `);
+      
+      console.log('Updated records result:', JSON.stringify(updatedRecords));
+      const updatedRecord = updatedRecords.rows[0];
+      const manualUpdateSucceeded = updatedRecord.clicks === newClicks;
+      
+      console.log(`Manual update result: ${manualUpdateSucceeded ? 'SUCCESS' : 'FAILED'}`);
+      console.log(`  - New clicks value: ${updatedRecord.clicks}`);
+      
+      // Test 2: Start an auto-sync context and try to update
+      console.log('\nTest 2: Auto-sync update (should be blocked if protection is working)');
+      
+      // Get the current click value
+      const currentClicks = updatedRecord.clicks;
+      
+      // Define a massive new value (like what happens in the bug)
+      const autoSyncClicks = 1947542743;  // This is similar to the extreme values seen in the bug
+      
+      // Begin auto-sync context
+      const syncOpResult = await db.execute(`SELECT start_auto_sync() AS operation_id`);
+      const syncOperationId = syncOpResult[0].operation_id;
+      
+      try {
+        console.log(`Starting auto-sync operation ID: ${syncOperationId}`);
+        console.log(`Attempting to update clicks from ${currentClicks} to ${autoSyncClicks}`);
+        
+        // Try to update with a massive value within auto-sync context
+        await db.execute(`
+          UPDATE click_protection_test
+          SET clicks = ${autoSyncClicks}
+          WHERE id = ${testRecordId}
+        `);
+      } finally {
+        // Always end the auto-sync operation
+        await db.execute(`SELECT end_auto_sync(${syncOperationId})`);
+        console.log('Auto-sync operation ended');
+      }
+      
+      // Check if the protection blocked the update
+      const finalRecords = await db.execute(`
+        SELECT id, name, clicks FROM click_protection_test WHERE id = ${testRecordId}
+      `);
+      
+      console.log('Final records result:', JSON.stringify(finalRecords));
+      const finalRecord = finalRecords.rows[0];
+      const autoUpdateBlocked = finalRecord.clicks !== autoSyncClicks;
+      
+      console.log(`Auto-sync update blocked: ${autoUpdateBlocked ? 'YES (Good)' : 'NO (Bad)'}`);
+      console.log(`  - Final clicks value: ${finalRecord.clicks}`);
+      
+      return res.json({
+        success: true,
+        clickProtectionEnabled: protectionEnabled,
+        testResults: {
+          manualUpdateSucceeded,
+          autoUpdateBlocked,
+          overallProtectionWorking: manualUpdateSucceeded && autoUpdateBlocked
+        },
+        details: {
+          initialClicks: testRecord.clicks,
+          afterManualUpdate: updatedRecord.clicks,
+          attemptedAutoSyncClicks: autoSyncClicks,
+          finalClicks: finalRecord.clicks
+        }
+      });
+    } catch (error) {
+      console.error('Error testing click protection:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to test click protection", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // API route to test click protection
   app.post("/api/system/click-protection/test", async (_req: Request, res: Response) => {
     try {
