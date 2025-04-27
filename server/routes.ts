@@ -61,9 +61,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update original click value for a URL and propagate the change
   app.patch("/api/original-clicks/:id", async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const { original_click_limit } = req.body;
+      // Simplify to basic inputs
+      const id = req.params.id;
+      const original_click_limit = req.body.original_click_limit;
       
+      // Basic validation
       if (!id || isNaN(parseInt(id))) {
         return res.status(400).json({ message: "Invalid URL ID" });
       }
@@ -75,74 +77,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
       console.log(`Requested new original click value: ${original_click_limit}`);
       
-      // First get the current URL details to check if there's a multiplier in effect
-      const urlDetails = await db.execute(`
-        SELECT id, name, original_click_limit, click_limit
-        FROM urls
-        WHERE id = $1
-      `, [id]);
+      // Just perform a direct SQL update as simply as possible
+      // First, get the URL info to see if there's a multiplier
+      const urlResult = await db.query(`SELECT name, original_click_limit, click_limit FROM urls WHERE id = $1`, [id]);
       
-      if (!urlDetails.rows || urlDetails.rows.length === 0) {
+      if (!urlResult.rowCount || urlResult.rowCount === 0) {
         return res.status(404).json({ message: "URL not found" });
       }
       
-      const currentUrl = urlDetails.rows[0];
-      const currentOriginalClickLimit = parseInt(currentUrl.original_click_limit);
-      const currentClickLimit = parseInt(currentUrl.click_limit);
+      const currentUrl = urlResult.rows[0];
+      const currentOriginalLimit = parseInt(currentUrl.original_click_limit) || 0;
+      const currentLimit = parseInt(currentUrl.click_limit) || 0;
       
-      console.log(`Current URL state: 
-      - ID: ${currentUrl.id}
-      - Name: ${currentUrl.name}
-      - Original click limit: ${currentOriginalClickLimit}
-      - Current click limit: ${currentClickLimit}`);
-      
-      // Check if there's a multiplier in effect
+      // Calculate multiplier if any
       let multiplier = 1;
-      if (currentOriginalClickLimit > 0 && currentClickLimit > currentOriginalClickLimit) {
-        multiplier = currentClickLimit / currentOriginalClickLimit;
-        console.log(`Raw multiplier calculation: ${currentClickLimit} / ${currentOriginalClickLimit} = ${multiplier}`);
-        
-        // Round to the nearest whole number for cleaner values
-        multiplier = Math.round(multiplier);
-        console.log(`Detected multiplier: ${multiplier}x (rounded from ${currentClickLimit / currentOriginalClickLimit})`);
+      if (currentOriginalLimit > 0 && currentLimit > currentOriginalLimit) {
+        multiplier = Math.round(currentLimit / currentOriginalLimit);
       }
       
-      // Apply the new original click limit AND preserve the multiplier ratio
-      // Important: We're only updating the click_limit with the multiplier - we should NOT apply the multiplier to original_click_limit
-      const newClickLimit = original_click_limit * multiplier;
+      // Calculate new click limit with multiplier
+      const newClickLimit = parseInt(original_click_limit) * multiplier;
       
-      console.log(`UPDATE CALCULATION:
-      - New original click limit: ${original_click_limit}
-      - Multiplier: ${multiplier}x 
-      - New click limit: ${original_click_limit} × ${multiplier} = ${newClickLimit}`);
-      console.log(`Click limit is changing from ${currentClickLimit} to ${newClickLimit}`);
+      console.log(`Current values: Original limit=${currentOriginalLimit}, Limit=${currentLimit}`);
+      console.log(`Calculated multiplier: ${multiplier}x`);
+      console.log(`New values: Original limit=${original_click_limit}, Limit=${newClickLimit}`);
       
-      // Temporarily disable click protection
-      await db.execute(`
-        UPDATE protection_settings
-        SET value = FALSE
-        WHERE key = 'click_protection_enabled'
-      `);
+      // Disable protection
+      await db.query(`UPDATE protection_settings SET value = false WHERE key = 'click_protection_enabled'`);
       
-      // Update the original_click_limit and click_limit (with multiplier) in the URLs table
-      const updateResult = await db.execute(`
-        UPDATE urls
-        SET original_click_limit = $1,
-            click_limit = $2,
-            updated_at = NOW()
-        WHERE id = $3
-        RETURNING id, name, original_click_limit, click_limit
-      `, [original_click_limit, newClickLimit, id]);
+      // Simple direct update
+      const updateResult = await db.query(
+        `UPDATE urls SET original_click_limit = $1, click_limit = $2, updated_at = NOW() WHERE id = $3 RETURNING id, name, original_click_limit, click_limit`,
+        [original_click_limit, newClickLimit, id]
+      );
       
-      // Re-enable click protection 
-      await db.execute(`
-        UPDATE protection_settings
-        SET value = TRUE
-        WHERE key = 'click_protection_enabled'
-      `);
+      // Re-enable protection
+      await db.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
       
-      if (!updateResult.rows || updateResult.rows.length === 0) {
-        return res.status(404).json({ message: "URL not found" });
+      if (!updateResult.rowCount || updateResult.rowCount === 0) {
+        return res.status(404).json({ message: "URL update failed" });
       }
       
       // Return the updated URL
@@ -155,11 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Make sure protection is re-enabled in case of error
       try {
-        await db.execute(`
-          UPDATE protection_settings
-          SET value = TRUE
-          WHERE key = 'click_protection_enabled'
-        `);
+        await db.query(`UPDATE protection_settings SET value = true WHERE key = 'click_protection_enabled'`);
       } catch (settingError) {
         console.error("Error re-enabling click protection:", settingError);
       }
