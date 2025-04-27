@@ -27,7 +27,10 @@ export default function OriginalClicksPage() {
   // Fetch all URLs with their original click values
   const { data: urls, isLoading, error, refetch } = useQuery<OriginalUrl[]>({
     queryKey: ['/api/original-clicks'],
-    retry: false
+    retry: false,
+    refetchOnWindowFocus: true, // Auto-refresh when window is focused
+    staleTime: 0, // Data is considered stale immediately
+    refetchInterval: 5000 // Refresh every 5 seconds to ensure data is fresh
   });
 
   // Update original click value mutation
@@ -46,15 +49,23 @@ export default function OriginalClicksPage() {
       
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Show the returned data in the toast for verification
       toast({
         title: "Success",
-        description: "Original click value updated and propagated successfully",
+        description: `Original click value updated to ${data.url.original_click_limit}`,
         variant: "default",
       });
+
+      // Force an immediate refetch of the data
+      refetch();
+      
+      // Also invalidate other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/original-clicks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/urls'] });
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      
+      // Close dialogs
       setIsDialogOpen(false);
       setIsConfirmOpen(false);
     },
