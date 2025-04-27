@@ -44,14 +44,18 @@ async function testClickProtection() {
     console.log('\n🔍 TEST 2: Automatic update (should be blocked)');
     const testValue2 = 999999;
     
-    // Debugging: Check if we can set and retrieve the variable
-    await client.query(`SET LOCAL app.is_auto_sync = 'true'`);
-    const checkResult = await client.query(`SELECT current_setting('app.is_auto_sync', TRUE) AS value`);
-    console.log('Auto-sync value set to:', checkResult.rows[0].value);
-
-    // Also directly check the function
-    const syncFuncResult = await client.query(`SELECT check_auto_sync() AS is_auto_sync`);
-    console.log('check_auto_sync() returns:', syncFuncResult.rows[0].is_auto_sync);
+    // Start an auto-sync operation
+    const startResult = await client.query(`SELECT start_auto_sync() AS operation_id`);
+    const operationId = startResult.rows[0].operation_id;
+    console.log('Started auto-sync operation with ID:', operationId);
+    
+    // Verify protection is enabled
+    const protectionResult = await client.query(`SELECT click_protection_enabled() AS enabled`);
+    console.log('Click protection enabled:', protectionResult.rows[0].enabled);
+    
+    // Check if auto-sync flag is properly set
+    const syncActiveResult = await client.query(`SELECT is_auto_sync() AS active`);
+    console.log('Auto-sync active:', syncActiveResult.rows[0].active);
     
     // Try to update in auto-sync context
     const updateResult = await client.query(`
@@ -63,8 +67,9 @@ async function testClickProtection() {
     
     console.log('Update in auto-sync returned:', updateResult.rows[0].click_limit);
     
-    // Reset the auto-sync context flag
-    await client.query(`SET LOCAL app.is_auto_sync = 'false'`);
+    // End the auto-sync operation
+    await client.query(`SELECT end_auto_sync($1)`, [operationId]);
+    console.log('Ended auto-sync operation');
     
     const afterAutoResult = await client.query(`
       SELECT id, click_limit, clicks FROM urls WHERE id = $1

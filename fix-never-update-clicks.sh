@@ -1,118 +1,81 @@
 #!/bin/bash
 
-# Complete fix to prevent ANY automatic updates to click numbers
-echo "===== Ensuring Click Numbers NEVER Update Automatically ====="
+# Fix: Never Update Clicks
+# This script applies the click protection system to prevent automatic
+# updates to click values in the PostgreSQL database
 
-# Create SQL to block automatic updates
-echo "1. Creating SQL fix to block automatic updates..."
-cat > /tmp/block-auto-updates.sql << 'EOF'
--- Reset campaign values to safe defaults
-UPDATE campaigns SET total_clicks = 0 WHERE id = 29;
+# Set the app directory
+APP_DIR="/var/www/url-campaign"
+cd "$APP_DIR" || { echo "Failed to cd to $APP_DIR"; exit 1; }
 
--- Reset any URL click limits that exceed the original value
-UPDATE urls SET click_limit = original_click_limit 
-WHERE click_limit > original_click_limit AND campaign_id = 29;
+echo "===== Click Protection System Installation ====="
+echo "This script will add database triggers to prevent automatic updates to click values."
+echo
 
--- Create a trigger function that prevents ANY changes to click_limit
--- unless they match the original_click_limit or are specifically set by a user
-CREATE OR REPLACE FUNCTION prevent_auto_click_updates()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Only allow changes that are specifically initiated by user actions
-  -- Check if this is coming from an automatic sync process
-  IF current_setting('app.is_auto_sync', true) = 'true' THEN
-    -- If it's an automatic sync, don't allow click_limit changes
-    NEW.click_limit = OLD.click_limit;
-    NEW.clicks = OLD.clicks;
-    RAISE NOTICE 'Prevented automatic update of click values for URL %', NEW.id;
-  END IF;
+# Get PostgreSQL connection info from environment
+if [ -f "$APP_DIR/.env" ]; then
+  source "$APP_DIR/.env"
+fi
+
+# Set PostgreSQL connection string
+if [ -z "$DATABASE_URL" ]; then
+  DB_HOST="localhost"
+  DB_USER="postgres"
+  DB_PASS="postgres"
+  DB_NAME="url-campaign"
+  DB_PORT="5432"
   
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+  # Create connection string
+  export DATABASE_URL="postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME"
+fi
 
--- Create a trigger on the urls table
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_trigger 
-    WHERE tgname = 'prevent_auto_click_update_trigger'
-  ) THEN
-    CREATE TRIGGER prevent_auto_click_update_trigger
-    BEFORE UPDATE ON urls
-    FOR EACH ROW
-    EXECUTE FUNCTION prevent_auto_click_updates();
-  END IF;
-END;
-$$;
+echo "1. Creating utility files..."
+# Create the click protection utility file
+mkdir -p "$APP_DIR/server/utils"
 
--- Create a similar trigger for the campaigns table
-CREATE OR REPLACE FUNCTION prevent_campaign_auto_click_updates()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Only allow changes that are specifically initiated by user actions
-  IF current_setting('app.is_auto_sync', true) = 'true' THEN
-    -- If it's an automatic sync, don't allow total_clicks changes
-    NEW.total_clicks = OLD.total_clicks;
-    RAISE NOTICE 'Prevented automatic update of total_clicks for campaign %', NEW.id;
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create a trigger on the campaigns table
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_trigger 
-    WHERE tgname = 'prevent_campaign_auto_click_update_trigger'
-  ) THEN
-    CREATE TRIGGER prevent_campaign_auto_click_update_trigger
-    BEFORE UPDATE ON campaigns
-    FOR EACH ROW
-    EXECUTE FUNCTION prevent_campaign_auto_click_updates();
-  END IF;
-END;
-$$;
-EOF
-
-# Run the SQL fix
-echo "2. Running SQL fix..."
-export PGPASSWORD=postgres
-psql -h localhost -U postgres -d postgres -f /tmp/block-auto-updates.sql
-
-# Create a patch for TrafficStar sync code
-echo "3. Creating auto-sync flag setter..."
-mkdir -p /var/www/url-campaign/server/utils
-cat > /var/www/url-campaign/server/utils/sync-context.js << 'EOF'
+cat > "$APP_DIR/server/utils/click-protection.js" << 'EOF'
 /**
- * Utility to mark database operations as being part of an automatic sync
- * This ensures the database triggers know when an update is automatic vs. user-initiated
+ * Click Protection Utility
+ * 
+ * This utility provides functions to ensure click values are never automatically
+ * modified during TrafficStar or other external API synchronization processes.
  */
 
 import { db } from '../db.js';
+import { sql } from 'drizzle-orm';
 
 /**
- * Execute a callback within an auto-sync context
- * @param {Function} callback - Function to execute within auto-sync context
+ * Execute a callback within auto-sync context
+ * This marks operations as automatic, so they can't modify click values
+ * 
+ * @param {Function} callback - The function to execute in auto-sync context
  * @returns {Promise<any>} - Result of the callback
  */
 export async function withAutoSyncContext(callback) {
+  let syncOperationId = null;
+  
   try {
-    // Set the auto-sync flag in the database session
-    await db.query("SET LOCAL app.is_auto_sync = 'true'");
+    // Start a new auto-sync operation
+    const [result] = await db.execute(sql`SELECT start_auto_sync() AS operation_id`);
+    syncOperationId = result.operation_id;
     
-    // Execute the callback
+    console.log(`Started auto-sync operation with ID: ${syncOperationId}`);
+    
+    // Execute the callback within this context
     return await callback();
   } finally {
-    // Reset the flag (though it's automatically reset at the end of the transaction)
-    await db.query("SET LOCAL app.is_auto_sync = 'false'");
+    // End the auto-sync operation if it was started
+    if (syncOperationId) {
+      await db.execute(sql`SELECT end_auto_sync(${syncOperationId})`);
+      console.log(`Ended auto-sync operation with ID: ${syncOperationId}`);
+    }
   }
 }
 
 /**
  * Mark a function as being part of an automatic sync process
+ * Any click-related updates within this function will be blocked
+ * 
  * @param {Function} func - Function to mark as auto-sync
  * @returns {Function} - Wrapped function that sets auto-sync context
  */
@@ -121,188 +84,211 @@ export function markAsAutoSync(func) {
     return withAutoSyncContext(() => func.apply(this, args));
   };
 }
-EOF
 
-# Create a reference implementation patch (not actually applied)
-echo "4. Creating reference implementation..."
-mkdir -p /tmp/reference-patches
-cat > /tmp/reference-patches/trafficstar-sync-patch.txt << 'EOF'
-// Import the sync context utilities
-import { markAsAutoSync } from '../utils/sync-context.js';
-
-// Any function that automatically updates click limits or counts should be marked
-// Example:
-
-// Original function
-async function syncTrafficStarCampaign(campaignId) {
-  // ... existing code ...
-  
-  // Update campaign data
-  await db.update(campaigns)
-    .set({ total_clicks: campaignData.clicks })
-    .where(eq(campaigns.id, campaignId));
-    
-  // ... more code ...
-}
-
-// Modified function with auto-sync marking
-const syncTrafficStarCampaign = markAsAutoSync(async function(campaignId) {
-  // ... existing code ...
-  
-  // The database triggers will now prevent changes to click values
-  // because this function is marked as an automatic sync
-  await db.update(campaigns)
-    .set({ total_clicks: campaignData.clicks })
-    .where(eq(campaigns.id, campaignId));
-    
-  // ... more code ...
-});
-EOF
-
-# Create an official patch to apply to scheduled jobs
-echo "5. Creating click protection patch..."
-cat > /tmp/click-protection-patch.js << 'EOF'
 /**
- * CRITICAL PATCH: Prevent automatic click updates
+ * Check if click protection is enabled
  * 
- * This code should replace any TrafficStar sync functions that might update click values.
- * The key change is that click-related values are explicitly excluded from updates.
+ * @returns {Promise<boolean>} - Whether click protection is enabled
  */
-
-// Sync campaign but NEVER update click values
-async function syncCampaignWithoutClickUpdates(campaignId, trafficStarId) {
-  try {
-    console.log(`Syncing campaign ${campaignId} with TrafficStar ID ${trafficStarId} (CLICK PROTECTED)`);
-    
-    // Get campaign data from TrafficStar
-    const campaignData = await getTrafficStarCampaign(trafficStarId);
-    
-    if (!campaignData) {
-      console.error(`Failed to get campaign data for TrafficStar ID ${trafficStarId}`);
-      return null;
-    }
-    
-    // Update campaign data BUT NEVER update click-related fields
-    // We explicitly exclude total_clicks and other click-related fields
-    await db.update(campaigns)
-      .set({ 
-        last_trafficstar_sync: new Date(),
-        // Importantly, we DO NOT include total_clicks here
-      })
-      .where(eq(campaigns.id, campaignId));
-    
-    console.log(`Campaign ${campaignId} synced successfully (click values protected)`);
-    return campaignData;
-  } catch (error) {
-    console.error(`Error syncing campaign ${campaignId} with TrafficStar:`, error);
-    return null;
-  }
+export async function isClickProtectionEnabled() {
+  const [result] = await db.execute(sql`SELECT click_protection_enabled() AS enabled`);
+  return result?.enabled === true;
 }
 
-// Similarly, for URL updates, never update click values
-async function updateUrlWithoutClickChanges(urlId, urlData) {
-  try {
-    // Get the current URL data
-    const [currentUrl] = await db.select().from(urls).where(eq(urls.id, urlId));
-    
-    if (!currentUrl) {
-      console.error(`URL with ID ${urlId} not found`);
-      return null;
-    }
-    
-    // Update URL but preserve click values
-    await db.update(urls)
-      .set({
-        // Include whatever fields need updating, but NOT click_limit or clicks
-        name: urlData.name,
-        target_url: urlData.target_url,
-        // Other non-click fields...
-        
-        // Explicitly preserve these values from the current record
-        click_limit: currentUrl.click_limit,
-        clicks: currentUrl.clicks,
-        original_click_limit: currentUrl.original_click_limit
-      })
-      .where(eq(urls.id, urlId));
-    
-    console.log(`URL ${urlId} updated with click values preserved`);
-  } catch (error) {
-    console.error(`Error updating URL ${urlId}:`, error);
-  }
+/**
+ * Enable or disable click protection
+ * 
+ * @param {boolean} enabled - Whether protection should be enabled
+ * @returns {Promise<void>}
+ */
+export async function setClickProtectionEnabled(enabled) {
+  await db.execute(sql`
+    UPDATE protection_settings 
+    SET value = ${enabled} 
+    WHERE key = 'click_protection_enabled'
+  `);
+  
+  console.log(`Click protection ${enabled ? 'enabled' : 'disabled'}`);
 }
 EOF
 
-# Create a readme file explaining the fix
-echo "6. Creating documentation..."
-cat > /var/www/url-campaign/CLICK_PROTECTION.md << 'EOF'
-# Click Protection System
+echo "2. Installing database protection..."
+# Create the SQL migration
+cat > /tmp/click_protection.sql << 'EOF'
+-- Click Protection SQL
+-- This adds PostgreSQL triggers to prevent automatic updates to click values
 
-This system ensures that click values (click_limit, clicks, total_clicks) are NEVER automatically modified.
+-- Settings table for protection configuration
+CREATE TABLE IF NOT EXISTS protection_settings (
+  key TEXT PRIMARY KEY,
+  value BOOLEAN NOT NULL
+);
 
-## What's Protected
+-- Initialize with default value if not exists
+INSERT INTO protection_settings (key, value)
+VALUES ('click_protection_enabled', TRUE)
+ON CONFLICT (key) DO NOTHING;
 
-- URL click_limit values
-- URL clicks counts
-- Campaign total_clicks values
+-- Create a table to track sync operations
+CREATE TABLE IF NOT EXISTS sync_operations (
+  id SERIAL PRIMARY KEY,
+  is_auto_sync BOOLEAN NOT NULL DEFAULT FALSE,
+  started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  completed_at TIMESTAMP WITH TIME ZONE
+);
 
-## How It Works
+-- Function to check if click protection is enabled
+CREATE OR REPLACE FUNCTION click_protection_enabled()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (SELECT value FROM protection_settings WHERE key = 'click_protection_enabled');
+END;
+$$ LANGUAGE plpgsql;
 
-1. **Database Triggers**: Triggers prevent automatic updates to click values
-2. **Context Tracking**: The system tracks whether an update is automatic or user-initiated
-3. **Selective Updates**: Automatic sync processes explicitly exclude click-related fields
+-- Function to check if an automatic sync is in progress
+CREATE OR REPLACE FUNCTION is_auto_sync()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM sync_operations 
+    WHERE is_auto_sync = TRUE AND completed_at IS NULL
+  );
+END;
+$$ LANGUAGE plpgsql;
 
-## Implementation Details
+-- Function to start an auto-sync operation
+CREATE OR REPLACE FUNCTION start_auto_sync()
+RETURNS INTEGER AS $$
+DECLARE
+  operation_id INTEGER;
+BEGIN
+  INSERT INTO sync_operations (is_auto_sync) 
+  VALUES (TRUE) 
+  RETURNING id INTO operation_id;
+  
+  RETURN operation_id;
+END;
+$$ LANGUAGE plpgsql;
 
-### For Developers
+-- Function to end an auto-sync operation
+CREATE OR REPLACE FUNCTION end_auto_sync(operation_id INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE sync_operations
+  SET completed_at = NOW()
+  WHERE id = operation_id;
+END;
+$$ LANGUAGE plpgsql;
 
-When making changes to the codebase:
+-- Create a function that prevents automatic updates to click values in URLs
+CREATE OR REPLACE FUNCTION prevent_auto_click_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If this is an automatic sync operation
+  IF click_protection_enabled() AND is_auto_sync() THEN
+    -- Restore the original click_limit value if it was changed
+    IF NEW.click_limit IS DISTINCT FROM OLD.click_limit THEN
+      RAISE WARNING 'Preventing automatic update to click_limit (from % to %) for URL %', 
+        OLD.click_limit, NEW.click_limit, NEW.id;
+      NEW.click_limit := OLD.click_limit;
+    END IF;
+    
+    -- Restore the original clicks value if it was changed
+    IF NEW.clicks IS DISTINCT FROM OLD.clicks THEN
+      RAISE WARNING 'Preventing automatic update to clicks (from % to %) for URL %', 
+        OLD.clicks, NEW.clicks, NEW.id;
+      NEW.clicks := OLD.clicks;
+    END IF;
+    
+    -- Restore the original original_click_limit value if it was changed
+    IF NEW.original_click_limit IS DISTINCT FROM OLD.original_click_limit THEN
+      RAISE WARNING 'Preventing automatic update to original_click_limit (from % to %) for URL %', 
+        OLD.original_click_limit, NEW.original_click_limit, NEW.id;
+      NEW.original_click_limit := OLD.original_click_limit;
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-1. NEVER include click-related fields in automatic updates
-2. Any function that syncs with external services should be marked with `markAsAutoSync`
-3. Before deploying new code, verify it doesn't modify click values automatically
+-- Create a function that prevents automatic updates to click values in campaigns
+CREATE OR REPLACE FUNCTION prevent_campaign_auto_click_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If this is an automatic sync operation
+  IF click_protection_enabled() AND is_auto_sync() THEN
+    -- Restore the original total_clicks value if it was changed
+    IF NEW.total_clicks IS DISTINCT FROM OLD.total_clicks THEN
+      RAISE WARNING 'Preventing automatic update to total_clicks (from % to %) for campaign %', 
+        OLD.total_clicks, NEW.total_clicks, NEW.id;
+      NEW.total_clicks := OLD.total_clicks;
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-### For System Administrators
+-- Drop existing triggers if they exist (for idempotency)
+DROP TRIGGER IF EXISTS prevent_auto_click_update_trigger ON urls;
+DROP TRIGGER IF EXISTS prevent_campaign_auto_click_update_trigger ON campaigns;
 
-If you need to manually update click values:
+-- Create the trigger for URLs
+CREATE TRIGGER prevent_auto_click_update_trigger
+BEFORE UPDATE ON urls
+FOR EACH ROW
+EXECUTE FUNCTION prevent_auto_click_updates();
 
-1. Use direct SQL with the `app.is_auto_sync = 'false'` setting
-2. Use the admin UI which is explicitly marked as user-initiated
-3. NEVER run batch updates on click values without user confirmation
-
-## Troubleshooting
-
-If click values are changing unexpectedly:
-
-1. Check the database logs for trigger notifications
-2. Verify all sync functions are properly marked
-3. Apply the click protection patch if needed
-
-## Safety Measures
-
-The system includes multiple redundant protections:
-
-1. Database constraints
-2. Application-level validation
-3. Database triggers
-4. Context tracking
-5. Selective field updates
-
-This multi-layered approach ensures click values are never modified automatically under any circumstances.
+-- Create the trigger for campaigns
+CREATE TRIGGER prevent_campaign_auto_click_update_trigger
+BEFORE UPDATE ON campaigns
+FOR EACH ROW
+EXECUTE FUNCTION prevent_campaign_auto_click_updates();
 EOF
 
-# Restart the application
-echo "7. Restarting application..."
-cd /var/www/url-campaign
-pm2 restart url-campaign
+# Apply the migrations to the database
+if [ -n "$DB_USER" ]; then
+  # If we have direct database credentials
+  PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -p $DB_PORT -f /tmp/click_protection.sql
+else
+  # Use the connection string if available
+  psql "$DATABASE_URL" -f /tmp/click_protection.sql
+fi
 
-echo "===== Click Protection Complete ====="
-echo "Click values (click_limit, clicks, total_clicks) will NEVER update automatically."
+# Check if the triggers were created
+if [ $? -eq 0 ]; then
+  echo "3. Verifying protection system..."
+  
+  # Verify if triggers exist
+  if [ -n "$DB_USER" ]; then
+    TRIGGERS=$(PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -p $DB_PORT -t -c "SELECT tgname FROM pg_trigger WHERE tgname LIKE 'prevent%'")
+  else
+    TRIGGERS=$(psql "$DATABASE_URL" -t -c "SELECT tgname FROM pg_trigger WHERE tgname LIKE 'prevent%'")
+  fi
+  
+  if [[ $TRIGGERS == *"prevent_auto_click_update_trigger"* && $TRIGGERS == *"prevent_campaign_auto_click_update_trigger"* ]]; then
+    echo "✅ Click protection successfully installed!"
+    echo "✅ URL click values are now protected from automatic updates"
+    echo "✅ Campaign click values are now protected from automatic updates"
+  else
+    echo "❌ Failed to verify all triggers."
+    echo "Found triggers: $TRIGGERS"
+  fi
+else
+  echo "❌ Error applying database migrations."
+fi
+
+# Clean up
+rm -f /tmp/click_protection.sql
+
 echo ""
-echo "Several protection layers have been implemented:"
-echo "1. Database triggers to block automatic updates"
-echo "2. Context tracking to distinguish user vs. automatic actions"
-echo "3. Documentation for future developers"
+echo "===== Click Protection System Documentation ====="
+echo "The click protection system prevents automatic updates to click values."
+echo "- Database triggers prevent TrafficStar from modifying click values"
+echo "- Utility functions help track sync operations"
 echo ""
-echo "This fix can be applied to both your VPS and Replit versions."
-echo "See /var/www/url-campaign/CLICK_PROTECTION.md for details."
-echo "===========================================" 
+echo "To manually update click values, make changes directly in the database"
+echo "or through the web interface."
+echo ""
+echo "✓ Installation complete"
