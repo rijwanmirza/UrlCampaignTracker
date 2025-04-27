@@ -86,7 +86,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           -- Calculate multiplier if any exists
           multiplier := 1;
           IF current_url.original_click_limit > 0 AND current_url.click_limit > current_url.original_click_limit THEN
-            multiplier := ROUND(current_url.click_limit::float / current_url.original_click_limit::float, 1);
+            -- PostgreSQL ROUND takes numeric type for second parameter, not integer
+            multiplier := ROUND(current_url.click_limit::float / current_url.original_click_limit::float);
           END IF;
           
           -- Log what we're doing
