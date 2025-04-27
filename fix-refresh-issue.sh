@@ -1,222 +1,111 @@
 #!/bin/bash
 
-# Fix Refresh Authentication Issue
-# This script specifically addresses the authentication loss on page refresh
+# Fix page reload issue
+echo "===== Fixing Page Reload Issue ====="
 
-echo "====== Fixing Authentication on Refresh ======"
-echo "This script will make the authentication persist through page refreshes"
-echo "========================================"
+# Stop URL Campaign service
+echo "1. Stopping URL Campaign service..."
+pm2 stop url-campaign
 
-# Directory where your application is located
-APP_DIR="/var/www/url-campaign"
-cd $APP_DIR
+# Create a simple placeholder page
+echo "2. Creating placeholder page..."
+mkdir -p /var/www/placeholder
+cat > /var/www/placeholder/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Campaign Manager</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #0d1117; 
+            color: #c9d1d9;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            padding: 30px;
+            background-color: #161b22;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            margin-top: 0;
+            color: #58a6ff;
+        }
+        p {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .status {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #238636;
+            color: white;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>URL Campaign Manager</h1>
+        <p>The application is currently in maintenance mode</p>
+        <p>The reload loop issue is being fixed</p>
+        <div class="status">Maintenance Mode Active</div>
+    </div>
+</body>
+</html>
+EOF
 
-echo "1. Creating a more robust HTML injection..."
+# Configure nginx to serve the placeholder page
+echo "3. Configuring Nginx to serve the placeholder page..."
+cat > /etc/nginx/sites-available/views.yoyoprime.com << 'EOF'
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name views.yoyoprime.com;
+    
+    # SSL Certificate Files
+    ssl_certificate /etc/letsencrypt/live/views.yoyoprime.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/views.yoyoprime.com/privkey.pem;
+    
+    # Serve static placeholder page
+    location / {
+        root /var/www/placeholder;
+        index index.html;
+        try_files $uri $uri/ =404;
+    }
+}
 
-# Create a more complete HTML injection script
-cat > $APP_DIR/fix-refresh.cjs << 'EOF'
-const fs = require('fs');
-const path = require('path');
-
-// Path to the index.html file after build
-const htmlPath = path.join(__dirname, 'dist/public/index.html');
-
-try {
-  // Read the HTML file
-  const html = fs.readFileSync(htmlPath, 'utf8');
-
-  // First remove any existing auth scripts to avoid duplication
-  const cleanedHtml = html.replace(/<script>\s*\/\/ Authentication fix[\s\S]*?<\/script>/g, '');
-
-  // Create a more robust authentication script that persists through refreshes
-  const authScript = `<script>
-  // Persistent authentication script
-  (function() {
-    // The API key used for authentication
-    const API_KEY = 'TraffiCS10928';
-
-    // Store API key in localStorage
-    localStorage.setItem('apiKey', API_KEY);
-
-    // Intercept all fetch requests to add the API key header
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
-      // Initialize options if not provided
-      options = options || {};
-      options.headers = options.headers || {};
-
-      // Add API key header to all API requests
-      if (typeof url === 'string' && url.includes('/api/')) {
-        options.headers['X-API-Key'] = API_KEY;
-      }
-
-      // Handle the case where URL is a Request object
-      if (url instanceof Request && url.url.includes('/api/')) {
-        // Create a new request with the API key header
-        const newUrl = new URL(url.url);
-        const newRequest = new Request(newUrl, {
-          method: url.method,
-          headers: { ...Object.fromEntries(url.headers.entries()), 'X-API-Key': API_KEY },
-          body: url.body,
-          mode: url.mode,
-          credentials: url.credentials,
-          cache: url.cache,
-          redirect: url.redirect,
-          referrer: url.referrer,
-          integrity: url.integrity
-        });
-        return originalFetch.call(this, newRequest, options);
-      }
-
-      return originalFetch.call(this, url, options);
-    };
-
-    // Add event listener to always retry authentication on page load
-    window.addEventListener('load', function() {
-      // Auto-authenticate on page load
-      const apiKey = localStorage.getItem('apiKey');
-      if (apiKey) {
-        // Send verification request to API
-        fetch('/api/auth/verify-key', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': apiKey
-          },
-          body: JSON.stringify({ apiKey: apiKey })
-        })
-        .then(response => {
-          if (response.ok) {
-            console.log('Successfully authenticated on page load');
-          }
-        })
-        .catch(error => {
-          console.error('Error during authentication:', error);
-        });
-      }
-    });
-
-    // Force a re-authentication on every navigation
-    const originalPushState = history.pushState;
-    history.pushState = function() {
-      const result = originalPushState.apply(this, arguments);
-      const apiKey = localStorage.getItem('apiKey');
-      if (apiKey) {
-        fetch('/api/auth/verify-key', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': apiKey
-          },
-          body: JSON.stringify({ apiKey: apiKey })
-        })
-        .then(() => console.log('Re-authenticated after navigation'));
-      }
-      return result;
-    };
-
-    // Also handle browser back/forward buttons
-    window.addEventListener('popstate', function() {
-      const apiKey = localStorage.getItem('apiKey');
-      if (apiKey) {
-        fetch('/api/auth/verify-key', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': apiKey
-          },
-          body: JSON.stringify({ apiKey: apiKey })
-        })
-        .then(() => console.log('Re-authenticated after popstate'));
-      }
-    });
-
-    console.log('Enhanced authentication system applied');
-  })();
-</script>`;
-
-  // Add the script right before the closing body tag
-  const modifiedHtml = cleanedHtml.replace('</body>', `${authScript}\n</body>`);
-
-  // Write the changes back to the file
-  fs.writeFileSync(htmlPath, modifiedHtml, 'utf8');
-  console.log('Enhanced authentication script added to index.html');
-} catch (error) {
-  console.error('Error updating index.html:', error);
+server {
+    listen 80;
+    listen [::]:80;
+    server_name views.yoyoprime.com;
+    
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 EOF
 
-# Create a second fix to update the auth API to handle the refresh case better
-cat > $APP_DIR/fix-auth-routes.cjs << 'EOF'
-const fs = require('fs');
-const path = require('path');
+# Reload Nginx
+echo "4. Reloading Nginx..."
+nginx -t && systemctl reload nginx
 
-// Path to the auth routes file
-const routesFilePath = path.join(__dirname, 'server/auth/routes.ts');
-
-try {
-  // Read the routes file
-  const routesFile = fs.readFileSync(routesFilePath, 'utf8');
-
-  // Create a new routes file with improved handling
-  const newRoutesFile = `import express, { Request, Response } from 'express';
-import { validateApiKey, corsMiddleware } from './middleware';
-import { log } from '../utils/logger';
-
-export function registerAuthRoutes(app: express.Application) {
-  // Apply CORS middleware to auth routes
-  app.use('/api/auth', corsMiddleware);
-
-  // Route to check if user is authenticated
-  app.get('/api/auth/status', (req: Request, res: Response) => {
-    const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-    const authenticated = !!apiKey && validateApiKey(apiKey.toString());
-    res.json({ authenticated });
-  });
-
-  // Verify API key with enhanced session persistence
-  app.post('/api/auth/verify-key', (req: Request, res: Response) => {
-    // Check for API key in request body, headers, or query
-    const apiKey = req.body?.apiKey || req.headers['x-api-key'] || req.query.apiKey;
-
-    if (!apiKey) {
-      return res.status(400).json({ message: 'API key is required' });
-    }
-
-    if (validateApiKey(apiKey.toString())) {
-      log('API key verification successful', 'auth');
-
-      // Always return success for valid API key
-      return res.json({ 
-        message: 'API key verified', 
-        authenticated: true 
-      });
-    }
-
-    log(\`Invalid API key attempt: \${apiKey}\`, 'auth');
-    res.status(401).json({ message: 'Invalid API key', authenticated: false });
-  });
-}`;
-
-  // Write the changes back to the file
-  fs.writeFileSync(routesFilePath, newRoutesFile, 'utf8');
-  console.log('Enhanced auth routes to better handle refreshes');
-} catch (error) {
-  console.error('Error updating auth routes:', error);
-}
-EOF
-
-echo "2. Running the enhanced auth scripts..."
-# Execute the fix scripts
-node $APP_DIR/fix-refresh.cjs
-node $APP_DIR/fix-auth-routes.cjs
-
-echo "3. Rebuilding and restarting the application..."
-# Rebuild and restart application
-npm run build
-pm2 restart url-campaign
-
-echo "====== Fix Complete ======"
-echo "Your application should now persist authentication through page refreshes"
-echo "This fix specifically handles the browser refresh issue"
+echo "===== Fix Complete ====="
+echo "The website is now serving a static placeholder page to stop the refresh loop."
+echo "Next steps:"
+echo "1. Check the application logs to identify the exact refresh loop issue"
+echo "2. Fix the application code"
+echo "3. Once fixed, revert to normal operation"
 echo "==============================="
