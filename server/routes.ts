@@ -75,101 +75,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
       console.log(`Requested new original click value: ${original_click_limit}`);
       
-      // Start a transaction
-      await db.execute('BEGIN');
+      // First get the current URL details to check if there's a multiplier in effect
+      const urlDetails = await db.execute(`
+        SELECT id, name, original_click_limit, click_limit
+        FROM urls
+        WHERE id = $1
+      `, [id]);
       
-      try {
-        // We'll use a different approach to track this as an intentional update
-        
-        // First get the current URL details to check if there's a multiplier in effect
-        const urlDetails = await db.execute(`
-          SELECT id, name, original_click_limit, click_limit
-          FROM urls
-          WHERE id = $1::int
-        `, [id]);
-        
-        if (!urlDetails.rows || urlDetails.rows.length === 0) {
-          await db.execute("ROLLBACK");
-          return res.status(404).json({ message: "URL not found" });
-        }
-        
-        const currentUrl = urlDetails.rows[0];
-        const currentOriginalClickLimit = parseInt(currentUrl.original_click_limit);
-        const currentClickLimit = parseInt(currentUrl.click_limit);
-        
-        console.log(`Current URL state: 
-        - ID: ${currentUrl.id}
-        - Name: ${currentUrl.name}
-        - Original click limit: ${currentOriginalClickLimit}
-        - Current click limit: ${currentClickLimit}`);
-        
-        // Check if there's a multiplier in effect
-        let multiplier = 1;
-        if (currentOriginalClickLimit > 0 && currentClickLimit > currentOriginalClickLimit) {
-          multiplier = currentClickLimit / currentOriginalClickLimit;
-          console.log(`Raw multiplier calculation: ${currentClickLimit} / ${currentOriginalClickLimit} = ${multiplier}`);
-          
-          // Round to the nearest whole number for cleaner values
-          multiplier = Math.round(multiplier);
-          console.log(`Detected multiplier: ${multiplier}x (rounded from ${currentClickLimit / currentOriginalClickLimit})`);
-        }
-        
-        // Apply the new original click limit AND preserve the multiplier ratio
-        // Important: We're only updating the click_limit with the multiplier - we should NOT apply the multiplier to original_click_limit
-        const newClickLimit = original_click_limit * multiplier;
-        
-        console.log(`UPDATE CALCULATION:
-        - New original click limit: ${original_click_limit}
-        - Multiplier: ${multiplier}x 
-        - New click limit: ${original_click_limit} × ${multiplier} = ${newClickLimit}`);
-        console.log(`Click limit is changing from ${currentClickLimit} to ${newClickLimit}`);
-        
-        
-        // Update the original_click_limit and click_limit (with multiplier) in the URLs table
-        const updateResult = await db.execute(`
-          UPDATE urls
-          SET original_click_limit = $1,
-              click_limit = $2,
-              updated_at = NOW()
-          WHERE id = $3
-          RETURNING id, name, original_click_limit, click_limit
-        `, [original_click_limit, newClickLimit, parseInt(id)]);
-        
-        if (!updateResult || !updateResult.rows || updateResult.rows.length === 0) {
-          // Rollback if update failed
-          await db.execute("ROLLBACK");
-          return res.status(404).json({ message: "URL not found" });
-        }
-        
-        // No need to reset the context flag since we're not using it anymore
-        
-        // Commit the transaction
-        await db.execute("COMMIT");
-        
-        // Return the updated URL
-        res.json({
-          message: "Original click value updated successfully",
-          url: updateResult.rows[0]
-        });
-      } catch (innerError) {
-        // Rollback in case of any error
-        await db.execute("ROLLBACK");
-        throw innerError;
+      if (!urlDetails.rows || urlDetails.rows.length === 0) {
+        return res.status(404).json({ message: "URL not found" });
       }
+      
+      const currentUrl = urlDetails.rows[0];
+      const currentOriginalClickLimit = parseInt(currentUrl.original_click_limit);
+      const currentClickLimit = parseInt(currentUrl.click_limit);
+      
+      console.log(`Current URL state: 
+      - ID: ${currentUrl.id}
+      - Name: ${currentUrl.name}
+      - Original click limit: ${currentOriginalClickLimit}
+      - Current click limit: ${currentClickLimit}`);
+      
+      // Check if there's a multiplier in effect
+      let multiplier = 1;
+      if (currentOriginalClickLimit > 0 && currentClickLimit > currentOriginalClickLimit) {
+        multiplier = currentClickLimit / currentOriginalClickLimit;
+        console.log(`Raw multiplier calculation: ${currentClickLimit} / ${currentOriginalClickLimit} = ${multiplier}`);
+        
+        // Round to the nearest whole number for cleaner values
+        multiplier = Math.round(multiplier);
+        console.log(`Detected multiplier: ${multiplier}x (rounded from ${currentClickLimit / currentOriginalClickLimit})`);
+      }
+      
+      // Apply the new original click limit AND preserve the multiplier ratio
+      // Important: We're only updating the click_limit with the multiplier - we should NOT apply the multiplier to original_click_limit
+      const newClickLimit = original_click_limit * multiplier;
+      
+      console.log(`UPDATE CALCULATION:
+      - New original click limit: ${original_click_limit}
+      - Multiplier: ${multiplier}x 
+      - New click limit: ${original_click_limit} × ${multiplier} = ${newClickLimit}`);
+      console.log(`Click limit is changing from ${currentClickLimit} to ${newClickLimit}`);
+      
+      // Temporarily disable click protection
+      await db.execute(`
+        UPDATE protection_settings
+        SET value = FALSE
+        WHERE key = 'click_protection_enabled'
+      `);
+      
+      // Update the original_click_limit and click_limit (with multiplier) in the URLs table
+      const updateResult = await db.execute(`
+        UPDATE urls
+        SET original_click_limit = $1,
+            click_limit = $2,
+            updated_at = NOW()
+        WHERE id = $3
+        RETURNING id, name, original_click_limit, click_limit
+      `, [original_click_limit, newClickLimit, id]);
+      
+      // Re-enable click protection 
+      await db.execute(`
+        UPDATE protection_settings
+        SET value = TRUE
+        WHERE key = 'click_protection_enabled'
+      `);
+      
+      if (!updateResult.rows || updateResult.rows.length === 0) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Return the updated URL
+      res.json({
+        message: "Original click value updated successfully",
+        url: updateResult.rows[0]
+      });
     } catch (error) {
-        // Rollback in case the first transaction was started
-        try {
-          await db.execute("ROLLBACK");
-        } catch (rollbackErr) {
-          console.error("Error during rollback:", rollbackErr);
-        }
-        
-        console.error("Error updating original click value:", error);
-        res.status(500).json({ 
-          message: "Failed to update original click value", 
-          error: error instanceof Error ? error.message : String(error) 
-        });
+      console.error("Error updating original click value:", error);
+      
+      // Make sure protection is re-enabled in case of error
+      try {
+        await db.execute(`
+          UPDATE protection_settings
+          SET value = TRUE
+          WHERE key = 'click_protection_enabled'
+        `);
+      } catch (settingError) {
+        console.error("Error re-enabling click protection:", settingError);
       }
+      
+      res.status(500).json({ 
+        message: "Failed to update original click value", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
   });
   
   // API route to apply click protection
