@@ -85,6 +85,16 @@ export default function OriginalClicksPage() {
       return;
     }
     
+    // Don't allow negative or zero values
+    if (parseInt(newClickValue) <= 0) {
+      toast({
+        title: "Invalid Input",
+        description: "Click value must be greater than zero",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsConfirmOpen(true);
   };
 
@@ -242,8 +252,8 @@ export default function OriginalClicksPage() {
           <DialogHeader>
             <DialogTitle>Confirm Update</DialogTitle>
             <DialogDescription>
-              Are you sure you want to change the original click value from {editableItem?.original_click_limit} to {newClickValue}?
-              This will update all instances of this URL across all campaigns.
+              Are you sure you want to change the original click value from {editableItem?.original_click_limit.toLocaleString()} to {parseInt(newClickValue).toLocaleString()}?
+              This will update all instances of this URL across all campaigns and preserve any multipliers currently in effect.
             </DialogDescription>
           </DialogHeader>
           

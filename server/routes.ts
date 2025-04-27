@@ -79,15 +79,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Set the context flag to indicate this is an intentional update from our API
         await db.execute(`SELECT set_config('app.original_click_update', 'true', FALSE)`);
         
-        // Update the original_click_limit in the URLs table
+        // First get the current URL details to check if there's a multiplier in effect
+        const urlDetails = await db.execute(`
+          SELECT id, name, original_click_limit, click_limit
+          FROM urls
+          WHERE id = $1
+        `, [parseInt(id)]);
+        
+        if (!urlDetails.rows || urlDetails.rows.length === 0) {
+          await db.execute("ROLLBACK");
+          return res.status(404).json({ message: "URL not found" });
+        }
+        
+        const currentUrl = urlDetails.rows[0];
+        const currentOriginalClickLimit = parseInt(currentUrl.original_click_limit);
+        const currentClickLimit = parseInt(currentUrl.click_limit);
+        
+        // Check if there's a multiplier in effect
+        let multiplier = 1;
+        if (currentOriginalClickLimit > 0 && currentClickLimit > currentOriginalClickLimit) {
+          multiplier = Math.round(currentClickLimit / currentOriginalClickLimit);
+        }
+        
+        console.log(`Updating URL ${id} original click value from ${currentOriginalClickLimit} to ${original_click_limit} with multiplier: ${multiplier}`);
+        
+        // Apply the new original click limit AND preserve the multiplier ratio
+        const newClickLimit = original_click_limit * multiplier;
+        
+        // Update the original_click_limit and click_limit (with multiplier) in the URLs table
         const updateResult = await db.execute(`
           UPDATE urls
           SET original_click_limit = $1,
-              click_limit = $1,
+              click_limit = $2,
               updated_at = NOW()
-          WHERE id = $2
+          WHERE id = $3
           RETURNING id, name, original_click_limit, click_limit
-        `, [original_click_limit, id]);
+        `, [original_click_limit, newClickLimit, parseInt(id)]);
         
         if (!updateResult || !updateResult.rows || updateResult.rows.length === 0) {
           // Rollback if update failed
