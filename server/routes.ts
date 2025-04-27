@@ -2350,11 +2350,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetUpdateTimeMigrationNeeded = await isBudgetUpdateTimeMigrationNeeded();
       const trafficStarFieldsMigrationNeeded = await isTrafficStarFieldsMigrationNeeded();
       
+      // Check if the original_url_records table exists
+      const originalUrlRecordsTableResult = await db.execute(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'original_url_records'
+        ) as exists;
+      `);
+      
+      const originalUrlRecordsTableExists = originalUrlRecordsTableResult[0]?.exists === true || 
+                                           originalUrlRecordsTableResult[0]?.exists === 't';
+      
       // Return migration status
       res.status(200).json({
         budgetUpdateTimeMigrationNeeded,
         trafficStarFieldsMigrationNeeded,
-        migrationNeeded: budgetUpdateTimeMigrationNeeded || trafficStarFieldsMigrationNeeded,
+        originalUrlRecordsTableExists,
+        migrationNeeded: budgetUpdateTimeMigrationNeeded || trafficStarFieldsMigrationNeeded || !originalUrlRecordsTableExists,
         message: "Migration status checked successfully"
       });
     } catch (error) {
@@ -2394,6 +2406,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to add budget update time field:", error);
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
+    }
+  });
+  
+  // Database migration - add original URL records table
+  app.post("/api/system/migrate-original-url-records", async (_req: Request, res: Response) => {
+    try {
+      console.log("Applying original URL records migration...");
+      
+      // Read the migration file
+      const fs = require('fs');
+      const path = require('path');
+      const migrationPath = path.join(process.cwd(), 'migrations', 'original_url_records.sql');
+      
+      if (!fs.existsSync(migrationPath)) {
+        return res.status(404).json({ 
+          success: false,
+          message: "Migration file not found"
+        });
+      }
+      
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      
+      // Execute the migration
+      await db.execute(migrationSQL);
+      
+      // Verify the table was created
+      const tableCheck = await db.execute(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'original_url_records'
+        ) as exists;
+      `);
+      
+      const tableExists = tableCheck[0]?.exists === true || tableCheck[0]?.exists === 't';
+      
+      if (tableExists) {
+        // Populate the original_url_records table with existing URL data
+        const populateResult = await db.execute(`
+          INSERT INTO original_url_records (name, target_url, original_click_limit, created_at, updated_at)
+          SELECT DISTINCT
+            name, 
+            target_url, 
+            COALESCE(original_click_limit, click_limit) as original_click_limit,
+            created_at,
+            updated_at
+          FROM urls
+          ON CONFLICT (name) DO NOTHING
+        `);
+        
+        console.log("✅ Original URL records migration and data population successful");
+        return res.json({
+          success: true,
+          message: "Original URL records migration applied successfully",
+          tableCreated: true,
+          recordsPopulated: true
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: "Migration failed - table not created"
+        });
+      }
+    } catch (error) {
+      console.error("Error applying original URL records migration:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to apply migration", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
   
