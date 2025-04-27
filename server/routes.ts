@@ -72,15 +72,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid original click limit value" });
       }
       
+      console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
+      console.log(`Requested new original click value: ${original_click_limit}`);
+      
       // Start a transaction
-      await db.execute("BEGIN");
+      await db.execute('BEGIN');
       
       try {
-        console.log(`=== STARTING ORIGINAL CLICK VALUE UPDATE FOR URL ${id} ===`);
-        console.log(`Requested new original click value: ${original_click_limit}`);
-        
         // Set the context flag to indicate this is an intentional update from our API
-        await db.execute(`SELECT set_config($1, $2, $3)`, ['app.original_click_update', 'true', false]);
+        // Use a direct string instead of parameters for this query
+        await db.execute(`SET LOCAL app.original_click_update = 'true'`);
         
         // First get the current URL details to check if there's a multiplier in effect
         const urlDetails = await db.execute(`
@@ -143,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Reset the context flag after we're done
-        await db.execute(`SELECT set_config($1, $2, $3)`, ['app.original_click_update', 'false', false]);
+        await db.execute(`SET LOCAL app.original_click_update = 'false'`);
         
         // Commit the transaction
         await db.execute("COMMIT");
@@ -159,12 +160,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw innerError;
       }
     } catch (error) {
-      console.error("Error updating original click value:", error);
-      res.status(500).json({ 
-        message: "Failed to update original click value", 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-    }
+        // Rollback in case the first transaction was started
+        try {
+          await db.execute("ROLLBACK");
+        } catch (rollbackErr) {
+          console.error("Error during rollback:", rollbackErr);
+        }
+        
+        console.error("Error updating original click value:", error);
+        res.status(500).json({ 
+          message: "Failed to update original click value", 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
   });
   
   // API route to apply click protection
