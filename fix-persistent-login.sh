@@ -15,7 +15,7 @@ cat > $APP_DIR/dist/public/auth-guard.js << 'EOF'
 // Improved Auth Guard - runs immediately
 (function() {
   console.log("Auth guard running");
-  
+
   // Check if user is authenticated
   function isAuthenticated() {
     try {
@@ -26,17 +26,17 @@ cat > $APP_DIR/dist/public/auth-guard.js << 'EOF'
       return false;
     }
   }
-  
+
   // Redirect to login if not authenticated
   if (!isAuthenticated()) {
     console.log("Not authenticated, redirecting to login");
     window.location.replace('/login');
   } else {
     console.log("User is authenticated");
-    
+
     // Set up request interceptors to add API key
     const apiKey = 'TraffiCS10928';
-    
+
     // Intercept XMLHttpRequest
     const originalXHROpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function() {
@@ -44,7 +44,7 @@ cat > $APP_DIR/dist/public/auth-guard.js << 'EOF'
       this.setRequestHeader('X-API-Key', apiKey);
       return result;
     };
-    
+
     // Intercept fetch
     const originalFetch = window.fetch;
     window.fetch = function(url, options = {}) {
@@ -167,19 +167,19 @@ cat > $APP_DIR/dist/public/login/index.html << 'EOF'
     <script>
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const apiKey = document.getElementById('api-key').value;
             const errorElement = document.getElementById('error-message');
-            
+
             if (apiKey === 'TraffiCS10928') {
                 try {
                     // Store API key in localStorage
                     localStorage.setItem('apiKey', apiKey);
                     console.log("API key stored successfully");
-                    
+
                     // Set a cookie as backup
                     document.cookie = "apiKey=" + apiKey + "; path=/; max-age=31536000";
-                    
+
                     // Redirect to home page
                     window.location.replace('/');
                 } catch (e) {
@@ -208,13 +208,13 @@ try {
   const indexPath = path.join(__dirname, 'dist/public/index.html');
   if (fs.existsSync(indexPath)) {
     let html = fs.readFileSync(indexPath, 'utf8');
-    
+
     // Remove any existing script tags for auth-guard to avoid duplicates
     html = html.replace(/<script src="\/auth-guard.js"><\/script>/g, '');
-    
+
     // Add auth-guard script at the top of head for early execution
     html = html.replace('<head>', '<head>\n<script src="/auth-guard.js"></script>');
-    
+
     fs.writeFileSync(indexPath, html);
     console.log('Updated index.html to include auth-guard at the top');
   } else {
@@ -239,15 +239,15 @@ cat > $APP_DIR/dist/public/test-storage.html << 'EOF'
 <body>
   <h1>LocalStorage Test</h1>
   <div id="result"></div>
-  
+
   <script>
     try {
       // Test writing to localStorage
       localStorage.setItem('test', 'working');
-      
+
       // Read it back
       const value = localStorage.getItem('test');
-      
+
       document.getElementById('result').innerHTML = 
         `<p>LocalStorage Test: ${value === 'working' ? 'PASSED' : 'FAILED'}</p>
          <p>Value read: ${value}</p>
