@@ -84,12 +84,12 @@ cat > /var/www/login-page/index.html << 'EOF'
       if (parts.length === 2) return parts.pop().split(';').shift();
       return null;
     }
-    
+
     // If already authenticated, go to app
     if (getCookie('auth_key') === 'TraffiCS10928') {
       window.location.href = '/app/';
     }
-    
+
     function login() {
       const key = document.getElementById('apikey').value;
       if (key === 'TraffiCS10928') {
@@ -118,7 +118,7 @@ cat > /var/www/auth-scripts/add-key.js << 'EOF'
     this.setRequestHeader('X-API-Key', 'TraffiCS10928');
     return result;
   };
-  
+
   // Add to fetch
   const originalFetch = window.fetch;
   window.fetch = function(url, options = {}) {
@@ -143,33 +143,33 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name views.yoyoprime.com;
-    
+
     # SSL Certificate Files
     ssl_certificate /etc/letsencrypt/live/views.yoyoprime.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/views.yoyoprime.com/privkey.pem;
-    
+
     # Login page - direct access
     location = /login {
         alias /var/www/login-page;
         index index.html;
         try_files $uri $uri/ /index.html;
     }
-    
+
     # Serve the auth scripts
     location /auth/ {
         alias /var/www/auth-scripts/;
     }
-    
+
     # API routes - pass through requests but add API key header
     location /api/ {
         # If no auth cookie, redirect to login
         if ($is_authenticated = 0) {
             return 302 /login;
         }
-        
+
         # Add the API key header
         proxy_set_header X-API-Key "TraffiCS10928";
-        
+
         # Standard proxy settings
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
@@ -181,18 +181,18 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
-    
+
     # App routes - check for auth cookie and inject API key script
     location /app/ {
         # If no auth cookie, redirect to login
         if ($is_authenticated = 0) {
             return 302 /login;
         }
-        
+
         # Modify responses to inject our API key script
         sub_filter '</head>' '<script src="/auth/add-key.js"></script></head>';
         sub_filter_once on;
-        
+
         # Remove /app/ prefix and proxy to backend
         rewrite ^/app/(.*)$ /$1 break;
         proxy_pass http://localhost:5000;
@@ -205,7 +205,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
-    
+
     # Root redirects to app or login depending on auth
     location = / {
         if ($is_authenticated = 0) {
@@ -213,13 +213,13 @@ server {
         }
         return 302 /app/;
     }
-    
+
     # All other paths require auth
     location / {
         if ($is_authenticated = 0) {
             return 302 /login;
         }
-        
+
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -236,7 +236,7 @@ server {
     listen 80;
     listen [::]:80;
     server_name views.yoyoprime.com;
-    
+
     location / {
         return 301 https://$host$request_uri;
     }
