@@ -2414,23 +2414,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Applying original URL records migration...");
       
-      // Read the migration file
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const migrationPath = path.join(process.cwd(), 'migrations', 'original_url_records.sql');
-      
-      let migrationSQL;
       try {
-        migrationSQL = await fs.readFile(migrationPath, 'utf8');
+        // Step 1: Create the original_url_records table
+        console.log("Step 1: Creating original_url_records table");
+        await db.execute(`
+          CREATE TABLE IF NOT EXISTS original_url_records (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            target_url TEXT NOT NULL,
+            original_click_limit INTEGER NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+          )
+        `);
+        
+        // Step 2: Create index
+        console.log("Step 2: Creating index");
+        await db.execute(`
+          CREATE INDEX IF NOT EXISTS original_url_records_name_idx ON original_url_records (name)
+        `);
+        
+        // Step 3: Create updated_at trigger function
+        console.log("Step 3: Creating trigger function");
+        await db.execute(`
+          CREATE OR REPLACE FUNCTION update_original_url_records_updated_at()
+          RETURNS TRIGGER AS $$
+          BEGIN
+            NEW.updated_at = NOW();
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql
+        `);
+        
+        // Step 4: Create the trigger 
+        console.log("Step 4: Creating trigger");
+        await db.execute(`
+          DROP TRIGGER IF EXISTS update_original_url_records_trigger ON original_url_records
+        `);
+        
+        await db.execute(`
+          CREATE TRIGGER update_original_url_records_trigger
+          BEFORE UPDATE ON original_url_records
+          FOR EACH ROW
+          EXECUTE FUNCTION update_original_url_records_updated_at()
+        `);
       } catch (err) {
-        return res.status(404).json({ 
-          success: false,
-          message: "Migration file not found"
-        });
+        console.error("Error in migration steps:", err);
+        throw err;
       }
       
-      // Execute the migration
-      await db.execute(migrationSQL);
+      // Migration execution step-by-step (already done above)
       
       // Verify the table was created
       const tableCheck = await db.execute(`
