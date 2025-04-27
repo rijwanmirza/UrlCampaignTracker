@@ -80,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Requested new original click value: ${original_click_limit}`);
         
         // Set the context flag to indicate this is an intentional update from our API
-        await db.execute(`SELECT set_config('app.original_click_update', 'true', FALSE)`);
+        await db.execute(`SELECT set_config($1, $2, $3)`, ['app.original_click_update', 'true', false]);
         
         // First get the current URL details to check if there's a multiplier in effect
         const urlDetails = await db.execute(`
@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Reset the context flag after we're done
-        await db.execute(`SELECT set_config('app.original_click_update', 'false', FALSE)`);
+        await db.execute(`SELECT set_config($1, $2, $3)`, ['app.original_click_update', 'false', false]);
         
         // Commit the transaction
         await db.execute("COMMIT");
