@@ -49,8 +49,7 @@ export async function getServerStats(): Promise<ServerStats> {
     // Get CPU details
     let cpuInfo;
     try {
-      // Always try the OS module first in Replit environment
-      const os = require('os');
+      // Use the already imported os module
       console.log("OS module CPU info:", JSON.stringify({
         cpus: os.cpus(),
         cpuCount: os.cpus().length,
@@ -111,7 +110,7 @@ export async function getServerStats(): Promise<ServerStats> {
     const uptime = await si.time();
     const loadavg = await si.currentLoad();
     console.log("Load average data:", JSON.stringify(loadavg, null, 2));
-    console.log("OS load averages:", await si.osInfo().then(os => os.platform), require('os').loadavg());
+    console.log("OS load averages:", await si.osInfo().then(os => os.platform), os.loadavg());
     
     // Calculate memory usage percentage
     const memoryUsagePercent = (memory.total - memory.available) / memory.total * 100;
@@ -124,13 +123,13 @@ export async function getServerStats(): Promise<ServerStats> {
       console.log("========== SYSTEM LOAD CALCULATION ==========");
       
       // Get load average from OS
-      const osLoadAvg = require('os').loadavg();
+      const osLoadAvg = os.loadavg();
       console.log("Raw OS load averages:", JSON.stringify(osLoadAvg));
       const oneMinLoad = osLoadAvg[0] || 0;
       console.log("Using 1-minute load average:", oneMinLoad);
       
       // Get CPU information 
-      const cpuInfoRaw = require('os').cpus();
+      const cpuInfoRaw = os.cpus();
       console.log("CPU Info raw length:", cpuInfoRaw.length);
       const numCPUs = cpuInfoRaw.length || 1;
       console.log("Number of CPUs detected:", numCPUs);
@@ -220,7 +219,7 @@ export async function getServerStats(): Promise<ServerStats> {
       },
       timestamp: new Date(),
       uptime: uptime.uptime,
-      loadAverage: require('os').loadavg() || (loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100]),
+      loadAverage: os.loadavg() || (loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100]),
       systemLoad: systemLoad
     };
     
