@@ -1,4 +1,5 @@
 import si from 'systeminformation';
+import * as os from 'os';
 
 // Interface for server stats
 export interface ServerStats {
