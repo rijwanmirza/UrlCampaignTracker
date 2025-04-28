@@ -5,6 +5,7 @@ import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
+import analyticsRoutes from './routes/analytics';
 import { 
   optimizeResponseHeaders,
   ultraFastMetaRefresh,
@@ -3901,6 +3902,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
   // We'll handle the HTTP/2.0 headers in the individual route handlers
+  
+  // Register analytics routes
+  app.use(analyticsRoutes);
   
   // Initialize server monitoring
   initServerMonitor();
