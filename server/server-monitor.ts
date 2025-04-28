@@ -137,19 +137,23 @@ export async function getServerStats(): Promise<ServerStats> {
       systemLoad = Math.min(Math.round(cpu.currentLoad), 100);
     }
     
-    // Create stats object
+    // Create stats object with hard-coded values for CPU to avoid nulls
+    const cpuDetails = {
+      manufacturer: cpuInfo.manufacturer || 'Replit',
+      brand: cpuInfo.brand || 'Replit Virtual CPU',
+      speed: cpuInfo.speed || 2.8, // Default to 2.8 GHz if unknown
+      cores: cpuInfo.cores || 4,   // Default to 4 logical cores
+      physicalCores: cpuInfo.physicalCores || 2 // Default to 2 physical cores
+    };
+    
+    console.log("Final CPU details being set:", JSON.stringify(cpuDetails, null, 2));
+    
     const stats: ServerStats = {
       cpuUsage: parseFloat(cpu.currentLoad.toFixed(2)),
       memoryUsage: parseFloat(memoryUsagePercent.toFixed(2)),
       memoryTotal: memory.total,
       memoryFree: memory.available,
-      cpuDetails: {
-        manufacturer: cpuInfo.manufacturer || 'Replit',
-        brand: cpuInfo.brand || 'Replit Virtual CPU',
-        speed: cpuInfo.speed || 2.8, // Default to 2.8 GHz if unknown
-        cores: cpuInfo.cores || 4,   // Default to 4 logical cores
-        physicalCores: cpuInfo.physicalCores || 2 // Default to 2 physical cores
-      },
+      cpuDetails: cpuDetails,
       networkStats: {
         rx_sec: networkStats.reduce((sum, interface_) => sum + interface_.rx_sec, 0),
         tx_sec: networkStats.reduce((sum, interface_) => sum + interface_.tx_sec, 0),
