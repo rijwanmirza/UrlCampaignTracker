@@ -46,8 +46,40 @@ export async function getServerStats(): Promise<ServerStats> {
     const cpu = await si.currentLoad();
     
     // Get CPU details
-    const cpuInfo = await si.cpu();
-    console.log("CPU Info from systeminformation:", JSON.stringify(cpuInfo, null, 2));
+    let cpuInfo;
+    try {
+      cpuInfo = await si.cpu();
+      console.log("CPU Info from systeminformation:", JSON.stringify(cpuInfo, null, 2));
+    } catch (err) {
+      console.error("Error fetching CPU info from systeminformation:", err);
+      
+      // Fallback to OS module
+      try {
+        const os = require('os');
+        const cpuModel = os.cpus()[0]?.model || 'Unknown CPU';
+        const cpuCount = os.cpus().length;
+        const cpuSpeed = os.cpus()[0]?.speed || 0;
+        
+        cpuInfo = {
+          manufacturer: cpuModel.split(' ')[0] || 'Unknown',
+          brand: cpuModel,
+          speed: cpuSpeed / 1000, // Convert to GHz
+          cores: cpuCount,
+          physicalCores: Math.ceil(cpuCount / 2) // Estimate physical cores
+        };
+        
+        console.log("Using fallback CPU info from OS module:", JSON.stringify(cpuInfo, null, 2));
+      } catch (osErr) {
+        console.error("Error in fallback CPU info:", osErr);
+        cpuInfo = {
+          manufacturer: 'Unknown',
+          brand: 'Unknown CPU',
+          speed: 0,
+          cores: 0,
+          physicalCores: 0
+        };
+      }
+    }
     
     // Get memory usage
     const memory = await si.mem();
@@ -68,7 +100,24 @@ export async function getServerStats(): Promise<ServerStats> {
     // Calculate overall system load
     // This gives us a percentage representation of total system load (0-100%)
     // From CPU load, processes, IO operations, etc.
-    const systemLoad = Math.min(Math.round((loadavg.avgLoad || cpu.currentLoad / 100) * 100), 100);
+    let systemLoad = 0;
+    try {
+      // Get load average from OS or systeminformation
+      const osLoadAvg = require('os').loadavg()[0];
+      const numCPUs = require('os').cpus().length || 1;
+      // Convert load average to percentage (normalized by CPU count)
+      systemLoad = Math.min(Math.round((osLoadAvg / numCPUs) * 100), 100);
+      
+      // Fallback to loadavg.avgLoad or cpu.currentLoad if available
+      if (isNaN(systemLoad) && loadavg.avgLoad) {
+        systemLoad = Math.min(Math.round(loadavg.avgLoad * 100), 100);
+      } else if (isNaN(systemLoad)) {
+        systemLoad = Math.min(Math.round(cpu.currentLoad), 100);
+      }
+    } catch (err) {
+      console.error("Error calculating system load:", err);
+      systemLoad = Math.min(Math.round(cpu.currentLoad), 100);
+    }
     
     // Create stats object
     const stats: ServerStats = {
@@ -90,7 +139,7 @@ export async function getServerStats(): Promise<ServerStats> {
       },
       timestamp: new Date(),
       uptime: uptime.uptime,
-      loadAverage: loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100],
+      loadAverage: require('os').loadavg() || (loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100]),
       systemLoad: systemLoad
     };
     
