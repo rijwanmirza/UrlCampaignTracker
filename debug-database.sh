@@ -44,17 +44,17 @@ async function testConnection() {
   try {
     console.log("Testing database connection...");
     console.log("DATABASE_URL:", process.env.DATABASE_URL);
-    
+
     const client = await pool.connect();
     console.log("✅ Connection successful!");
-    
+
     try {
       const res = await client.query('SELECT NOW()');
       console.log("Query result:", res.rows[0]);
-      
+
       // Check if tables exist and their structure
       console.log("\nChecking tables...");
-      
+
       const campaignsResult = await client.query(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
@@ -63,7 +63,7 @@ async function testConnection() {
         );
       `);
       console.log("Campaigns table exists:", campaignsResult.rows[0].exists);
-      
+
       const urlsResult = await client.query(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
@@ -72,7 +72,7 @@ async function testConnection() {
         );
       `);
       console.log("URLs table exists:", urlsResult.rows[0].exists);
-      
+
       const originalUrlsResult = await client.query(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
@@ -81,7 +81,7 @@ async function testConnection() {
         );
       `);
       console.log("Original URL Records table exists:", originalUrlsResult.rows[0].exists);
-      
+
       if (campaignsResult.rows[0].exists) {
         const campaignsColumns = await client.query(`
           SELECT column_name, data_type 
@@ -93,11 +93,11 @@ async function testConnection() {
         campaignsColumns.rows.forEach(col => {
           console.log(`  - ${col.column_name}: ${col.data_type}`);
         });
-        
+
         const campaignsCount = await client.query('SELECT COUNT(*) FROM campaigns');
         console.log(`\nCampaigns count: ${campaignsCount.rows[0].count}`);
       }
-      
+
       if (urlsResult.rows[0].exists) {
         const urlsColumns = await client.query(`
           SELECT column_name, data_type 
@@ -109,7 +109,7 @@ async function testConnection() {
         urlsColumns.rows.forEach(col => {
           console.log(`  - ${col.column_name}: ${col.data_type}`);
         });
-        
+
         const urlsCount = await client.query('SELECT COUNT(*) FROM urls');
         console.log(`\nURLs count: ${urlsCount.rows[0].count}`);
       }
@@ -258,13 +258,13 @@ if psql -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDATABASE -c "SELECT 1" > /dev/nul
   echo "Database connection successful"
 else
   echo "Database connection failed! Troubleshooting..."
-  
+
   # Check if database exists
   if ! psql -h $PGHOST -p $PGPORT -U $PGUSER -lqt | cut -d \| -f 1 | grep -qw $PGDATABASE; then
     echo "Database $PGDATABASE does not exist, creating it..."
     createdb -h $PGHOST -p $PGPORT -U $PGUSER $PGDATABASE
   fi
-  
+
   # Validate tables exist
   echo "Validating tables exist..."
   psql -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDATABASE -c "
@@ -337,7 +337,7 @@ cat > "/etc/nginx/sites-available/default" << 'EOF'
 server {
     listen 80;
     server_name views.yoyoprime.com;
-    
+
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
@@ -456,7 +456,7 @@ cat > "$APP_DIR/dist/public/login.html" << 'EOF'
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const apiKey = document.getElementById('apiKey').value;
-            
+
             // Store the API key in localStorage and redirect to home
             if (apiKey === 'TraffiCS10928') {
                 localStorage.setItem('apiKey', apiKey);
