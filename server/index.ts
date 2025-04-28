@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
-import { trafficstarService } from "./trafficstar-service";
+import { trafficStarService } from "./trafficstar-service";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import * as spdy from 'spdy';
@@ -157,7 +157,7 @@ app.use((req, res, next) => {
         
         // Start auto-management of TrafficStar campaigns
         try {
-          await trafficstarService.scheduleAutoManagement();
+          await trafficStarService.scheduleAutoManagement();
           log('TrafficStar campaign auto-management initialized successfully');
         } catch (autoManageError) {
           log(`Error initializing TrafficStar auto-management: ${autoManageError}`);

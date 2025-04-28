@@ -16,6 +16,7 @@ import {
   millionRequestsHttp2Redirect,
   optimizedDirectRedirect
 } from './high-performance-redirects';
+import { trafficStarService } from './trafficstar-service';
 import { 
   insertCampaignSchema, 
   insertUrlSchema, 
@@ -29,9 +30,8 @@ import {
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
-import { trafficstarService } from "./trafficstar-service";
 import { db } from "./db";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq, and, isNotNull, sql } from "drizzle-orm";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
