@@ -75,7 +75,7 @@ else
   echo -e "${RED}⚠️ Application failed to start${NC}"
   echo -e "${YELLOW}Checking logs...${NC}"
   tail -n 20 "$APP_DIR/app.log"
-  
+
   echo -e "${YELLOW}Trying alternative approach with PM2...${NC}"
   pm2 start "$APP_DIR/start.sh" --name url-campaign
   pm2 save
@@ -90,15 +90,15 @@ if [ $? -eq 0 ]; then
   echo -e "${GREEN}✓ Application is responding on port 80${NC}"
 else
   echo -e "${RED}⚠️ Application is not responding on port 80${NC}"
-  
+
   echo -e "${YELLOW}Trying to re-enable and configure Nginx...${NC}"
   systemctl enable nginx
-  
+
   cat > "$NGINX_CONF" << 'EOF'
 server {
     listen 80;
     server_name views.yoyoprime.com;
-    
+
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_set_header Host $host;
@@ -107,12 +107,12 @@ server {
     }
 }
 EOF
-  
+
   systemctl start nginx
-  
+
   echo -e "${YELLOW}Restarting application on port 5000...${NC}"
   kill $APP_PID 2>/dev/null
-  
+
   cat > "$APP_DIR/start-5000.sh" << 'EOF'
 #!/bin/bash
 cd /var/www/url-campaign
@@ -121,10 +121,10 @@ export HOST=0.0.0.0
 export NODE_ENV=production
 node dist/index.js
 EOF
-  
+
   chmod +x "$APP_DIR/start-5000.sh"
   nohup "$APP_DIR/start-5000.sh" > app-5000.log 2>&1 &
-  
+
   echo -e "${GREEN}✓ Application restarted on port 5000 with Nginx proxy${NC}"
 fi
 
