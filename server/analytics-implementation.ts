@@ -1,328 +1,475 @@
-// NOTE: This file contains the analytics implementation to be added to the storage.ts file
-// Copy these methods to the DatabaseStorage class in server/storage.ts
+import { IStorage } from './storage';
+import { AnalyticsFilter, AnalyticsResponse } from '@shared/schema';
+import { Pool } from 'pg';
+import { Request } from 'express';
 
-  /**
-   * Record a click in the analytics system
-   */
-  async recordClick(urlId: number, campaignId: number, data?: {
-    userAgent?: string;
-    ipAddress?: string;
-    referer?: string;
-    country?: string;
-    city?: string;
-    deviceType?: string;
-    browser?: string;
-    os?: string;
-  }): Promise<void> {
-    try {
-      const now = new Date();
-      
-      // Create record data
-      const recordData = {
-        urlId,
-        campaignId,
-        clickTime: now,
-        clickTimeUtc: now, // Store UTC timestamp for consistent querying
-        ...data
+// Helper function to get date range from time range
+export function getDateRangeFromTimeRange(timeRange: string, startDate?: string, endDate?: string): { start: Date, end: Date } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  switch (timeRange) {
+    case 'today':
+      return {
+        start: today,
+        end: now
       };
-      
-      // Insert into analytics table
-      await db.insert(clickAnalytics).values(recordData);
-    } catch (error) {
-      console.error('Error recording click for analytics:', error);
-      // Fail silently - don't disrupt the redirect process for analytics failures
+    case 'yesterday': {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayEnd = new Date(yesterday);
+      yesterdayEnd.setHours(23, 59, 59, 999);
+      return {
+        start: yesterday,
+        end: yesterdayEnd
+      };
     }
+    case 'last_2_days': {
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      return {
+        start: twoDaysAgo,
+        end: now
+      };
+    }
+    case 'last_3_days': {
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      return {
+        start: threeDaysAgo,
+        end: now
+      };
+    }
+    case 'last_7_days': {
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return {
+        start: sevenDaysAgo,
+        end: now
+      };
+    }
+    case 'this_week': {
+      const firstDayOfWeek = new Date(today);
+      const day = firstDayOfWeek.getDay() || 7; // Convert Sunday (0) to 7
+      firstDayOfWeek.setDate(firstDayOfWeek.getDate() - (day - 1)); // Get Monday
+      return {
+        start: firstDayOfWeek,
+        end: now
+      };
+    }
+    case 'last_week': {
+      const lastWeekMonday = new Date(today);
+      const day = lastWeekMonday.getDay() || 7; // Convert Sunday (0) to 7
+      lastWeekMonday.setDate(lastWeekMonday.getDate() - (day - 1) - 7); // Get last Monday
+      const lastWeekSunday = new Date(lastWeekMonday);
+      lastWeekSunday.setDate(lastWeekSunday.getDate() + 6);
+      lastWeekSunday.setHours(23, 59, 59, 999);
+      return {
+        start: lastWeekMonday,
+        end: lastWeekSunday
+      };
+    }
+    case 'this_month': {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        start: firstDayOfMonth,
+        end: now
+      };
+    }
+    case 'last_month': {
+      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      lastDayOfLastMonth.setHours(23, 59, 59, 999);
+      return {
+        start: firstDayOfLastMonth,
+        end: lastDayOfLastMonth
+      };
+    }
+    case 'last_6_months': {
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      return {
+        start: sixMonthsAgo,
+        end: now
+      };
+    }
+    case 'this_year': {
+      const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+      return {
+        start: firstDayOfYear,
+        end: now
+      };
+    }
+    case 'last_year': {
+      const firstDayOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+      const lastDayOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+      lastDayOfLastYear.setHours(23, 59, 59, 999);
+      return {
+        start: firstDayOfLastYear,
+        end: lastDayOfLastYear
+      };
+    }
+    case 'all_time': {
+      // Set a date far in the past for "all time"
+      const past = new Date(2020, 0, 1);
+      return {
+        start: past,
+        end: now
+      };
+    }
+    case 'custom': {
+      // If custom time range, use provided dates
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Set to end of day
+        return { start, end };
+      }
+      
+      // Default to last 7 days if custom but no dates provided
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return {
+        start: sevenDaysAgo,
+        end: now
+      };
+    }
+    default:
+      // Default to last 7 days
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return {
+        start: sevenDaysAgo,
+        end: now
+      };
+  }
+}
+
+// Extract client information from request
+export function extractClientInfo(req: Request): {
+  ipAddress: string;
+  userAgent: string;
+  referer: string;
+} {
+  // Get IP address with fallbacks for various proxy setups
+  const ipAddress = 
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || 
+    req.socket.remoteAddress || 
+    '';
+  
+  // Get user agent and referer
+  const userAgent = req.headers['user-agent'] || '';
+  const referer = req.headers.referer || '';
+  
+  return {
+    ipAddress,
+    userAgent,
+    referer
+  };
+}
+
+// Parse user agent string to get device information
+export function parseUserAgent(userAgent: string): {
+  deviceType: string;
+  browser: string;
+  operatingSystem: string;
+} {
+  let deviceType = 'Unknown';
+  let browser = 'Unknown';
+  let operatingSystem = 'Unknown';
+  
+  // Simple device type detection
+  if (/mobile|android|iphone|ipad|ipod|windows phone/i.test(userAgent)) {
+    deviceType = 'Mobile';
+  } else if (/tablet|ipad/i.test(userAgent)) {
+    deviceType = 'Tablet';
+  } else {
+    deviceType = 'Desktop';
   }
   
-  /**
-   * Get analytics data based on provided filters
-   */
-  async getAnalytics(filter: AnalyticsFilter): Promise<AnalyticsResponse> {
-    // Process time range
-    const { startDate, endDate } = this.getDateRangeFromFilter(filter);
+  // Simple browser detection
+  if (/chrome/i.test(userAgent) && !/edge|opr|edg/i.test(userAgent)) {
+    browser = 'Chrome';
+  } else if (/firefox/i.test(userAgent)) {
+    browser = 'Firefox';
+  } else if (/safari/i.test(userAgent) && !/chrome|chromium|edg/i.test(userAgent)) {
+    browser = 'Safari';
+  } else if (/edge|edg/i.test(userAgent)) {
+    browser = 'Edge';
+  } else if (/opr|opera/i.test(userAgent)) {
+    browser = 'Opera';
+  } else if (/msie|trident/i.test(userAgent)) {
+    browser = 'Internet Explorer';
+  }
+  
+  // Simple OS detection
+  if (/windows/i.test(userAgent)) {
+    operatingSystem = 'Windows';
+  } else if (/macintosh|mac os x/i.test(userAgent)) {
+    operatingSystem = 'macOS';
+  } else if (/linux/i.test(userAgent)) {
+    operatingSystem = 'Linux';
+  } else if (/android/i.test(userAgent)) {
+    operatingSystem = 'Android';
+  } else if (/iphone|ipad|ipod/i.test(userAgent)) {
+    operatingSystem = 'iOS';
+  }
+  
+  return {
+    deviceType,
+    browser,
+    operatingSystem
+  };
+}
+
+// Format period string based on grouping
+export function formatPeriod(date: Date, groupBy: string): string {
+  if (groupBy === 'hour') {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:00`;
+  } else if (groupBy === 'day') {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  } else if (groupBy === 'week') {
+    // Get the first day of the week (Monday)
+    const firstDayOfWeek = new Date(date);
+    const day = date.getDay() || 7; // Convert Sunday (0) to 7
+    firstDayOfWeek.setDate(date.getDate() - (day - 1));
+    return `Week of ${firstDayOfWeek.getFullYear()}-${String(firstDayOfWeek.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfWeek.getDate()).padStart(2, '0')}`;
+  } else if (groupBy === 'month') {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
+  
+  // Default to daily format
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Implementation for storage.getAnalytics method
+export async function getAnalyticsImpl(pool: Pool, filter: AnalyticsFilter): Promise<AnalyticsResponse> {
+  try {
+    // Get date range based on time range
+    const { start, end } = getDateRangeFromTimeRange(filter.timeRange, filter.startDate, filter.endDate);
     
-    // Get the resource name (campaign or URL)
     let resourceName = '';
+    let resourceType = filter.type;
+    let totalClicks = 0;
+    let timeseries: { period: string; clicks: number }[] = [];
+    
+    // Format date strings for SQL
+    const startStr = start.toISOString();
+    const endStr = end.toISOString();
+    
+    // Get resource name
     if (filter.type === 'campaign') {
-      const campaign = await this.getCampaign(filter.id);
-      resourceName = campaign?.name || `Campaign #${filter.id}`;
-    } else {
-      const url = await this.getUrl(filter.id);
-      resourceName = url?.name || `URL #${filter.id}`;
+      const campaignResult = await pool.query(
+        'SELECT name FROM campaigns WHERE id = $1',
+        [filter.id]
+      );
+      
+      if (campaignResult.rows.length > 0) {
+        resourceName = campaignResult.rows[0].name;
+      }
+      
+      // Get total clicks for the campaign in the time range
+      const totalClicksResult = await pool.query(
+        'SELECT COUNT(*) as count FROM click_analytics WHERE campaign_id = $1 AND timestamp >= $2 AND timestamp <= $3',
+        [filter.id, startStr, endStr]
+      );
+      
+      totalClicks = parseInt(totalClicksResult.rows[0].count, 10) || 0;
+      
+      // Get time series data grouped by the specified interval
+      let timeSeriesQuery = '';
+      const params = [filter.id, startStr, endStr];
+      
+      // Build query based on grouping
+      if (filter.groupBy === 'hour') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('hour', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE campaign_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      } else if (filter.groupBy === 'day') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('day', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE campaign_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      } else if (filter.groupBy === 'week') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('week', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE campaign_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      } else if (filter.groupBy === 'month') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('month', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE campaign_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      }
+      
+      const timeSeriesResult = await pool.query(timeSeriesQuery, params);
+      
+      // Format the timeseries data
+      timeseries = timeSeriesResult.rows.map(row => ({
+        period: formatPeriod(new Date(row.period), filter.groupBy),
+        clicks: parseInt(row.clicks, 10) || 0
+      }));
+    } else if (filter.type === 'url') {
+      // Similar implementation for URLs
+      const urlResult = await pool.query(
+        'SELECT name FROM urls WHERE id = $1',
+        [filter.id]
+      );
+      
+      if (urlResult.rows.length > 0) {
+        resourceName = urlResult.rows[0].name;
+      }
+      
+      // Get total clicks for the URL in the time range
+      const totalClicksResult = await pool.query(
+        'SELECT COUNT(*) as count FROM click_analytics WHERE url_id = $1 AND timestamp >= $2 AND timestamp <= $3',
+        [filter.id, startStr, endStr]
+      );
+      
+      totalClicks = parseInt(totalClicksResult.rows[0].count, 10) || 0;
+      
+      // Get time series data grouped by the specified interval
+      let timeSeriesQuery = '';
+      const params = [filter.id, startStr, endStr];
+      
+      // Build query based on grouping
+      if (filter.groupBy === 'hour') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('hour', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE url_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      } else if (filter.groupBy === 'day') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('day', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE url_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      } else if (filter.groupBy === 'week') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('week', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE url_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      } else if (filter.groupBy === 'month') {
+        timeSeriesQuery = `
+          SELECT 
+            DATE_TRUNC('month', timestamp AT TIME ZONE $4) as period,
+            COUNT(*) as clicks
+          FROM click_analytics 
+          WHERE url_id = $1 AND timestamp >= $2 AND timestamp <= $3
+          GROUP BY period
+          ORDER BY period ASC
+        `;
+        params.push(filter.timezone || 'UTC');
+      }
+      
+      const timeSeriesResult = await pool.query(timeSeriesQuery, params);
+      
+      // Format the timeseries data
+      timeseries = timeSeriesResult.rows.map(row => ({
+        period: formatPeriod(new Date(row.period), filter.groupBy),
+        clicks: parseInt(row.clicks, 10) || 0
+      }));
     }
     
-    // Get total clicks
-    const totalClicks = await this.getClickCount(filter, startDate, endDate);
+    // Fill in gaps in time series if no data for certain periods
+    const filledTimeseries = fillTimeSeriesGaps(timeseries, start, end, filter.groupBy);
     
-    // Get timeseries data
-    const timeseries = await this.getTimeseriesData(filter, startDate, endDate);
-    
-    // Build response
-    const response: AnalyticsResponse = {
+    return {
       summary: {
         totalClicks,
-        dateRangeStart: startDate.toISOString(),
-        dateRangeEnd: endDate.toISOString(),
-        timezone: filter.timezone,
-        resourceType: filter.type,
+        resourceType,
         resourceId: filter.id,
-        resourceName
+        resourceName,
+        dateRangeStart: start.toISOString(),
+        dateRangeEnd: end.toISOString(),
+        timezone: filter.timezone
       },
-      timeseries
+      timeseries: filledTimeseries
     };
-    
-    return response;
+  } catch (error) {
+    console.error('Error getting analytics:', error);
+    throw error;
   }
+}
+
+// Fill in gaps in time series data
+function fillTimeSeriesGaps(
+  timeseries: { period: string; clicks: number }[],
+  start: Date,
+  end: Date,
+  groupBy: string
+): { period: string; clicks: number }[] {
+  const result: { period: string; clicks: number }[] = [];
+  const existing = new Map<string, number>();
   
-  /**
-   * Get a list of all campaigns for analytics selection
-   */
-  async getCampaignsList(): Promise<{ id: number, name: string }[]> {
-    const result = await db
-      .select({
-        id: campaigns.id,
-        name: campaigns.name
-      })
-      .from(campaigns)
-      .orderBy(desc(campaigns.createdAt));
-    
-    return result;
-  }
+  // Store existing data in a map for quick lookup
+  timeseries.forEach(item => {
+    existing.set(item.period, item.clicks);
+  });
   
-  /**
-   * Get a list of all URLs for analytics selection
-   */
-  async getUrlsList(search?: string): Promise<{ id: number, name: string, campaignId: number }[]> {
-    // Base query to get URLs
-    let query = db
-      .select({
-        id: urls.id,
-        name: urls.name,
-        campaignId: urls.campaignId
-      })
-      .from(urls)
-      .where(ne(urls.status, 'deleted'));
-    
-    // Add search filter if provided
-    if (search) {
-      query = query.where(or(
-        ilike(urls.name, `%${search}%`),
-        ilike(urls.targetUrl, `%${search}%`)
-      ));
-    }
-    
-    // Execute query
-    const result = await query.orderBy(desc(urls.createdAt));
-    
-    return result;
-  }
+  // Create a new date to iterate from start to end
+  const current = new Date(start);
   
-  /**
-   * Helper function to extract date range from filter
-   */
-  private getDateRangeFromFilter(filter: AnalyticsFilter): { startDate: Date, endDate: Date } {
-    const now = new Date();
-    let startDate = new Date(now);
-    let endDate = new Date(now);
+  // Iterate through each period and fill gaps
+  while (current <= end) {
+    const period = formatPeriod(current, groupBy);
+    const clicks = existing.has(period) ? existing.get(period)! : 0;
     
-    // Handle custom date range
-    if (filter.timeRange === 'custom' && filter.startDate && filter.endDate) {
-      startDate = new Date(filter.startDate);
-      endDate = new Date(filter.endDate);
-      // Add 1 day to end date to include the entire day
-      endDate.setDate(endDate.getDate() + 1);
-      return { startDate, endDate };
-    }
+    result.push({ period, clicks });
     
-    // Process predefined ranges
-    switch (filter.timeRange) {
-      case 'today':
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'yesterday':
-        startDate.setDate(startDate.getDate() - 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(endDate.getDate() - 1);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_2_days':
-        startDate.setDate(startDate.getDate() - 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_3_days':
-        startDate.setDate(startDate.getDate() - 2);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_7_days':
-        startDate.setDate(startDate.getDate() - 6);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'this_week':
-        // Start from Monday of current week
-        const day = startDate.getDay();
-        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_week':
-        // Start from Monday of last week
-        const lastWeekDay = startDate.getDay();
-        const lastWeekDiff = startDate.getDate() - lastWeekDay - 6;
-        startDate.setDate(lastWeekDiff);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(lastWeekDiff + 6);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'this_month':
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_month':
-        startDate.setMonth(startDate.getMonth() - 1);
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(0); // Last day of previous month
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_6_months':
-        startDate.setMonth(startDate.getMonth() - 6);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'this_year':
-        startDate.setMonth(0);
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'last_year':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        startDate.setMonth(0);
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setFullYear(endDate.getFullYear() - 1);
-        endDate.setMonth(11);
-        endDate.setDate(31);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'all_time':
-      default:
-        // Set to a far past date
-        startDate = new Date(2020, 0, 1);
-        break;
-    }
-    
-    return { startDate, endDate };
-  }
-  
-  /**
-   * Get total click count for a resource
-   */
-  private async getClickCount(
-    filter: AnalyticsFilter, 
-    startDate: Date, 
-    endDate: Date
-  ): Promise<number> {
-    try {
-      // Create base query
-      let query = db
-        .select({ count: count() })
-        .from(clickAnalytics)
-        .where(
-          and(
-            gte(clickAnalytics.clickTimeUtc, startDate),
-            lte(clickAnalytics.clickTimeUtc, endDate)
-          )
-        );
-      
-      // Add resource filter
-      if (filter.type === 'campaign') {
-        query = query.where(eq(clickAnalytics.campaignId, filter.id));
-      } else {
-        query = query.where(eq(clickAnalytics.urlId, filter.id));
-      }
-      
-      // Execute query
-      const result = await query;
-      return Number(result[0].count) || 0;
-    } catch (error) {
-      console.error('Error getting click count:', error);
-      return 0;
+    // Advance to the next period based on grouping
+    if (groupBy === 'hour') {
+      current.setHours(current.getHours() + 1);
+    } else if (groupBy === 'day') {
+      current.setDate(current.getDate() + 1);
+    } else if (groupBy === 'week') {
+      current.setDate(current.getDate() + 7);
+    } else if (groupBy === 'month') {
+      current.setMonth(current.getMonth() + 1);
     }
   }
   
-  /**
-   * Get timeseries data for analytics
-   */
-  private async getTimeseriesData(
-    filter: AnalyticsFilter,
-    startDate: Date,
-    endDate: Date
-  ): Promise<AnalyticsTimeseriesData[]> {
-    try {
-      // Use raw SQL for time-based aggregation 
-      // as it's more flexible with different time formats
-      let timeFormat: string;
-      let groupByClause: string;
-      
-      switch (filter.groupBy) {
-        case 'hour':
-          timeFormat = 'YYYY-MM-DD HH24:00';
-          groupByClause = `DATE_TRUNC('hour', click_time_utc)`;
-          break;
-        case 'week':
-          timeFormat = 'YYYY-WW';
-          groupByClause = `DATE_TRUNC('week', click_time_utc)`;
-          break;
-        case 'month':
-          timeFormat = 'YYYY-MM';
-          groupByClause = `DATE_TRUNC('month', click_time_utc)`;
-          break;
-        case 'day':
-        default:
-          timeFormat = 'YYYY-MM-DD';
-          groupByClause = `DATE_TRUNC('day', click_time_utc)`;
-          break;
-      }
-      
-      // Add resource filter
-      let resourceFilter: string;
-      if (filter.type === 'campaign') {
-        resourceFilter = `campaign_id = ${filter.id}`;
-      } else {
-        resourceFilter = `url_id = ${filter.id}`;
-      }
-      
-      // Build query
-      const query = `
-        SELECT 
-          TO_CHAR(${groupByClause}, '${timeFormat}') AS period,
-          COUNT(*) AS clicks
-        FROM click_analytics
-        WHERE 
-          click_time_utc >= $1 AND
-          click_time_utc <= $2 AND
-          ${resourceFilter}
-        GROUP BY period
-        ORDER BY period
-      `;
-      
-      // Execute query
-      const result = await pool.query(query, [startDate, endDate]);
-      
-      // Map results to the expected format
-      return result.rows.map(row => ({
-        period: row.period,
-        clicks: parseInt(row.clicks)
-      }));
-    } catch (error) {
-      console.error('Error getting timeseries data:', error);
-      return [];
-    }
-  }
+  return result;
+}

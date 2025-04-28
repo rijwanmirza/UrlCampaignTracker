@@ -4,7 +4,7 @@
  * credentials are properly configured in the database
  */
 import { db } from './db';
-import { trafficStarService } from './trafficstar-service';
+import { trafficstarService } from './trafficstar-service';
 import { trafficstarCredentials } from '@shared/schema';
 
 export async function initializeTrafficStar() {
@@ -30,7 +30,7 @@ export async function initializeTrafficStar() {
     }
     
     // Save the API key - this will validate the key with TrafficStar API and store it
-    await trafficStarService.saveApiKey(apiKey);
+    await trafficstarService.saveApiKey(apiKey);
     console.log('🔍 DEBUG: Successfully saved TrafficStar API key to database');
   } catch (error) {
     console.error('Error initializing TrafficStar API credentials:', error);

@@ -18,25 +18,17 @@ import {
 } from './high-performance-redirects';
 import { 
   insertCampaignSchema, 
-  updateCampaignSchema,
   insertUrlSchema, 
-  updateUrlSchema,
-  bulkUrlActionSchema,
-  insertTrafficstarCredentialSchema,
-  trafficstarCampaignActionSchema,
-  trafficstarCampaignBudgetSchema,
-  trafficstarCampaignEndTimeSchema,
   insertOriginalUrlRecordSchema,
-  updateOriginalUrlRecordSchema,
-  trafficstarCampaigns,
   campaigns,
   urls,
-  originalUrlRecords
+  originalUrlRecords,
+  clickAnalytics
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
-import { trafficStarService } from "./trafficstar-service";
+import { trafficstarService } from "./trafficstar-service";
 import { db } from "./db";
 import { eq, and, isNotNull } from "drizzle-orm";
 import Imap from "imap";
@@ -1068,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Scheduling budget update for this URL in 10 minutes`);
           
           // Add to the pending URL budgets tracking
-          await trafficStarService.trackNewUrlForBudgetUpdate(
+          await trafficstarService.trackNewUrlForBudgetUpdate(
             url.id,
             campaignId,
             campaign.trafficstarCampaignId,
@@ -1144,7 +1136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`Scheduling budget update for this URL in 10 minutes`);
               
               // Add to the pending URL budgets tracking using only the difference
-              await trafficStarService.trackNewUrlForBudgetUpdate(
+              await trafficstarService.trackNewUrlForBudgetUpdate(
                 url.id,
                 existingUrl.campaignId,
                 campaign.trafficstarCampaignId,
