@@ -144,6 +144,10 @@ export type UrlWithActiveStatus = Url & {
 
 export type CampaignWithUrls = Campaign & {
   urls: UrlWithActiveStatus[];
+  // Make sure these TrafficStar spent fields are included
+  dailySpent?: string | number;
+  dailySpentDate?: string | Date;
+  lastSpentCheck?: string | Date;
 };
 
 // TrafficStar API schema

@@ -191,6 +191,28 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                   </div>
                 </div>
               )}
+              
+              {/* TrafficStar Daily Spent Section */}
+              {campaign.trafficstarCampaignId && 'dailySpent' in campaign && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500">TrafficStar Spent:</span>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-900">
+                      ${typeof campaign.dailySpent === 'string' 
+                        ? parseFloat(campaign.dailySpent).toFixed(4) 
+                        : (Number(campaign.dailySpent || 0)).toFixed(4)}
+                      <span className="text-xs text-gray-500 ml-1">
+                        {campaign.dailySpentDate ? `on ${campaign.dailySpentDate}` : 'today'}
+                      </span>
+                    </p>
+                    {campaign.lastSpentCheck && (
+                      <span className="text-xs text-gray-500">
+                        (last checked: {new Date(campaign.lastSpentCheck).toLocaleTimeString()})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="mt-6">
