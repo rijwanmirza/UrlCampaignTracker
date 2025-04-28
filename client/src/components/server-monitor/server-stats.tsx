@@ -230,8 +230,8 @@ export function ServerMonitor() {
             <div>
               <h4 className="text-sm font-medium">System Load</h4>
               <div className="flex items-center gap-2">
-                <Progress value={stats?.systemLoad} className="h-2 w-24" />
-                <p className="text-lg">{stats?.systemLoad.toFixed(1)}%</p>
+                <Progress value={stats?.systemLoad || 0} className="h-2 w-24" />
+                <p className="text-lg">{stats?.systemLoad !== undefined ? stats.systemLoad.toFixed(1) : '0.0'}%</p>
               </div>
             </div>
             <div>
@@ -246,27 +246,27 @@ export function ServerMonitor() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Processor</p>
-                <p className="text-sm font-medium">{stats?.cpuDetails.brand}</p>
+                <p className="text-sm font-medium">{stats && stats.cpuDetails ? stats.cpuDetails.brand : 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Manufacturer</p>
-                <p className="text-sm font-medium">{stats?.cpuDetails.manufacturer}</p>
+                <p className="text-sm font-medium">{stats && stats.cpuDetails ? stats.cpuDetails.manufacturer : 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Speed</p>
-                <p className="text-sm font-medium">{stats?.cpuDetails.speed} GHz</p>
+                <p className="text-sm font-medium">{stats && stats.cpuDetails ? stats.cpuDetails.speed : 0} GHz</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Logical Cores</p>
-                <p className="text-sm font-medium">{stats?.cpuDetails.cores}</p>
+                <p className="text-sm font-medium">{stats && stats.cpuDetails ? stats.cpuDetails.cores : 0}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Physical Cores</p>
-                <p className="text-sm font-medium">{stats?.cpuDetails.physicalCores}</p>
+                <p className="text-sm font-medium">{stats && stats.cpuDetails ? stats.cpuDetails.physicalCores : 0}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Load Average</p>
-                <p className="text-sm font-medium">{stats?.loadAverage?.map(load => load.toFixed(2)).join(', ')}</p>
+                <p className="text-sm font-medium">{stats?.loadAverage?.map(load => load.toFixed(2)).join(', ') || '0.00'}</p>
               </div>
             </div>
           </div>
