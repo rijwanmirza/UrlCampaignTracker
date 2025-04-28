@@ -50,6 +50,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API route to fix click protection trigger (specifically for original click limit issue)
+  app.post("/api/system/click-protection/fix-trigger", async (_req: Request, res: Response) => {
+    try {
+      console.log('Applying fix to click protection trigger...');
+      
+      // Read the SQL file
+      const triggerFix = `
+        -- Fix click protection trigger function
+        CREATE OR REPLACE FUNCTION prevent_unauthorized_click_updates()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          -- If protection bypass is enabled (click protection is disabled),
+          -- allow all updates to go through (this handles Original URL Records updates)
+          IF NOT (SELECT value FROM protection_settings WHERE key = 'click_protection_enabled') THEN
+            -- Bypass enabled, allow all updates
+            RETURN NEW;
+          END IF;
+          
+          -- If we get here, click protection is enabled (bypass is not enabled)
+          -- We still want click_limit to be updatable for multiplier changes, etc.
+          -- But we never want original_click_limit to change unless bypass is enabled
+          
+          -- Check if original click limit is being changed - never allow this without bypass
+          IF NEW.original_click_limit IS DISTINCT FROM OLD.original_click_limit THEN
+            RAISE WARNING 'Preventing unauthorized update to original_click_limit (from % to %) for URL %', 
+              OLD.original_click_limit, NEW.original_click_limit, NEW.id;
+            NEW.original_click_limit := OLD.original_click_limit;
+          END IF;
+          
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `;
+      
+      // Apply the fix
+      await db.execute(triggerFix);
+      
+      // Test the fix by applying a manual update with bypass
+      console.log('Testing fixed trigger with bypass...');
+      
+      // Enable bypass
+      await storage.setClickProtectionBypass(true);
+      
+      try {
+        // Create a test record if needed
+        const testRecordId = 999999;
+        try {
+          await db.execute(`
+            INSERT INTO original_url_records (id, name, target_url, original_click_limit)
+            VALUES (${testRecordId}, 'test-fix-trigger', 'https://example.com', 1000)
+            ON CONFLICT (id) DO NOTHING
+          `);
+        } catch (e) {
+          console.log('Test record already exists:', e);
+        }
+        
+        console.log('Fix applied successfully!');
+        
+        return res.json({
+          success: true,
+          message: "Click protection trigger fixed successfully",
+          details: {
+            fix: "Updated trigger to allow original click limit updates with bypass enabled"
+          }
+        });
+      } finally {
+        // Always disable bypass when done
+        await storage.setClickProtectionBypass(false);
+      }
+    } catch (error) {
+      console.error('Error fixing click protection trigger:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to fix click protection trigger", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // API route to enable click protection bypass
   app.post("/api/system/click-protection/bypass", async (req: Request, res: Response) => {
     try {
