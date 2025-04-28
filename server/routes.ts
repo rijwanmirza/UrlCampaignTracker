@@ -1280,6 +1280,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment click count 
       await storage.incrementUrlClicks(urlId);
+      
+      // Record analytics data for the click
+      await storage.recordClick(
+        urlId, 
+        campaignId, 
+        {
+          userAgent: req.headers['user-agent'],
+          ipAddress: req.ip || req.connection.remoteAddress,
+          referer: req.headers.referer
+        }
+      );
 
       // ULTRA-OPTIMIZED REDIRECT HANDLERS - For maximum throughput (millions of redirects per second)
       // Pre-calculate the target URL and remove all unnecessary processing
@@ -1377,6 +1388,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!url) {
         return res.status(404).json({ message: "URL not found" });
       }
+      
+      // Record analytics data for the second-stage click
+      await storage.recordClick(
+        urlId, 
+        campaignId, 
+        {
+          userAgent: req.headers['user-agent'],
+          ipAddress: req.ip || req.connection.remoteAddress,
+          referer: req.headers.referer,
+          // Add flag to indicate this is a bridge page click
+          deviceType: 'bridge_page'
+        }
+      );
 
       // ULTRA-FAST SECOND STAGE: Hyper-optimized for instant browser parsing and execution
       // Remove all unnecessary headers for maximum throughput
@@ -1435,6 +1459,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);
+      
+      // Record analytics data for the click
+      await storage.recordClick(
+        selectedUrl.id, 
+        campaign.id, 
+        {
+          userAgent: req.headers['user-agent'],
+          ipAddress: req.ip || req.connection.remoteAddress,
+          referer: req.headers.referer
+        }
+      );
       
       // Performance metrics
       const endTime = process.hrtime(startTime);
