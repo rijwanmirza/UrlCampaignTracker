@@ -36,17 +36,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const apiKey = req.headers['x-api-key'] || 
                   req.headers.authorization?.replace('Bearer ', '') || 
                   req.query.apiKey;
-    
+
     if (!apiKey) {
       return res.status(401).json({ message: 'API key required' });
     }
-    
+
     // Simple check - compare the API key with our secret
     if (apiKey !== API_SECRET_KEY) {
       console.log('Auth failed - invalid API key');
       return res.status(401).json({ message: 'Invalid API key' });
     }
-    
+
     // Authentication successful
     next();
   } catch (error) {
@@ -65,11 +65,11 @@ export function corsMiddleware(_req: Request, res: Response, next: NextFunction)
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-API-Key, Authorization');
-  
+
   if (_req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   next();
 }
 EOF
@@ -90,30 +90,30 @@ export function registerAuthRoutes(app: express.Application) {
       const apiKey = req.headers['x-api-key'] || 
                     req.headers.authorization?.replace('Bearer ', '') || 
                     req.query.apiKey;
-      
+
       if (!apiKey) {
         return res.json({ authenticated: false });
       }
-      
+
       // Validate the API key
       const isValid = validateApiKey(apiKey as string);
-      
+
       res.json({ authenticated: isValid });
     } catch (error) {
       console.error('Auth status error:', error);
       res.json({ authenticated: false });
     }
   });
-  
+
   // Verify API key
   app.post('/api/auth/verify-key', (req: Request, res: Response) => {
     try {
       const { apiKey } = req.body;
-      
+
       if (!apiKey) {
         return res.status(400).json({ message: 'API key is required' });
       }
-      
+
       if (validateApiKey(apiKey)) {
         console.log('API key verification successful');
         return res.json({ 
@@ -135,13 +135,13 @@ export function registerAuthRoutes(app: express.Application) {
       });
     }
   });
-  
+
   // Clear API key cookie (logout)
   app.post('/api/auth/logout', (req: Request, res: Response) => {
     res.clearCookie('apiKey');
     res.json({ message: 'API key cleared' });
   });
-  
+
   // Test route to verify auth is working
   app.get('/api/auth/test', requireAuth, (req: Request, res: Response) => {
     res.json({ 
@@ -174,68 +174,68 @@ if (!content.includes('import { requireAuth }')) {
     'import express',
     'import { requireAuth } from "./auth/middleware";\nimport express'
   );
-  
+
   // Add auth middleware to routes that need protection
   content = content.replace(
     /app\.get\('\/api\/campaigns'/g, 
     "app.get('/api/campaigns', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.post\('\/api\/campaigns'/g, 
     "app.post('/api/campaigns', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.put\('\/api\/campaigns\/([^']+)'/g, 
     "app.put('/api/campaigns/$1', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.delete\('\/api\/campaigns\/([^']+)'/g, 
     "app.delete('/api/campaigns/$1', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.get\('\/api\/urls'/g, 
     "app.get('/api/urls', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.post\('\/api\/urls'/g, 
     "app.post('/api/urls', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.put\('\/api\/urls\/([^']+)'/g, 
     "app.put('/api/urls/$1', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.delete\('\/api\/urls\/([^']+)'/g, 
     "app.delete('/api/urls/$1', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.get\('\/api\/original-url-records'/g, 
     "app.get('/api/original-url-records', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.post\('\/api\/original-url-records'/g, 
     "app.post('/api/original-url-records', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.put\('\/api\/original-url-records\/([^']+)'/g, 
     "app.put('/api/original-url-records/$1', requireAuth"
   );
-  
+
   content = content.replace(
     /app\.delete\('\/api\/original-url-records\/([^']+)'/g, 
     "app.delete('/api/original-url-records/$1', requireAuth"
   );
-  
+
   // Write the modified content back
   fs.writeFileSync(routesPath, content);
   console.log('Routes file updated with auth middleware');
@@ -271,13 +271,13 @@ if (!content.includes('registerAuthRoutes')) {
     'import { registerRoutes }',
     'import { registerAuthRoutes } from "./auth/routes";\nimport { registerRoutes }'
   );
-  
+
   // Add auth routes registration
   content = content.replace(
     'registerRoutes(app);',
     'registerAuthRoutes(app);\nregisterRoutes(app);'
   );
-  
+
   // Write the modified content back
   fs.writeFileSync(indexPath, content);
   console.log('Server index.ts updated to register auth routes');
@@ -355,7 +355,7 @@ export default function LoginPage() {
         <p style={{ textAlign: 'center', marginBottom: '20px', color: '#666' }}>
           Enter your API key to continue
         </p>
-        
+
         {error && (
           <div style={{ 
             backgroundColor: '#fee2e2', 
@@ -367,7 +367,7 @@ export default function LoginPage() {
             {error}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <input
@@ -386,7 +386,7 @@ export default function LoginPage() {
               required
             />
           </div>
-          
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -404,7 +404,7 @@ export default function LoginPage() {
           >
             {isSubmitting ? 'Verifying...' : 'Login'}
           </button>
-          
+
           <div style={{ 
             marginTop: '20px', 
             textAlign: 'center', 
@@ -437,17 +437,17 @@ const appTsxPath = path.join(__dirname, 'client/src/App.tsx');
 
 if (fs.existsSync(appTsxPath)) {
   let content = fs.readFileSync(appTsxPath, 'utf8');
-  
+
   // Check if LoginPage is already imported
   const hasLoginImport = content.includes("import LoginPage");
-  
+
   // Check if login route exists
   const hasLoginRoute = content.includes("path=\"/login\"") || 
                         content.includes("path='/login'");
-  
+
   if (!hasLoginImport || !hasLoginRoute) {
     console.log('Need to add login route to App.tsx');
-    
+
     // If no login import, add it
     if (!hasLoginImport) {
       const importMatch = content.match(/import.*from ['"][^'"]+['"]/g);
@@ -459,13 +459,13 @@ if (fs.existsSync(appTsxPath)) {
         );
       }
     }
-    
+
     // If no login route, add it
     if (!hasLoginRoute) {
       // Find the Switch component or routes definition
       const routeRegex = /<Route.*?>/g;
       const routes = content.match(routeRegex);
-      
+
       if (routes && routes.length > 0) {
         // Add login route after the first route
         const firstRoute = routes[0];
@@ -475,7 +475,7 @@ if (fs.existsSync(appTsxPath)) {
         );
       }
     }
-    
+
     fs.writeFileSync(appTsxPath, content);
     console.log('Updated App.tsx with login route');
   } else {
@@ -566,7 +566,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Remove API key from axios defaults
       delete axios.defaults.headers.common['X-API-Key'];
-      
+
       await axios.post('/api/auth/logout');
       setIsAuthenticated(false);
     } catch (error) {
@@ -650,11 +650,11 @@ cat > "/etc/nginx/sites-available/default" << 'EOF'
 server {
     listen 80;
     server_name views.yoyoprime.com;
-    
+
     # Add cache control headers to prevent caching
     add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
     add_header Pragma "no-cache";
-    
+
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
@@ -668,11 +668,11 @@ server {
         proxy_read_timeout 300;
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
-        
+
         # Set a cookie for the API key (optional extra layer)
         add_header Set-Cookie "apiKey=TraffiCS10928; Path=/; HttpOnly; SameSite=Strict";
     }
-    
+
     # Handle API routes without setting API key header for /auth endpoints
     location /api/auth/ {
         proxy_pass http://127.0.0.1:5000;
@@ -686,7 +686,7 @@ server {
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
     }
-    
+
     # Handle all other API routes with API key
     location /api/ {
         proxy_pass http://127.0.0.1:5000;
@@ -701,7 +701,7 @@ server {
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
     }
-    
+
     # Websocket support
     location /ws {
         proxy_pass http://127.0.0.1:5000;
