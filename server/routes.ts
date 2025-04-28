@@ -3909,6 +3909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/system/server-stats", async (_req: Request, res: Response) => {
     try {
       const stats = await getServerStats();
+      console.log("Server stats CPU details:", JSON.stringify(stats.cpuDetails, null, 2));
       res.json({
         success: true,
         data: stats
