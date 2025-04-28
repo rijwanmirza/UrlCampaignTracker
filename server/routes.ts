@@ -4,6 +4,7 @@ import spdy from 'spdy';
 import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
+import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
 import { 
   optimizeResponseHeaders,
   ultraFastMetaRefresh,
