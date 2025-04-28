@@ -35,6 +35,10 @@ export const campaigns = pgTable("campaigns", {
   autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // Auto-manage TrafficStar campaign
   budgetUpdateTime: text("budget_update_time").default("00:00:00"), // Daily budget update time in UTC (HH:MM:SS format)
   lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
+  // TrafficStar spent tracking fields
+  dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent value from TrafficStar
+  dailySpentDate: timestamp("daily_spent_date").defaultNow(), // Date of the daily spent value
+  lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time spent was checked
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
