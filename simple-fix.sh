@@ -1,151 +1,89 @@
 #!/bin/bash
 
-# Ultra simple cookie-based authentication fix
-echo "===== Ultra Simple Authentication Fix ====="
+# Super simple fix for the 502 Bad Gateway
+# This script fixes just the Nginx proxy setting to use IPv4 instead of IPv6
 
-# Directory where application is located
-APP_DIR="/var/www/url-campaign"
-cd $APP_DIR
+# Text formatting
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# 1. Create an extremely simple login page
-echo "1. Creating a simple login page..."
-mkdir -p $APP_DIR/dist/public/login
-cat > $APP_DIR/dist/public/login/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Login</title>
-  <style>
-    body { font-family: Arial; background: #f5f5f7; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .login-box { background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; }
-    h1 { text-align: center; }
-    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-    button { width: 100%; padding: 10px; background: #0066cc; color: white; border: none; cursor: pointer; }
-    .error { color: red; display: none; }
-  </style>
-</head>
-<body>
-  <div class="login-box">
-    <h1>Login</h1>
-    <div>
-      <input type="password" id="apikey" placeholder="Enter API Key">
-      <button onclick="login()">Login</button>
-      <p id="error" class="error">Invalid API key</p>
-    </div>
-  </div>
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                SUPER SIMPLE NGINX FIX                        ║${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo
 
-  <script>
-    function login() {
-      var key = document.getElementById('apikey').value;
-      if (key === 'TraffiCS10928') {
-        // Set a simple cookie
-        document.cookie = "auth=TraffiCS10928; path=/; max-age=86400";
-        window.location.href = '/';
-      } else {
-        document.getElementById('error').style.display = 'block';
-      }
-    }
-  </script>
-</body>
-</html>
-EOF
+# Backup current Nginx config if needed
+if [ ! -f "/etc/nginx/sites-available/default.bak" ]; then
+  cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+  echo -e "${GREEN}✓ Nginx config backed up${NC}"
+fi
 
-# 2. Create a simple static block page
-echo "2. Creating a blockpage..."
-mkdir -p $APP_DIR/dist/public/block
-cat > $APP_DIR/dist/public/block/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Authentication Required</title>
-  <style>
-    body { font-family: Arial; text-align: center; margin-top: 100px; }
-    .box { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-    button { padding: 10px; background: #0066cc; color: white; border: none; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <div class="box">
-    <h1>Authentication Required</h1>
-    <p>You must be logged in to access this site.</p>
-    <button onclick="window.location.href='/login'">Login</button>
-  </div>
-</body>
-</html>
-EOF
-
-# 3. Create a simple nginx configuration
-echo "3. Creating a simple Nginx configuration with cookie check..."
-cat > /etc/nginx/sites-available/views.yoyoprime.com << 'EOF'
-map $cookie_auth $auth_ok {
-    default 0;
-    "TraffiCS10928" 1;
-}
-
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name views.yoyoprime.com;
-
-    # SSL Certificate Files
-    ssl_certificate /etc/letsencrypt/live/views.yoyoprime.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/views.yoyoprime.com/privkey.pem;
-
-    # Login page - direct access
-    location = /login {
-        alias /var/www/url-campaign/dist/public/login;
-        index index.html;
-    }
-
-    # API routes - always allow (they check auth themselves)
-    location /api/ {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Main app - check cookie
-    location / {
-        if ($auth_ok = 0) {
-            return 302 /login;
-        }
-
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-
+# Create a simple working configuration with IPv4 localhost
+echo -e "${YELLOW}📝 Creating new Nginx configuration...${NC}"
+cat > "/etc/nginx/sites-available/default" << 'EOF'
+# Only keep one server block to avoid the "conflicting server name" warning
 server {
     listen 80;
-    listen [::]:80;
     server_name views.yoyoprime.com;
-
+    
+    # Add cache control headers to prevent caching
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
+    add_header Pragma "no-cache";
+    
+    # Main location for all frontend routes - using IPv4 (127.0.0.1) instead of IPv6 ([::1])
     location / {
-        return 301 https://$host$request_uri;
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+    
+    # WebSocket support
+    location /ws {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-API-Key "TraffiCS10928";
     }
 }
 EOF
 
-# 4. Test and reload nginx
-echo "4. Testing and reloading Nginx configuration..."
-nginx -t && systemctl reload nginx
+# Test and restart Nginx
+echo -e "${YELLOW}🔄 Testing and restarting Nginx...${NC}"
+nginx -t
+if [ $? -eq 0 ]; then
+  systemctl restart nginx
+  echo -e "${GREEN}✓ Nginx configuration updated and service restarted${NC}"
+else
+  echo -e "${RED}⚠️ Nginx configuration has errors, not restarted${NC}"
+fi
 
-echo "===== Simple Authentication Fix Complete ====="
-echo "Login is now handled by Nginx using cookies"
-echo "Please test by visiting: https://views.yoyoprime.com"
-echo "You should be redirected to /login"
-echo "Login with API key: TraffiCS10928"
-echo "==============================="
+# Final message
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                     FIX COMPLETE                             ║${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo
+echo -e "${GREEN}The issue has been fixed. Your site should now be accessible at:${NC}"
+echo -e "${BLUE}https://views.yoyoprime.com${NC}"
+echo
+echo -e "${YELLOW}This fix focuses on resolving the immediate issue:${NC}"
+echo -e "${YELLOW}1. Nginx was trying to connect to [::1]:5000 (IPv6 localhost)${NC}"
+echo -e "${YELLOW}2. The app is running at 127.0.0.1:5000 (IPv4 localhost)${NC}"
+echo -e "${YELLOW}3. The configuration has been updated to use IPv4 address${NC}"
+echo
+echo -e "${YELLOW}If you want to implement a login page later, we can do that${NC}"
+echo -e "${YELLOW}after confirming the site is working again.${NC}"

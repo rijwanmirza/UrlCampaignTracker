@@ -1,0 +1,126 @@
+root@vultr:~# rm fix-502-gateway.sh
+root@vultr:~# nano fix-502-gateway.sh
+root@vultr:~# chmod +x fix-502-gateway.sh
+./fix-502-gateway.sh
+╔══════════════════════════════════════════════════════════════╗
+║            FIX 502 BAD GATEWAY ERROR                         ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 Checking application status...
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 6418     │ 3m     │ 6    │ online    │ 0%       │ 3.4mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+✓ PM2 status check completed
+🔌 Checking listening ports...
+./fix-502-gateway.sh: line 37: netstat: command not found
+
+⚠️ No Node.js listening ports found
+🔍 Checking Nginx configuration...
+nginx: [warn] conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+✓ Nginx configuration is valid
+📜 Checking Nginx error logs...
+2025/04/28 07:46:08 [error] 5647#5647: *60 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /assets/index-B46m0Riv.css HTTP/2.0", upstream: "http://[::1]:5000/assets/index-B46m0Riv.css", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/urls"
+2025/04/28 07:47:58 [info] 6265#6265: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 07:47:58 [warn] 6265#6265: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 07:47:58 [info] 6274#6274: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 07:47:58 [warn] 6274#6274: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 07:47:58 [warn] 6275#6275: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 07:49:15 [error] 6277#6277: *3 connect() failed (111: Unknown error) while connecting to upstream, client: 43.157.142.101, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:5000/", host: "139.84.169.252:80"
+2025/04/28 07:50:43 [error] 6277#6277: *6 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /assets/index-BIIX2iOl.js HTTP/2.0", upstream: "http://[::1]:5000/assets/index-BIIX2iOl.js", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/urls"
+2025/04/28 07:51:02 [crit] 6277#6277: *24 SSL_do_handshake() failed (SSL: error:0A00006C:SSL routines::bad key share) while SSL handshaking, client: 212.102.40.218, server: 0.0.0.0:443
+2025/04/28 07:51:36 [info] 6365#6365: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 07:51:36 [warn] 6365#6365: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 07:51:36 [info] 6369#6369: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 07:51:36 [warn] 6369#6369: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 07:51:36 [warn] 6371#6371: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 07:52:09 [error] 6374#6374: *2 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /urls HTTP/2.0", upstream: "http://[::1]:5000/urls", host: "views.yoyoprime.com"
+2025/04/28 07:52:32 [error] 6374#6374: *2 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /assets/index-D9SVjKag.js HTTP/2.0", upstream: "http://[::1]:5000/assets/index-D9SVjKag.js", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 07:52:46 [error] 6374#6374: *2 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /assets/index-D9SVjKag.js HTTP/2.0", upstream: "http://[::1]:5000/assets/index-D9SVjKag.js", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 07:52:59 [error] 6374#6374: *50 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.216.103, server: views.yoyoprime.com, request: "GET /assets/index-DiqfkRvY.css HTTP/1.1", upstream: "http://[::1]:5000/assets/index-DiqfkRvY.css", host: "views.yoyoprime.com", referrer: "http://views.yoyoprime.com/login"
+2025/04/28 07:55:23 [info] 6477#6477: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 07:55:23 [warn] 6477#6477: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+🔍 Checking Nginx proxy configuration...
+Proxy settings in Nginx configuration:
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+--
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+--
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-API-Key "TraffiCS10928";
+    }
+}
+📜 Checking PM2 logs for the application...
+[TAILING] Tailing last 20 lines for [url-campaign] process (change the value with --lines option)
+/root/.pm2/logs/url-campaign-error.log last 20 lines:
+0|url-camp |       subjectaltname: 'DNS:views.yoyoprime.com',
+0|url-camp |       infoAccess: [Object: null prototype],
+0|url-camp |       ca: false,
+0|url-camp |       modulus: '948B4C1E8F8F27FA9538241E56DAAED009A76AC76C1F6067DE57FDF9209586AD273D9A6740CD5B38CCBB6D2095258F8F1100E45AA395A70DF0598E48F42B7A51BA103470642D65FD7D45DA464FEF07B0FE1670941EF67116E359062CC33E974AABFA42273C49A44F725F99084AB215B86F115FFA0195AC0DF6C8B2CC5E3212587D0FFE1219CDC5892C29F6489F5154D6EA6D4B874848EB736E41296DBA1F07CCDEAFF13C8E644B2B05D3DF91659E794ABD32EEC4219F5A6E4E5EEDCA9419A28830E3325B1450F812589F39420BAE7A30079ED6A957E39B13FC608A89672CCCA6D94FF9842339E6D553F089557A5A0F560C519DC7519176638F25A337602B1F17',
+0|url-camp |       bits: 2048,
+0|url-camp |       exponent: '0x10001',
+0|url-camp |       pubkey: <Buffer 30 82 01 22 30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00 03 82 01 0f 00 30 82 01 0a 02 82 01 01 00 94 8b 4c 1e 8f 8f 27 fa 95 38 24 1e 56 da ae d0 09 ... 244 more bytes>,
+0|url-camp |       valid_from: 'Apr 27 09:33:35 2025 GMT',
+0|url-camp |       valid_to: 'Jul 26 09:33:34 2025 GMT',
+0|url-camp |       fingerprint: '11:CC:BE:1A:3C:2D:8B:5D:9C:FB:F7:0A:36:8C:5D:14:12:E2:75:00',
+0|url-camp |       fingerprint256: 'E8:B0:FD:7D:7A:DB:D2:9F:AF:54:BB:D9:30:93:12:E9:AE:10:18:95:50:D7:FB:5D:94:77:94:BC:F4:80:7F:2F',
+0|url-camp |       fingerprint512: '6E:B7:E0:51:3E:9B:CE:B1:C0:EB:D9:D8:30:50:69:D9:B4:DF:5D:26:71:D4:F5:BA:A0:93:F9:3F:81:4C:30:7F:BA:42:C1:3A:DA:AD:B3:67:8E:05:07:55:D1:49:4C:0C:88:BC:A3:7B:2E:5A:15:05:B7:DF:DD:AB:C0:F0:D5:87',
+0|url-camp |       ext_key_usage: [Array],
+0|url-camp |       serialNumber: '061421E92B4EE09A8467368A727ED799C26C',
+0|url-camp |       raw: <Buffer 30 82 05 25 30 82 04 0d a0 03 02 01 02 02 12 06 14 21 e9 2b 4e e0 9a 84 67 36 8a 72 7e d7 99 c2 6c 30 0d 06 09 2a 86 48 86 f7 0d 01 01 0b 05 00 30 33 ... 1271 more bytes>,
+0|url-camp |       issuerCertificate: [Object]
+0|url-camp |     }
+0|url-camp |   },
+0|url-camp |   [Symbol(kMessage)]: "Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:views.yoyoprime.com"
+0|url-camp | }
+
+/root/.pm2/logs/url-campaign-out.log last 20 lines:
+0|url-camp | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 3
+0|url-camp | 7:39:02 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-camp | 7:39:02 AM [express] serving on port 5000
+0|url-camp | 7:39:02 AM [startup] Error auto-configuring integrations: [object Object]
+0|url-camp | 7:40:34 AM [express] GET /api/auth/status 304 in 4ms :: {"authenticated":true}
+0|url-camp | 7:40:34 AM [express] GET /api/urls 500 in 14ms :: {"message":"Failed to fetch URLs"}
+0|url-camp | 7:46:09 AM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":true}
+0|url-camp | 7:46:09 AM [express] GET /api/urls 500 in 11ms :: {"message":"Failed to fetch URLs"}
+0|url-camp | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 3
+0|url-camp | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 3
+0|url-camp | 7:48:01 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-camp | 7:48:01 AM [express] serving on port 5000
+0|url-camp | 7:48:01 AM [startup] Error auto-configuring integrations: [object Object]
+0|url-camp | 7:50:44 AM [express] GET /api/auth/status 304 in 3ms :: {"authenticated":true}
+0|url-camp | 7:50:44 AM [express] GET /api/urls 500 in 12ms :: {"message":"Failed to fetch URLs"}
+0|url-camp | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 3
+0|url-camp | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 3
+0|url-camp | 7:51:54 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-camp | 7:51:54 AM [express] serving on port 5000
+0|url-camp | 7:51:54 AM [startup] Error auto-configuring integrations: [object Object]
+
