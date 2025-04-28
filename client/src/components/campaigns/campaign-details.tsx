@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clipboard, ExternalLink, AlertCircle, LineChart, Loader2, DollarSign, RefreshCw } from "lucide-react";
+import { Clipboard, ExternalLink, AlertCircle } from "lucide-react";
 import { FormattedCampaign } from "@/lib/types";
 import { RedirectMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -12,40 +12,9 @@ import CampaignDeleteButton from "./campaign-delete-button";
 import { useLocation } from "wouter";
 import RunMigrationButton from "@/components/RunMigrationButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
-}
-
-// Define the spent value stats type for TrafficStar API integration
-interface SpentValueStats {
-  campaignId: number;
-  dateRange: {
-    from: string;
-    to: string;
-  };
-  dailyStats: Array<{
-    date: string;
-    impressions: number;
-    clicks: number;
-    leads: number;
-    price: number;
-    ecpm: number;
-    ecpc: number;
-    ecpa: number;
-    ctr: number;
-  }>;
-  totals: {
-    spent: number;
-    impressions: number;
-    clicks: number;
-    leads: number;
-    ecpm: number;
-    ecpc: number;
-    ecpa: number;
-    ctr: number;
-  };
 }
 
 export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
@@ -53,9 +22,6 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
   const [copied, setCopied] = useState(false);
   const [, navigate] = useLocation();
   const [migrationNeeded, setMigrationNeeded] = useState<boolean>(false);
-  const [spentValueData, setSpentValueData] = useState<SpentValueStats | null>(null);
-  const [isLoadingSpentValue, setIsLoadingSpentValue] = useState(false);
-  const [spentValueError, setSpentValueError] = useState<string | null>(null);
 
   const redirectMethodLabels: Record<string, string> = {
     [RedirectMethod.DIRECT]: "Direct Redirect",
@@ -92,54 +58,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
       });
   };
 
-  // Function to fetch campaign spent values from the TrafficStar API
-  const fetchCampaignSpentValues = async (campaignId: number | string | null) => {
-    // Only proceed if we have a valid campaign ID
-    if (!campaignId || campaignId === 'none' || campaignId === 'null') {
-      setSpentValueError('No valid TrafficStar campaign ID found');
-      return;
-    }
-    
-    setIsLoadingSpentValue(true);
-    setSpentValueError(null);
-    
-    try {
-      // Get current UTC date
-      const now = new Date();
-      // Get today's date in UTC (YYYY-MM-DD format)
-      const today = now.toISOString().split('T')[0]; 
-      
-      // Create query parameters (use today for both from and until)
-      const params = new URLSearchParams();
-      params.append('dateFrom', today);
-      params.append('dateUntil', today);
-      
-      // Fetch spent value data for today only
-      const response = await fetch(`/api/trafficstar/campaigns/${campaignId}/spent?${params.toString()}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch spent value data');
-      }
-      
-      const spentData: SpentValueStats = await response.json();
-      setSpentValueData(spentData);
-      
-    } catch (error) {
-      console.error('Error fetching campaign spent values:', error);
-      setSpentValueError(error instanceof Error ? error.message : 'An unknown error occurred');
-      
-      toast({
-        title: 'Failed to Fetch Campaign Costs',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingSpentValue(false);
-    }
-  };
-
-  // Check if migrations are needed and fetch campaign spent values when component mounts
+  // Check if migrations are needed when component mounts
   useEffect(() => {
     const checkMigrations = async () => {
       try {
@@ -161,12 +80,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
     };
     
     checkMigrations();
-    
-    // If campaign has a TrafficStar ID, fetch the spent values automatically
-    if (campaign.trafficstarCampaignId) {
-      fetchCampaignSpentValues(campaign.trafficstarCampaignId);
-    }
-  }, [campaign.trafficstarCampaignId]);
+  }, []);
   
   return (
     <div className="space-y-4 mb-6">
@@ -271,7 +185,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                     <Badge className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
                       Auto-Managed
                     </Badge>
-                    <span className="text-xs text-gray-500 block">
+                    <span className="text-xs text-gray-500">
                       Campaign #{campaign.trafficstarCampaignId}
                     </span>
                   </div>
@@ -356,76 +270,6 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* TrafficStar Spent Value - Simple Version */}
-      {campaign.trafficstarCampaignId && (
-        <div className="mt-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    TrafficStar Spent
-                  </CardTitle>
-                  <CardDescription>
-                    Today's cost for campaign #{campaign.trafficstarCampaignId} (UTC+00:00)
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => campaign.trafficstarCampaignId && fetchCampaignSpentValues(campaign.trafficstarCampaignId)}
-                  disabled={isLoadingSpentValue}
-                >
-                  {isLoadingSpentValue ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Refresh
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingSpentValue ? (
-                <div className="flex justify-center items-center py-4">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  <span>Loading cost data...</span>
-                </div>
-              ) : spentValueError ? (
-                <div className="p-3 border border-red-200 rounded-md bg-red-50 text-red-700 flex items-start">
-                  <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p>Error retrieving data: {spentValueError}</p>
-                  </div>
-                </div>
-              ) : spentValueData ? (
-                <div className="flex items-center">
-                  <div className="text-3xl font-bold text-green-700 flex items-center">
-                    <DollarSign className="h-6 w-6 mr-1" />
-                    {spentValueData.totals.spent.toFixed(2)}
-                  </div>
-                  <div className="ml-6 text-sm text-gray-500">
-                    <div>Impressions: {spentValueData.totals.impressions.toLocaleString()}</div>
-                    <div>Clicks: {spentValueData.totals.clicks.toLocaleString()}</div>
-                    <div>eCPM: ${spentValueData.totals.ecpm.toFixed(4)}</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-center items-center py-4">
-                  <p className="text-sm text-gray-500">Click refresh to load today's cost for campaign #{campaign.trafficstarCampaignId}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

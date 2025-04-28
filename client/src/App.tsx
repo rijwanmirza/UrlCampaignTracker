@@ -14,7 +14,7 @@ import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
 import TestSpentValuePage from "@/pages/test-spent-value";
 import OriginalUrlRecordsPage from "@/pages/original-url-records-page";
-import LoginPage from "@/pages/login";
+import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
