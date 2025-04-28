@@ -1021,72 +1021,90 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateOriginalUrlRecord(id: number, updateRecord: UpdateOriginalUrlRecord): Promise<OriginalUrlRecord | undefined> {
-    const existingRecord = await this.getOriginalUrlRecord(id);
-    
-    // Check if originalClickLimit is changing, which means we need to update URLs
-    if (existingRecord && updateRecord.originalClickLimit !== undefined && updateRecord.originalClickLimit !== existingRecord.originalClickLimit) {
-      const oldClickValue = existingRecord.originalClickLimit || 0;
-      const newClickValue = updateRecord.originalClickLimit;
+    try {
+      const existingRecord = await this.getOriginalUrlRecord(id);
       
-      console.log(`🔄 Original URL Record ${id} clicks changing from ${oldClickValue} to ${newClickValue}, updating all related URLs...`);
-      
-      // Enable click protection bypass
-      await this.setClickProtectionBypass(true);
-      
-      // Find all URLs that use this record's name
-      const relatedUrls = await db
-        .select()
-        .from(urls)
-        .where(eq(urls.name, existingRecord.name));
-      
-      // Update each URL's click limit and original click limit
-      for (const url of relatedUrls) {
-        const campaignId = url.campaignId;
-        let multiplier = 1;
-        
-        // Get campaign multiplier if URL is associated with a campaign
-        if (campaignId) {
-          const campaign = await this.getCampaign(campaignId);
-          if (campaign) {
-            multiplier = campaign.multiplier || 1;
-          }
-        }
-        
-        // Calculate new click limit applying the multiplier
-        const newOriginalClickLimit = newClickValue;
-        const newClickLimit = Math.floor(newOriginalClickLimit * multiplier);
-        
-        console.log(`  → URL ${url.id}: Updating clickLimit from ${url.clickLimit} to ${newClickLimit} (originalClickLimit: ${newOriginalClickLimit} × multiplier: ${multiplier})`);
-        
-        // Update the URL
-        await db
-          .update(urls)
-          .set({ 
-            clickLimit: newClickLimit,
-            originalClickLimit: newOriginalClickLimit,
-            updatedAt: new Date()
-          })
-          .where(eq(urls.id, url.id));
-        
-        // Invalidate URL cache
-        this.invalidateUrlCache(url.id);
+      if (!existingRecord) {
+        console.error(`Original URL record with ID ${id} not found`);
+        return undefined;
       }
       
-      // Disable click protection bypass
-      await this.setClickProtectionBypass(false);
+      // Check if originalClickLimit is changing, which means we need to update URLs
+      if (updateRecord.originalClickLimit !== undefined && updateRecord.originalClickLimit !== existingRecord.originalClickLimit) {
+        const oldClickValue = existingRecord.originalClickLimit || 0;
+        const newClickValue = updateRecord.originalClickLimit;
+        
+        console.log(`🔄 Original URL Record ${id} clicks changing from ${oldClickValue} to ${newClickValue}, updating all related URLs...`);
+        
+        // Enable click protection bypass
+        await this.setClickProtectionBypass(true);
+        
+        // Find all URLs that use this record's name
+        const relatedUrls = await db
+          .select()
+          .from(urls)
+          .where(eq(urls.name, existingRecord.name));
+        
+        // Update each URL's click limit and original click limit
+        for (const url of relatedUrls) {
+          const campaignId = url.campaignId;
+          let multiplier = 1;
+          
+          // Get campaign multiplier if URL is associated with a campaign
+          if (campaignId) {
+            const campaign = await this.getCampaign(campaignId);
+            if (campaign) {
+              multiplier = campaign.multiplier || 1;
+            }
+          }
+          
+          // Calculate new click limit applying the multiplier
+          const newOriginalClickLimit = newClickValue;
+          const newClickLimit = Math.floor(newOriginalClickLimit * multiplier);
+          
+          console.log(`  → URL ${url.id}: Updating clickLimit from ${url.clickLimit} to ${newClickLimit} (originalClickLimit: ${newOriginalClickLimit} × multiplier: ${multiplier})`);
+          
+          // Update the URL
+          await db
+            .update(urls)
+            .set({ 
+              clickLimit: newClickLimit,
+              originalClickLimit: newOriginalClickLimit,
+              updatedAt: new Date()
+            })
+            .where(eq(urls.id, url.id));
+          
+          // Invalidate URL cache
+          this.invalidateUrlCache(url.id);
+        }
+        
+        // Disable click protection bypass
+        await this.setClickProtectionBypass(false);
+      }
+      
+      // Create a clean update record with only the fields that exist in the DB schema
+      const cleanUpdateRecord: any = {};
+      
+      if (updateRecord.name !== undefined) cleanUpdateRecord.name = updateRecord.name;
+      if (updateRecord.targetUrl !== undefined) cleanUpdateRecord.targetUrl = updateRecord.targetUrl;
+      if (updateRecord.originalClickLimit !== undefined) cleanUpdateRecord.originalClickLimit = updateRecord.originalClickLimit;
+      
+      // Update the record
+      const result = await db
+        .update(originalUrlRecords)
+        .set({ 
+          ...cleanUpdateRecord, 
+          updatedAt: new Date()
+        })
+        .where(eq(originalUrlRecords.id, id))
+        .returning();
+      
+      const [updatedRecord] = result;
+      return updatedRecord;
+    } catch (error) {
+      console.error(`Error updating original URL record ${id}:`, error);
+      return undefined;
     }
-    
-    // Update the record
-    const [updatedRecord] = await db
-      .update(originalUrlRecords)
-      .set({ 
-        ...updateRecord, 
-        updatedAt: new Date()
-      })
-      .where(eq(originalUrlRecords.id, id))
-      .returning();
-    
-    return updatedRecord;
   }
   
   async deleteOriginalUrlRecord(id: number): Promise<boolean> {

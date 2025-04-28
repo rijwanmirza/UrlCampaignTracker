@@ -3675,18 +3675,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the updateData with all fields to update
       const updateData = validationResult.data;
       
+      // Create a clean object with only the fields we know exist in the database schema
+      const cleanUpdateData: any = {};
+      
+      if (updateData.name !== undefined) cleanUpdateData.name = updateData.name;
+      if (updateData.targetUrl !== undefined) cleanUpdateData.targetUrl = updateData.targetUrl;
+      if (updateData.originalClickLimit !== undefined) cleanUpdateData.originalClickLimit = updateData.originalClickLimit;
+      
       // Log what values are changing
-      console.log(`📝 Updating Original URL Record #${id}:`, updateData);
+      console.log(`📝 Updating Original URL Record #${id}:`, cleanUpdateData);
       
       // Check if we're updating click limit (the key value that will propagate to all instances)
-      const isUpdatingClickLimit = updateData.originalClickLimit !== undefined;
+      const isUpdatingClickLimit = cleanUpdateData.originalClickLimit !== undefined;
       if (isUpdatingClickLimit) {
-        console.log(`📊 Original Click Limit being updated to: ${updateData.originalClickLimit}`);
+        console.log(`📊 Original Click Limit being updated to: ${cleanUpdateData.originalClickLimit}`);
       }
       
       try {
-        // Update the record
-        const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
+        // Update the record with clean data
+        const updatedRecord = await storage.updateOriginalUrlRecord(id, cleanUpdateData);
         
         if (!updatedRecord) {
           return res.status(404).json({ message: "Original URL record not found" });
@@ -3694,16 +3701,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If updating click limit, use our force fix function that bypasses all protections
         if (isUpdatingClickLimit) {
-          console.log(`✅ Successfully updated original click limit to ${updateData.originalClickLimit}`);
+          console.log(`✅ Successfully updated original click limit to ${cleanUpdateData.originalClickLimit}`);
           console.log(`🔄 Force-updating all linked URL instances...`);
           
-          // CRITICAL FIX: Force update using direct SQL instead of the ORM method
-          const success = await forceFixUrlClickLimits(id);
+          // Use syncUrlsWithOriginalRecord instead of forceFixUrlClickLimits
+          const updatedCount = await storage.syncUrlsWithOriginalRecord(id);
           
-          if (success) {
-            console.log(`✅ Successfully force-updated all URLs with name "${updatedRecord.name}"`);
+          if (updatedCount > 0) {
+            console.log(`✅ Successfully updated ${updatedCount} URLs with name "${updatedRecord.name}"`);
           } else {
-            console.error(`❌ Failed to force-update URLs with name "${updatedRecord.name}"`);
+            console.log(`ℹ️ No URLs found with name "${updatedRecord.name}" to update`);
           }
         }
         
