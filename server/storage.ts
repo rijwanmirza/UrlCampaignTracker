@@ -477,9 +477,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUrls(campaignId: number): Promise<UrlWithActiveStatus[]> {
+  async getUrls(campaignId: number, forceRefresh: boolean = false): Promise<UrlWithActiveStatus[]> {
     // Get all URLs for a campaign that are not deleted or rejected
     // This ensures rejected URLs with duplicate names don't appear in campaigns
+    
+    if (forceRefresh) {
+      console.log(`🔄 Force refreshing URLs for campaign ID: ${campaignId}`);
+    }
+    
     const urlsResult = await db
       .select()
       .from(urls)
@@ -1297,11 +1302,53 @@ export class DatabaseStorage implements IStorage {
   
   // Invalidate campaign cache when URLs are modified
   private invalidateCampaignCache(campaignId: number) {
+    console.log(`🧹 Invalidating campaign cache for ID: ${campaignId}`);
+    
+    // Remove from campaign URLs cache
     this.campaignUrlsCache.delete(campaignId);
+    
+    // Remove from direct campaign cache
+    this.campaignCache.delete(campaignId);
+    
+    // Also check custom path cache and clear if found
+    const customPathEntry = Array.from(this.customPathCache.entries())
+      .find(([_, value]) => {
+        if (value && typeof value === 'object' && 'campaign' in value && typeof value.campaign === 'object') {
+          // Check if campaign is an object with an id property
+          return value.campaign && 'id' in value.campaign && value.campaign.id === campaignId;
+        }
+        return false;
+      });
+    
+    if (customPathEntry) {
+      console.log(`🧹 Also removing campaign from custom path cache: ${customPathEntry[0]}`);
+      this.customPathCache.delete(customPathEntry[0]);
+    }
   }
 
   private invalidateUrlCache(urlId: number) {
+    console.log(`🧹 Invalidating URL cache for ID: ${urlId}`);
+    
+    // Clear direct URL cache entry
     this.urlCache.delete(urlId);
+    
+    // Find the URL's campaign ID from the database if possible
+    db.select({
+      id: urls.id,
+      campaignId: urls.campaignId
+    })
+    .from(urls)
+    .where(eq(urls.id, urlId))
+    .then(results => {
+      if (results.length > 0 && results[0].campaignId) {
+        // Also invalidate the campaign cache
+        console.log(`🧹 URL #${urlId} belongs to campaign #${results[0].campaignId} - invalidating campaign cache`);
+        this.invalidateCampaignCache(results[0].campaignId);
+      }
+    })
+    .catch(err => {
+      console.error(`Error finding campaign for URL #${urlId}:`, err);
+    });
   }
   
   // Helper to update URL status (used for async marking URLs as completed)
@@ -1606,17 +1653,43 @@ export class DatabaseStorage implements IStorage {
               console.log(`🔄 Force invalidated campaign cache for campaign ID ${url.campaignId}`);
               
               // Also, if this is a URL in an active campaign, force-refresh campaign's URLs
+              // Double-refresh: first get the campaign with forced refresh
               const updatedCampaign = await this.getCampaign(url.campaignId, true);
               if (updatedCampaign) {
+                // Then get its URLs with forced refresh
+                const refreshedUrls = await this.getUrls(url.campaignId, true);
                 console.log(`📊 Retrieved fresh campaign data for ${updatedCampaign.name}:`);
-                console.log(`  - Found ${updatedCampaign.urls.length} URLs after refresh`);
-                const refreshedUrl = updatedCampaign.urls.find(u => u.id === url.id);
+                console.log(`  - Found ${refreshedUrls.length} URLs after refresh`);
+                
+                // Find our updated URL in the refreshed data
+                const refreshedUrl = refreshedUrls.find(u => u.id === url.id);
                 if (refreshedUrl) {
                   console.log(`  - URL #${url.id} refreshed limits:`, {
                     clickLimit: refreshedUrl.clickLimit,
                     originalClickLimit: refreshedUrl.originalClickLimit
                   });
                 }
+                
+                // Re-cache the campaign with fresh URLs to ensure UI gets updated values
+                const campaign = { ...updatedCampaign };
+                delete (campaign as any).urls; // Remove urls property to avoid TypeScript error
+                
+                this.campaignCache.set(url.campaignId, {
+                  lastUpdated: Date.now(),
+                  campaign: campaign
+                });
+                
+                // Also update the campaignUrlsCache directly
+                // Get fresh weighted distribution
+                const weightedDistribution = await this.getWeightedUrlDistribution(url.campaignId);
+                
+                // Update the cache with all required properties
+                this.campaignUrlsCache.set(url.campaignId, {
+                  lastUpdated: Date.now(),
+                  activeUrls: weightedDistribution.activeUrls,
+                  weightedDistribution: weightedDistribution.weightedDistribution
+                });
+                console.log(`✅ Re-cached campaign ${url.campaignId} with fresh URL data`);
               }
             }
             
