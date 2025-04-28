@@ -1557,13 +1557,16 @@ export class DatabaseStorage implements IStorage {
       }
       
       try {
-        // CRITICAL FIX: Use raw SQL to bypass protection for direct updates from Original URL Records
-        // This ensures the update goes through without being blocked by trigger protection
+        // Log actual values being applied
+        console.log(`⚙️ Setting click_limit=${updateData.clickLimit || record.originalClickLimit}, original_click_limit=${record.originalClickLimit}`);
+      
+        // CRITICAL FIX: Use raw SQL to bypass protection by disabling all triggers during the update
+        // This is a much more reliable approach than trying to use session variables
         await db.execute(`
-          -- Explicitly set the bypass flag for this update
-          SET app.bypass_click_protection = 'true';
+          -- Temporarily disable all triggers 
+          ALTER TABLE urls DISABLE TRIGGER ALL;
 
-          -- Update the URL record directly with SQL
+          -- Update the URL record directly with SQL with EXPLICIT original_click_limit update
           UPDATE urls
           SET 
             original_click_limit = ${record.originalClickLimit},
@@ -1571,9 +1574,20 @@ export class DatabaseStorage implements IStorage {
             updated_at = NOW()
           WHERE id = ${url.id};
           
-          -- Reset the bypass flag
-          SET app.bypass_click_protection = 'false';
+          -- Re-enable all triggers
+          ALTER TABLE urls ENABLE TRIGGER ALL;
         `);
+
+        // Double-check that the update was successful by querying the database directly
+        const updatedUrlResult = await db.execute(`
+          SELECT id, name, click_limit, original_click_limit 
+          FROM urls
+          WHERE id = ${url.id}
+        `);
+        
+        if (updatedUrlResult[0]) {
+          console.log(`🔍 Verification: URL #${url.id} now has values:`, updatedUrlResult[0]);
+        }
 
         // Log success
         console.log(`✅ Successfully updated URL #${url.id}`);

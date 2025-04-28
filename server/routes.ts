@@ -3390,28 +3390,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`📊 Original Click Limit being updated to: ${updateData.originalClickLimit}`);
       }
       
-      // CRITICAL FIX: Disable click protection for updates from the Original URL Records page
-      // Set session variable to bypass click protection (this is picked up by the sync function)
-      await db.execute(`SET app.bypass_click_protection = 'true'`);
-      console.log('⚠️ BYPASSING CLICK PROTECTION for this update from Original URL Records page');
+      // Update the record - the sync function will handle trigger disabling
+      const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
       
-      try {
-        // Update the record (with protection bypassed)
-        const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
-        
-        if (!updatedRecord) {
-          return res.status(404).json({ message: "Original URL record not found" });
-        }
-        
-        // Cache invalidation happens in the storage methods
-        // No need to manually invalidate here
-        
-        res.json(updatedRecord);
-      } finally {
-        // Reset the session variable to re-enable protection for other updates
-        await db.execute(`SET app.bypass_click_protection = 'false'`);
-        console.log('✅ Re-enabled click protection after update');
+      if (!updatedRecord) {
+        return res.status(404).json({ message: "Original URL record not found" });
       }
+      
+      // Sync this update to all connected URLs, using the safer ALTER TABLE approach
+      if (updateData.originalClickLimit !== undefined) {
+        console.log(`✅ Successfully updated original click limit to ${updateData.originalClickLimit}`);
+        console.log(`🔄 Propagating changes to all linked URL instances...`);
+        
+        const syncedUrlCount = await storage.syncUrlsWithOriginalRecord(id);
+        console.log(`✅ Successfully propagated original click limit update to ${syncedUrlCount} URLs`);
+      }
+      
+      // Cache invalidation happens in the storage methods
+      // No need to manually invalidate here
+      
+      res.json(updatedRecord);
     } catch (error) {
       console.error("Error updating original URL record:", error);
       
