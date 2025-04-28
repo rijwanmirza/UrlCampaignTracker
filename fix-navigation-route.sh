@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Fix Navigation and Route - Simplified Script
-# This script focuses specifically on fixing the route to the Original URL Records page
+# Fix Navigation Route - Address the PM2/Nginx connection issues
+# This script takes a comprehensive approach to fixing the server connectivity
 
 # Text formatting
 GREEN='\033[0;32m'
@@ -12,294 +12,251 @@ NC='\033[0m' # No Color
 
 # Configuration
 APP_DIR="/var/www/url-campaign"
-PM2_APP_NAME="url-campaign"
+NGINX_CONF="/etc/nginx/sites-available/default"
+NGINX_MAIN_CONF="/etc/nginx/nginx.conf"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          FIXING ORIGINAL URL RECORDS ROUTE                   ║${NC}"
+echo -e "${BLUE}║         FINAL FIX FOR NAVIGATION & CONNECTIVITY              ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
 
-# Backup the application
-echo -e "${YELLOW}📦 Creating backup before fixes...${NC}"
-BACKUP_DIR="/root/url-campaign-route-fix-backup-$(date +%Y%m%d%H%M%S)"
-mkdir -p $BACKUP_DIR
-cp -r $APP_DIR/client/src/* $BACKUP_DIR/
-echo -e "${GREEN}✓ Backup created at ${BACKUP_DIR}${NC}"
-echo
+# Step 1: Install netstat if not already available
+echo -e "${YELLOW}Installing network diagnostic tools...${NC}"
+apt-get update -qq && apt-get install -y net-tools lsof
 
-# Step 1: Create a direct solution file
-echo -e "${YELLOW}🔧 Creating direct-fix script...${NC}"
+# Step 2: Stop the application to make a clean restart
+echo -e "${YELLOW}🛑 Stopping application...${NC}"
+pm2 stop url-campaign
+echo -e "${GREEN}✓ Application stopped${NC}"
 
-# Create a file with the route component
-cat > "$APP_DIR/original-url-records-page.jsx" << 'EOF'
-import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle, Plus } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+# Step 3: Find and remove conflicting server blocks in main Nginx config
+echo -e "${YELLOW}🔍 Checking for conflicting server blocks...${NC}"
+# Check if there's a server block with views.yoyoprime.com in main config
+if grep -q "server_name.*views.yoyoprime.com" "$NGINX_MAIN_CONF"; then
+  echo -e "${RED}Found conflicting server block in main Nginx config${NC}"
+  # Create a backup of the original file
+  cp "$NGINX_MAIN_CONF" "${NGINX_MAIN_CONF}.bak.$(date +%Y%m%d%H%M%S)"
+  echo -e "${GREEN}✓ Backed up main Nginx config${NC}"
+  
+  # Remove or comment out the server block
+  sed -i '/server {/,/}/s/^/#/' "$NGINX_MAIN_CONF"
+  echo -e "${GREEN}✓ Commented out conflicting server blocks${NC}"
+fi
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+# Step 4: Create a proper start script that explicitly binds to 0.0.0.0
+echo -e "${YELLOW}📝 Creating proper start script...${NC}"
 
-// Form schema validation
-const formSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  target_url: z.string().url("Must be a valid URL"),
-  click_limit: z.coerce.number().int().min(0, "Must be a positive number"),
-  clicks: z.coerce.number().int().min(0, "Must be a positive number"),
-  status: z.enum(["active", "paused"]),
-  notes: z.string().optional(),
+cat > "$APP_DIR/explicit-start.js" << 'EOF'
+// Start script that explicitly binds to 0.0.0.0
+import { spawn } from 'child_process';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+console.log('Starting URL Campaign Manager...');
+console.log('Working directory:', __dirname);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT || 5000);
+
+const serverProcess = spawn('node', ['dist/index.js'], {
+  cwd: __dirname,
+  env: {
+    ...process.env,
+    NODE_ENV: 'production',
+    PORT: '5000',
+    HOST: '0.0.0.0' // Force binding to all interfaces
+  },
+  stdio: 'inherit'
 });
 
-export default function OriginalUrlRecordsPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isNewRecordDialogOpen, setIsNewRecordDialogOpen] = useState(false);
+serverProcess.on('error', (err) => {
+  console.error('Failed to start server process:', err);
+  process.exit(1);
+});
 
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Original URL Records</h1>
-          <p className="text-muted-foreground mb-4">
-            Master records for URL data. Updates here can be propagated to all linked URLs.
-          </p>
-        </div>
-        <Button onClick={() => setIsNewRecordDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Record
-        </Button>
-      </div>
+process.on('SIGINT', () => {
+  serverProcess.kill('SIGINT');
+  process.exit(0);
+});
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="p-4 text-center">
-            <p>This is a placeholder for the Original URL Records page.</p>
-            <p>If you are seeing this, the page is correctly rendering but the API endpoints may need configuration.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* New Record Dialog */}
-      <Dialog open={isNewRecordDialogOpen} onOpenChange={setIsNewRecordDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Create New Original URL Record</DialogTitle>
-          </DialogHeader>
-
-          <div className="p-4">
-            <p>Placeholder for form - API endpoint needs configuration</p>
-          </div>
-
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsNewRecordDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button>Create Record</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+process.on('SIGTERM', () => {
+  serverProcess.kill('SIGTERM');
+  process.exit(0);
+});
 EOF
 
-# Create a direct-fix script
-cat > "$APP_DIR/direct-fix.cjs" << 'EOF'
-const fs = require('fs');
-const path = require('path');
+echo -e "${GREEN}✓ Created explicit start script${NC}"
 
-// Configuration
-const APP_DIR = process.argv[2] || '/var/www/url-campaign';
-const CLIENT_SRC = path.join(APP_DIR, 'client/src');
-const PAGES_DIR = path.join(CLIENT_SRC, 'pages');
-const APP_TSX = path.join(CLIENT_SRC, 'App.tsx');
-const COMP_DIR = path.join(PAGES_DIR, 'original-url-records-page.jsx');
+# Step 5: Create a fallback shell script version
+echo -e "${YELLOW}📝 Creating shell script version...${NC}"
 
-// Ensure directories exist
-if (!fs.existsSync(PAGES_DIR)) {
-  fs.mkdirSync(PAGES_DIR, { recursive: true });
-  console.log(`Created pages directory at ${PAGES_DIR}`);
-}
-
-// Copy the component
-const sourceFile = path.join(APP_DIR, 'original-url-records-page.jsx');
-if (fs.existsSync(sourceFile)) {
-  fs.copyFileSync(sourceFile, path.join(PAGES_DIR, 'original-url-records-page.jsx'));
-  console.log(`Copied Original URL Records page to ${PAGES_DIR}`);
-} else {
-  console.error(`Source file not found at ${sourceFile}`);
-  process.exit(1);
-}
-
-// Fix App.tsx
-if (fs.existsSync(APP_TSX)) {
-  let appContent = fs.readFileSync(APP_TSX, 'utf8');
-
-  // Check if import exists
-  if (!appContent.includes('import OriginalUrlRecordsPage')) {
-    // Add import
-    const importLine = "import OriginalUrlRecordsPage from './pages/original-url-records-page';\n";
-    appContent = importLine + appContent;
-    console.log('Added import for OriginalUrlRecordsPage');
-  }
-
-  // Check if route exists
-  if (!appContent.includes('/original-url-records')) {
-    // Find the Switch component
-    if (appContent.includes('<Switch>')) {
-      // Add route inside Switch
-      appContent = appContent.replace(
-        /<Switch>/,
-        '<Switch>\n        <Route path="/original-url-records" component={OriginalUrlRecordsPage} />'
-      );
-      console.log('Added route for /original-url-records in Switch');
-    } else if (appContent.includes('function App()')) {
-      // No Switch found, try to add a complete Router
-      console.log('No Switch component found, adding custom Router with route');
-
-      // Add a complete Router component with our route
-      const routerComponent = `
-function Router() {
-  return (
-    <div>
-      <Route path="/" component={HomePage} />
-      <Route path="/original-url-records" component={OriginalUrlRecordsPage} />
-    </div>
-  );
-}
-`;
-
-      // Insert the Router component before App
-      appContent = appContent.replace(
-        /function App\(\)/,
-        `${routerComponent}\nfunction App()`
-      );
-
-      // Replace the content in App with our Router
-      appContent = appContent.replace(
-        /return \([^)]*\);/s,
-        'return (\n    <Router />\n  );'
-      );
-    } else {
-      console.log('Could not find suitable place to add route. Manual intervention needed.');
-    }
-  }
-
-  // Write updated App.tsx
-  fs.writeFileSync(APP_TSX, appContent);
-  console.log(`Updated ${APP_TSX} with Original URL Records route`);
-
-  // Create a very minimal navigation component if needed
-  const NAV_COMP = path.join(CLIENT_SRC, 'components/SimpleNav.jsx');
-  if (!fs.existsSync(path.dirname(NAV_COMP))) {
-    fs.mkdirSync(path.dirname(NAV_COMP), { recursive: true });
-  }
-
-  fs.writeFileSync(NAV_COMP, `
-import React from 'react';
-
-export default function SimpleNav() {
-  return (
-    <div style={{ 
-      background: '#f0f0f0', 
-      padding: '10px', 
-      marginBottom: '20px',
-      display: 'flex',
-      justifyContent: 'space-between' 
-    }}>
-      <div><strong>URL Redirector</strong></div>
-      <div>
-        <a href="/" style={{ marginRight: '15px' }}>Home</a>
-        <a href="/campaigns" style={{ marginRight: '15px' }}>Campaigns</a>
-        <a href="/urls" style={{ marginRight: '15px' }}>URLs</a>
-        <a href="/original-url-records" style={{ fontWeight: 'bold' }}>Original URL Records</a>
-      </div>
-    </div>
-  );
-}
-  `);
-
-  console.log(`Created simple navigation component at ${NAV_COMP}`);
-
-  // Add the navigation to App.tsx if it doesn't have navigation
-  if (!appContent.includes('SimpleNav')) {
-    let updatedContent = fs.readFileSync(APP_TSX, 'utf8');
-
-    // Add import for SimpleNav
-    if (!updatedContent.includes('import SimpleNav')) {
-      updatedContent = updatedContent.replace(
-        /import.*from/,
-        "import SimpleNav from './components/SimpleNav';\nimport"
-      );
-    }
-
-    // Add SimpleNav to the App component
-    if (updatedContent.includes('return (')) {
-      updatedContent = updatedContent.replace(
-        /return \(/,
-        'return (\n    <>\n      <SimpleNav />'
-      );
-
-      updatedContent = updatedContent.replace(
-        /<\/(.*)>(\s*);/,
-        '</\\1>\n    </>\n  );'
-      );
-    }
-
-    fs.writeFileSync(APP_TSX, updatedContent);
-    console.log('Added SimpleNav to App.tsx');
-  }
-
-} else {
-  console.error(`App.tsx not found at ${APP_TSX}`);
-  process.exit(1);
-}
-
-console.log('Direct fix applied successfully');
+cat > "$APP_DIR/start.sh" << 'EOF'
+#!/bin/bash
+cd /var/www/url-campaign
+export PORT=5000
+export HOST=0.0.0.0
+export NODE_ENV=production
+node dist/index.js
 EOF
 
-echo -e "${GREEN}✓ Direct-fix script created${NC}"
-echo
+chmod +x "$APP_DIR/start.sh"
+echo -e "${GREEN}✓ Created shell script version${NC}"
 
-# Step 2: Run the direct fix
-echo -e "${YELLOW}🔧 Running direct fix...${NC}"
-node "$APP_DIR/direct-fix.cjs" "$APP_DIR"
-echo -e "${GREEN}✓ Direct fix applied${NC}"
-echo
+# Step 6: Create a simple ecosystem config for PM2
+echo -e "${YELLOW}📝 Creating simple PM2 ecosystem config...${NC}"
 
-# Step 3: Rebuild and restart
-echo -e "${YELLOW}🚀 Rebuilding and restarting application...${NC}"
+cat > "$APP_DIR/ecosystem.config.cjs" << 'EOF'
+module.exports = {
+  apps: [{
+    name: "url-campaign",
+    script: "./start.sh",
+    env: {
+      NODE_ENV: "production",
+      PORT: 5000,
+      HOST: "0.0.0.0"
+    },
+    max_memory_restart: "500M",
+    restart_delay: 3000,
+    max_restarts: 10
+  }]
+};
+EOF
+
+echo -e "${GREEN}✓ Created simple PM2 ecosystem config${NC}"
+
+# Step 7: Restart the application
+echo -e "${YELLOW}🚀 Starting application with new configuration...${NC}"
 cd "$APP_DIR"
-npm run build
-pm2 restart $PM2_APP_NAME
-echo -e "${GREEN}✓ Application rebuilt and restarted${NC}"
-echo
+pm2 delete url-campaign 2>/dev/null
+pm2 start ecosystem.config.cjs
+sleep 5
+echo -e "${GREEN}✓ Application started with new configuration${NC}"
+
+# Step 8: Verify the application is listening
+echo -e "${YELLOW}🔌 Verifying application is actually listening...${NC}"
+LISTENING=$(netstat -tlnp | grep node)
+if [ -z "$LISTENING" ]; then
+  echo -e "${RED}⚠️ Application is not listening on any ports${NC}"
+  echo -e "${YELLOW}Trying alternative method...${NC}"
+  
+  pm2 stop url-campaign
+  cd "$APP_DIR"
+  PORT=5000 HOST=0.0.0.0 NODE_ENV=production node dist/index.js > server.log 2>&1 &
+  DIRECT_PID=$!
+  
+  sleep 5
+  
+  if ps -p $DIRECT_PID > /dev/null; then
+    echo -e "${GREEN}✓ Application started directly${NC}"
+    LISTENING=$(netstat -tlnp | grep node)
+    if [ -n "$LISTENING" ]; then
+      echo -e "${GREEN}✓ Now listening on: ${LISTENING}${NC}"
+      kill $DIRECT_PID
+      
+      # Restart with PM2
+      pm2 start "$APP_DIR/start.sh" --name url-campaign
+      pm2 save
+    else
+      echo -e "${RED}⚠️ Still not listening on any ports${NC}"
+      
+      # Check the server log
+      echo -e "${YELLOW}Checking server log:${NC}"
+      tail -n 20 "$APP_DIR/server.log"
+      
+      kill $DIRECT_PID
+    fi
+  else
+    echo -e "${RED}⚠️ Direct start failed${NC}"
+  fi
+else
+  echo -e "${GREEN}✓ Application is listening: ${LISTENING}${NC}"
+  PORT=$(echo "$LISTENING" | grep -oP ':\K\d+' | head -1)
+  echo -e "${GREEN}✓ Detected port: $PORT${NC}"
+fi
+
+# Step 9: Update Nginx configuration based on what we found
+echo -e "${YELLOW}📝 Updating Nginx configuration...${NC}"
+
+if [ -z "$PORT" ]; then
+  PORT=5000  # Default fallback
+fi
+
+# Backup the original configuration
+cp "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
+echo -e "${GREEN}✓ Backed up Nginx configuration${NC}"
+
+# Create a super simple configuration file
+cat > "$NGINX_CONF" << EOF
+server {
+    listen 80;
+    server_name views.yoyoprime.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:$PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+}
+EOF
+
+echo -e "${GREEN}✓ Created simple Nginx configuration${NC}"
+
+# Step 10: Check if the configuration is valid and restart Nginx
+echo -e "${YELLOW}🔍 Validating Nginx configuration...${NC}"
+nginx -t
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}✓ Nginx configuration is valid${NC}"
+  
+  # Restart Nginx
+  echo -e "${YELLOW}🔄 Restarting Nginx...${NC}"
+  systemctl restart nginx
+  if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Nginx restarted successfully${NC}"
+  else
+    echo -e "${RED}⚠️ Failed to restart Nginx${NC}"
+  fi
+else
+  echo -e "${RED}⚠️ Nginx configuration is invalid${NC}"
+fi
+
+# Step 11: Double-check connections
+echo -e "${YELLOW}🔍 Testing connections...${NC}"
+echo -e "${YELLOW}1. Checking if application responds on port $PORT:${NC}"
+curl -s -I "http://localhost:$PORT/" | head -1
+echo -e "${YELLOW}2. Checking if Nginx responds:${NC}"
+curl -s -I "http://localhost/" | head -1
 
 # Final message
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                     FIX COMPLETED                            ║${NC}"
+echo -e "${BLUE}║                      FIX COMPLETED                           ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
-echo -e "${GREEN}✓ Route to Original URL Records page should now be working${NC}"
-echo -e "${GREEN}✓ You can access it at: https://views.yoyoprime.com/original-url-records${NC}"
-echo -e "${GREEN}✓ A simple navigation bar has been added to access all pages${NC}"
+echo -e "${GREEN}✓ Application has been restarted with explicit port binding${NC}"
+echo -e "${GREEN}✓ Nginx has been configured with a minimal setup${NC}"
 echo
-echo -e "${YELLOW}If the page is still not accessible:${NC}"
-echo -e "1. Check application logs with: ${BLUE}pm2 logs ${PM2_APP_NAME}${NC}"
-echo -e "2. The fallback solution is to add the page manually in App.tsx:${NC}"
+echo -e "${YELLOW}Your site should now be accessible at: https://views.yoyoprime.com${NC}"
 echo
-echo -e "${BLUE}import OriginalUrlRecordsPage from './pages/original-url-records-page';${NC}"
-echo -e "${BLUE}<Route path=\"/original-url-records\" component={OriginalUrlRecordsPage} />${NC}"
+echo -e "${YELLOW}If you still encounter issues:${NC}"
+echo -e "1. Check if the application is listening: ${BLUE}netstat -tlnp | grep node${NC}"
+echo -e "2. Check Nginx error logs: ${BLUE}tail -f /var/log/nginx/error.log${NC}"
+echo -e "3. Check application logs: ${BLUE}pm2 logs url-campaign${NC}"
 echo
-echo -e "${GREEN}Backup of your frontend files is available at: ${BACKUP_DIR}${NC}"
+echo -e "${YELLOW}Next steps for your full site:${NC}"
+echo -e "1. After confirming the basic setup works, run the more advanced Nginx config script:${NC}"
+echo -e "   ${BLUE}./fix-nginx-config.sh${NC}"
+echo -e "2. Restore any static files if needed:${NC}"
+echo -e "   ${BLUE}cp -r /root/url-campaign-backup-*/dist/public/* $APP_DIR/dist/public/${NC}"

@@ -53,7 +53,7 @@ echo -e "${YELLOW}🔌 Checking if port 5000 is being used...${NC}"
 ss -tlnp | grep ":5000" || netstat -tlpn | grep ":5000" || lsof -i :5000
 if [ $? -ne 0 ]; then
   echo -e "${RED}⚠️ Port 5000 is not being used by any process${NC}"
-  
+
   # Try to check what port the application is actually using
   PROCESS_ID=$(pm2 jlist | grep -o '"pid":[0-9]*' | head -1 | cut -d':' -f2)
   if [ -n "$PROCESS_ID" ]; then
@@ -119,7 +119,7 @@ cat > "$NGINX_CONF" << EOF
 server {
     listen 80;
     server_name views.yoyoprime.com;
-    
+
     # SSL configuration - uncomment if you have SSL set up
     # listen 443 ssl;
     # ssl_certificate /etc/nginx/ssl/your_domain.crt;
@@ -159,10 +159,10 @@ server {
         proxy_buffer_size 128k;
         proxy_buffers 4 256k;
         proxy_busy_buffers_size 256k;
-        
+
         # Add API key for authentication bypass
         proxy_set_header X-API-Key "TraffiCS10928";
-        
+
         # Longer timeouts for API calls
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
@@ -264,7 +264,7 @@ echo -e "${YELLOW}🔍 Validating Nginx configuration...${NC}"
 nginx -t
 if [ $? -eq 0 ]; then
   echo -e "${GREEN}✓ Nginx configuration is valid${NC}"
-  
+
   # Restart Nginx
   echo -e "${YELLOW}🔄 Restarting Nginx...${NC}"
   systemctl restart nginx
@@ -304,7 +304,7 @@ if [ "$DIRECT_RESPONSE" != "000" ]; then
   echo -e "${GREEN}✓ Application is responding with HTTP status code: $DIRECT_RESPONSE${NC}"
 else
   echo -e "${RED}⚠️ Application is not responding directly${NC}"
-  
+
   # Check if the process is still running
   echo -e "${YELLOW}Checking process status...${NC}"
   if ps -p $PROCESS_ID > /dev/null; then
