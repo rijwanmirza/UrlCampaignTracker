@@ -101,7 +101,7 @@ if [ -f "$NGINX_CONF" ]; then
   # Backup the original configuration
   cp "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
   echo -e "${GREEN}✓ Backed up Nginx configuration${NC}"
-  
+
   # Create a new minimal configuration
   cat > "$NGINX_CONF" << EOF
 server {
@@ -132,21 +132,21 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
-        
+
         # Longer timeouts for TrafficStar API calls
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
         proxy_read_timeout 300;
         send_timeout 300;
     }
-    
+
     # Serve static files directly
     location ~ ^/(assets|public|images|favicon.ico) {
         expires 7d;
         access_log off;
         add_header Cache-Control "public";
     }
-    
+
     # Original URL Records fallback
     location /original-url-records {
         try_files \$uri \$uri/ /index.html;
@@ -155,7 +155,7 @@ server {
 EOF
 
   echo -e "${GREEN}✓ Updated Nginx configuration${NC}"
-  
+
   # Test and reload Nginx
   nginx -t
   if [ $? -eq 0 ]; then
