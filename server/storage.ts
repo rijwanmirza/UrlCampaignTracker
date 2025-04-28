@@ -625,7 +625,7 @@ export class DatabaseStorage implements IStorage {
         await db
           .update(urls)
           .set({ 
-            active: true,
+            status: "active",
             updatedAt: new Date()
           })
           .where(inArray(urls.id, ids));
@@ -852,7 +852,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(urls)
         .set({ 
-          active: true,
+          status: "active",
           updatedAt: new Date()
         })
         .where(eq(urls.id, id));
@@ -1277,7 +1277,7 @@ export class DatabaseStorage implements IStorage {
           campaignId: urls.campaignId
         })
         .from(urls)
-        .where(ne(urls.active, false));
+        .where(eq(urls.status, 'active'));
       
       // Add search filter if provided
       if (search) {
