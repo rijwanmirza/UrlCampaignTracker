@@ -1488,17 +1488,58 @@ export class DatabaseStorage implements IStorage {
     const matchingUrls = await db.select().from(urls).where(eq(urls.name, record.name));
     if (matchingUrls.length === 0) return 0;
     
-    // Update all matching URLs with the original click limit
-    await db
-      .update(urls)
-      .set({ 
-        originalClickLimit: record.originalClickLimit,
-        // Don't update the actual clickLimit since that could be modified by campaign multipliers
-        updatedAt: new Date()
-      })
-      .where(eq(urls.name, record.name));
+    // Process each URL individually to apply campaign multipliers correctly
+    let updatedCount = 0;
     
-    return matchingUrls.length;
+    for (const url of matchingUrls) {
+      // Set the original click limit from the master record
+      let updateData: any = {
+        originalClickLimit: record.originalClickLimit,
+        updatedAt: new Date()
+      };
+      
+      // If the URL belongs to a campaign, apply the campaign multiplier
+      if (url.campaignId) {
+        const campaign = await this.getCampaign(url.campaignId);
+        if (campaign && campaign.multiplier) {
+          // Convert multiplier to number if it's a string
+          const multiplierValue = typeof campaign.multiplier === 'string'
+            ? parseFloat(campaign.multiplier)
+            : campaign.multiplier;
+          
+          // Apply multiplier if greater than 0.01
+          if (multiplierValue > 0.01) {
+            // Calculate new click limit with multiplier
+            updateData.clickLimit = Math.ceil(record.originalClickLimit * multiplierValue);
+            
+            console.log('🔍 DEBUG: Updated URL record for', record.name);
+            console.log('🔍 DEBUG: URL updated with new limits:');
+            console.log(`  - Original click limit: ${record.originalClickLimit}`);
+            console.log(`  - After multiplier (${multiplierValue}x): ${updateData.clickLimit}`);
+            console.log(`  - Calculation: ${record.originalClickLimit} × ${multiplierValue} = ${updateData.clickLimit}`);
+          }
+        }
+      } else {
+        // If not in a campaign, clickLimit should match originalClickLimit
+        updateData.clickLimit = record.originalClickLimit;
+      }
+      
+      // Update this URL with the new values
+      await db
+        .update(urls)
+        .set(updateData)
+        .where(eq(urls.id, url.id));
+      
+      // Invalidate cache for this URL and its campaign
+      this.invalidateUrlCache(url.id);
+      if (url.campaignId) {
+        this.invalidateCampaignCache(url.campaignId);
+      }
+      
+      updatedCount++;
+    }
+    
+    return updatedCount;
   }
 }
 
