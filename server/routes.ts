@@ -3362,6 +3362,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.put("/api/original-url-records/:id", async (req: Request, res: Response) => {
+    // Variable to track if click protection bypass was enabled
+    let clickProtectionBypassEnabled = false;
+    
     try {
       const id = parseInt(req.params.id);
       
@@ -3388,9 +3391,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This is the key value that will propagate to all instances
       if (updateData.originalClickLimit !== undefined) {
         console.log(`📊 Original Click Limit being updated to: ${updateData.originalClickLimit}`);
+        
+        // CRITICAL FIX: Disable click protection for sync operations 
+        // Set session variable to bypass click protection
+        await db.execute(`SET app.bypass_click_protection = 'true'`);
+        clickProtectionBypassEnabled = true;
+        console.log('⚠️ BYPASSING CLICK PROTECTION for Original URL Records update operation');
       }
       
-      // Update the record - the sync function will handle trigger disabling
+      // Update the record
       const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
       
       if (!updatedRecord) {
@@ -3409,23 +3418,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Cache invalidation happens in the storage methods
       // No need to manually invalidate here
       
-      res.json(updatedRecord);
+      // Re-enable click protection if it was disabled
+      if (clickProtectionBypassEnabled) {
+        await db.execute(`SET app.bypass_click_protection = 'false'`);
+        clickProtectionBypassEnabled = false;
+        console.log('✅ Re-enabled click protection after successful update');
+      }
+      
+      return res.json(updatedRecord);
     } catch (error) {
       console.error("Error updating original URL record:", error);
       
-      // Reset the session variable in case of error
-      try {
-        await db.execute(`SET app.bypass_click_protection = 'false'`);
-        console.log('✅ Re-enabled click protection after error');
-      } catch (resetError) {
-        console.error('Error resetting bypass_click_protection flag:', resetError);
+      // Reset the session variable in case of error, but only if we enabled it
+      if (clickProtectionBypassEnabled) {
+        try {
+          await db.execute(`SET app.bypass_click_protection = 'false'`);
+          console.log('✅ Re-enabled click protection after error');
+        } catch (resetError) {
+          console.error('Error resetting bypass_click_protection flag:', resetError);
+        }
       }
       
       if (error instanceof Error && error.message.includes("duplicate key")) {
         return res.status(400).json({ message: "A record with this name already exists" });
       }
       
-      res.status(500).json({ message: "Failed to update original URL record" });
+      return res.status(500).json({ message: "Failed to update original URL record" });
     }
   });
   
@@ -3451,6 +3469,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/original-url-records/:id/sync", async (req: Request, res: Response) => {
+    // Variable to track if click protection bypass was enabled
+    let clickProtectionBypassEnabled = false;
+    
     try {
       const id = parseInt(req.params.id);
       
@@ -3467,34 +3488,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // CRITICAL FIX: Disable click protection for sync operations from the Original URL Records page
       // Set session variable to bypass click protection
       await db.execute(`SET app.bypass_click_protection = 'true'`);
+      clickProtectionBypassEnabled = true;
       console.log('⚠️ BYPASSING CLICK PROTECTION for Original URL Records sync operation');
       
-      try {
-        // Sync with click protection disabled
-        const updatedUrlCount = await storage.syncUrlsWithOriginalRecord(id);
-        
-        res.json({ 
-          message: "Original URL record synced successfully",
-          updatedUrlCount,
-          record
-        });
-      } finally {
-        // Reset the session variable to re-enable protection
+      // Sync with click protection disabled
+      const updatedUrlCount = await storage.syncUrlsWithOriginalRecord(id);
+      
+      // Re-enable click protection
+      if (clickProtectionBypassEnabled) {
         await db.execute(`SET app.bypass_click_protection = 'false'`);
+        clickProtectionBypassEnabled = false;
         console.log('✅ Re-enabled click protection after sync operation');
       }
+      
+      return res.json({ 
+        message: "Original URL record synced successfully",
+        updatedUrlCount,
+        record
+      });
     } catch (error) {
       console.error("Error syncing original URL record:", error);
       
-      // Reset the session variable in case of error
-      try {
-        await db.execute(`SET app.bypass_click_protection = 'false'`);
-        console.log('✅ Re-enabled click protection after error');
-      } catch (resetError) {
-        console.error('Error resetting bypass_click_protection flag:', resetError);
+      // Reset the session variable in case of error, but only if we enabled it
+      if (clickProtectionBypassEnabled) {
+        try {
+          await db.execute(`SET app.bypass_click_protection = 'false'`);
+          console.log('✅ Re-enabled click protection after error');
+        } catch (resetError) {
+          console.error('Error resetting bypass_click_protection flag:', resetError);
+        }
       }
       
-      res.status(500).json({ message: "Failed to sync original URL record" });
+      return res.status(500).json({ message: "Failed to sync original URL record" });
     }
   });
 
