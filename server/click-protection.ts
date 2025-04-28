@@ -97,11 +97,12 @@ export async function applyClickProtection() {
     
     if (Array.isArray(urlTriggersResult) && urlTriggersResult.length > 0) {
       // Direct array format
-      triggerCount = parseInt(urlTriggersResult[0]?.count || '0');
+      triggerCount = parseInt(String(urlTriggersResult[0]?.count || '0'));
     } else if (urlTriggersResult && typeof urlTriggersResult === 'object') {
       // Node-postgres style format with rows
-      if (Array.isArray(urlTriggersResult.rows) && urlTriggersResult.rows.length > 0) {
-        triggerCount = parseInt(urlTriggersResult.rows[0]?.count || '0');
+      const pgResult = urlTriggersResult as { rows?: Array<{ count: string | number }> };
+      if (pgResult.rows && Array.isArray(pgResult.rows) && pgResult.rows.length > 0) {
+        triggerCount = parseInt(String(pgResult.rows[0]?.count || '0'));
       }
     }
     

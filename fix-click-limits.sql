@@ -27,10 +27,10 @@ UPDATE urls u
 SET 
   original_click_limit = ou.original_click_limit,
   click_limit = ROUND(ou.original_click_limit * COALESCE(c.multiplier, 1))
-FROM original_url_records ou
-JOIN campaigns c ON u.campaign_id = c.id
+FROM original_url_records ou, campaigns c
 WHERE 
   u.name = ou.name AND
+  u.campaign_id = c.id AND
   ou.original_click_limit != u.original_click_limit;
 
 -- Step 4: Verify the fixes worked
