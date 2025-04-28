@@ -28,11 +28,11 @@ cat > "/etc/nginx/sites-available/default" << 'EOF'
 server {
     listen 80;
     server_name views.yoyoprime.com;
-    
+
     # Add cache control headers to prevent caching
     add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
     add_header Pragma "no-cache";
-    
+
     # Main location for all frontend routes - using IPv4 (127.0.0.1) instead of IPv6 ([::1])
     location / {
         proxy_pass http://127.0.0.1:5000;
@@ -48,7 +48,7 @@ server {
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
     }
-    
+
     # WebSocket support
     location /ws {
         proxy_pass http://127.0.0.1:5000;
