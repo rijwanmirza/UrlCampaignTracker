@@ -33,6 +33,7 @@ import { gmailReader } from "./gmail-reader";
 import { db } from "./db";
 import { eq, and, isNotNull, sql } from "drizzle-orm";
 import Imap from "imap";
+import { trafficStarService } from "./trafficstar-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
@@ -1061,7 +1062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Scheduling budget update for this URL in 10 minutes`);
           
           // Add to the pending URL budgets tracking
-          await trafficstarService.trackNewUrlForBudgetUpdate(
+          await trafficStarService.trackNewUrlForBudgetUpdate(
             url.id,
             campaignId,
             campaign.trafficstarCampaignId,
@@ -1137,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`Scheduling budget update for this URL in 10 minutes`);
               
               // Add to the pending URL budgets tracking using only the difference
-              await trafficstarService.trackNewUrlForBudgetUpdate(
+              await trafficStarService.trackNewUrlForBudgetUpdate(
                 url.id,
                 existingUrl.campaignId,
                 campaign.trafficstarCampaignId,
