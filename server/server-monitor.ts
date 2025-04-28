@@ -47,6 +47,7 @@ export async function getServerStats(): Promise<ServerStats> {
     
     // Get CPU details
     const cpuInfo = await si.cpu();
+    console.log("CPU Info from systeminformation:", JSON.stringify(cpuInfo, null, 2));
     
     // Get memory usage
     const memory = await si.mem();
@@ -58,6 +59,8 @@ export async function getServerStats(): Promise<ServerStats> {
     // Get system uptime and load average
     const uptime = await si.time();
     const loadavg = await si.currentLoad();
+    console.log("Load average data:", JSON.stringify(loadavg, null, 2));
+    console.log("OS load averages:", await si.osInfo().then(os => os.platform), require('os').loadavg());
     
     // Calculate memory usage percentage
     const memoryUsagePercent = (memory.total - memory.available) / memory.total * 100;
