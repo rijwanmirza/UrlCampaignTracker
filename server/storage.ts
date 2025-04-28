@@ -1509,110 +1509,119 @@ export class DatabaseStorage implements IStorage {
   }
 
   async syncUrlsWithOriginalRecord(recordId: number): Promise<number> {
-    const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, recordId));
-    if (!record) return 0;
-    
-    // Find all URLs with matching name - this will include URLs in all campaigns
-    const matchingUrls = await db.select().from(urls).where(eq(urls.name, record.name));
-    if (matchingUrls.length === 0) return 0;
-    
-    console.log(`🔄 Found ${matchingUrls.length} URLs with name "${record.name}" to update`);
-    
-    // Process each URL individually to apply campaign multipliers correctly
-    let updatedCount = 0;
-    
-    for (const url of matchingUrls) {
-      console.log(`🔍 Processing URL #${url.id} in campaign ID ${url.campaignId || 'none'}`);
+    try {
+      const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, recordId));
+      if (!record) return 0;
       
-      // Keep track of existing clicks to preserve that data
-      const existingClicks = url.clicks || 0;
+      // Find all URLs with matching name - this will include URLs in all campaigns
+      const matchingUrls = await db.select().from(urls).where(eq(urls.name, record.name));
+      if (matchingUrls.length === 0) return 0;
       
-      // Set the original click limit from the master record
-      let updateData: any = {
-        originalClickLimit: record.originalClickLimit,
-        updatedAt: new Date()
-      };
+      console.log(`🔄 Found ${matchingUrls.length} URLs with name "${record.name}" to update`);
       
-      // If the URL belongs to a campaign, apply the campaign multiplier
-      if (url.campaignId) {
-        const campaign = await this.getCampaign(url.campaignId);
-        if (campaign && campaign.multiplier) {
-          // Convert multiplier to number if it's a string
-          const multiplierValue = typeof campaign.multiplier === 'string'
-            ? parseFloat(campaign.multiplier)
-            : campaign.multiplier;
-          
-          // Apply multiplier if greater than 0.01
-          if (multiplierValue > 0.01) {
-            // Calculate new click limit with multiplier
-            updateData.clickLimit = Math.ceil(record.originalClickLimit * multiplierValue);
-            
-            console.log(`📊 URL #${url.id} updated:`);
-            console.log(`  - Original click limit: ${record.originalClickLimit}`);
-            console.log(`  - Campaign multiplier: ${multiplierValue}x`);
-            console.log(`  - New click limit: ${updateData.clickLimit}`);
-            console.log(`  - Existing clicks: ${existingClicks} (preserved)`);
-          }
-        }
-      } else {
-        // If not in a campaign, clickLimit should match originalClickLimit
-        updateData.clickLimit = record.originalClickLimit;
-        console.log(`📊 URL #${url.id} updated with no campaign multiplier:`);
-        console.log(`  - Original click limit = new click limit: ${record.originalClickLimit}`);
-        console.log(`  - Existing clicks: ${existingClicks} (preserved)`);
-      }
+      // Enable click protection bypass for this entire operation
+      await this.setClickProtectionBypass(true);
       
       try {
-        // Log actual values being applied
-        console.log(`⚙️ Setting click_limit=${updateData.clickLimit || record.originalClickLimit}, original_click_limit=${record.originalClickLimit}`);
-      
-        // CRITICAL FIX: Use raw SQL to bypass protection by disabling all triggers during the update
-        // This is a much more reliable approach than trying to use session variables
-        await db.execute(`
-          -- Temporarily disable all triggers 
-          ALTER TABLE urls DISABLE TRIGGER ALL;
-
-          -- Update the URL record directly with SQL with EXPLICIT original_click_limit update
-          UPDATE urls
-          SET 
-            original_click_limit = ${record.originalClickLimit},
-            click_limit = ${updateData.clickLimit || record.originalClickLimit},
-            updated_at = NOW()
-          WHERE id = ${url.id};
+        // Process each URL individually to apply campaign multipliers correctly
+        let updatedCount = 0;
+        
+        for (const url of matchingUrls) {
+          console.log(`🔍 Processing URL #${url.id} in campaign ID ${url.campaignId || 'none'}`);
           
-          -- Re-enable all triggers
-          ALTER TABLE urls ENABLE TRIGGER ALL;
-        `);
-
-        // Double-check that the update was successful by querying the database directly
-        const updatedUrlResult = await db.execute(`
-          SELECT id, name, click_limit, original_click_limit 
-          FROM urls
-          WHERE id = ${url.id}
-        `);
-        
-        if (updatedUrlResult[0]) {
-          console.log(`🔍 Verification: URL #${url.id} now has values:`, updatedUrlResult[0]);
+          // Keep track of existing clicks to preserve that data
+          const existingClicks = url.clicks || 0;
+          
+          // Set the original click limit from the master record
+          let updateData: any = {
+            originalClickLimit: record.originalClickLimit,
+            updatedAt: new Date()
+          };
+          
+          // If the URL belongs to a campaign, apply the campaign multiplier
+          if (url.campaignId) {
+            const campaign = await this.getCampaign(url.campaignId);
+            if (campaign && campaign.multiplier) {
+              // Convert multiplier to number if it's a string
+              const multiplierValue = typeof campaign.multiplier === 'string'
+                ? parseFloat(campaign.multiplier)
+                : campaign.multiplier;
+              
+              // Apply multiplier if greater than 0.01
+              if (multiplierValue > 0.01) {
+                // Calculate new click limit with multiplier
+                updateData.clickLimit = Math.ceil(record.originalClickLimit * multiplierValue);
+                
+                console.log(`📊 URL #${url.id} updated:`);
+                console.log(`  - Original click limit: ${record.originalClickLimit}`);
+                console.log(`  - Campaign multiplier: ${multiplierValue}x`);
+                console.log(`  - New click limit: ${updateData.clickLimit}`);
+                console.log(`  - Existing clicks: ${existingClicks} (preserved)`);
+              }
+            }
+          } else {
+            // If not in a campaign, clickLimit should match originalClickLimit
+            updateData.clickLimit = record.originalClickLimit;
+            console.log(`📊 URL #${url.id} updated with no campaign multiplier:`);
+            console.log(`  - Original click limit = new click limit: ${record.originalClickLimit}`);
+            console.log(`  - Existing clicks: ${existingClicks} (preserved)`);
+          }
+          
+          try {
+            // Log actual values being applied
+            console.log(`⚙️ Setting click_limit=${updateData.clickLimit || record.originalClickLimit}, original_click_limit=${record.originalClickLimit}`);
+          
+            // Update the URL directly with the new values
+            // The bypass_click_protection session variable is already set to TRUE
+            const [updatedUrl] = await db
+              .update(urls)
+              .set({
+                originalClickLimit: record.originalClickLimit,
+                clickLimit: updateData.clickLimit || record.originalClickLimit,
+                updatedAt: new Date()
+              })
+              .where(eq(urls.id, url.id))
+              .returning();
+            
+            // Verify the update was successful
+            if (updatedUrl) {
+              console.log(`🔍 Verification: URL #${url.id} now has values:`, {
+                id: updatedUrl.id,
+                name: updatedUrl.name,
+                clickLimit: updatedUrl.clickLimit,
+                originalClickLimit: updatedUrl.originalClickLimit
+              });
+            }
+            
+            // Invalidate cache for this URL and its campaign to ensure changes are visible immediately
+            this.invalidateUrlCache(url.id);
+            if (url.campaignId) {
+              this.invalidateCampaignCache(url.campaignId);
+            }
+            
+            console.log(`✅ Successfully updated URL #${url.id}`);
+            updatedCount++;
+          } catch (error) {
+            console.error(`❌ Error updating URL #${url.id}:`, error);
+          }
         }
-
-        // Log success
-        console.log(`✅ Successfully updated URL #${url.id}`);
         
-        // Invalidate cache for this URL and its campaign to ensure changes are visible immediately
-        this.invalidateUrlCache(url.id);
-        if (url.campaignId) {
-          this.invalidateCampaignCache(url.campaignId);
-        }
-        
-        console.log(`✅ Successfully updated URL #${url.id}`);
-        updatedCount++;
-      } catch (error) {
-        console.error(`❌ Error updating URL #${url.id}:`, error);
+        console.log(`🎉 Successfully updated ${updatedCount} out of ${matchingUrls.length} URLs`);
+        return updatedCount;
+      } finally {
+        // Always disable click protection bypass when we're done
+        await this.setClickProtectionBypass(false);
       }
+    } catch (error) {
+      console.error('Error syncing URLs with original record:', error);
+      // Make sure we always disable the bypass in case of errors
+      try {
+        await this.setClickProtectionBypass(false);
+      } catch (bypassError) {
+        console.error('Error resetting click protection bypass:', bypassError);
+      }
+      throw error;
     }
-    
-    console.log(`🎉 Successfully updated ${updatedCount} out of ${matchingUrls.length} URLs`);
-    return updatedCount;
   }
 
   /**
@@ -1624,12 +1633,12 @@ export class DatabaseStorage implements IStorage {
   async setClickProtectionBypass(enabled: boolean): Promise<void> {
     try {
       if (enabled) {
-        console.log('⚠️ Setting database session variable bypass_click_protection = TRUE');
-        await db.execute(sql`SET SESSION bypass_click_protection = TRUE`);
+        console.log('⚠️ Setting database session variable app.bypass_click_protection = TRUE');
+        await db.execute(sql`SET app.bypass_click_protection = 'true'`);
         this.clickProtectionBypassed = true;
       } else {
-        console.log('✅ Setting database session variable bypass_click_protection = FALSE');
-        await db.execute(sql`SET SESSION bypass_click_protection = FALSE`);
+        console.log('✅ Setting database session variable app.bypass_click_protection = FALSE');
+        await db.execute(sql`SET app.bypass_click_protection = 'false'`);
         this.clickProtectionBypassed = false;
       }
     } catch (error) {
