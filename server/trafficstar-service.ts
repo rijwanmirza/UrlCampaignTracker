@@ -1175,6 +1175,66 @@ class TrafficStarService {
       return [];
     }
   }
+  
+  /**
+   * Schedule automatic management of TrafficStar campaigns
+   * Sets up periodic checks for campaign monitoring
+   */
+  async scheduleAutoManagement(): Promise<void> {
+    console.log('Setting up TrafficStar campaign auto-management scheduler');
+    
+    // Initial checks
+    try {
+      await this.autoManageCampaigns();
+      console.log('Initial campaign auto-management completed successfully');
+    } catch (error) {
+      console.error('Error during initial campaign auto-management:', error);
+    }
+    
+    try {
+      await this.checkCampaignsSpentValue();
+      console.log('Initial spent value check completed successfully');
+    } catch (error) {
+      console.error('Error during initial spent value check:', error);
+    }
+    
+    try {
+      await this.processPendingUrlBudgetUpdates();
+      console.log('Initial URL budget updates processed successfully');
+    } catch (error) {
+      console.error('Error during initial URL budget updates processing:', error);
+    }
+    
+    // Schedule periodic checks
+    setInterval(async () => {
+      try {
+        await this.autoManageCampaigns();
+        console.log('Periodic campaign auto-management completed');
+      } catch (error) {
+        console.error('Error during periodic campaign auto-management:', error);
+      }
+    }, 5 * 60 * 1000); // Every 5 minutes
+    
+    setInterval(async () => {
+      try {
+        await this.checkCampaignsSpentValue();
+        console.log('Periodic spent value check completed');
+      } catch (error) {
+        console.error('Error during periodic spent value check:', error);
+      }
+    }, 10 * 60 * 1000); // Every 10 minutes
+    
+    setInterval(async () => {
+      try {
+        await this.processPendingUrlBudgetUpdates();
+        console.log('Periodic URL budget updates processed');
+      } catch (error) {
+        console.error('Error during periodic URL budget updates processing:', error);
+      }
+    }, 3 * 60 * 1000); // Every 3 minutes
+    
+    console.log('TrafficStar campaign auto-management scheduler configured successfully');
+  }
 }
 
 // Export singleton instance

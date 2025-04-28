@@ -33,7 +33,6 @@ import { gmailReader } from "./gmail-reader";
 import { db } from "./db";
 import { eq, and, isNotNull, sql } from "drizzle-orm";
 import Imap from "imap";
-import { trafficStarService } from "./trafficstar-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
