@@ -62,7 +62,7 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = insertOriginalUrlRecordSchema.extend({
-  original_click_limit: z.coerce.number().min(1, {
+  originalClickLimit: z.coerce.number().min(1, {
     message: "Click limit must be at least 1",
   }),
 });
@@ -210,8 +210,8 @@ export default function OriginalUrlRecordsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      target_url: "",
-      original_click_limit: 1000,
+      targetUrl: "",
+      originalClickLimit: 1000,
     },
   });
 
@@ -220,8 +220,8 @@ export default function OriginalUrlRecordsPage() {
     resolver: zodResolver(updateOriginalUrlRecordSchema),
     defaultValues: {
       name: "",
-      target_url: "",
-      original_click_limit: 1000,
+      targetUrl: "",
+      originalClickLimit: 1000,
     },
   });
 
@@ -239,8 +239,8 @@ export default function OriginalUrlRecordsPage() {
     setEditingRecord(record);
     editForm.reset({
       name: record.name,
-      target_url: record.targetUrl,
-      original_click_limit: record.originalClickLimit,
+      targetUrl: record.targetUrl,
+      originalClickLimit: record.originalClickLimit,
     });
     setIsEditDialogOpen(true);
   };
@@ -325,7 +325,7 @@ export default function OriginalUrlRecordsPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="target_url"
+                  name="targetUrl"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Target URL</FormLabel>
@@ -341,7 +341,7 @@ export default function OriginalUrlRecordsPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="original_click_limit"
+                  name="originalClickLimit"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Original Click Limit</FormLabel>
@@ -576,7 +576,7 @@ export default function OriginalUrlRecordsPage() {
               />
               <FormField
                 control={editForm.control}
-                name="target_url"
+                name="targetUrl"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Target URL</FormLabel>
@@ -592,7 +592,7 @@ export default function OriginalUrlRecordsPage() {
               />
               <FormField
                 control={editForm.control}
-                name="original_click_limit"
+                name="originalClickLimit"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Original Click Limit</FormLabel>
