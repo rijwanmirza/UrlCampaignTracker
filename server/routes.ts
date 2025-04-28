@@ -3488,6 +3488,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  /**
+   * Force fix all URLs to match their original record values
+   * This function bypasses all protection mechanisms and directly updates the database
+   */
+  async function forceFixUrlClickLimits(originalRecordId?: number) {
+    try {
+      console.log(`🛠️ FORCE-FIXING URL CLICK LIMITS ${originalRecordId ? `for record #${originalRecordId}` : 'for ALL records'}`);
+      
+      // Create the SQL query base
+      let sqlQuery = `
+        -- Temporarily disable triggers to force the update
+        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
+        
+        -- Update all URLs with matching original record names
+        UPDATE urls u
+        SET 
+          original_click_limit = ou.original_click_limit,
+          click_limit = ROUND(ou.original_click_limit * COALESCE((SELECT multiplier FROM campaigns WHERE id = u.campaign_id), 1)),
+          updated_at = NOW()
+        FROM original_url_records ou
+        WHERE u.name = ou.name
+      `;
+      
+      // If specific ID provided, add the condition
+      if (originalRecordId) {
+        sqlQuery += ` AND ou.id = ${originalRecordId}`;
+      }
+      
+      sqlQuery += `;
+        
+        -- Re-enable triggers
+        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+      `;
+      
+      // Execute the direct SQL update
+      await db.execute(sql([sqlQuery]));
+      
+      // CRITICAL FIX: Find all affected campaign IDs to invalidate their caches
+      let affectedCampaigns: {id: number}[] = [];
+      
+      if (originalRecordId) {
+        // Get record name first
+        const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, originalRecordId));
+        
+        if (record) {
+          // Find all campaigns that have URLs with this name
+          affectedCampaigns = await db.execute(sql`
+            SELECT DISTINCT c.id 
+            FROM campaigns c
+            JOIN urls u ON u.campaign_id = c.id
+            WHERE u.name = ${record.name}
+          `);
+        }
+      } else {
+        // If updating all records, get all campaign IDs
+        affectedCampaigns = await db.select({ id: campaigns.id }).from(campaigns);
+      }
+      
+      // Invalidate all affected campaign caches
+      console.log(`🧹 Clearing campaign caches for ${affectedCampaigns.length} affected campaigns`);
+      
+      for (const campaign of affectedCampaigns) {
+        if (campaign && campaign.id) {
+          // Force invalidate campaign caches
+          storage.invalidateCampaignCache(campaign.id);
+          
+          // Force refresh to get latest data
+          await storage.getCampaign(campaign.id, true);
+          await storage.getUrls(campaign.id, true);
+          
+          console.log(`✅ Forced refresh of campaign #${campaign.id} cache`);
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error in forceFixUrlClickLimits:", error);
+      return false;
+    }
+  }
+
   app.put("/api/original-url-records/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -3517,11 +3600,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`📊 Original Click Limit being updated to: ${updateData.originalClickLimit}`);
       }
       
-      // Enable click protection bypass if we're updating click limit
-      if (isUpdatingClickLimit) {
-        await storage.setClickProtectionBypass(true);
-      }
-      
       try {
         // Update the record
         const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
@@ -3530,21 +3608,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Original URL record not found" });
         }
         
-        // Sync this update to all connected URLs if we updated the click limit
+        // If updating click limit, use our force fix function that bypasses all protections
         if (isUpdatingClickLimit) {
           console.log(`✅ Successfully updated original click limit to ${updateData.originalClickLimit}`);
-          console.log(`🔄 Propagating changes to all linked URL instances...`);
+          console.log(`🔄 Force-updating all linked URL instances...`);
           
-          const syncedUrlCount = await storage.syncUrlsWithOriginalRecord(id);
-          console.log(`✅ Successfully propagated original click limit update to ${syncedUrlCount} URLs`);
+          // CRITICAL FIX: Force update using direct SQL instead of the ORM method
+          const success = await forceFixUrlClickLimits(id);
+          
+          if (success) {
+            console.log(`✅ Successfully force-updated all URLs with name "${updatedRecord.name}"`);
+          } else {
+            console.error(`❌ Failed to force-update URLs with name "${updatedRecord.name}"`);
+          }
         }
         
         return res.json(updatedRecord);
-      } finally {
-        // Always disable click protection bypass if we enabled it
-        if (isUpdatingClickLimit) {
-          await storage.setClickProtectionBypass(false);
-        }
+      } catch (error) {
+        console.error("Error in update operation:", error);
+        throw error;
       }
     } catch (error) {
       console.error("Error updating original URL record:", error);
@@ -3594,12 +3676,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`🔄 Syncing Original URL Record #${id} (${record.name}) with click limit: ${record.originalClickLimit}`);
       
-      // Use the storage method to handle click protection bypass (will enable and disable properly)
-      // This is much safer as it ensures protection is restored even if there's an error
+      // CRITICAL FIX: Use our new direct SQL method for guaranteed updates
+      console.log(`🛠️ Using direct SQL force-update to guarantee data consistency...`);
+      const success = await forceFixUrlClickLimits(id);
+      
+      // Also call the storage method as a backup
       const updatedUrlCount = await storage.syncUrlsWithOriginalRecord(id);
       
       return res.json({ 
-        message: "Original URL record synced successfully",
+        message: `Original URL record synced successfully ${success ? '(with force update)' : ''}`,
         updatedUrlCount,
         record
       });
@@ -3614,50 +3699,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🔧 Running the fix-click-limits script to repair data inconsistencies...');
       
-      // Step 1: Temporarily disable triggers to allow direct updates
-      await db.execute(sql`
-        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
-        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
-      `);
+      // Use our forceFixUrlClickLimits function that handles everything
+      const success = await forceFixUrlClickLimits();
       
-      console.log('✅ Triggers disabled temporarily');
+      if (!success) {
+        throw new Error("Force fix operation failed");
+      }
       
-      // Step 2: Find mismatched records where the original_click_limit values don't match
-      const mismatchedRecords = await db.execute(sql`
-        SELECT 
-          ou.id AS original_record_id,
-          ou.name AS url_name,
-          ou.original_click_limit AS original_limit,
-          u.id AS url_id, 
-          u.original_click_limit AS url_original_limit,
-          u.click_limit AS url_click_limit,
-          c.multiplier AS campaign_multiplier,
-          c.id AS campaign_id
-        FROM original_url_records ou
-        JOIN urls u ON ou.name = u.name
-        JOIN campaigns c ON u.campaign_id = c.id
-        WHERE ou.original_click_limit != u.original_click_limit
-      `);
-      
-      const mismatchCount = Array.isArray(mismatchedRecords) ? mismatchedRecords.length : 0;
-      console.log(`Found ${mismatchCount} mismatched records`);
-      
-      // Step 3: Fix all mismatched records
-      const updateResult = await db.execute(sql`
-        UPDATE urls u
-        SET 
-          original_click_limit = ou.original_click_limit,
-          click_limit = ROUND(ou.original_click_limit * COALESCE(c.multiplier, 1))
-        FROM original_url_records ou, campaigns c
-        WHERE 
-          u.name = ou.name AND
-          u.campaign_id = c.id AND
-          ou.original_click_limit != u.original_click_limit
-      `);
-      
-      console.log('Fixed records:', updateResult);
-      
-      // Step 4: Verify the fixes worked
+      // Verify the fixes worked
       const verificationResult = await db.execute(sql`
         SELECT 
           COUNT(*) AS total_records,
@@ -3667,24 +3716,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN urls u ON ou.name = u.name
       `);
       
-      // Step 5: Re-enable the triggers
-      await db.execute(sql`
-        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
-        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
-      `);
-      
-      console.log('✅ Triggers re-enabled');
-      
       const summary = Array.isArray(verificationResult) && verificationResult.length > 0 
         ? verificationResult[0] 
         : { total_records: 0, matched_records: 0, mismatched_records: 0 };
       
       return res.json({
         success: true,
-        message: "Successfully fixed click limit inconsistencies",
-        before: { mismatched: mismatchCount },
-        after: summary,
-        fixedCount: mismatchCount
+        message: "Successfully fixed ALL click limit values",
+        result: summary,
       });
     } catch (error) {
       console.error("Error fixing click limits:", error);
@@ -3703,6 +3742,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: "Failed to fix click limit inconsistencies",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // New route to FORCE UPDATE all original URL records to campaigns immediately
+  app.post("/api/system/force-update-all-clicks", async (_req: Request, res: Response) => {
+    try {
+      console.log('🚨 EMERGENCY FORCE UPDATE - Updating ALL URL click values...');
+      
+      // Step 1: Force bypass all click protection and disable triggers
+      await db.execute(sql`
+        -- Set click protection bypass
+        INSERT INTO protection_settings (key, value)
+        VALUES ('click_protection_enabled', FALSE)
+        ON CONFLICT (key) DO UPDATE SET value = FALSE;
+        
+        -- Disable triggers
+        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
+      `);
+      
+      // Step 2: FORCE UPDATE ALL URLs to match their original records
+      const updateResult = await db.execute(sql`
+        -- Update all URLs with original record values
+        UPDATE urls u
+        SET 
+          original_click_limit = ou.original_click_limit,
+          click_limit = ROUND(ou.original_click_limit * COALESCE((SELECT multiplier FROM campaigns WHERE id = u.campaign_id), 1)),
+          updated_at = NOW()
+        FROM original_url_records ou
+        WHERE u.name = ou.name;
+        
+        -- Fix URLs without campaign multipliers
+        UPDATE urls u
+        SET 
+          click_limit = original_click_limit,
+          updated_at = NOW()
+        WHERE campaign_id IS NULL AND click_limit != original_click_limit;
+      `);
+      
+      // Step 3: Re-enable protection
+      await db.execute(sql`
+        -- Re-enable triggers
+        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+        
+        -- Reset click protection bypass
+        INSERT INTO protection_settings (key, value)
+        VALUES ('click_protection_enabled', TRUE)
+        ON CONFLICT (key) DO UPDATE SET value = TRUE;
+      `);
+      
+      // Step 4: Invalidate all campaign caches to ensure fresh data
+      const campaigns = await db.select({ id: campaigns.id }).from(campaigns);
+      
+      for (const campaign of campaigns) {
+        storage.invalidateCampaignCache(campaign.id);
+        await storage.getCampaign(campaign.id, true);
+        await storage.getUrls(campaign.id, true);
+      }
+      
+      return res.json({
+        success: true,
+        message: "EMERGENCY FORCE UPDATE COMPLETE - All URLs have been updated to match their original records",
+        campaignsRefreshed: campaigns.length
+      });
+    } catch (error) {
+      console.error("Error in emergency force update:", error);
+      
+      // Make sure to restore protection
+      try {
+        await db.execute(sql`
+          ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
+          ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+          
+          INSERT INTO protection_settings (key, value)
+          VALUES ('click_protection_enabled', TRUE)
+          ON CONFLICT (key) DO UPDATE SET value = TRUE;
+        `);
+      } catch (restoreError) {
+        console.error("Failed to restore protection:", restoreError);
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: "Emergency force update failed",
         error: error instanceof Error ? error.message : String(error)
       });
     }
