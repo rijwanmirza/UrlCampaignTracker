@@ -300,7 +300,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(urls)
         .set({ 
-          active: false,
+          status: "inactive",
           updatedAt: new Date()
         })
         .where(eq(urls.campaignId, id));
@@ -309,7 +309,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(campaigns)
         .set({
-          active: false,
+          status: "inactive",
           updatedAt: new Date()
         })
         .where(eq(campaigns.id, id));
@@ -344,7 +344,7 @@ export class DatabaseStorage implements IStorage {
     
     // Calculate active status for each URL
     const urlsWithStatus: UrlWithActiveStatus[] = urlsResult.map(url => {
-      const isActive = url.active !== false;
+      const isActive = url.status === "active";
       
       // Check if URL has reached its click limit
       let limitReached = false;
@@ -385,7 +385,7 @@ export class DatabaseStorage implements IStorage {
     if (search) {
       const searchCondition = or(
         ilike(urls.name, `%${search}%`),
-        ilike(urls.landingPageUrl, `%${search}%`)
+        ilike(urls.targetUrl, `%${search}%`)
       );
       query = query.where(searchCondition);
       countQuery = countQuery.where(searchCondition);
@@ -393,11 +393,11 @@ export class DatabaseStorage implements IStorage {
     
     // Add status filter if provided
     if (status === 'active') {
-      query = query.where(eq(urls.active, true));
-      countQuery = countQuery.where(eq(urls.active, true));
+      query = query.where(eq(urls.status, 'active'));
+      countQuery = countQuery.where(eq(urls.status, 'active'));
     } else if (status === 'inactive') {
-      query = query.where(eq(urls.active, false));
-      countQuery = countQuery.where(eq(urls.active, false));
+      query = query.where(eq(urls.status, 'inactive'));
+      countQuery = countQuery.where(eq(urls.status, 'inactive'));
     }
     
     // Execute count query
@@ -412,7 +412,7 @@ export class DatabaseStorage implements IStorage {
     
     // Calculate active status for each URL
     const urlsWithStatus: UrlWithActiveStatus[] = urlsResult.map(url => {
-      const isActive = url.active !== false;
+      const isActive = url.status === "active";
       
       // Check if URL has reached its click limit
       let limitReached = false;
@@ -555,7 +555,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(urls)
         .set({ 
-          active: false,
+          status: "inactive",
           updatedAt: new Date()
         })
         .where(eq(urls.id, id));
@@ -633,7 +633,7 @@ export class DatabaseStorage implements IStorage {
         await db
           .update(urls)
           .set({ 
-            active: false,
+            status: "inactive",
             updatedAt: new Date()
           })
           .where(inArray(urls.id, ids));
@@ -642,7 +642,7 @@ export class DatabaseStorage implements IStorage {
         await db
           .update(urls)
           .set({ 
-            active: false,
+            status: "inactive",
             updatedAt: new Date()
           })
           .where(inArray(urls.id, ids));
@@ -751,7 +751,7 @@ export class DatabaseStorage implements IStorage {
   async getWeightedUrlDistribution(campaignId: number) {
     // Get all active URLs for this campaign
     const allUrls = await this.getUrls(campaignId, true);
-    const activeUrls = allUrls.filter(url => url.active !== false && url.weight > 0);
+    const activeUrls = allUrls.filter(url => url.status === "active" && url.weight > 0);
     
     // If no active URLs, return empty result
     if (!activeUrls.length) {
@@ -860,7 +860,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(urls)
         .set({ 
-          active: false,
+          status: "inactive",
           updatedAt: new Date()
         })
         .where(eq(urls.id, id));
