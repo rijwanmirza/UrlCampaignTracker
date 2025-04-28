@@ -632,6 +632,14 @@ export class DatabaseStorage implements IStorage {
             updatedAt: new Date()
           })
           .where(inArray(urls.id, ids));
+      } else if (action === 'pause') {
+        await db
+          .update(urls)
+          .set({ 
+            status: "paused",
+            updatedAt: new Date()
+          })
+          .where(inArray(urls.id, ids));
       } else if (action === 'deactivate') {
         await db
           .update(urls)
