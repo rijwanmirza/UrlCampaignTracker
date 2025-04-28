@@ -347,13 +347,16 @@ export class DatabaseStorage implements IStorage {
       const isActive = url.status === "active";
       
       // Check if URL has reached its click limit
+      // Note: clickLimit of 0 means unlimited clicks
       let limitReached = false;
-      if (isActive && url.clickLimit !== null && url.clickLimit > 0) {
-        limitReached = url.clicks >= url.clickLimit;
+      if (isActive && url.clickLimit !== null && url.clickLimit > 0 && url.clicks >= url.clickLimit) {
+        limitReached = true;
       }
       
+      // Add isActive property to handle the issue with custom path routing
       return {
         ...url,
+        isActive: isActive && !limitReached,
         activeStatus: limitReached ? 'limit-reached' : (isActive ? 'active' : 'inactive'),
         originalClickLimit: url.originalClickLimit || url.clickLimit
       };
