@@ -20,6 +20,7 @@ import {
   insertCampaignSchema, 
   insertUrlSchema, 
   insertOriginalUrlRecordSchema,
+  updateOriginalUrlRecordSchema,
   campaigns,
   urls,
   originalUrlRecords,
