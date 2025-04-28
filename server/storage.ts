@@ -1482,6 +1482,34 @@ export class DatabaseStorage implements IStorage {
         console.log(`ℹ️ SYSTEM RESET: No sessions table found or nothing to delete`);
       }
       
+      // 7. CRITICAL FIX: Reset all ID sequences to start from 1 again
+      console.log(`🔄 SYSTEM RESET: Resetting all database sequences to start from 1...`);
+      try {
+        // Reset URLs sequence
+        await db.execute(sql`ALTER SEQUENCE urls_id_seq RESTART WITH 1`);
+        console.log(`✅ SYSTEM RESET: Reset URLs sequence to start from ID 1`);
+        
+        // Reset campaigns sequence  
+        await db.execute(sql`ALTER SEQUENCE campaigns_id_seq RESTART WITH 1`);
+        console.log(`✅ SYSTEM RESET: Reset campaigns sequence to start from ID 1`);
+        
+        // Reset original URL records sequence
+        await db.execute(sql`ALTER SEQUENCE original_url_records_id_seq RESTART WITH 1`);
+        console.log(`✅ SYSTEM RESET: Reset original URL records sequence to start from ID 1`);
+        
+        // Reset TrafficStar campaigns sequence if it exists
+        try {
+          await db.execute(sql`ALTER SEQUENCE trafficstar_campaigns_id_seq RESTART WITH 1`);
+          console.log(`✅ SYSTEM RESET: Reset TrafficStar campaigns sequence to start from ID 1`);
+        } catch (error) {
+          // Ignore error if table doesn't exist
+          console.log(`ℹ️ SYSTEM RESET: No TrafficStar campaigns sequence found to reset`);
+        }
+      } catch (error) {
+        console.error(`❌ SYSTEM RESET: Error resetting sequences:`, error);
+        // Continue anyway, as the main data is still deleted
+      }
+      
       // Clear all caches for complete reset
       this.campaignUrlsCache.clear();
       this.urlCache.clear();
