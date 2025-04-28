@@ -481,8 +481,27 @@ export class DatabaseStorage implements IStorage {
     // Get all URLs for a campaign that are not deleted or rejected
     // This ensures rejected URLs with duplicate names don't appear in campaigns
     
+    // Check campaignUrls cache first if not force refreshing
+    const cachedUrls = this.campaignUrlsCache.get(campaignId);
+    const now = Date.now();
+    
+    // Use cache if available, not forcing refresh, and not stale
+    if (!forceRefresh && cachedUrls && (now - cachedUrls.lastUpdated < this.cacheTTL)) {
+      console.log(`📋 Using cached URLs for campaign ID: ${campaignId}`);
+      
+      // If there's a weightedDistribution, we have the active URLs ready to go
+      if (cachedUrls.activeUrls && cachedUrls.activeUrls.length > 0) {
+        return cachedUrls.activeUrls;
+      }
+    }
+    
+    // Force refresh or cache miss, log for debugging
     if (forceRefresh) {
       console.log(`🔄 Force refreshing URLs for campaign ID: ${campaignId}`);
+    } else if (!cachedUrls) {
+      console.log(`🔍 Cache miss - fetching fresh URLs for campaign ID: ${campaignId}`);
+    } else {
+      console.log(`⏰ Cache stale - refreshing URLs for campaign ID: ${campaignId}`);
     }
     
     const urlsResult = await db
@@ -1314,8 +1333,9 @@ export class DatabaseStorage implements IStorage {
     const customPathEntry = Array.from(this.customPathCache.entries())
       .find(([_, value]) => {
         if (value && typeof value === 'object' && 'campaign' in value && typeof value.campaign === 'object') {
-          // Check if campaign is an object with an id property
-          return value.campaign && 'id' in value.campaign && value.campaign.id === campaignId;
+          // Safely access the campaign id property using type assertion
+          const campaign = value.campaign as any;
+          return campaign && typeof campaign.id === 'number' && campaign.id === campaignId;
         }
         return false;
       });
