@@ -251,3 +251,101 @@ export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTi
 export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
 export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
 export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;
+
+// Click Analytics schema
+export const clickAnalytics = pgTable("click_analytics", {
+  id: serial("id").primaryKey(),
+  urlId: integer("url_id").notNull(), // Reference to urls table
+  campaignId: integer("campaign_id").notNull(), // Reference to campaign
+  clickTime: timestamp("click_time").defaultNow().notNull(), // When the click occurred
+  clickTimeUtc: timestamp("click_time_utc").defaultNow().notNull(), // UTC time for consistent querying
+  userAgent: text("user_agent"), // User agent string
+  ipAddress: text("ip_address"), // IP address (anonymized if needed)
+  referer: text("referer"), // Referer URL
+  country: text("country"), // Country code
+  city: text("city"), // City name
+  deviceType: text("device_type"), // mobile, desktop, tablet, etc.
+  browser: text("browser"), // Browser name
+  os: text("os"), // Operating system
+});
+
+// Timezone enum for analytics queries
+export const timezones = [
+  'UTC',
+  'America/New_York', // Eastern Time
+  'America/Chicago', // Central Time
+  'America/Denver', // Mountain Time
+  'America/Los_Angeles', // Pacific Time
+  'Europe/London', // GMT/BST
+  'Europe/Paris', // Central European Time
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Kolkata', // Indian Standard Time
+  'Australia/Sydney',
+] as const;
+
+export type Timezone = typeof timezones[number];
+
+// Analytics query parameter schema
+export const analyticsFilterSchema = z.object({
+  // Resource type and ID
+  type: z.enum(['campaign', 'url']),
+  id: z.number().int().positive(),
+  
+  // Time filters
+  timeRange: z.enum([
+    'all_time',
+    'today', 
+    'yesterday',
+    'last_2_days',
+    'last_3_days',
+    'last_7_days',
+    'this_week',
+    'last_week',
+    'this_month',
+    'last_month',
+    'this_year',
+    'last_year',
+    'last_6_months',
+    'custom'
+  ]),
+  
+  // Only required if timeRange is 'custom'
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  
+  // Timezone for date calculations
+  timezone: z.enum(timezones).default('UTC'),
+  
+  // Grouping
+  groupBy: z.enum(['day', 'hour', 'week', 'month']).default('day'),
+  
+  // Pagination
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(50),
+});
+
+export type AnalyticsFilter = z.infer<typeof analyticsFilterSchema>;
+
+// Analytics response types
+export type ClickAnalyticsRecord = typeof clickAnalytics.$inferSelect;
+
+export type AnalyticsSummary = {
+  totalClicks: number;
+  dateRangeStart: string;
+  dateRangeEnd: string;
+  timezone: string;
+  resourceType: 'campaign' | 'url';
+  resourceId: number;
+  resourceName: string;
+};
+
+export type AnalyticsTimeseriesData = {
+  period: string; // Could be date, hour, etc. depending on groupBy
+  clicks: number;
+};
+
+export type AnalyticsResponse = {
+  summary: AnalyticsSummary;
+  timeseries: AnalyticsTimeseriesData[];
+};

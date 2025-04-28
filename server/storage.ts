@@ -13,10 +13,16 @@ import {
   OriginalUrlRecord,
   InsertOriginalUrlRecord,
   UpdateOriginalUrlRecord,
-  originalUrlRecords
+  originalUrlRecords,
+  clickAnalytics,
+  AnalyticsFilter,
+  AnalyticsResponse,
+  AnalyticsSummary,
+  AnalyticsTimeseriesData,
+  ClickAnalyticsRecord
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
+import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or, between, gte, lte, count } from "drizzle-orm";
 
 export interface IStorage {
   // Campaign operations
@@ -64,6 +70,23 @@ export interface IStorage {
   
   // System operations
   fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number, originalUrlRecordsDeleted: number }>;
+  
+  // Analytics operations
+  recordClick(urlId: number, campaignId: number, data?: {
+    userAgent?: string;
+    ipAddress?: string;
+    referer?: string;
+    country?: string;
+    city?: string; 
+    deviceType?: string;
+    browser?: string;
+    os?: string;
+  }): Promise<void>;
+  
+  getAnalytics(filter: AnalyticsFilter): Promise<AnalyticsResponse>;
+  
+  getCampaignsList(): Promise<{ id: number, name: string }[]>;
+  getUrlsList(search?: string): Promise<{ id: number, name: string, campaignId: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
