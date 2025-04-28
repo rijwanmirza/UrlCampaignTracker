@@ -814,11 +814,15 @@ export class DatabaseStorage implements IStorage {
     
     if (selectedDistribution) {
       // Check if selected URL has reached its click limit
-      if (selectedDistribution.url.clickLimit && 
+      // If clickLimit is 0, it means unlimited clicks
+      if (selectedDistribution.url.clickLimit > 0 && 
           selectedDistribution.url.clicks >= selectedDistribution.url.clickLimit) {
         // Try to find another URL that hasn't reached its limit
+        // A URL is available if:
+        // 1. clickLimit is 0 (unlimited)
+        // 2. OR clicks < clickLimit 
         const availableUrls = activeUrls.filter(url => 
-          !url.clickLimit || url.clicks < url.clickLimit
+          url.clickLimit === 0 || (url.clickLimit > 0 && url.clicks < url.clickLimit)
         );
         
         if (availableUrls.length) {
