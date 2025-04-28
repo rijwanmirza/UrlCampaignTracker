@@ -1644,8 +1644,20 @@ export class DatabaseStorage implements IStorage {
           
           try {
             // Log actual values being applied - explicitly use the value from the master original URL record
-            // Make sure we preserve the exact value from the original record
-            const newOriginalClickLimit = parseInt(String(record.originalClickLimit), 10);
+            // CRITICAL: Fix for mismatched values - ensure we get the exact original value
+            // Force convert to a number using parseInt and then toString+parseInt again to ensure
+            // we're working with clean integer values without any potential type issues
+            const originalClickLimitStr = String(record.originalClickLimit).trim();
+            const newOriginalClickLimit = parseInt(originalClickLimitStr, 10);
+            
+            if (isNaN(newOriginalClickLimit)) {
+              console.error(`❌ ERROR: Invalid original click limit value: "${originalClickLimitStr}"`);
+              throw new Error(`Invalid original click limit: ${originalClickLimitStr}`);
+            }
+
+            // Log the precise value we're working with
+            console.log(`🔢 DEBUG: Original click limit from record: "${originalClickLimitStr}" (parsed as: ${newOriginalClickLimit})`);
+            
             const newClickLimit = updateData.clickLimit || newOriginalClickLimit;
             
             console.log(`⚙️ Setting click_limit=${newClickLimit}, original_click_limit=${newOriginalClickLimit}`);
@@ -1696,6 +1708,26 @@ export class DatabaseStorage implements IStorage {
                     clickLimit: refreshedUrl.clickLimit,
                     originalClickLimit: refreshedUrl.originalClickLimit
                   });
+                  
+                  // Validate the refreshed URL's originalClickLimit value
+                  if (refreshedUrl.originalClickLimit !== newOriginalClickLimit) {
+                    console.error(`❌ CRITICAL ERROR: Data integrity issue detected!`);
+                    console.error(`  - Expected originalClickLimit: ${newOriginalClickLimit}`);
+                    console.error(`  - Actual refreshed value: ${refreshedUrl.originalClickLimit}`);
+                    console.error(`  - Attempting to fix inconsistency...`);
+                    
+                    // Attempt to directly fix the inconsistent value with a raw SQL query
+                    try {
+                      await db.execute(sql`
+                        UPDATE urls 
+                        SET original_click_limit = ${newOriginalClickLimit}
+                        WHERE id = ${url.id}
+                      `);
+                      console.log(`✅ Successfully fixed originalClickLimit value for URL #${url.id}`);
+                    } catch (fixError) {
+                      console.error(`❌ Failed to fix originalClickLimit value:`, fixError);
+                    }
+                  }
                 }
                 
                 // Re-cache the campaign with fresh URLs to ensure UI gets updated values
