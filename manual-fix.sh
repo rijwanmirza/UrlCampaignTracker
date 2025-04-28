@@ -34,7 +34,7 @@ export default function OriginalUrlRecordsPage() {
         This page allows you to manage master records for URL data.
         Updates here can be propagated to all linked URLs.
       </p>
-      
+
       <div style={{ 
         padding: '20px', 
         border: '1px solid #ddd', 
