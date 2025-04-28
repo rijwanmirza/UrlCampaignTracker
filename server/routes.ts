@@ -3496,36 +3496,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🛠️ FORCE-FIXING URL CLICK LIMITS ${originalRecordId ? `for record #${originalRecordId}` : 'for ALL records'}`);
       
-      // Create the SQL query base
-      let sqlQuery = `
-        -- Temporarily disable triggers to force the update
+      // CRITICAL FIX: This is the bug - can't use multiple statements in one sql call
+      // Disable triggers first
+      await db.execute(sql`
         ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
         ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
-        
-        -- Update all URLs with matching original record names
-        UPDATE urls u
-        SET 
-          original_click_limit = ou.original_click_limit,
-          click_limit = ROUND(ou.original_click_limit * COALESCE((SELECT multiplier FROM campaigns WHERE id = u.campaign_id), 1)),
-          updated_at = NOW()
-        FROM original_url_records ou
-        WHERE u.name = ou.name
-      `;
+      `);
       
-      // If specific ID provided, add the condition
+      // Get original record if ID provided
       if (originalRecordId) {
-        sqlQuery += ` AND ou.id = ${originalRecordId}`;
+        const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, originalRecordId));
+        
+        if (record) {
+          console.log(`🔍 Updating all URLs with name ${record.name} to match original click limit: ${record.originalClickLimit}`);
+          
+          // Direct update with parameters
+          await db.execute(sql`
+            UPDATE urls 
+            SET 
+              original_click_limit = ${record.originalClickLimit},
+              click_limit = ROUND(${record.originalClickLimit} * COALESCE((SELECT multiplier FROM campaigns WHERE id = campaign_id), 1)),
+              updated_at = NOW()
+            WHERE name = ${record.name}
+          `);
+        }
+      } else {
+        // Update all URLs
+        await db.execute(sql`
+          UPDATE urls u
+          SET 
+            original_click_limit = ou.original_click_limit,
+            click_limit = ROUND(ou.original_click_limit * COALESCE((SELECT multiplier FROM campaigns WHERE id = u.campaign_id), 1)),
+            updated_at = NOW()
+          FROM original_url_records ou
+          WHERE u.name = ou.name
+        `);
       }
       
-      sqlQuery += `;
-        
-        -- Re-enable triggers
+      // Re-enable triggers
+      await db.execute(sql`
         ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
         ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
-      `;
-      
-      // Execute the direct SQL update
-      await db.execute(sql([sqlQuery]));
+      `);
       
       // CRITICAL FIX: Find all affected campaign IDs to invalidate their caches
       let affectedCampaigns: {id: number}[] = [];
@@ -3731,8 +3743,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Make sure to re-enable triggers even if there's an error
       try {
         await db.execute(sql`
-          ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
-          ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+          ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger
+        `);
+        
+        await db.execute(sql`
+          ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger
         `);
         console.log('✅ Triggers re-enabled after error');
       } catch (triggerError) {
@@ -3752,20 +3767,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🚨 EMERGENCY FORCE UPDATE - Updating ALL URL click values...');
       
-      // Step 1: Force bypass all click protection and disable triggers
+      // Step 1: Set click protection bypass
       await db.execute(sql`
         -- Set click protection bypass
         INSERT INTO protection_settings (key, value)
         VALUES ('click_protection_enabled', FALSE)
-        ON CONFLICT (key) DO UPDATE SET value = FALSE;
-        
-        -- Disable triggers
-        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
-        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
+        ON CONFLICT (key) DO UPDATE SET value = FALSE
       `);
       
-      // Step 2: FORCE UPDATE ALL URLs to match their original records
-      const updateResult = await db.execute(sql`
+      // Step 2: Disable triggers
+      await db.execute(sql`
+        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger
+      `);
+      
+      await db.execute(sql`
+        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger
+      `);
+      
+      // Step 3: FORCE UPDATE ALL URLs to match their original records
+      await db.execute(sql`
         -- Update all URLs with original record values
         UPDATE urls u
         SET 
@@ -3773,26 +3793,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           click_limit = ROUND(ou.original_click_limit * COALESCE((SELECT multiplier FROM campaigns WHERE id = u.campaign_id), 1)),
           updated_at = NOW()
         FROM original_url_records ou
-        WHERE u.name = ou.name;
-        
-        -- Fix URLs without campaign multipliers
+        WHERE u.name = ou.name
+      `);
+      
+      // Step 4: Fix URLs without campaign multipliers
+      await db.execute(sql`
         UPDATE urls u
         SET 
           click_limit = original_click_limit,
           updated_at = NOW()
-        WHERE campaign_id IS NULL AND click_limit != original_click_limit;
+        WHERE campaign_id IS NULL AND click_limit != original_click_limit
       `);
       
-      // Step 3: Re-enable protection
+      // Step 5: Re-enable triggers
       await db.execute(sql`
-        -- Re-enable triggers
-        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
-        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
-        
-        -- Reset click protection bypass
+        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger
+      `);
+      
+      await db.execute(sql`
+        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger
+      `);
+      
+      // Step 6: Reset click protection bypass
+      await db.execute(sql`
         INSERT INTO protection_settings (key, value)
         VALUES ('click_protection_enabled', TRUE)
-        ON CONFLICT (key) DO UPDATE SET value = TRUE;
+        ON CONFLICT (key) DO UPDATE SET value = TRUE
       `);
       
       // Step 4: Invalidate all campaign caches to ensure fresh data
@@ -3815,12 +3841,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Make sure to restore protection
       try {
         await db.execute(sql`
-          ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
-          ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
-          
+          ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger
+        `);
+        
+        await db.execute(sql`
+          ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger
+        `);
+        
+        await db.execute(sql`
           INSERT INTO protection_settings (key, value)
           VALUES ('click_protection_enabled', TRUE)
-          ON CONFLICT (key) DO UPDATE SET value = TRUE;
+          ON CONFLICT (key) DO UPDATE SET value = TRUE
         `);
       } catch (restoreError) {
         console.error("Failed to restore protection:", restoreError);
