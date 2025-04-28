@@ -1614,6 +1614,29 @@ export class DatabaseStorage implements IStorage {
     console.log(`🎉 Successfully updated ${updatedCount} out of ${matchingUrls.length} URLs`);
     return updatedCount;
   }
+
+  /**
+   * Temporarily enables or disables the database click protection bypass.
+   * This is used for legitimate operations that need to modify click limits,
+   * such as campaign multiplier changes and Original URL Record syncs.
+   * @param enabled Whether to enable (true) or disable (false) the bypass
+   */
+  async setClickProtectionBypass(enabled: boolean): Promise<void> {
+    try {
+      if (enabled) {
+        console.log('⚠️ Setting database session variable bypass_click_protection = TRUE');
+        await db.execute(sql`SET SESSION bypass_click_protection = TRUE`);
+        this.clickProtectionBypassed = true;
+      } else {
+        console.log('✅ Setting database session variable bypass_click_protection = FALSE');
+        await db.execute(sql`SET SESSION bypass_click_protection = FALSE`);
+        this.clickProtectionBypassed = false;
+      }
+    } catch (error) {
+      console.error(`Error setting click protection bypass to ${enabled}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
