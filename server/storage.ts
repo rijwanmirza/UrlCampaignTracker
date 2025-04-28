@@ -63,7 +63,7 @@ export interface IStorage {
   }>;
   
   // System operations
-  fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number }>;
+  fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number, originalUrlRecordsDeleted: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1428,7 +1428,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Full system cleanup - deletes all campaigns and URLs
-  async fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number }> {
+  async fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number, originalUrlRecordsDeleted: number }> {
     try {
       // First, count how many items we'll delete
       const allCampaigns = await this.getCampaigns();
@@ -1438,11 +1438,49 @@ export class DatabaseStorage implements IStorage {
         totalUrls += campaign.urls.length;
       }
       
-      // Delete all URLs first (to handle foreign key constraints)
-      await db.delete(urls);
+      // Count original URL records too
+      const originalRecordsResult = await db.select({ count: sql`count(*)` }).from(originalUrlRecords);
+      const originalRecordsCount = Number(originalRecordsResult[0]?.count || 0);
       
-      // Then delete all campaigns
+      console.log(`🧹 SYSTEM RESET: Starting complete database cleanup - Found ${allCampaigns.length} campaigns, ${totalUrls} URLs, and ${originalRecordsCount} original URL records to delete`);
+      
+      // Delete in proper order to respect foreign key constraints
+      
+      // 1. Delete all URLs first (to handle foreign key constraints)
+      await db.delete(urls);
+      console.log(`✅ SYSTEM RESET: Deleted all URLs (${totalUrls} records)`);
+      
+      // 2. Delete all original URL records
+      await db.delete(originalUrlRecords);
+      console.log(`✅ SYSTEM RESET: Deleted all original URL records (${originalRecordsCount} records)`);
+      
+      // 3. Delete all campaigns
       await db.delete(campaigns);
+      console.log(`✅ SYSTEM RESET: Deleted all campaigns (${allCampaigns.length} records)`);
+      
+      // 4. Also delete protection settings if they exist
+      try {
+        await db.execute(sql`DELETE FROM protection_settings`);
+        console.log(`✅ SYSTEM RESET: Deleted all protection settings`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No protection_settings table found or nothing to delete`);
+      }
+      
+      // 5. Delete pending budget updates if they exist
+      try {
+        await db.execute(sql`DELETE FROM pending_url_budget_updates`);
+        console.log(`✅ SYSTEM RESET: Deleted all pending URL budget updates`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No pending_url_budget_updates table found or nothing to delete`);
+      }
+      
+      // 6. Delete sessions table data if it exists
+      try {
+        await db.execute(sql`DELETE FROM sessions`);
+        console.log(`✅ SYSTEM RESET: Deleted all session data`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No sessions table found or nothing to delete`);
+      }
       
       // Clear all caches for complete reset
       this.campaignUrlsCache.clear();
@@ -1450,19 +1488,22 @@ export class DatabaseStorage implements IStorage {
       this.campaignCache.clear();
       this.customPathCache.clear();
       this.pendingClickUpdates.clear();
+      console.log(`✅ SYSTEM RESET: Cleared all application caches`);
       
       // Cancel any pending update timer
       if (this.clickUpdateTimer) {
         clearInterval(this.clickUpdateTimer);
         // Restart the timer
         this.clickUpdateTimer = setInterval(() => this.flushPendingClickUpdates(), 1000);
+        console.log(`✅ SYSTEM RESET: Reset click update timer`);
       }
       
-      console.log(`Full system cleanup completed: deleted ${allCampaigns.length} campaigns and ${totalUrls} URLs`);
+      console.log(`✅ SYSTEM RESET COMPLETED: Successfully deleted ${allCampaigns.length} campaigns, ${totalUrls} URLs, and ${originalRecordsCount} original URL records`);
       
       return {
         campaignsDeleted: allCampaigns.length,
-        urlsDeleted: totalUrls
+        urlsDeleted: totalUrls,
+        originalUrlRecordsDeleted: originalRecordsCount
       };
     } catch (error) {
       console.error("Error during full system cleanup:", error);

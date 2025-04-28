@@ -2058,6 +2058,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result: {
           campaignsDeleted: dbResult.campaignsDeleted,
           urlsDeleted: dbResult.urlsDeleted,
+          originalUrlRecordsDeleted: dbResult.originalUrlRecordsDeleted,
           emailLogsCleared: emailLogsResult.success,
           emailLogsRemoved: emailLogsResult.entriesRemoved
         }
