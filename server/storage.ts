@@ -983,7 +983,7 @@ export class DatabaseStorage implements IStorage {
     if (search) {
       const searchCondition = or(
         ilike(originalUrlRecords.name, `%${search}%`),
-        ilike(originalUrlRecords.description, `%${search}%`)
+        ilike(originalUrlRecords.targetUrl, `%${search}%`)
       );
       query = query.where(searchCondition);
       countQuery = countQuery.where(searchCondition);
@@ -1023,10 +1023,10 @@ export class DatabaseStorage implements IStorage {
   async updateOriginalUrlRecord(id: number, updateRecord: UpdateOriginalUrlRecord): Promise<OriginalUrlRecord | undefined> {
     const existingRecord = await this.getOriginalUrlRecord(id);
     
-    // Check if clicks are changing, which means we need to update URLs
-    if (existingRecord && updateRecord.clicks !== undefined && updateRecord.clicks !== existingRecord.clicks) {
-      const oldClickValue = existingRecord.clicks;
-      const newClickValue = updateRecord.clicks;
+    // Check if originalClickLimit is changing, which means we need to update URLs
+    if (existingRecord && updateRecord.originalClickLimit !== undefined && updateRecord.originalClickLimit !== existingRecord.originalClickLimit) {
+      const oldClickValue = existingRecord.originalClickLimit || 0;
+      const newClickValue = updateRecord.originalClickLimit;
       
       console.log(`🔄 Original URL Record ${id} clicks changing from ${oldClickValue} to ${newClickValue}, updating all related URLs...`);
       
@@ -1037,7 +1037,7 @@ export class DatabaseStorage implements IStorage {
       const relatedUrls = await db
         .select()
         .from(urls)
-        .where(eq(urls.originalRecordName, existingRecord.name));
+        .where(eq(urls.name, existingRecord.name));
       
       // Update each URL's click limit and original click limit
       for (const url of relatedUrls) {
@@ -1108,11 +1108,11 @@ export class DatabaseStorage implements IStorage {
         throw new Error(`Original URL record with ID ${recordId} not found`);
       }
       
-      // Find all URLs that use this record's name
+      // Find all URLs that have names matching this record's name
       const relatedUrls = await db
         .select()
         .from(urls)
-        .where(eq(urls.originalRecordName, record.name));
+        .where(eq(urls.name, record.name));
       
       // Enable click protection bypass for this legitimate operation
       await this.setClickProtectionBypass(true);
@@ -1133,7 +1133,7 @@ export class DatabaseStorage implements IStorage {
         }
         
         // Calculate new click limit applying the multiplier
-        const newOriginalClickLimit = record.clicks;
+        const newOriginalClickLimit = record.originalClickLimit || 0;
         const newClickLimit = Math.floor(newOriginalClickLimit * multiplier);
         
         // Update the URL

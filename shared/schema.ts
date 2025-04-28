@@ -89,10 +89,9 @@ export type InsertUrl = z.infer<typeof insertUrlSchema>;
 // Original URL Records table
 export const originalUrlRecords = pgTable('original_url_records', {
   id: serial('id').primaryKey(),
-  urlId: integer('url_id').references(() => urls.id),
-  campaignId: integer('campaign_id').references(() => campaigns.id),
-  clicks: integer('clicks').default(0),
-  multiplier: integer('multiplier').default(1),
+  name: text('name').notNull(),
+  targetUrl: text('target_url'),
+  originalClickLimit: integer('original_click_limit'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
