@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, AlertTriangle } from "lucide-react";
 import DecimalMultiplierMigration from "@/components/system/decimal-multiplier-migration";
+import { ServerMonitor } from "@/components/server-monitor/server-stats";
 
 export default function SystemSettings() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -87,6 +88,12 @@ export default function SystemSettings() {
         <p className="text-muted-foreground mt-2">
           Advanced settings and maintenance tools for the application
         </p>
+      </div>
+      
+      {/* Server Monitoring section */}
+      <div className="mb-10">
+        <h2 className="text-xl font-bold mb-4">Server Monitoring</h2>
+        <ServerMonitor />
       </div>
       
       {/* Migration section */}

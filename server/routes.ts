@@ -3901,5 +3901,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
   // We'll handle the HTTP/2.0 headers in the individual route handlers
+  
+  // Initialize server monitoring
+  initServerMonitor();
+  
+  // API endpoint to get current server stats
+  app.get("/api/system/server-stats", async (_req: Request, res: Response) => {
+    try {
+      const stats = await getServerStats();
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error("Error fetching server stats:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch server stats",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // API endpoint to get historical server stats
+  app.get("/api/system/server-stats/history", (_req: Request, res: Response) => {
+    try {
+      const history = getStatsHistory();
+      res.json({
+        success: true,
+        data: history
+      });
+    } catch (error) {
+      console.error("Error fetching server stats history:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch server stats history",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   return server;
 }
