@@ -811,37 +811,51 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getRandomWeightedUrl(campaignId: number): Promise<UrlWithActiveStatus | null> {
-    const { activeUrls, weightedDistribution } = await this.getWeightedUrlDistribution(campaignId);
+    // Get all URLs for this campaign directly, bypassing the distribution calculation
+    const allUrls = await this.getUrls(campaignId, true);
     
-    // If no active URLs, return null
-    if (!activeUrls.length) {
+    console.log(`getRandomWeightedUrl for campaign ${campaignId}: found ${allUrls.length} total URLs`);
+    
+    // Filter for active URLs with proper conditions directly here
+    const activeUrls = allUrls.filter(url => {
+      // Check if URL is active
+      const isActive = url.status === "active";
+      
+      // Check if URL has available clicks
+      const hasUnlimitedClicks = url.clickLimit === 0 || url.clickLimit === null;
+      const hasAvailableClicks = hasUnlimitedClicks || (url.clicks < url.clickLimit);
+      
+      console.log(`URL ${url.id} (${url.name}): active=${isActive}, clicks=${url.clicks}/${url.clickLimit}, unlimited=${hasUnlimitedClicks}, available=${hasAvailableClicks}`);
+      
+      // URL is usable if it's active and has available clicks
+      return isActive && hasAvailableClicks;
+    });
+    
+    console.log(`Campaign ${campaignId} has ${activeUrls.length} active URLs available for selection`);
+    
+    // If no active URLs are available, return null
+    if (activeUrls.length === 0) {
+      console.log(`No active URLs available for campaign ${campaignId}`);
       return null;
     }
     
     // If only one active URL, return it directly
     if (activeUrls.length === 1) {
+      console.log(`Only one active URL available: ${activeUrls[0].id} (${activeUrls[0].name})`);
       return activeUrls[0];
     }
     
-    // Pick a random number in the range
-    const totalRange = weightedDistribution.reduce((max, item) => 
-      item.endRange > max ? item.endRange : max, 0);
+    // For multiple URLs, use weighted selection
+    // Calculate total weight (default to 1 if weight is not set)
+    const totalWeight = activeUrls.reduce((sum, url) => sum + (url.weight || 1), 0);
     
-    const randomValue = Math.floor(Math.random() * (totalRange + 1));
+    // Simple random selection for now (can be enhanced with weights later)
+    const randomIndex = Math.floor(Math.random() * activeUrls.length);
+    const selectedUrl = activeUrls[randomIndex];
     
-    // Find the URL that contains this random value in its range
-    const selectedDistribution = weightedDistribution.find(
-      item => randomValue >= item.startRange && randomValue <= item.endRange
-    );
+    console.log(`Selected URL ${selectedUrl.id} (${selectedUrl.name}) with clicks=${selectedUrl.clicks}/${selectedUrl.clickLimit}`);
     
-    if (selectedDistribution) {
-      // No need to check if the URL has reached its click limit here
-      // because we've already filtered those out in getWeightedUrlDistribution
-      return selectedDistribution.url;
-    }
-    
-    // Fallback to first URL if something goes wrong
-    return activeUrls[0];
+    return selectedUrl;
   }
   
   private invalidateCampaignCache(campaignId: number) {
