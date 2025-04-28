@@ -751,7 +751,17 @@ export class DatabaseStorage implements IStorage {
   async getWeightedUrlDistribution(campaignId: number) {
     // Get all active URLs for this campaign
     const allUrls = await this.getUrls(campaignId, true);
-    const activeUrls = allUrls.filter(url => url.status === "active" && url.weight > 0);
+    
+    // Filter for active URLs with weight > 0
+    // A URL is considered active if:
+    // 1. Its status is "active"
+    // 2. Its weight is > 0
+    // 3. Either it has unlimited clicks (clickLimit = 0) OR it hasn't reached its click limit
+    const activeUrls = allUrls.filter(url => 
+      url.status === "active" && 
+      url.weight > 0 && 
+      (url.clickLimit === 0 || url.clickLimit === null || url.clicks < url.clickLimit)
+    );
     
     // If no active URLs, return empty result
     if (!activeUrls.length) {
@@ -813,28 +823,8 @@ export class DatabaseStorage implements IStorage {
     );
     
     if (selectedDistribution) {
-      // Check if selected URL has reached its click limit
-      // If clickLimit is 0, it means unlimited clicks
-      if (selectedDistribution.url.clickLimit > 0 && 
-          selectedDistribution.url.clicks >= selectedDistribution.url.clickLimit) {
-        // Try to find another URL that hasn't reached its limit
-        // A URL is available if:
-        // 1. clickLimit is 0 (unlimited)
-        // 2. OR clicks < clickLimit 
-        const availableUrls = activeUrls.filter(url => 
-          url.clickLimit === 0 || (url.clickLimit > 0 && url.clicks < url.clickLimit)
-        );
-        
-        if (availableUrls.length) {
-          // Pick a random URL from available ones
-          const randomIndex = Math.floor(Math.random() * availableUrls.length);
-          return availableUrls[randomIndex];
-        } else {
-          // All URLs have reached their limits, return the original selection anyway
-          return selectedDistribution.url;
-        }
-      }
-      
+      // No need to check if the URL has reached its click limit here
+      // because we've already filtered those out in getWeightedUrlDistribution
       return selectedDistribution.url;
     }
     
