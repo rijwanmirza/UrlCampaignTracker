@@ -125,21 +125,21 @@ if (!navPath) {
 // If we still couldn't find the navigation, create a fallback solution
 if (!navPath) {
   console.log('Could not find navigation component. Creating a custom solution...');
-  
+
   // Find App.tsx to add a navigation bar directly
   const appTsxPath = path.join(appDir, 'client/src/App.tsx');
-  
+
   if (fs.existsSync(appTsxPath)) {
     console.log(`Found App.tsx at ${appTsxPath}. Adding navigation there instead...`);
-    
+
     let appContent = fs.readFileSync(appTsxPath, 'utf8');
-    
+
     // Check if we already added the navigation
     if (appContent.includes('OriginalUrlNav')) {
       console.log('Navigation already added to App.tsx');
       process.exit(0);
     }
-    
+
     // Add our custom navigation component
     const navComponentCode = `
 // Original URL Records Navigation Component
@@ -157,24 +157,24 @@ function OriginalUrlNav() {
   );
 }
 `;
-    
+
     // Find the right place to insert our component
     let updatedContent;
-    
+
     if (appContent.includes('function App()')) {
       // Add our component before the App function
       updatedContent = appContent.replace(
         /function App\(\)/,
         `${navComponentCode}\nfunction App()`
       );
-      
+
       // Find the return statement in App and add our nav component
       if (updatedContent.includes('return (')) {
         updatedContent = updatedContent.replace(
           /return \(/,
           'return (\n      <>\n        <OriginalUrlNav />'
         );
-        
+
         // Find the closing tag of the return and add our closing tag
         updatedContent = updatedContent.replace(
           /<\/Switch>/,
@@ -185,7 +185,7 @@ function OriginalUrlNav() {
       // Just add the component at the top of the file after imports
       const importEndIndex = appContent.lastIndexOf('import');
       const importEndLineIndex = appContent.indexOf('\n', importEndIndex);
-      
+
       if (importEndLineIndex !== -1) {
         updatedContent = 
           appContent.slice(0, importEndLineIndex + 1) + 
@@ -195,23 +195,23 @@ function OriginalUrlNav() {
         updatedContent = navComponentCode + '\n' + appContent;
       }
     }
-    
+
     // Write the updated file
     fs.writeFileSync(appTsxPath, updatedContent);
     console.log('Successfully added navigation component to App.tsx');
     process.exit(0);
   }
-  
+
   console.log('Could not find App.tsx either. Creating standalone navigation file...');
-  
+
   // Create a new navigation component file
   const newNavPath = path.join(appDir, 'client/src/components/OriginalUrlNav.tsx');
   const navDir = path.dirname(newNavPath);
-  
+
   if (!fs.existsSync(navDir)) {
     fs.mkdirSync(navDir, { recursive: true });
   }
-  
+
   const navContent = `import React from "react";
 import { Link } from "wouter";
 import { Database } from "lucide-react";
@@ -232,22 +232,22 @@ export default function OriginalUrlNav() {
   );
 }
 `;
-  
+
   fs.writeFileSync(newNavPath, navContent);
   console.log(`Created new navigation component at ${newNavPath}`);
-  
+
   // Now, update App.tsx to include this component
   const appTsxPath = path.join(appDir, 'client/src/App.tsx');
-  
+
   if (fs.existsSync(appTsxPath)) {
     let appContent = fs.readFileSync(appTsxPath, 'utf8');
-    
+
     // Add import for our new component
     const lastImportIndex = appContent.lastIndexOf('import');
     const lastImportLineEnd = appContent.indexOf('\n', lastImportIndex);
-    
+
     const newImport = 'import OriginalUrlNav from "./components/OriginalUrlNav";\n';
-    
+
     let updatedContent;
     if (lastImportLineEnd !== -1) {
       updatedContent = 
@@ -257,25 +257,25 @@ export default function OriginalUrlNav() {
     } else {
       updatedContent = newImport + appContent;
     }
-    
+
     // Now, find a good place to add our component
     if (updatedContent.includes('return (')) {
       updatedContent = updatedContent.replace(
         /return \(/,
         'return (\n      <>\n        <OriginalUrlNav />'
       );
-      
+
       updatedContent = updatedContent.replace(
         /<\/Switch>/,
         '</Switch>\n      </>'
       );
     }
-    
+
     fs.writeFileSync(appTsxPath, updatedContent);
     console.log('Successfully added OriginalUrlNav to App.tsx');
     process.exit(0);
   }
-  
+
   console.log('Could not modify App.tsx. Navigation may need to be added manually.');
   process.exit(1);
 }
@@ -369,14 +369,14 @@ if (!updatedContent) {
   // Look for a MenuLink or NavItem component
   if (content.includes('MenuLink') || content.includes('NavItem') || content.includes('NavLink')) {
     const lastItemIndex = content.lastIndexOf('MenuLink') || content.lastIndexOf('NavItem') || content.lastIndexOf('NavLink');
-    
+
     if (lastItemIndex !== -1) {
       const itemEndIndex = content.indexOf(')', lastItemIndex);
-      
+
       if (itemEndIndex !== -1) {
         const beforeLastItem = content.substring(0, itemEndIndex + 1);
         const afterLastItem = content.substring(itemEndIndex + 1);
-        
+
         // Add our new item after the last one
         const newItem = `
         <NavItem
@@ -384,7 +384,7 @@ if (!updatedContent) {
           icon={Database}
           label="Original URL Records"
         />`;
-        
+
         content = beforeLastItem + newItem + afterLastItem;
         updatedContent = true;
       }
@@ -396,14 +396,14 @@ if (!updatedContent) {
 if (!updatedContent) {
   // Find the end of the component and add our nav section
   const endIndex = content.lastIndexOf('return');
-  
+
   if (endIndex !== -1) {
     const returnEndIndex = content.indexOf(';', endIndex);
-    
+
     if (returnEndIndex !== -1) {
       const beforeReturn = content.substring(0, returnEndIndex);
       const afterReturn = content.substring(returnEndIndex);
-      
+
       // Add a custom nav section
       const customNav = `
   // Original URL Records navigation link
@@ -414,16 +414,16 @@ if (!updatedContent) {
     </a>
   );
 `;
-      
+
       // Add function component
       content = content.substring(0, endIndex) + customNav + content.substring(endIndex);
-      
+
       // Add the component to the return statement
       content = content.replace(
         /return\s+\([\s\S]*?<\/div>/,
         (match) => match.replace('</div>', '<OriginalUrlRecordsLink /></div>')
       );
-      
+
       updatedContent = true;
     }
   }
@@ -458,10 +458,10 @@ if [ -f "$PAGE_PATH" ]; then
 else
   echo -e "⚠️ Original URL Records page component doesn't exist at $PAGE_PATH"
   echo -e "🔧 Creating a new page component..."
-  
+
   # Create the directory if it doesn't exist
   mkdir -p "$(dirname "$PAGE_PATH")"
-  
+
   # Create a simplified version of the page component
   cat > "$PAGE_PATH" << 'EOF'
 import { useState } from 'react';
@@ -762,37 +762,37 @@ fi
 
 if [ -n "$ROUTES_FILE" ]; then
   echo -e "Found routes file at $ROUTES_FILE"
-  
+
   # Check if the routes already exist
   grep -q "/api/original-url-records" "$ROUTES_FILE"
   if [ $? -eq 0 ]; then
     echo -e "Original URL Records API routes already exist"
   else
     echo -e "Adding Original URL Records API routes..."
-    
+
     # Create a separate file with the new routes
     NEW_ROUTES_FILE="$APP_DIR/add-original-url-routes.js"
-    
+
     cat > "$NEW_ROUTES_FILE" << 'EOF'
 // Original URL Records API Routes
 
 // Add these routes to your existing routes.js file:
 
   // ===== Original URL Records API =====
-  
+
   // Get all original URL records
   app.get('/api/original-url-records', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit || '100', 10);
       const offset = parseInt(req.query.offset || '0', 10);
       const status = req.query.status || null;
-      
+
       // Simple implementation with in-memory data if storage doesn't have the methods
       const records = await db.query('SELECT * FROM original_url_records ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
       const countResult = await db.query('SELECT COUNT(*) as count FROM original_url_records');
-      
+
       const totalCount = parseInt(countResult.rows[0].count, 10);
-      
+
       res.json({
         records: records.rows,
         pagination: {
@@ -807,23 +807,23 @@ if [ -n "$ROUTES_FILE" ]; then
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Get a single original URL record by ID
   app.get('/api/original-url-records/:id', async (req, res) => {
     try {
       const result = await db.query('SELECT * FROM original_url_records WHERE id = $1', [req.params.id]);
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       res.json(result.rows[0]);
     } catch (error) {
       console.error('Error getting original URL record:', error);
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Create a new original URL record
   app.post('/api/original-url-records', async (req, res) => {
     try {
@@ -831,7 +831,7 @@ if [ -n "$ROUTES_FILE" ]; then
       if (!req.body.name || !req.body.target_url) {
         return res.status(400).json({ error: 'Name and target URL are required' });
       }
-      
+
       // Create the record
       const result = await db.query(
         `INSERT INTO original_url_records (
@@ -846,99 +846,99 @@ if [ -n "$ROUTES_FILE" ]; then
           req.body.notes || null
         ]
       );
-      
+
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating original URL record:', error);
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Update an original URL record
   app.patch('/api/original-url-records/:id', async (req, res) => {
     try {
       const recordId = parseInt(req.params.id, 10);
-      
+
       // Check if record exists
       const existingRecord = await db.query('SELECT * FROM original_url_records WHERE id = $1', [recordId]);
-      
+
       if (existingRecord.rows.length === 0) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       // Build dynamic update query
       const updates = [];
       const values = [];
       let paramIndex = 1;
-      
+
       for (const [key, value] of Object.entries(req.body)) {
         if (['name', 'target_url', 'click_limit', 'clicks', 'status', 'notes'].includes(key)) {
           updates.push(`${key} = $${paramIndex++}`);
           values.push(value);
         }
       }
-      
+
       if (updates.length === 0) {
         return res.status(400).json({ error: 'No valid fields provided for update' });
       }
-      
+
       updates.push(`updated_at = NOW()`);
       values.push(recordId);
-      
+
       const result = await db.query(
         `UPDATE original_url_records SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
         values
       );
-      
+
       res.json(result.rows[0]);
     } catch (error) {
       console.error('Error updating original URL record:', error);
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Delete an original URL record
   app.delete('/api/original-url-records/:id', async (req, res) => {
     try {
       const recordId = parseInt(req.params.id, 10);
-      
+
       // Check if record exists
       const existingRecord = await db.query('SELECT * FROM original_url_records WHERE id = $1', [recordId]);
-      
+
       if (existingRecord.rows.length === 0) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       // Delete the record
       await db.query('DELETE FROM original_url_records WHERE id = $1', [recordId]);
-      
+
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting original URL record:', error);
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Sync URLs with original URL record
   app.post('/api/original-url-records/:id/sync', async (req, res) => {
     try {
       const recordId = parseInt(req.params.id, 10);
-      
+
       // Check if record exists
       const existingRecord = await db.query('SELECT * FROM original_url_records WHERE id = $1', [recordId]);
-      
+
       if (existingRecord.rows.length === 0) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       const originalRecord = existingRecord.rows[0];
-      
+
       // Find all URLs that need to be updated based on the original record name
       const urls = await db.query(
         'SELECT * FROM urls WHERE name = $1',
         [originalRecord.name]
       );
-      
+
       if (urls.rows.length === 0) {
         return res.json({ 
           success: true, 
@@ -946,35 +946,35 @@ if [ -n "$ROUTES_FILE" ]; then
           updatedCount: 0 
         });
       }
-      
+
       console.log(`Found ${urls.rows.length} URLs to update from original record`);
-      
+
       // Temporarily disable the trigger
       await db.query('ALTER TABLE urls DISABLE TRIGGER url_clicks_protection_trigger');
-      
+
       // Update each URL
       let updatedCount = 0;
       let errors = [];
-      
+
       for (const url of urls.rows) {
         try {
           // Calculate the new click limit for the URL
           // If the URL belongs to a campaign, we apply the campaign multiplier
           let multiplier = 1.0;
-          
+
           if (url.campaign_id) {
             const campaignResult = await db.query(
               'SELECT multiplier FROM campaigns WHERE id = $1',
               [url.campaign_id]
             );
-            
+
             if (campaignResult.rows.length > 0 && campaignResult.rows[0].multiplier) {
               multiplier = parseFloat(campaignResult.rows[0].multiplier) || 1.0;
             }
           }
-          
+
           const newClickLimit = Math.round(originalRecord.click_limit * multiplier);
-          
+
           // Update the URL
           await db.query(
             `UPDATE urls 
@@ -985,17 +985,17 @@ if [ -n "$ROUTES_FILE" ]; then
              WHERE id = $4`,
             [originalRecord.clicks, newClickLimit, originalRecord.click_limit, url.id]
           );
-          
+
           updatedCount++;
         } catch (error) {
           errors.push(`Error updating URL ID ${url.id}: ${error.message}`);
           console.error(`Error updating URL ID ${url.id}:`, error);
         }
       }
-      
+
       // Re-enable the trigger
       await db.query('ALTER TABLE urls ENABLE TRIGGER url_clicks_protection_trigger');
-      
+
       return res.json({ 
         success: true, 
         message: `Updated ${updatedCount} URLs from original record`, 
@@ -1004,39 +1004,39 @@ if [ -n "$ROUTES_FILE" ]; then
       });
     } catch (error) {
       console.error('Error syncing URLs with original URL record:', error);
-      
+
       // In case of error, try to re-enable the trigger
       try {
         await db.query('ALTER TABLE urls ENABLE TRIGGER url_clicks_protection_trigger');
       } catch (triggerError) {
         console.error('Failed to re-enable trigger:', triggerError);
       }
-      
+
       res.status(500).json({ error: error.message });
     }
   });
 
 EOF
-    
+
     echo -e "${YELLOW}Created routes file at $NEW_ROUTES_FILE${NC}"
     echo -e "${YELLOW}You'll need to manually add these routes to $ROUTES_FILE${NC}"
     echo -e "${YELLOW}The new routes begin with app.get('/api/original-url-records',...${NC}"
-    
+
     # Attempt to add routes automatically by finding a good insertion point
     echo -e "Attempting to add routes automatically..."
-    
+
     # Look for common insertion points
     INSERTION_POINT=$(grep -n "app.get.*trafficstar\|app.post.*campaign\|app.get.*url" "$ROUTES_FILE" | head -1 | cut -d: -f1)
-    
+
     if [ -n "$INSERTION_POINT" ]; then
       echo -e "Found insertion point at line $INSERTION_POINT"
-      
+
       # Get the route content without the comments
       ROUTE_CONTENT=$(grep -v "^//" "$NEW_ROUTES_FILE")
-      
+
       # Insert the routes at the found insertion point
       sed -i "${INSERTION_POINT}i\\${ROUTE_CONTENT}" "$ROUTES_FILE"
-      
+
       echo -e "${GREEN}✓ Added Original URL Records API routes to $ROUTES_FILE${NC}"
     else
       echo -e "${YELLOW}⚠️ Could not find a good insertion point. Please manually add the routes from $NEW_ROUTES_FILE to $ROUTES_FILE${NC}"
