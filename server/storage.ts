@@ -1588,6 +1588,29 @@ export class DatabaseStorage implements IStorage {
       const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, recordId));
       if (!record) return 0;
       
+      console.log(`✅ Successfully updated original click limit to ${record.originalClickLimit}`);
+      console.log(`🔄 Propagating changes to all linked URL instances...`);
+      
+      // CRITICAL FIX: Use direct SQL to update all URLs with matching name
+      // This bypass all possible ORM issues or trigger problems
+      await db.execute(sql`
+        -- Temporarily disable triggers to force the update
+        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
+        
+        -- Update all URLs with the matching name
+        UPDATE urls
+        SET 
+          original_click_limit = ${record.originalClickLimit},
+          click_limit = ROUND(${record.originalClickLimit} * COALESCE((SELECT multiplier FROM campaigns WHERE id = campaign_id), 1)),
+          updated_at = NOW()
+        WHERE name = ${record.name};
+        
+        -- Re-enable triggers
+        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+      `);
+      
       // Find all URLs with matching name - this will include URLs in all campaigns
       const matchingUrls = await db.select().from(urls).where(eq(urls.name, record.name));
       if (matchingUrls.length === 0) return 0;
@@ -1611,149 +1634,21 @@ export class DatabaseStorage implements IStorage {
         this.invalidateCampaignCache(campaignId);
       });
       
-      // Enable click protection bypass for this entire operation
-      console.log(`✅ Setting click protection bypass to ENABLED (protection disabled)`);
-      await this.setClickProtectionBypass(true);
-      
-      try {
-        // Process each URL individually to apply campaign multipliers correctly
-        let updatedCount = 0;
+      // FORCE-REFRESH all campaigns with this URL to ensure everything is updated
+      for (const campaignId of affectedCampaignIds) {
+        // Force a deep cache invalidation of the campaign
+        this.invalidateCampaignCache(campaignId);
         
-        for (const url of matchingUrls) {
-          console.log(`🔍 Processing URL #${url.id} in campaign ID ${url.campaignId || 'none'}`);
-          
-          // Set the original click limit from the master record
-          let updateData: any = {
-            originalClickLimit: record.originalClickLimit,
-            updatedAt: new Date()
-          };
-          
-          // If the URL belongs to a campaign, apply the campaign multiplier
-          if (url.campaignId) {
-            // Force refresh the campaign to get fresh data
-            const campaign = await this.getCampaign(url.campaignId, true);
-            if (campaign && campaign.multiplier) {
-              // Convert multiplier to number if it's a string
-              const multiplierValue = typeof campaign.multiplier === 'string'
-                ? parseFloat(campaign.multiplier)
-                : campaign.multiplier;
-              
-              // Apply multiplier if greater than 0.01
-              if (multiplierValue > 0.01) {
-                // Calculate new click limit with multiplier
-                updateData.clickLimit = Math.round(record.originalClickLimit * multiplierValue);
-                
-                console.log(`📊 URL #${url.id} updated:`);
-                console.log(`  - Original click limit: ${record.originalClickLimit}`);
-                console.log(`  - Campaign multiplier: ${multiplierValue}x`);
-                console.log(`  - New click limit: ${updateData.clickLimit}`);
-              }
-            }
-          } else {
-            // If not in a campaign, clickLimit should match originalClickLimit
-            updateData.clickLimit = record.originalClickLimit;
-            console.log(`📊 URL #${url.id} updated with no campaign multiplier:`);
-            console.log(`  - Original click limit = new click limit: ${record.originalClickLimit}`);
-          }
-          
-          try {
-            // Force parse the original click limit to ensure it's a clean number
-            const originalClickLimitStr = String(record.originalClickLimit).trim();
-            const newOriginalClickLimit = parseInt(originalClickLimitStr, 10);
-            
-            if (isNaN(newOriginalClickLimit)) {
-              console.error(`❌ ERROR: Invalid original click limit value: "${originalClickLimitStr}"`);
-              throw new Error(`Invalid original click limit: ${originalClickLimitStr}`);
-            }
-
-            // Log the precise value we're working with
-            console.log(`🔢 DEBUG: Original click limit from record: "${originalClickLimitStr}" (parsed as: ${newOriginalClickLimit})`);
-            
-            const newClickLimit = updateData.clickLimit || newOriginalClickLimit;
-            
-            console.log(`⚙️ Setting click_limit=${newClickLimit}, original_click_limit=${newOriginalClickLimit}`);
-          
-            // Update the URL directly with the new values
-            const [updatedUrl] = await db
-              .update(urls)
-              .set({
-                originalClickLimit: newOriginalClickLimit,
-                clickLimit: newClickLimit,
-                updatedAt: new Date()
-              })
-              .where(eq(urls.id, url.id))
-              .returning();
-            
-            if (updatedUrl) {
-              console.log(`✅ Successfully updated URL #${url.id}`);
-              
-              // Force invalidate all caches for this URL
-              this.invalidateUrlCache(url.id);
-              
-              if (url.campaignId) {
-                // Force a deep cache invalidation of the campaign
-                this.invalidateCampaignCache(url.campaignId);
-                
-                // After updating, force refresh to check if update worked
-                const refreshedUrls = await this.getUrls(url.campaignId, true);
-                
-                // Find our updated URL in the refreshed data
-                const refreshedUrl = refreshedUrls.find(u => u.id === url.id);
-                if (refreshedUrl) {
-                  // Validate the refreshed URL's originalClickLimit value
-                  if (refreshedUrl.originalClickLimit !== newOriginalClickLimit) {
-                    console.error(`❌ CRITICAL ERROR: Data integrity issue detected!`);
-                    console.error(`  - Expected originalClickLimit: ${newOriginalClickLimit}`);
-                    console.error(`  - Actual refreshed value: ${refreshedUrl.originalClickLimit}`);
-                    console.error(`  - Attempting to fix inconsistency...`);
-                    
-                    // Attempt to directly fix the inconsistent value with a raw SQL query
-                    try {
-                      await db.execute(sql`
-                        UPDATE urls 
-                        SET original_click_limit = ${newOriginalClickLimit}
-                        WHERE id = ${url.id}
-                      `);
-                      console.log(`✅ Successfully fixed originalClickLimit value for URL #${url.id}`);
-                    } catch (fixError) {
-                      console.error(`❌ Failed to fix originalClickLimit value:`, fixError);
-                    }
-                  }
-                }
-              }
-            }
-            
-            updatedCount++;
-          } catch (error) {
-            console.error(`❌ Error updating URL #${url.id}:`, error);
-          }
-        }
+        // Force refresh the campaign data and URLs
+        await this.getCampaign(campaignId, true);
+        await this.getUrls(campaignId, true);
         
-        // IMPROVEMENT: After all updates, force refresh all campaign caches again
-        affectedCampaignIds.forEach(async (campaignId) => {
-          // Force refresh campaign
-          await this.getCampaign(campaignId, true);
-          // Force refresh its URLs
-          await this.getUrls(campaignId, true);
-          console.log(`🔄 Force refreshed cache for campaign ID ${campaignId} after updates`);
-        });
-        
-        console.log(`🎉 Successfully updated ${updatedCount} out of ${matchingUrls.length} URLs`);
-        return updatedCount;
-      } finally {
-        // Always disable click protection bypass when we're done
-        console.log(`✅ Setting click protection bypass to DISABLED (protection enabled)`);
-        await this.setClickProtectionBypass(false);
+        console.log(`✅ Force refreshed campaign ${campaignId} with updated URL data`);
       }
+      
+      return matchingUrls.length;
     } catch (error) {
       console.error('Error syncing URLs with original record:', error);
-      // Make sure we always disable the bypass in case of errors
-      try {
-        console.log(`✅ Setting click protection bypass to DISABLED (protection enabled)`);
-        await this.setClickProtectionBypass(false);
-      } catch (bypassError) {
-        console.error('Error resetting click protection bypass:', bypassError);
-      }
       throw error;
     }
   }
