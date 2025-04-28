@@ -193,20 +193,22 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
               )}
               
               {/* TrafficStar Daily Spent Section */}
-              {campaign.trafficstarCampaignId && 'dailySpent' in campaign && (
-                <div>
-                  <span className="text-sm font-medium text-gray-500">TrafficStar Spent:</span>
+              {campaign.trafficstarCampaignId && (
+                <div className="mt-2 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
+                  <span className="text-sm font-medium text-slate-700">TrafficStar Spent:</span>
                   <div className="flex items-center gap-2">
-                    <p className="text-gray-900">
+                    <p className="text-slate-900 font-semibold">
                       ${typeof campaign.dailySpent === 'string' 
-                        ? parseFloat(campaign.dailySpent).toFixed(4) 
+                        ? parseFloat(campaign.dailySpent || '0').toFixed(4) 
                         : (Number(campaign.dailySpent || 0)).toFixed(4)}
-                      <span className="text-xs text-gray-500 ml-1">
-                        {campaign.dailySpentDate ? `on ${campaign.dailySpentDate}` : 'today'}
+                      <span className="text-xs text-slate-500 ml-1 font-normal">
+                        {campaign.dailySpentDate 
+                          ? `on ${new Date(campaign.dailySpentDate).toLocaleDateString()}` 
+                          : 'today'}
                       </span>
                     </p>
                     {campaign.lastSpentCheck && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-slate-500">
                         (last checked: {new Date(campaign.lastSpentCheck).toLocaleTimeString()})
                       </span>
                     )}
