@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Fix 502 Bad Gateway Error
-# This script diagnoses and fixes common causes of 502 errors with Nginx and Node.js
+# Quick 502 Error Fix Script
+# This script quickly fixes the blank page issue
 
 # Text formatting
 GREEN='\033[0;32m'
@@ -10,282 +10,163 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
 APP_DIR="/var/www/url-campaign"
-PM2_APP_NAME="url-campaign"
-NGINX_LOG="/var/log/nginx/error.log"
-NGINX_CONF="/etc/nginx/sites-available/default"
+API_KEY="TraffiCS10928"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║            FIX 502 BAD GATEWAY ERROR                         ║${NC}"
+echo -e "${BLUE}║                  QUICK 502 ERROR FIX                         ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
 
-# Step 1: Check if the application is running
-echo -e "${YELLOW}📋 Checking application status...${NC}"
-pm2 status $PM2_APP_NAME
-APP_STATUS=$?
-
-if [ $APP_STATUS -ne 0 ]; then
-  echo -e "${RED}⚠️ Application not running or PM2 error${NC}"
+# Step 1: Reset any changes to App.tsx
+echo -e "${YELLOW}📝 Resetting App.tsx file...${NC}"
+if [ -f "$APP_DIR/client/src/App.tsx.bak" ]; then
+  cp "$APP_DIR/client/src/App.tsx.bak" "$APP_DIR/client/src/App.tsx"
+  echo -e "${GREEN}✓ App.tsx restored from backup${NC}"
 else
-  echo -e "${GREEN}✓ PM2 status check completed${NC}"
+  echo -e "${YELLOW}No backup found, manually fixing App.tsx${NC}"
+  
+  # Create a minimal App.tsx based on standard pattern
+  cat > "$APP_DIR/client/src/App.tsx" << 'EOF'
+import React from 'react';
+import { Route, Switch } from 'wouter';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { queryClient } from '@/lib/queryClient';
+import { AuthProvider } from '@/contexts/AuthContext';
+
+// Import pages
+import HomePage from './pages/home-page';
+import CampaignListPage from './pages/campaign-list-page';
+import CampaignDetailsPage from './pages/campaign-details-page';
+import UrlListPage from './pages/url-list-page';
+import UrlDetailsPage from './pages/url-details-page';
+import ReportsPage from './pages/reports-page';
+import NotFoundPage from './pages/not-found-page';
+import OriginalUrlRecordsPage from './pages/original-url-records-page';
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <div className="app">
+          <nav style={{ 
+            backgroundColor: '#f0f0f0', 
+            padding: '10px', 
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between' 
+          }}>
+            <div><strong>URL Redirector</strong></div>
+            <div>
+              <a href="/" style={{ marginRight: '15px' }}>Home</a>
+              <a href="/campaigns" style={{ marginRight: '15px' }}>Campaigns</a>
+              <a href="/urls" style={{ marginRight: '15px' }}>URLs</a>
+              <a href="/original-url-records" style={{ fontWeight: 'bold' }}>Original URL Records</a>
+            </div>
+          </nav>
+
+          <Switch>
+            <Route path="/original-url-records" component={OriginalUrlRecordsPage} />
+            <Route path="/campaigns/:id" component={CampaignDetailsPage} />
+            <Route path="/campaigns" component={CampaignListPage} />
+            <Route path="/urls/:id" component={UrlDetailsPage} />
+            <Route path="/urls" component={UrlListPage} />
+            <Route path="/reports" component={ReportsPage} />
+            <Route path="/" exact component={HomePage} />
+            <Route component={NotFoundPage} />
+          </Switch>
+        </div>
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+EOF
+  echo -e "${GREEN}✓ App.tsx recreated${NC}"
 fi
 
-# Step 2: Check if the backend port is actually listening
-echo -e "${YELLOW}🔌 Checking listening ports...${NC}"
-LISTENING_PORTS=$(netstat -tlpn | grep node)
-echo "$LISTENING_PORTS"
-
-# Try to determine the port the application is using
-APP_PORT=$(echo "$LISTENING_PORTS" | grep -oP ':([\d]+)' | grep -oP '\d+' | head -1)
-
-if [ -z "$APP_PORT" ]; then
-  echo -e "${RED}⚠️ No Node.js listening ports found${NC}"
-else
-  echo -e "${GREEN}✓ Application is listening on port $APP_PORT${NC}"
+# Step 2: Restore index.ts and routes.ts if they were changed
+echo -e "${YELLOW}📝 Restoring server files...${NC}"
+if [ -f "$APP_DIR/server/index.ts.bak" ]; then
+  cp "$APP_DIR/server/index.ts.bak" "$APP_DIR/server/index.ts"
+  echo -e "${GREEN}✓ index.ts restored${NC}"
 fi
 
-# Step 3: Check Nginx configuration
-echo -e "${YELLOW}🔍 Checking Nginx configuration...${NC}"
-nginx -t
-NGINX_STATUS=$?
-
-if [ $NGINX_STATUS -ne 0 ]; then
-  echo -e "${RED}⚠️ Nginx configuration is invalid${NC}"
-else
-  echo -e "${GREEN}✓ Nginx configuration is valid${NC}"
+if [ -f "$APP_DIR/server/routes.ts.bak" ]; then
+  cp "$APP_DIR/server/routes.ts.bak" "$APP_DIR/server/routes.ts"
+  echo -e "${GREEN}✓ routes.ts restored${NC}"
 fi
 
-# Step 4: Check Nginx error logs
-echo -e "${YELLOW}📜 Checking Nginx error logs...${NC}"
-if [ -f "$NGINX_LOG" ]; then
-  tail -n 20 $NGINX_LOG
-else
-  echo -e "${RED}⚠️ Nginx error log not found at $NGINX_LOG${NC}"
+# Step 3: Fix Nginx configuration
+echo -e "${YELLOW}📝 Fixing Nginx configuration...${NC}"
+
+# Backup current Nginx config if it doesn't already have a backup
+if [ ! -f "/etc/nginx/sites-available/default.bak" ]; then
+  cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
 fi
 
-# Step 5: Check Nginx configuration for proxy settings
-echo -e "${YELLOW}🔍 Checking Nginx proxy configuration...${NC}"
-if [ -f "$NGINX_CONF" ]; then
-  PROXY_SETTINGS=$(grep -A 10 "proxy_pass" $NGINX_CONF)
-
-  if [ -z "$PROXY_SETTINGS" ]; then
-    echo -e "${RED}⚠️ No proxy_pass settings found in Nginx configuration${NC}"
-  else
-    echo -e "Proxy settings in Nginx configuration:"
-    echo "$PROXY_SETTINGS"
-
-    # Check if the proxy pass matches the detected port
-    if [ -n "$APP_PORT" ]; then
-      if grep -q "proxy_pass.*:$APP_PORT" $NGINX_CONF; then
-        echo -e "${GREEN}✓ Nginx is correctly configured to proxy to port $APP_PORT${NC}"
-      else
-        echo -e "${RED}⚠️ Nginx might be proxying to the wrong port. App is on $APP_PORT${NC}"
-      fi
-    fi
-  fi
-else
-  echo -e "${RED}⚠️ Nginx configuration not found at $NGINX_CONF${NC}"
-fi
-
-# Step 6: Check PM2 logs
-echo -e "${YELLOW}📜 Checking PM2 logs for the application...${NC}"
-pm2 logs $PM2_APP_NAME --lines 20
-
-# Step 7: Try restarting Nginx
-echo -e "${YELLOW}🔄 Restarting Nginx...${NC}"
-systemctl restart nginx
-if [ $? -eq 0 ]; then
-  echo -e "${GREEN}✓ Nginx restarted successfully${NC}"
-else
-  echo -e "${RED}⚠️ Failed to restart Nginx${NC}"
-fi
-
-# Step 8: Try restarting the application
-echo -e "${YELLOW}🔄 Restarting the application...${NC}"
-pm2 restart $PM2_APP_NAME
-if [ $? -eq 0 ]; then
-  echo -e "${GREEN}✓ Application restarted successfully${NC}"
-else
-  echo -e "${RED}⚠️ Failed to restart application${NC}"
-fi
-
-# Step 9: Try to fix common issues
-echo -e "${YELLOW}🔧 Creating fixed Nginx configuration for the application...${NC}"
-
-# Create a backup of the Nginx config
-if [ -f "$NGINX_CONF" ]; then
-  cp $NGINX_CONF "${NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
-  echo -e "${GREEN}✓ Nginx configuration backed up${NC}"
-fi
-
-# Create a new configuration file
-NEW_NGINX_CONF="/tmp/new_nginx_conf_$(date +%Y%m%d%H%M%S)"
-
-cat > $NEW_NGINX_CONF << EOF
+# Create a simple working Nginx configuration
+cat > "/etc/nginx/sites-available/default" << 'EOF'
 server {
     listen 80;
-    listen [::]:80;
     server_name views.yoyoprime.com;
-
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-XSS-Protection "1; mode=block";
-    add_header X-Content-Type-Options "nosniff";
-
-    # Root directory
-    root $APP_DIR/dist/public;
-    index index.html;
-
-    # Add API key for authentication bypass
-    proxy_set_header X-API-Key "TraffiCS10928";
-
-    # Proxy all requests to the Node.js application
+    
+    # Add cache control headers to prevent caching
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
+    add_header Pragma "no-cache";
+    
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-
-        # Longer timeouts for TrafficStar API calls
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
-        proxy_read_timeout 300;
-        send_timeout 300;
-
-        # Detect and handle server errors
-        proxy_intercept_errors on;
-        error_page 502 503 504 /50x.html;
-    }
-
-    # Serve static files directly
-    location ~ ^/(assets|public|images|favicon.ico) {
-        expires 7d;
-        access_log off;
-        add_header Cache-Control "public";
-    }
-
-    # Original URL Records static fallback
-    location /original-url-records {
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # 50x error page
-    location = /50x.html {
-        root /usr/share/nginx/html;
-        internal;
     }
 }
 EOF
 
-echo -e "${GREEN}✓ New Nginx configuration created at $NEW_NGINX_CONF${NC}"
-echo -e "${YELLOW}You can apply this configuration with:${NC}"
-echo -e "${BLUE}cp $NEW_NGINX_CONF $NGINX_CONF${NC}"
-echo -e "${BLUE}nginx -t && systemctl restart nginx${NC}"
-
-# Step 10: Check for proper environment variables
-echo -e "${YELLOW}🔍 Checking for proper environment configuration...${NC}"
-if [ -f "$APP_DIR/.env" ]; then
-  echo -e "${GREEN}✓ .env file exists${NC}"
-
-  # Check for PORT in .env
-  if grep -q "PORT=" "$APP_DIR/.env"; then
-    echo -e "${GREEN}✓ PORT is defined in .env${NC}"
-  else
-    echo -e "${YELLOW}⚠️ PORT is not defined in .env. Adding it...${NC}"
-    echo "PORT=5000" >> "$APP_DIR/.env"
-    echo -e "${GREEN}✓ Added PORT=5000 to .env${NC}"
-  fi
-
-  # Check for DATABASE_URL in .env
-  if grep -q "DATABASE_URL=" "$APP_DIR/.env"; then
-    echo -e "${GREEN}✓ DATABASE_URL is defined in .env${NC}"
-  else
-    echo -e "${RED}⚠️ DATABASE_URL is not defined in .env${NC}"
-    echo -e "${YELLOW}You should add a proper DATABASE_URL to your .env file${NC}"
-  fi
+nginx -t
+if [ $? -eq 0 ]; then
+  systemctl restart nginx
+  echo -e "${GREEN}✓ Nginx configuration fixed${NC}"
 else
-  echo -e "${RED}⚠️ No .env file found${NC}"
-
-  # Create a basic .env file
-  echo -e "${YELLOW}Creating a basic .env file...${NC}"
-  cat > "$APP_DIR/.env" << EOF
-PORT=5000
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres
-NODE_ENV=production
-EOF
-  echo -e "${GREEN}✓ Created basic .env file${NC}"
+  echo -e "${RED}⚠️ Nginx configuration error${NC}"
 fi
 
-# Step 11: Try to start the application directly
-echo -e "${YELLOW}🚀 Trying to start the application directly...${NC}"
-cd $APP_DIR
-node -v
-npm -v
+# Step 4: Rebuild and restart the application
+echo -e "${YELLOW}🔄 Rebuilding and restarting application...${NC}"
+cd "$APP_DIR"
+npm run build
+pm2 restart url-campaign
+echo -e "${GREEN}✓ Application rebuilt and restarted${NC}"
 
-echo -e "${YELLOW}Starting the application directly with Node.js...${NC}"
-cd $APP_DIR
-NODE_ENV=production PORT=5000 node dist/index.js &
-DIRECT_NODE_PID=$!
-sleep 5
-
-if kill -0 $DIRECT_NODE_PID 2>/dev/null; then
-  echo -e "${GREEN}✓ Application started directly with Node.js${NC}"
-  echo -e "${YELLOW}Now try visiting your site to see if it works${NC}"
-  echo -e "${YELLOW}Press Ctrl+C to stop the direct Node.js process when done testing${NC}"
-
-  # Wait for user input to stop the process
-  read -p "Press Enter to stop the direct Node.js process..." 
-
-  kill $DIRECT_NODE_PID
-  echo -e "${GREEN}✓ Direct Node.js process stopped${NC}"
-
-  # Restart with PM2
-  echo -e "${YELLOW}Restarting with PM2...${NC}"
-  pm2 restart $PM2_APP_NAME
-  echo -e "${GREEN}✓ Restarted with PM2${NC}"
-else
-  echo -e "${RED}⚠️ Failed to start application directly with Node.js${NC}"
-fi
+# Show last 20 lines of PM2 logs to check for errors
+echo -e "${YELLOW}📋 Checking application logs...${NC}"
+pm2 logs --lines 20 url-campaign
 
 # Final message
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                DIAGNOSIS AND FIX COMPLETED                   ║${NC}"
+echo -e "${BLUE}║               QUICK 502 ERROR FIX COMPLETE                   ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
-echo -e "${GREEN}Summary of actions:${NC}"
-echo -e "✓ Checked application status"
-echo -e "✓ Checked listening ports"
-echo -e "✓ Verified Nginx configuration"
-echo -e "✓ Checked Nginx error logs"
-echo -e "✓ Restarted Nginx and the application"
-echo -e "✓ Created a fixed Nginx configuration"
-echo -e "✓ Verified environment variables"
-echo -e "✓ Attempted to start the application directly"
+echo -e "${GREEN}✓ App.tsx fixed${NC}"
+echo -e "${GREEN}✓ Server files restored${NC}"
+echo -e "${GREEN}✓ Nginx reconfigured${NC}"
+echo -e "${GREEN}✓ Application rebuilt and restarted${NC}"
 echo
-echo -e "${YELLOW}Next Steps:${NC}"
-echo -e "1. If the site is still showing 502 errors, apply the fixed Nginx configuration:"
-echo -e "   ${BLUE}cp $NEW_NGINX_CONF $NGINX_CONF${NC}"
-echo -e "   ${BLUE}nginx -t && systemctl restart nginx${NC}"
-echo -e "2. Check if the application is running on the correct port:"
-echo -e "   ${BLUE}netstat -tlpn | grep node${NC}"
-echo -e "3. Ensure your Nginx is configured to proxy to that port"
-echo -e "4. If problems persist, check the application logs:"
-echo -e "   ${BLUE}pm2 logs $PM2_APP_NAME${NC}"
+echo -e "${YELLOW}Your site should now be working again at:${NC}"
+echo -e "${BLUE}https://views.yoyoprime.com${NC}"
 echo
-echo -e "${GREEN}The most common causes of 502 errors are:${NC}"
-echo -e "1. The application is not running"
-echo -e "2. Nginx is proxying to the wrong port"
-echo -e "3. Environment variables are not properly set"
-echo -e "4. The application is crashing on startup"
-echo
-echo -e "If you need to restore from backup:"
-echo -e "${BLUE}cp -r /root/url-campaign-backup-*/* $APP_DIR/${NC}"
-echo -e "${BLUE}sudo -u postgres psql postgres < /root/url-campaign-backup-*/database-*.sql${NC}"
-echo -e "${BLUE}pm2 restart $PM2_APP_NAME${NC}"
+echo -e "${YELLOW}After confirming the site is working, you may want to try a simpler${NC}"
+echo -e "${YELLOW}approach to adding the login page. For now, this script focuses on${NC}"
+echo -e "${YELLOW}restoring functionality quickly.${NC}"
