@@ -60,6 +60,15 @@ export const selectCampaignSchema = createSelectSchema(campaigns);
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 
+// Update schema for campaigns
+export const updateCampaignSchema = createInsertSchema(campaigns).omit({
+  id: true,
+  createdAt: true, 
+  updatedAt: true,
+  lastTrafficstarSync: true,
+  lastSpentCheck: true
+});
+
 // URLs table
 export const urls = pgTable('urls', {
   id: serial('id').primaryKey(),
@@ -85,6 +94,19 @@ export const insertUrlSchema = createInsertSchema(urls).omit({
 export const selectUrlSchema = createSelectSchema(urls);
 export type Url = typeof urls.$inferSelect;
 export type InsertUrl = z.infer<typeof insertUrlSchema>;
+
+// Update schema for URLs
+export const updateUrlSchema = createInsertSchema(urls).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Bulk URL action schema
+export const bulkUrlActionSchema = z.object({
+  urlIds: z.array(z.number()),
+  action: z.enum(['activate', 'pause', 'deactivate', 'delete'])
+});
 
 // Original URL Records table
 export const originalUrlRecords = pgTable('original_url_records', {
