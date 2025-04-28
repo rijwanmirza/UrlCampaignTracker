@@ -239,8 +239,8 @@ export default function OriginalUrlRecordsPage() {
     setEditingRecord(record);
     editForm.reset({
       name: record.name,
-      target_url: record.target_url,
-      original_click_limit: record.original_click_limit,
+      target_url: record.targetUrl,
+      original_click_limit: record.originalClickLimit,
     });
     setIsEditDialogOpen(true);
   };
@@ -459,24 +459,24 @@ export default function OriginalUrlRecordsPage() {
                         <TableCell className="font-medium">{record.id}</TableCell>
                         <TableCell>{record.name || 'Unnamed'}</TableCell>
                         <TableCell className="truncate max-w-xs">
-                          {record.target_url ? (
+                          {record.targetUrl ? (
                             <a 
-                              href={record.target_url} 
+                              href={record.targetUrl} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-blue-500 hover:underline"
                             >
-                              {record.target_url}
+                              {record.targetUrl}
                             </a>
                           ) : (
                             <span className="text-gray-400">No URL</span>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          {record.original_click_limit ? record.original_click_limit.toLocaleString() : 0}
+                          {record.originalClickLimit ? record.originalClickLimit.toLocaleString() : 0}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {record.updated_at ? formatDistanceToNow(new Date(record.updated_at), { addSuffix: true }) : 'N/A'}
+                          {record.updatedAt ? formatDistanceToNow(new Date(record.updatedAt), { addSuffix: true }) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
