@@ -6,6 +6,13 @@ export interface ServerStats {
   memoryUsage: number; // percentage
   memoryTotal: number; // bytes
   memoryFree: number; // bytes
+  cpuDetails: {
+    manufacturer: string;
+    brand: string;
+    speed: number;
+    cores: number;
+    physicalCores: number;
+  };
   networkStats: {
     rx_sec: number; // bytes received per second
     tx_sec: number; // bytes transmitted per second
@@ -14,6 +21,7 @@ export interface ServerStats {
   timestamp: Date;
   uptime: number; // seconds
   loadAverage: number[]; // 1, 5, 15 minute averages
+  systemLoad: number; // percentage (0-100)
 }
 
 // Cache stats to prevent excessive polling
@@ -37,6 +45,9 @@ export async function getServerStats(): Promise<ServerStats> {
     // Get CPU usage - average across all cores
     const cpu = await si.currentLoad();
     
+    // Get CPU details
+    const cpuInfo = await si.cpu();
+    
     // Get memory usage
     const memory = await si.mem();
     
@@ -51,12 +62,24 @@ export async function getServerStats(): Promise<ServerStats> {
     // Calculate memory usage percentage
     const memoryUsagePercent = (memory.total - memory.available) / memory.total * 100;
     
+    // Calculate overall system load
+    // This gives us a percentage representation of total system load (0-100%)
+    // From CPU load, processes, IO operations, etc.
+    const systemLoad = Math.min(Math.round((loadavg.avgLoad || cpu.currentLoad / 100) * 100), 100);
+    
     // Create stats object
     const stats: ServerStats = {
       cpuUsage: parseFloat(cpu.currentLoad.toFixed(2)),
       memoryUsage: parseFloat(memoryUsagePercent.toFixed(2)),
       memoryTotal: memory.total,
       memoryFree: memory.available,
+      cpuDetails: {
+        manufacturer: cpuInfo.manufacturer || 'Unknown',
+        brand: cpuInfo.brand || 'Unknown CPU',
+        speed: cpuInfo.speed || 0,
+        cores: cpuInfo.cores || 0,
+        physicalCores: cpuInfo.physicalCores || 0
+      },
       networkStats: {
         rx_sec: networkStats.reduce((sum, interface_) => sum + interface_.rx_sec, 0),
         tx_sec: networkStats.reduce((sum, interface_) => sum + interface_.tx_sec, 0),
@@ -64,7 +87,8 @@ export async function getServerStats(): Promise<ServerStats> {
       },
       timestamp: new Date(),
       uptime: uptime.uptime,
-      loadAverage: loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100]
+      loadAverage: loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100],
+      systemLoad: systemLoad
     };
     
     // Update cache
@@ -81,6 +105,13 @@ export async function getServerStats(): Promise<ServerStats> {
       memoryUsage: -1,
       memoryTotal: 0,
       memoryFree: 0,
+      cpuDetails: {
+        manufacturer: 'Unknown',
+        brand: 'Unknown CPU',
+        speed: 0,
+        cores: 0,
+        physicalCores: 0
+      },
       networkStats: {
         rx_sec: 0,
         tx_sec: 0,
@@ -88,7 +119,8 @@ export async function getServerStats(): Promise<ServerStats> {
       },
       timestamp: new Date(),
       uptime: 0,
-      loadAverage: [0, 0, 0]
+      loadAverage: [0, 0, 0],
+      systemLoad: 0
     };
   }
 }

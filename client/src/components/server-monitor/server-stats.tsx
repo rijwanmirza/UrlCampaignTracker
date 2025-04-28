@@ -12,6 +12,13 @@ interface ServerStats {
   memoryUsage: number;
   memoryTotal: number;
   memoryFree: number;
+  cpuDetails: {
+    manufacturer: string;
+    brand: string;
+    speed: number;
+    cores: number;
+    physicalCores: number;
+  };
   networkStats: {
     rx_sec: number;
     tx_sec: number;
@@ -20,6 +27,7 @@ interface ServerStats {
   timestamp: string;
   uptime: number;
   loadAverage: number[];
+  systemLoad: number;
 }
 
 export function ServerMonitor() {
@@ -214,18 +222,52 @@ export function ServerMonitor() {
           <CardTitle>Server Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <h4 className="text-sm font-medium">Uptime</h4>
               <p className="text-lg">{formatUptime(stats?.uptime || 0)}</p>
             </div>
             <div>
-              <h4 className="text-sm font-medium">Load Average</h4>
-              <p className="text-lg">{stats?.loadAverage?.map(load => load.toFixed(2)).join(', ')}</p>
+              <h4 className="text-sm font-medium">System Load</h4>
+              <div className="flex items-center gap-2">
+                <Progress value={stats?.systemLoad} className="h-2 w-24" />
+                <p className="text-lg">{stats?.systemLoad.toFixed(1)}%</p>
+              </div>
             </div>
             <div>
               <h4 className="text-sm font-medium">Last Updated</h4>
               <p className="text-lg">{stats ? new Date(stats.timestamp).toLocaleTimeString() : '-'}</p>
+            </div>
+          </div>
+          
+          {/* CPU Details */}
+          <div className="border-t pt-4 mt-2">
+            <h4 className="text-sm font-medium mb-2">CPU Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Processor</p>
+                <p className="text-sm font-medium">{stats?.cpuDetails.brand}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Manufacturer</p>
+                <p className="text-sm font-medium">{stats?.cpuDetails.manufacturer}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Speed</p>
+                <p className="text-sm font-medium">{stats?.cpuDetails.speed} GHz</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Logical Cores</p>
+                <p className="text-sm font-medium">{stats?.cpuDetails.cores}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Physical Cores</p>
+                <p className="text-sm font-medium">{stats?.cpuDetails.physicalCores}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Load Average</p>
+                <p className="text-sm font-medium">{stats?.loadAverage?.map(load => load.toFixed(2)).join(', ')}</p>
+              </div>
             </div>
           </div>
         </CardContent>
