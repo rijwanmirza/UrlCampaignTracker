@@ -789,33 +789,38 @@ export class DatabaseStorage implements IStorage {
       // If we're changing the click limit, we need to determine if we should update the original record
       const existingRecord = await this.getOriginalUrlRecordByName(existingUrl.name);
       
-      // If we have an original click limit and the original record doesn't exist, create it
-      if (updateUrl.originalClickLimit !== undefined && !existingRecord) {
-        try {
-          await this.createOriginalUrlRecord({
-            name: existingUrl.name,
-            targetUrl: updateUrl.targetUrl || existingUrl.targetUrl,
-            originalClickLimit: updateUrl.originalClickLimit
-          });
-          console.log('🔍 DEBUG: Created original URL record for', existingUrl.name);
-        } catch (error) {
-          console.error('Error creating original URL record during update:', error);
-        }
-      }
-      // If record exists and we're changing original click limit, update the master record
-      else if (updateUrl.originalClickLimit !== undefined && existingRecord) {
-        try {
-          await this.updateOriginalUrlRecord(existingRecord.id, {
-            originalClickLimit: updateUrl.originalClickLimit
-          });
-          console.log('🔍 DEBUG: Updated original URL record for', existingUrl.name);
-        } catch (error) {
-          console.error('Error updating original URL record:', error);
-        }
-      }
+      // NEW BEHAVIOR: When originalClickLimit is NOT provided explicitly but clickLimit is, 
+      // we DON'T update the originalClickLimit in the Original URL Records database.
+      // This prevents automatic changes to the master value.
       
-      // Log details about the update
+      // Only if originalClickLimit is explicitly provided, we update the original record
       if (updateUrl.originalClickLimit !== undefined) {
+        // If we have an original click limit and the original record doesn't exist, create it
+        if (!existingRecord) {
+          try {
+            await this.createOriginalUrlRecord({
+              name: existingUrl.name,
+              targetUrl: updateUrl.targetUrl || existingUrl.targetUrl,
+              originalClickLimit: updateUrl.originalClickLimit
+            });
+            console.log('🔍 DEBUG: Created original URL record for', existingUrl.name);
+          } catch (error) {
+            console.error('Error creating original URL record during update:', error);
+          }
+        }
+        // If record exists and we're changing original click limit, update the master record
+        else {
+          try {
+            await this.updateOriginalUrlRecord(existingRecord.id, {
+              originalClickLimit: updateUrl.originalClickLimit
+            });
+            console.log('🔍 DEBUG: Updated original URL record for', existingUrl.name);
+          } catch (error) {
+            console.error('Error updating original URL record:', error);
+          }
+        }
+        
+        // Log details about the update
         const campaignMultiplier = existingUrl.campaignId ? 
           await this.getCampaignMultiplier(existingUrl.campaignId) : 1;
         
