@@ -190,12 +190,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCampaign(id: number): Promise<CampaignWithUrls | undefined> {
+  async getCampaign(id: number, forceRefresh: boolean = false): Promise<CampaignWithUrls | undefined> {
     // Check campaign cache first for better performance
     const cachedCampaign = this.campaignCache.get(id);
     const now = Date.now();
     
-    if (cachedCampaign && (now - cachedCampaign.lastUpdated < this.cacheTTL)) {
+    // If force refresh is requested or cache is stale/missing, bypass cache
+    if (!forceRefresh && cachedCampaign && (now - cachedCampaign.lastUpdated < this.cacheTTL)) {
       // Use cached campaign data
       const campaign = cachedCampaign.campaign;
       
@@ -206,6 +207,10 @@ export class DatabaseStorage implements IStorage {
         ...campaign,
         urls
       };
+    }
+    
+    if (forceRefresh) {
+      console.log(`🔄 Force refreshing campaign data for ID: ${id}`);
     }
     
     try {
@@ -1596,7 +1601,23 @@ export class DatabaseStorage implements IStorage {
             // Invalidate cache for this URL and its campaign to ensure changes are visible immediately
             this.invalidateUrlCache(url.id);
             if (url.campaignId) {
+              // Force a deep cache invalidation of the campaign
               this.invalidateCampaignCache(url.campaignId);
+              console.log(`🔄 Force invalidated campaign cache for campaign ID ${url.campaignId}`);
+              
+              // Also, if this is a URL in an active campaign, force-refresh campaign's URLs
+              const updatedCampaign = await this.getCampaign(url.campaignId, true);
+              if (updatedCampaign) {
+                console.log(`📊 Retrieved fresh campaign data for ${updatedCampaign.name}:`);
+                console.log(`  - Found ${updatedCampaign.urls.length} URLs after refresh`);
+                const refreshedUrl = updatedCampaign.urls.find(u => u.id === url.id);
+                if (refreshedUrl) {
+                  console.log(`  - URL #${url.id} refreshed limits:`, {
+                    clickLimit: refreshedUrl.clickLimit,
+                    originalClickLimit: refreshedUrl.originalClickLimit
+                  });
+                }
+              }
             }
             
             console.log(`✅ Successfully updated URL #${url.id}`);
