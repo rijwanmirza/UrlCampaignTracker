@@ -65,16 +65,13 @@ export const urls = pgTable('urls', {
   id: serial('id').primaryKey(),
   campaignId: integer('campaign_id').references(() => campaigns.id),
   name: text('name').notNull(),
-  destinationUrl: text('destination_url').notNull(),
-  totalClicks: integer('total_clicks').default(0).notNull(),
+  targetUrl: text('target_url'),
+  clicks: integer('clicks').default(0),
   clickLimit: integer('click_limit'),
-  customPath: text('custom_path'),
-  requiresConfirmation: boolean('requires_confirmation').default(false),
-  active: boolean('active').default(true),
+  originalClickLimit: integer('original_click_limit'),
+  status: text('status'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  pendingBudgetUpdate: boolean('pending_budget_update').default(false),
-  pendingBudgetValue: integer('pending_budget_value'),
 });
 
 // Insert schema for URLs

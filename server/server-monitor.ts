@@ -125,11 +125,9 @@ export async function getServerStats(): Promise<ServerStats> {
       const oneMinLoad = loadavg.currentLoad || 0;
       console.log("Using current CPU load:", oneMinLoad);
       
-      // Get CPU information 
-      const cpuInfoRaw = require('os').cpus();
-      console.log("CPU Info raw length:", cpuInfoRaw.length);
-      const numCPUs = cpuInfoRaw.length || 1;
-      console.log("Number of CPUs detected:", numCPUs);
+      // Get CPU information from SI data instead of os.cpus()
+      const numCPUs = loadavg.cpus?.length || 4; // Default to 4 CPUs if we can't detect
+      console.log("Number of CPUs detected from SI:", numCPUs);
       
       // Get SI data too
       console.log("SI current load data:", JSON.stringify(loadavg));
@@ -216,7 +214,11 @@ export async function getServerStats(): Promise<ServerStats> {
       },
       timestamp: new Date(),
       uptime: uptime.uptime,
-      loadAverage: require('os').loadavg() || (loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100]),
+      loadAverage: [
+        loadavg.avgLoad || (cpu.currentLoad / 100), 
+        loadavg.avgLoad || (cpu.currentLoad / 100), 
+        loadavg.avgLoad || (cpu.currentLoad / 100)
+      ],
       systemLoad: systemLoad
     };
     
