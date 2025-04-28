@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = insertOriginalUrlRecordSchema.extend({
+  // No maximum limit on originalClickLimit, only require it to be a positive number
   originalClickLimit: z.coerce.number().min(1, {
     message: "Click limit must be at least 1",
   }),

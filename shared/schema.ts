@@ -102,6 +102,7 @@ export const insertUrlSchema = createInsertSchema(urls).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
+  // No upper limit on click limit values - any positive integer is allowed
   clickLimit: z.number().int().min(1),
   originalClickLimit: z.number().int().min(1), // Allow explicitly setting the original click limit
 });

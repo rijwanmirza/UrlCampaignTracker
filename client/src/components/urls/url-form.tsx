@@ -33,8 +33,8 @@ const urlFormSchema = z.object({
     .url("Please enter a valid URL (including http:// or https://)"),
   clickLimit: z
     .number()
-    .min(1, "Click limit must be at least 1")
-    .max(100000, "Click limit must be 100,000 or less"),
+    .min(1, "Click limit must be at least 1"),
+  // Removed maximum limit restriction to allow any valid number
 });
 
 export default function UrlForm({ 
@@ -151,7 +151,7 @@ export default function UrlForm({
                     <Input 
                       type="number" 
                       min={1}
-                      max={100000}
+                      // Removed maximum limit so users can enter any value
                       {...field} 
                       onChange={(e) => {
                         console.log("Click limit input changed:", e.target.value);
