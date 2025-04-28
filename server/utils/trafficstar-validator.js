@@ -3,8 +3,7 @@
  * Prevents click quantities from being automatically changed
  */
 
-// Maximum reasonable click value - 100 million
-const MAX_REASONABLE_CLICKS = 100000000;
+// NO MAXIMUM LIMIT - We allow unlimited click values as requested
 
 /**
  * Validate click values from TrafficStar to ensure they're reasonable
@@ -29,11 +28,7 @@ export function validateClickValue(value) {
   // Make sure it's a positive integer
   numValue = Math.max(0, Math.floor(numValue));
   
-  // Cap at maximum reasonable value
-  if (numValue > MAX_REASONABLE_CLICKS) {
-    console.warn(`TrafficStar returned unreasonable click value: ${numValue}, capping to ${MAX_REASONABLE_CLICKS}`);
-    return MAX_REASONABLE_CLICKS;
-  }
+  // No maximum limit to allow for high volume campaigns
   
   return numValue;
 }
