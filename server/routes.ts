@@ -692,6 +692,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('🔍 DEBUG: Campaign update request received:', JSON.stringify(req.body, null, 2));
+      
+      // ENHANCED PROTECTION: Block any direct modifications to click limits
+      if (req.body.clickLimit || req.body.originalClickLimit) {
+        return res.status(403).json({ 
+          message: "URL click limits can only be modified from the Original URL Records page",
+          error: "RESTRICTED_OPERATION",
+          details: "For data integrity reasons, click quantities can only be modified from the Original URL Records section."
+        });
+      }
+      
       console.log('🔍 DEBUG: Campaign update request TYPE:', typeof req.body.pricePerThousand);
       console.log('🔍 DEBUG: Campaign update request VALUE:', req.body.pricePerThousand);
       
@@ -732,6 +742,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (multiplierChanged) {
         console.log(`🔍 DEBUG: Multiplier change detected: ${oldMultiplierValue} → ${newMultiplierValue}`);
         
+        // This is a special case: when multiplier changes, we need to recalculate all URL click limits
+        // based on their original values. This is allowed since we're not changing the original values.
+        
         // Get all active/paused URLs
         const campaignUrls = await storage.getUrls(id);
         const activeOrPausedUrls = campaignUrls.filter(
@@ -740,22 +753,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`  - Found ${activeOrPausedUrls.length} active/paused URLs to update`);
         
-        // Update each URL with new clickLimit based on original value * new multiplier
-        for (const url of activeOrPausedUrls) {
-          // When multiplier changes, only update the clickLimit based on originalClickLimit
-          // The originalClickLimit remains unchanged (it's always the user's original input)
-          const newClickLimit = Math.ceil(url.originalClickLimit * newMultiplierValue);
-          
-          console.log(`  - Updating URL ${url.id}: ${url.originalClickLimit} × ${newMultiplierValue} = ${newClickLimit}`);
-          
-          await storage.updateUrl(url.id, {
-            clickLimit: newClickLimit, // Recalculate the click limit
-            // Keep all other values unchanged
-            originalClickLimit: url.originalClickLimit, // Original always stays the same
-            name: url.name,
-            targetUrl: url.targetUrl,
-            status: url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined
-          });
+        // We need to temporarily bypass click protection for this legitimate operation
+        console.log('⚠️ TEMPORARILY BYPASSING CLICK PROTECTION for multiplier-based recalculation');
+        await storage.setClickProtectionBypass(true);
+        
+        try {
+          // Update each URL with new clickLimit based on original value * new multiplier
+          for (const url of activeOrPausedUrls) {
+            // When multiplier changes, only update the clickLimit based on originalClickLimit
+            // The originalClickLimit remains unchanged (it's always the user's original input)
+            const newClickLimit = Math.ceil(url.originalClickLimit * newMultiplierValue);
+            
+            console.log(`  - Updating URL ${url.id}: ${url.originalClickLimit} × ${newMultiplierValue} = ${newClickLimit}`);
+            
+            await storage.updateUrl(url.id, {
+              clickLimit: newClickLimit, // Recalculate the click limit
+              // Keep all other values unchanged
+              originalClickLimit: url.originalClickLimit, // Original always stays the same
+              name: url.name,
+              targetUrl: url.targetUrl,
+              status: url.status as 'active' | 'paused' | 'completed' | 'deleted' | 'rejected' | undefined
+            });
+          }
+        } finally {
+          // Always re-enable click protection when done
+          console.log('✅ Re-enabling click protection after multiplier update');
+          await storage.setClickProtectionBypass(false);
         }
       } else {
         console.log('🔍 DEBUG: No multiplier change detected, skipping URL updates');
@@ -831,6 +854,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.log('🔍 DEBUG: Original click limit (user input):', originalClickLimit);
       
+      // ENHANCED PROTECTION: Always create/update Original URL Record with name if it doesn't exist
+      const existingRecord = await storage.getOriginalUrlRecordByName(req.body.name);
+      if (!existingRecord) {
+        console.log(`🔍 DEBUG: Creating Original URL Record for name: ${req.body.name}`);
+        // Create an original URL record to serve as the master data source
+        await storage.createOriginalUrlRecord({
+          name: req.body.name,
+          targetUrl: req.body.targetUrl || '',
+          originalClickLimit: originalClickLimit
+        });
+        console.log(`✅ Created Original URL Record with click limit: ${originalClickLimit}`);
+      } else {
+        console.log(`🔍 DEBUG: Found existing Original URL Record #${existingRecord.id} for name: ${req.body.name}`);
+        console.log(`🔍 DEBUG: Record has original click limit: ${existingRecord.originalClickLimit}`);
+        // Use the existing record's originalClickLimit value as the authoritative source
+        if (originalClickLimit !== existingRecord.originalClickLimit) {
+          console.log(`⚠️ WARNING: User-provided click limit (${originalClickLimit}) does not match Original URL Record (${existingRecord.originalClickLimit})`);
+          console.log(`⚠️ Using Original URL Record value (${existingRecord.originalClickLimit}) as the authoritative source`);
+          // Override the user input with the master record value
+          originalClickLimit = existingRecord.originalClickLimit;
+        }
+      }
+      
       // Calculate click limit with multiplier
       let calculatedClickLimit = originalClickLimit;
       if (campaign.multiplier) {
@@ -852,7 +898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body, 
         campaignId,
         clickLimit: calculatedClickLimit,
-        originalClickLimit: originalClickLimit // IMPORTANT: This is the raw user input value without multiplier
+        originalClickLimit: originalClickLimit // Now using the authoritative value from Original URL Record
       };
       
       console.log('🔍 DEBUG: Final URL data to be saved:', JSON.stringify(urlData, null, 2));

@@ -43,6 +43,9 @@ export interface IStorage {
   getOriginalUrlRecordByName(name: string): Promise<OriginalUrlRecord | undefined>;
   createOriginalUrlRecord(record: InsertOriginalUrlRecord): Promise<OriginalUrlRecord>;
   updateOriginalUrlRecord(id: number, record: UpdateOriginalUrlRecord): Promise<OriginalUrlRecord | undefined>;
+  
+  // Click protection bypass
+  setClickProtectionBypass(enabled: boolean): Promise<void>;
   deleteOriginalUrlRecord(id: number): Promise<boolean>;
   syncUrlsWithOriginalRecord(recordId: number): Promise<number>; // Returns number of URLs updated
   
@@ -107,6 +110,9 @@ export class DatabaseStorage implements IStorage {
   
   // Timer for periodic persistence of clicks
   private clickUpdateTimer: NodeJS.Timeout | null = null;
+  
+  // Flag to temporarily bypass click protection for legitimate operations
+  private clickProtectionBypassed = false;
 
   constructor() {
     this.campaignUrlsCache = new Map();
