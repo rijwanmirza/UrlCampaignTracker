@@ -5,6 +5,16 @@ import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { 
+  optimizeResponseHeaders,
+  ultraFastMetaRefresh,
+  turboDoubleMetaRefresh, 
+  turboBridgePage,
+  hyperFastHttp307,
+  http2TurboRedirect,
+  millionRequestsHttp2Redirect,
+  optimizedDirectRedirect
+} from './high-performance-redirects';
+import { 
   insertCampaignSchema, 
   updateCampaignSchema,
   insertUrlSchema, 
