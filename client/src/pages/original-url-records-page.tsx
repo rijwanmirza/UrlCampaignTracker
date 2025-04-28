@@ -82,6 +82,33 @@ export default function OriginalUrlRecordsPage() {
   const [recordToDelete, setRecordToDelete] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Mutation for fixing click protection trigger
+  const fixClickProtectionMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        const res = await apiRequest("POST", `/api/system/click-protection/fix-trigger`);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error fixing click protection:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Click protection trigger fixed successfully: ${data.message || "Now updates from Original URL Records will propagate correctly"}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to fix click protection",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Fetch original URL records with pagination
   const { 
@@ -315,7 +342,22 @@ export default function OriginalUrlRecordsPage() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Original URL Records</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Original URL Records</h1>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => fixClickProtectionMutation.mutate()}
+            disabled={fixClickProtectionMutation.isPending}
+          >
+            {fixClickProtectionMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Fix Click Protection
+          </Button>
+        </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
