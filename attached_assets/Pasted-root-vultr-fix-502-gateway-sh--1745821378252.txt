@@ -1,0 +1,90 @@
+root@vultr:~# ./fix-502-gateway.sh
+╔══════════════════════════════════════════════════════════════╗
+║            FIX 502 BAD GATEWAY ERROR                         ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 Checking application status...
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 20   │ errored   │ 0%       │ 0b       │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+✓ PM2 status check completed
+🔌 Checking listening ports...
+./fix-502-gateway.sh: line 37: netstat: command not found
+
+⚠️ No Node.js listening ports found
+🔍 Checking Nginx configuration...
+nginx: [warn] conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+✓ Nginx configuration is valid
+📜 Checking Nginx error logs...
+2025/04/28 06:17:40 [error] 947#947: *244 no live upstreams while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/2.0", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 06:17:43 [error] 947#947: *244 no live upstreams while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://localhost/", host: "views.yoyoprime.com"
+2025/04/28 06:17:44 [error] 947#947: *244 no live upstreams while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/2.0", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 06:18:19 [error] 947#947: *244 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "views.yoyoprime.com"
+2025/04/28 06:18:19 [error] 947#947: *244 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://[::1]:5000/", host: "views.yoyoprime.com"
+2025/04/28 06:18:19 [error] 947#947: *244 no live upstreams while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/2.0", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 06:19:18 [error] 947#947: *244 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "views.yoyoprime.com"
+2025/04/28 06:19:18 [error] 947#947: *244 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://[::1]:5000/", host: "views.yoyoprime.com"
+2025/04/28 06:19:18 [error] 947#947: *244 no live upstreams while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/2.0", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 06:19:25 [error] 947#947: *254 no live upstreams while connecting to upstream, client: 5.133.192.135, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://localhost/", host: "freeswedes.com"
+2025/04/28 06:19:25 [error] 947#947: *255 no live upstreams while connecting to upstream, client: 5.133.192.135, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/1.1", upstream: "http://localhost/favicon.ico", host: "freeswedes.com"
+2025/04/28 06:20:27 [error] 947#947: *244 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "views.yoyoprime.com"
+2025/04/28 06:20:27 [error] 947#947: *244 connect() failed (111: Unknown error) while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET / HTTP/2.0", upstream: "http://[::1]:5000/", host: "views.yoyoprime.com"
+2025/04/28 06:20:27 [error] 947#947: *244 no live upstreams while connecting to upstream, client: 1.187.180.149, server: views.yoyoprime.com, request: "GET /favicon.ico HTTP/2.0", upstream: "http://localhost/favicon.ico", host: "views.yoyoprime.com", referrer: "https://views.yoyoprime.com/"
+2025/04/28 06:21:16 [error] 947#947: *258 connect() failed (111: Unknown error) while connecting to upstream, client: 185.218.84.178, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:5000/", host: "139.84.169.252"
+2025/04/28 06:21:16 [error] 947#947: *258 connect() failed (111: Unknown error) while connecting to upstream, client: 185.218.84.178, server: views.yoyoprime.com, request: "GET / HTTP/1.1", upstream: "http://[::1]:5000/", host: "139.84.169.252"
+2025/04/28 06:22:03 [info] 2458#2458: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 06:22:03 [warn] 2458#2458: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+2025/04/28 06:22:37 [info] 2491#2491: Using 131072KiB of shared memory for nchan in /etc/nginx/nginx.conf:61
+2025/04/28 06:22:37 [warn] 2491#2491: conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+🔍 Checking Nginx proxy configuration...
+⚠️ No proxy_pass settings found in Nginx configuration
+📜 Checking PM2 logs for the application...
+[TAILING] Tailing last 20 lines for [url-campaign] process (change the value with --lines option)
+/root/.pm2/logs/url-campaign-out.log last 20 lines:
+0|url-camp | Running scheduled auto-management for TrafficStar campaigns
+0|url-camp | Running scheduled processing of pending URL budget updates
+0|url-camp | Processing pending URL budget updates
+0|url-camp | Found 0 campaigns with auto-management enabled for spent value check
+0|url-camp | No campaigns with auto-management enabled found
+0|url-camp | Running scheduled auto-management for TrafficStar campaigns
+0|url-camp | Running scheduled processing of pending URL budget updates
+0|url-camp | Processing pending URL budget updates
+0|url-camp | No campaigns with auto-management enabled found
+0|url-camp | 6:14:41 AM [gmail-reader] Running scheduled auto-delete check (3 minute threshold)
+0|url-camp | 6:14:41 AM [gmail-reader] Running email auto-delete check with interval set to 3 minutes
+0|url-camp | 6:14:41 AM [gmail-reader] Current IMAP connection state: authenticated
+0|url-camp | 6:14:41 AM [gmail-reader] Scanning for processed emails older than 2025-04-28T06:11:41.528Z (3 minutes ago)
+0|url-camp | 6:14:41 AM [gmail-reader] No emails found that are successfully processed and older than 3 minutes
+0|url-camp | Running scheduled spent value check for TrafficStar campaigns
+0|url-camp | Running scheduled auto-management for TrafficStar campaigns
+0|url-camp | Running scheduled processing of pending URL budget updates
+0|url-camp | Processing pending URL budget updates
+0|url-camp | Found 0 campaigns with auto-management enabled for spent value check
+0|url-camp | No campaigns with auto-management enabled found
+
+/root/.pm2/logs/url-campaign-error.log last 20 lines:
+0|url-camp |     at TrafficStarService.getCampaignSpentValue (file:///var/www/url-campaign/dist/index.js:3970:13)
+0|url-camp |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|url-camp |     at async TrafficStarService.checkCampaignsSpentValue (file:///var/www/url-campaign/dist/index.js:3837:30)
+0|url-camp |     at async Timeout._onTimeout (file:///var/www/url-campaign/dist/index.js:3771:11)
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+0|url-camp | bash: /var/www/url-campaign/start.sh: No such file or directory
+

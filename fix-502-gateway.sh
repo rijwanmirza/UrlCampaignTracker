@@ -69,13 +69,13 @@ fi
 echo -e "${YELLOW}🔍 Checking Nginx proxy configuration...${NC}"
 if [ -f "$NGINX_CONF" ]; then
   PROXY_SETTINGS=$(grep -A 10 "proxy_pass" $NGINX_CONF)
-  
+
   if [ -z "$PROXY_SETTINGS" ]; then
     echo -e "${RED}⚠️ No proxy_pass settings found in Nginx configuration${NC}"
   else
     echo -e "Proxy settings in Nginx configuration:"
     echo "$PROXY_SETTINGS"
-    
+
     # Check if the proxy pass matches the detected port
     if [ -n "$APP_PORT" ]; then
       if grep -q "proxy_pass.*:$APP_PORT" $NGINX_CONF; then
@@ -152,30 +152,30 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
-        
+
         # Longer timeouts for TrafficStar API calls
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
         proxy_read_timeout 300;
         send_timeout 300;
-        
+
         # Detect and handle server errors
         proxy_intercept_errors on;
         error_page 502 503 504 /50x.html;
     }
-    
+
     # Serve static files directly
     location ~ ^/(assets|public|images|favicon.ico) {
         expires 7d;
         access_log off;
         add_header Cache-Control "public";
     }
-    
+
     # Original URL Records static fallback
     location /original-url-records {
         try_files \$uri \$uri/ /index.html;
     }
-    
+
     # 50x error page
     location = /50x.html {
         root /usr/share/nginx/html;
@@ -193,7 +193,7 @@ echo -e "${BLUE}nginx -t && systemctl restart nginx${NC}"
 echo -e "${YELLOW}🔍 Checking for proper environment configuration...${NC}"
 if [ -f "$APP_DIR/.env" ]; then
   echo -e "${GREEN}✓ .env file exists${NC}"
-  
+
   # Check for PORT in .env
   if grep -q "PORT=" "$APP_DIR/.env"; then
     echo -e "${GREEN}✓ PORT is defined in .env${NC}"
@@ -202,7 +202,7 @@ if [ -f "$APP_DIR/.env" ]; then
     echo "PORT=5000" >> "$APP_DIR/.env"
     echo -e "${GREEN}✓ Added PORT=5000 to .env${NC}"
   fi
-  
+
   # Check for DATABASE_URL in .env
   if grep -q "DATABASE_URL=" "$APP_DIR/.env"; then
     echo -e "${GREEN}✓ DATABASE_URL is defined in .env${NC}"
@@ -212,7 +212,7 @@ if [ -f "$APP_DIR/.env" ]; then
   fi
 else
   echo -e "${RED}⚠️ No .env file found${NC}"
-  
+
   # Create a basic .env file
   echo -e "${YELLOW}Creating a basic .env file...${NC}"
   cat > "$APP_DIR/.env" << EOF
@@ -239,13 +239,13 @@ if kill -0 $DIRECT_NODE_PID 2>/dev/null; then
   echo -e "${GREEN}✓ Application started directly with Node.js${NC}"
   echo -e "${YELLOW}Now try visiting your site to see if it works${NC}"
   echo -e "${YELLOW}Press Ctrl+C to stop the direct Node.js process when done testing${NC}"
-  
+
   # Wait for user input to stop the process
   read -p "Press Enter to stop the direct Node.js process..." 
-  
+
   kill $DIRECT_NODE_PID
   echo -e "${GREEN}✓ Direct Node.js process stopped${NC}"
-  
+
   # Restart with PM2
   echo -e "${YELLOW}Restarting with PM2...${NC}"
   pm2 restart $PM2_APP_NAME
