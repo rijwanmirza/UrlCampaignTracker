@@ -3359,11 +3359,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const updatedRecord = await storage.updateOriginalUrlRecord(id, validationResult.data);
+      // Get the updateData with all fields to update
+      const updateData = validationResult.data;
+      
+      // Log what values are changing
+      console.log(`📝 Updating Original URL Record #${id}:`, updateData);
+      
+      // Make sure originalClickLimit is included in update data
+      // This is the key value that will propagate to all instances
+      if (updateData.originalClickLimit !== undefined) {
+        console.log(`📊 Original Click Limit being updated to: ${updateData.originalClickLimit}`);
+      }
+      
+      // Update the record
+      const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
       
       if (!updatedRecord) {
         return res.status(404).json({ message: "Original URL record not found" });
       }
+      
+      // Cache invalidation happens in the storage methods
+      // No need to manually invalidate here
       
       res.json(updatedRecord);
     } catch (error) {

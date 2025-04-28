@@ -1460,18 +1460,31 @@ export class DatabaseStorage implements IStorage {
       updateData.targetUrl = updateRecord.targetUrl;
     }
     
-    if (updateRecord.originalClickLimit !== undefined) {
+    // Check if we're updating the click limit
+    const isUpdatingClickLimit = updateRecord.originalClickLimit !== undefined && 
+      updateRecord.originalClickLimit !== existing.originalClickLimit;
+    
+    // If updating click limit, include it in the update
+    if (isUpdatingClickLimit) {
       updateData.originalClickLimit = updateRecord.originalClickLimit;
-      
-      // We're updating the original click limit, so sync with all related URLs
-      await this.syncUrlsWithOriginalRecord(id);
+      console.log(`🔄 Adding originalClickLimit = ${updateRecord.originalClickLimit} to update operation`);
     }
     
+    // First update the original record
     const [updated] = await db
       .update(originalUrlRecords)
       .set(updateData)
       .where(eq(originalUrlRecords.id, id))
       .returning();
+    
+    // If the original click limit has changed, propagate that change
+    if (isUpdatingClickLimit) {
+      console.log(`🔄 Updating original click limit for record #${id} from ${existing.originalClickLimit} to ${updateRecord.originalClickLimit}`);
+      
+      // We're updating the original click limit, so sync with all related URLs
+      const updatedCount = await this.syncUrlsWithOriginalRecord(id);
+      console.log(`✅ Successfully propagated original click limit update to ${updatedCount} URLs`);
+    }
     
     return updated;
   }
@@ -1488,14 +1501,21 @@ export class DatabaseStorage implements IStorage {
     const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, recordId));
     if (!record) return 0;
     
-    // Find all URLs with matching name
+    // Find all URLs with matching name - this will include URLs in all campaigns
     const matchingUrls = await db.select().from(urls).where(eq(urls.name, record.name));
     if (matchingUrls.length === 0) return 0;
+    
+    console.log(`🔄 Found ${matchingUrls.length} URLs with name "${record.name}" to update`);
     
     // Process each URL individually to apply campaign multipliers correctly
     let updatedCount = 0;
     
     for (const url of matchingUrls) {
+      console.log(`🔍 Processing URL #${url.id} in campaign ID ${url.campaignId || 'none'}`);
+      
+      // Keep track of existing clicks to preserve that data
+      const existingClicks = url.clicks || 0;
+      
       // Set the original click limit from the master record
       let updateData: any = {
         originalClickLimit: record.originalClickLimit,
@@ -1516,33 +1536,42 @@ export class DatabaseStorage implements IStorage {
             // Calculate new click limit with multiplier
             updateData.clickLimit = Math.ceil(record.originalClickLimit * multiplierValue);
             
-            console.log('🔍 DEBUG: Updated URL record for', record.name);
-            console.log('🔍 DEBUG: URL updated with new limits:');
+            console.log(`📊 URL #${url.id} updated:`);
             console.log(`  - Original click limit: ${record.originalClickLimit}`);
-            console.log(`  - After multiplier (${multiplierValue}x): ${updateData.clickLimit}`);
-            console.log(`  - Calculation: ${record.originalClickLimit} × ${multiplierValue} = ${updateData.clickLimit}`);
+            console.log(`  - Campaign multiplier: ${multiplierValue}x`);
+            console.log(`  - New click limit: ${updateData.clickLimit}`);
+            console.log(`  - Existing clicks: ${existingClicks} (preserved)`);
           }
         }
       } else {
         // If not in a campaign, clickLimit should match originalClickLimit
         updateData.clickLimit = record.originalClickLimit;
+        console.log(`📊 URL #${url.id} updated with no campaign multiplier:`);
+        console.log(`  - Original click limit = new click limit: ${record.originalClickLimit}`);
+        console.log(`  - Existing clicks: ${existingClicks} (preserved)`);
       }
       
-      // Update this URL with the new values
-      await db
-        .update(urls)
-        .set(updateData)
-        .where(eq(urls.id, url.id));
-      
-      // Invalidate cache for this URL and its campaign
-      this.invalidateUrlCache(url.id);
-      if (url.campaignId) {
-        this.invalidateCampaignCache(url.campaignId);
+      try {
+        // Update this URL with the new values, but DO NOT RESET clicks
+        await db
+          .update(urls)
+          .set(updateData)
+          .where(eq(urls.id, url.id));
+        
+        // Invalidate cache for this URL and its campaign to ensure changes are visible immediately
+        this.invalidateUrlCache(url.id);
+        if (url.campaignId) {
+          this.invalidateCampaignCache(url.campaignId);
+        }
+        
+        console.log(`✅ Successfully updated URL #${url.id}`);
+        updatedCount++;
+      } catch (error) {
+        console.error(`❌ Error updating URL #${url.id}:`, error);
       }
-      
-      updatedCount++;
     }
     
+    console.log(`🎉 Successfully updated ${updatedCount} out of ${matchingUrls.length} URLs`);
     return updatedCount;
   }
 }
