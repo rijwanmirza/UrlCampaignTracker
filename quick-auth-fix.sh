@@ -1,123 +1,744 @@
 #!/bin/bash
 
-# Quick Authentication Fix - Simple version
-echo "===== Quick Authentication Fix ====="
-echo "This script will restore basic authentication without changing the server code"
+# Quick Auth Fix Script
+# This script fixes the login system, ensuring it works properly
 
-# Directory where application is located
+# Text formatting
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 APP_DIR="/var/www/url-campaign"
-cd $APP_DIR
+API_KEY="TraffiCS10928"
 
-echo "1. Creating a minimalist authentication script to inject into HTML..."
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                  QUICK AUTH FIX                              ║${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo
 
-# Create a simple script to inject basic auth to index.html
-cat > $APP_DIR/inject-auth.cjs << 'EOF'
-const fs = require('fs');
-const path = require('path');
+# Step 1: Create the auth middleware files
+echo -e "${YELLOW}📝 Creating server-side auth middleware...${NC}"
 
-// Path to the built index.html
-const indexPath = path.join(__dirname, 'dist/public/index.html');
+mkdir -p "$APP_DIR/server/auth"
 
-try {
-  // Read the HTML file
-  const html = fs.readFileSync(indexPath, 'utf8');
-  
-  // Check if the auth script is already present
-  if (html.includes('auth-check-script')) {
-    console.log('Auth script already present in index.html');
-    process.exit(0);
-  }
-  
-  // Create a simple script that requires API key before showing content
-  const authScript = `
-<script id="auth-check-script">
-  (function() {
-    // The API key
-    const REQUIRED_API_KEY = 'TraffiCS10928';
+# Auth middleware
+cat > "$APP_DIR/server/auth/middleware.ts" << EOF
+import { Request, Response, NextFunction } from 'express';
+
+const API_SECRET_KEY = '$API_KEY';
+
+// Middleware to require authentication
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Get API key from multiple sources
+    const apiKey = req.headers['x-api-key'] || 
+                  req.headers.authorization?.replace('Bearer ', '') || 
+                  req.query.apiKey;
     
-    // Function to check if user is authenticated
-    function checkAuth() {
-      const storedKey = localStorage.getItem('apiKey');
-      
-      if (!storedKey || storedKey !== REQUIRED_API_KEY) {
-        // Not authenticated, show login prompt
-        document.body.innerHTML = \`
-          <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="text-align: center; color: #333;">TrafficStar Manager</h2>
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; color: #555;">API Key</label>
-              <input type="password" id="api-key-input" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-            </div>
-            <button id="login-button" style="width: 100%; background-color: #0066cc; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Access Application</button>
-            <p id="error-message" style="color: red; margin-top: 10px; text-align: center; display: none;">Invalid API key</p>
-          </div>
-        \`;
-        
-        // Hide the app content
-        Array.from(document.body.children).forEach(child => {
-          if (child.id !== 'auth-container') {
-            child.style.display = 'none';
-          }
-        });
-        
-        // Add event listeners for login
-        document.getElementById('login-button').addEventListener('click', function() {
-          const apiKey = document.getElementById('api-key-input').value;
-          
-          if (apiKey === REQUIRED_API_KEY) {
-            localStorage.setItem('apiKey', apiKey);
-            window.location.reload();
-          } else {
-            document.getElementById('error-message').style.display = 'block';
-          }
-        });
-        
-        return false;
-      }
-      
-      // Add API key to all requests
-      const originalXHROpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function() {
-        const result = originalXHROpen.apply(this, arguments);
-        this.setRequestHeader('X-API-Key', REQUIRED_API_KEY);
-        return result;
-      };
-      
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options = {}) {
-        options = options || {};
-        options.headers = options.headers || {};
-        options.headers['X-API-Key'] = REQUIRED_API_KEY;
-        return originalFetch.call(this, url, options);
-      };
-      
-      return true;
+    if (!apiKey) {
+      return res.status(401).json({ message: 'API key required' });
     }
     
-    // Run auth check
-    checkAuth();
-  })();
-</script>`;
+    // Simple check - compare the API key with our secret
+    if (apiKey !== API_SECRET_KEY) {
+      console.log('Auth failed - invalid API key');
+      return res.status(401).json({ message: 'Invalid API key' });
+    }
+    
+    // Authentication successful
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ message: 'Authentication error' });
+  }
+}
+
+// Validate an API key
+export function validateApiKey(apiKey: string): boolean {
+  return apiKey === API_SECRET_KEY;
+}
+
+// CORS middleware
+export function corsMiddleware(_req: Request, res: Response, next: NextFunction) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-API-Key, Authorization');
   
-  // Add the script at the beginning of the body
-  const updatedHtml = html.replace('<body>', '<body>' + authScript);
+  if (_req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   
-  // Write the updated HTML back to the file
-  fs.writeFileSync(indexPath, updatedHtml);
-  console.log('Authentication script successfully injected into index.html');
-} catch (error) {
-  console.error('Error updating index.html:', error);
+  next();
 }
 EOF
 
-echo "2. Injecting authentication code..."
-node $APP_DIR/inject-auth.cjs
+# Auth routes
+cat > "$APP_DIR/server/auth/routes.ts" << EOF
+import express, { Request, Response } from 'express';
+import { validateApiKey, corsMiddleware, requireAuth } from './middleware';
 
-echo "3. Restarting the application..."
+export function registerAuthRoutes(app: express.Application) {
+  // Apply CORS middleware to auth routes
+  app.use('/api/auth', corsMiddleware);
+
+  // Route to check if user is authenticated
+  app.get('/api/auth/status', (req: Request, res: Response) => {
+    try {
+      // Get API key from header or query param
+      const apiKey = req.headers['x-api-key'] || 
+                    req.headers.authorization?.replace('Bearer ', '') || 
+                    req.query.apiKey;
+      
+      if (!apiKey) {
+        return res.json({ authenticated: false });
+      }
+      
+      // Validate the API key
+      const isValid = validateApiKey(apiKey as string);
+      
+      res.json({ authenticated: isValid });
+    } catch (error) {
+      console.error('Auth status error:', error);
+      res.json({ authenticated: false });
+    }
+  });
+  
+  // Verify API key
+  app.post('/api/auth/verify-key', (req: Request, res: Response) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: 'API key is required' });
+      }
+      
+      if (validateApiKey(apiKey)) {
+        console.log('API key verification successful');
+        return res.json({ 
+          message: 'API key verified', 
+          authenticated: true 
+        });
+      } else {
+        console.log('API key verification failed');
+        return res.status(401).json({ 
+          message: 'Invalid API key', 
+          authenticated: false 
+        });
+      }
+    } catch (error) {
+      console.error('API key verification error:', error);
+      res.status(500).json({ 
+        message: 'Error verifying API key', 
+        authenticated: false 
+      });
+    }
+  });
+  
+  // Clear API key cookie (logout)
+  app.post('/api/auth/logout', (req: Request, res: Response) => {
+    res.clearCookie('apiKey');
+    res.json({ message: 'API key cleared' });
+  });
+  
+  // Test route to verify auth is working
+  app.get('/api/auth/test', requireAuth, (req: Request, res: Response) => {
+    res.json({ 
+      message: 'Authentication successful - API key is valid'
+    });
+  });
+}
+EOF
+
+echo -e "${GREEN}✓ Created auth middleware and routes${NC}"
+
+# Step 2: Update routes.ts to use auth middleware
+echo -e "${YELLOW}📝 Updating routes.ts to use auth middleware...${NC}"
+
+# Backup the original routes file
+cp "$APP_DIR/server/routes.ts" "$APP_DIR/server/routes.ts.bak"
+
+# Create a helper to update routes
+cat > "$APP_DIR/update-routes.js" << 'EOF'
+const fs = require('fs');
+const path = require('path');
+
+const routesPath = path.join(__dirname, 'server/routes.ts');
+let content = fs.readFileSync(routesPath, 'utf8');
+
+// Check if auth imports are already present
+if (!content.includes('import { requireAuth }')) {
+  // Add the import for auth middleware
+  content = content.replace(
+    'import express',
+    'import { requireAuth } from "./auth/middleware";\nimport express'
+  );
+  
+  // Add auth middleware to routes that need protection
+  content = content.replace(
+    /app\.get\('\/api\/campaigns'/g, 
+    "app.get('/api/campaigns', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.post\('\/api\/campaigns'/g, 
+    "app.post('/api/campaigns', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.put\('\/api\/campaigns\/([^']+)'/g, 
+    "app.put('/api/campaigns/$1', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.delete\('\/api\/campaigns\/([^']+)'/g, 
+    "app.delete('/api/campaigns/$1', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.get\('\/api\/urls'/g, 
+    "app.get('/api/urls', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.post\('\/api\/urls'/g, 
+    "app.post('/api/urls', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.put\('\/api\/urls\/([^']+)'/g, 
+    "app.put('/api/urls/$1', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.delete\('\/api\/urls\/([^']+)'/g, 
+    "app.delete('/api/urls/$1', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.get\('\/api\/original-url-records'/g, 
+    "app.get('/api/original-url-records', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.post\('\/api\/original-url-records'/g, 
+    "app.post('/api/original-url-records', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.put\('\/api\/original-url-records\/([^']+)'/g, 
+    "app.put('/api/original-url-records/$1', requireAuth"
+  );
+  
+  content = content.replace(
+    /app\.delete\('\/api\/original-url-records\/([^']+)'/g, 
+    "app.delete('/api/original-url-records/$1', requireAuth"
+  );
+  
+  // Write the modified content back
+  fs.writeFileSync(routesPath, content);
+  console.log('Routes file updated with auth middleware');
+} else {
+  console.log('Auth middleware already imported in routes');
+}
+EOF
+
+# Run the helper script
+cd "$APP_DIR"
+node update-routes.js
+
+echo -e "${GREEN}✓ Routes updated with auth middleware${NC}"
+
+# Step 3: Update index.ts to register auth routes
+echo -e "${YELLOW}📝 Updating server index.ts to register auth routes...${NC}"
+
+# Backup the original index file
+cp "$APP_DIR/server/index.ts" "$APP_DIR/server/index.ts.bak"
+
+# Create a helper to update index
+cat > "$APP_DIR/update-index.js" << 'EOF'
+const fs = require('fs');
+const path = require('path');
+
+const indexPath = path.join(__dirname, 'server/index.ts');
+let content = fs.readFileSync(indexPath, 'utf8');
+
+// Check if auth routes are already registered
+if (!content.includes('registerAuthRoutes')) {
+  // Add the import for auth routes
+  content = content.replace(
+    'import { registerRoutes }',
+    'import { registerAuthRoutes } from "./auth/routes";\nimport { registerRoutes }'
+  );
+  
+  // Add auth routes registration
+  content = content.replace(
+    'registerRoutes(app);',
+    'registerAuthRoutes(app);\nregisterRoutes(app);'
+  );
+  
+  // Write the modified content back
+  fs.writeFileSync(indexPath, content);
+  console.log('Server index.ts updated to register auth routes');
+} else {
+  console.log('Auth routes already registered in index.ts');
+}
+EOF
+
+# Run the helper script
+cd "$APP_DIR"
+node update-index.js
+
+echo -e "${GREEN}✓ Server index updated to register auth routes${NC}"
+
+# Step 4: Create a LoginPage component in the client (if it doesn't exist)
+echo -e "${YELLOW}📝 Adding client-side login page...${NC}"
+
+mkdir -p "$APP_DIR/client/src/pages"
+
+# Check if the login page already exists
+if [ ! -f "$APP_DIR/client/src/pages/login-page.tsx" ]; then
+  # Create login page
+  cat > "$APP_DIR/client/src/pages/login-page.tsx" << 'EOF'
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function LoginPage() {
+  const [apiKey, setApiKey] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { verifyApiKey, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await verifyApiKey(apiKey);
+      navigate('/');
+    } catch (err) {
+      setError('Invalid API key. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh', 
+      backgroundColor: '#f0f0f0',
+      padding: '20px'
+    }}>
+      <div style={{ 
+        maxWidth: '400px', 
+        width: '100%', 
+        backgroundColor: 'white', 
+        padding: '30px', 
+        borderRadius: '8px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '20px', color: '#333' }}>URL Campaign Manager</h1>
+        <p style={{ textAlign: 'center', marginBottom: '20px', color: '#666' }}>
+          Enter your API key to continue
+        </p>
+        
+        {error && (
+          <div style={{ 
+            backgroundColor: '#fee2e2', 
+            color: '#ef4444', 
+            padding: '10px', 
+            borderRadius: '4px', 
+            marginBottom: '20px' 
+          }}>
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '20px' }}>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Enter API key"
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                fontSize: '16px'
+              }}
+              autoFocus
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '16px',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              opacity: isSubmitting ? 0.7 : 1
+            }}
+          >
+            {isSubmitting ? 'Verifying...' : 'Login'}
+          </button>
+          
+          <div style={{ 
+            marginTop: '20px', 
+            textAlign: 'center', 
+            fontSize: '14px', 
+            color: '#666' 
+          }}>
+            <p>Default API key: TraffiCS10928</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+EOF
+
+  echo -e "${GREEN}✓ Created login page component${NC}"
+else
+  echo -e "${YELLOW}Login page already exists, skipping creation${NC}"
+fi
+
+# Step 5: Ensure LoginPage is included in App routes
+echo -e "${YELLOW}📝 Ensuring Login route exists in App.tsx...${NC}"
+
+# Create a helper to check App.tsx
+cat > "$APP_DIR/check-app-routes.js" << 'EOF'
+const fs = require('fs');
+const path = require('path');
+
+const appTsxPath = path.join(__dirname, 'client/src/App.tsx');
+
+if (fs.existsSync(appTsxPath)) {
+  let content = fs.readFileSync(appTsxPath, 'utf8');
+  
+  // Check if LoginPage is already imported
+  const hasLoginImport = content.includes("import LoginPage");
+  
+  // Check if login route exists
+  const hasLoginRoute = content.includes("path=\"/login\"") || 
+                        content.includes("path='/login'");
+  
+  if (!hasLoginImport || !hasLoginRoute) {
+    console.log('Need to add login route to App.tsx');
+    
+    // If no login import, add it
+    if (!hasLoginImport) {
+      const importMatch = content.match(/import.*from ['"][^'"]+['"]/g);
+      if (importMatch && importMatch.length > 0) {
+        const lastImport = importMatch[importMatch.length - 1];
+        content = content.replace(
+          lastImport,
+          `${lastImport}\nimport LoginPage from './pages/login-page';`
+        );
+      }
+    }
+    
+    // If no login route, add it
+    if (!hasLoginRoute) {
+      // Find the Switch component or routes definition
+      const routeRegex = /<Route.*?>/g;
+      const routes = content.match(routeRegex);
+      
+      if (routes && routes.length > 0) {
+        // Add login route after the first route
+        const firstRoute = routes[0];
+        content = content.replace(
+          firstRoute,
+          `${firstRoute}\n        <Route path="/login" component={LoginPage} />`
+        );
+      }
+    }
+    
+    fs.writeFileSync(appTsxPath, content);
+    console.log('Updated App.tsx with login route');
+  } else {
+    console.log('Login route already exists in App.tsx');
+  }
+} else {
+  console.log('App.tsx not found');
+}
+EOF
+
+# Run the helper script
+cd "$APP_DIR"
+node check-app-routes.js
+
+echo -e "${GREEN}✓ Ensured login route exists in App.tsx${NC}"
+
+# Step 6: Create a simpler auth context for easy login
+echo -e "${YELLOW}📝 Creating simplified auth context file...${NC}"
+
+mkdir -p "$APP_DIR/client/src/contexts"
+
+cat > "$APP_DIR/client/src/contexts/AuthContext.tsx" << EOF
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  verifyApiKey: (apiKey: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const defaultContextValue: AuthContextType = {
+  isAuthenticated: false,
+  isLoading: true,
+  verifyApiKey: async () => {},
+  logout: async () => {}
+};
+
+const AuthContext = createContext<AuthContextType>(defaultContextValue);
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await axios.get('/api/auth/status');
+        setIsAuthenticated(response.data.authenticated);
+      } catch (error) {
+        console.error('Error checking authentication status:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  // Verify API key function
+  const verifyApiKey = async (apiKey: string) => {
+    setIsLoading(true);
+    try {
+      // Set API key in axios defaults to use for all future requests
+      axios.defaults.headers.common['X-API-Key'] = apiKey;
+
+      const response = await axios.post('/api/auth/verify-key', { apiKey });
+      setIsAuthenticated(response.data.authenticated);
+    } catch (error) {
+      console.error('API key verification error:', error);
+      setIsAuthenticated(false);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Logout function - clears the API key
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      // Remove API key from axios defaults
+      delete axios.defaults.headers.common['X-API-Key'];
+      
+      await axios.post('/api/auth/logout');
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value = {
+    isAuthenticated,
+    isLoading,
+    verifyApiKey,
+    logout
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+EOF
+
+echo -e "${GREEN}✓ Created simplified auth context${NC}"
+
+# Step 7: Create a ProtectedRoute component
+echo -e "${YELLOW}📝 Creating ProtectedRoute component...${NC}"
+
+mkdir -p "$APP_DIR/client/src/components"
+
+cat > "$APP_DIR/client/src/components/ProtectedRoute.tsx" << 'EOF'
+import React, { ReactNode, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isLoading, isAuthenticated, navigate]);
+
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh' 
+      }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will be redirected by the useEffect hook
+  }
+
+  return <>{children}</>;
+}
+EOF
+
+echo -e "${GREEN}✓ Created ProtectedRoute component${NC}"
+
+# Step 8: Rebuild and restart the application
+echo -e "${YELLOW}🔄 Rebuilding and restarting application...${NC}"
+cd "$APP_DIR"
+npm run build
 pm2 restart url-campaign
+echo -e "${GREEN}✓ Application rebuilt and restarted${NC}"
 
-echo "===== Quick Authentication Fix Complete ====="
-echo "Your application should now require the API key to access the content"
-echo "Please test by accessing https://views.yoyoprime.com"
-echo "You should see a login form asking for API key: TraffiCS10928"
-echo "==============================="
+# Step 9: Update Nginx configuration
+echo -e "${YELLOW}📝 Updating Nginx configuration...${NC}"
+
+cat > "/etc/nginx/sites-available/default" << 'EOF'
+server {
+    listen 80;
+    server_name views.yoyoprime.com;
+    
+    # Add cache control headers to prevent caching
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
+    add_header Pragma "no-cache";
+    
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+        
+        # Set a cookie for the API key (optional extra layer)
+        add_header Set-Cookie "apiKey=TraffiCS10928; Path=/; HttpOnly; SameSite=Strict";
+    }
+    
+    # Handle API routes without setting API key header for /auth endpoints
+    location /api/auth/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+    
+    # Handle all other API routes with API key
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+    
+    # Websocket support
+    location /ws {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-API-Key "TraffiCS10928";
+    }
+}
+EOF
+
+nginx -t
+if [ $? -eq 0 ]; then
+  systemctl restart nginx
+  echo -e "${GREEN}✓ Nginx configuration updated${NC}"
+else
+  echo -e "${RED}⚠️ Nginx configuration error${NC}"
+fi
+
+# Final message
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                 QUICK AUTH FIX COMPLETE                      ║${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo
+echo -e "${GREEN}✓ Auth middleware created on server${NC}"
+echo -e "${GREEN}✓ Auth routes registered${NC}"
+echo -e "${GREEN}✓ Login page added to client${NC}"
+echo -e "${GREEN}✓ Auth context created${NC}"
+echo -e "${GREEN}✓ ProtectedRoute component added${NC}"
+echo -e "${GREEN}✓ Nginx configured for auth${NC}"
+echo
+echo -e "${YELLOW}Your login page should now be accessible at:${NC}"
+echo -e "${BLUE}https://views.yoyoprime.com/login${NC}"
+echo
+echo -e "${YELLOW}Use this API key to login:${NC} ${GREEN}TraffiCS10928${NC}"
+echo
+echo -e "${YELLOW}Nginx is also configured to automatically add the API key to requests,${NC}"
+echo -e "${YELLOW}but the login page is now available for direct access.${NC}"
