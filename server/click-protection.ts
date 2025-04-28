@@ -84,12 +84,27 @@ export async function applyClickProtection() {
     `);
 
     // Check if the trigger was created
-    const urlTriggers = await db.execute(sql`
+    const urlTriggersResult = await db.execute(sql`
       SELECT COUNT(*) AS count FROM pg_trigger 
       WHERE tgname = 'prevent_url_click_update_trigger'
     `);
     
-    const triggerCount = urlTriggers.length > 0 && urlTriggers[0] ? Number(urlTriggers[0].count) : 0;
+    console.log("Query result:", urlTriggersResult);
+    
+    // Handle different result formats safely
+    let triggerCount = 0;
+    
+    if (Array.isArray(urlTriggersResult) && urlTriggersResult.length > 0) {
+      // Direct array format
+      triggerCount = parseInt(urlTriggersResult[0]?.count || '0');
+    } else if (urlTriggersResult && typeof urlTriggersResult === 'object') {
+      // Node-postgres style format with rows
+      if (Array.isArray(urlTriggersResult.rows) && urlTriggersResult.rows.length > 0) {
+        triggerCount = parseInt(urlTriggersResult.rows[0]?.count || '0');
+      }
+    }
+    
+    console.log(`Found ${triggerCount} triggers`);
 
     if (triggerCount > 0) {
       console.log('✅ Click protection installed successfully!');

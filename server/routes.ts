@@ -37,7 +37,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API route to apply click protection
   app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {
     try {
-      console.log('=== Applying Click Protection ===');
+      // Use our new centralized function to apply click protection
+      const result = await applyClickProtection();
+      return res.status(result.success ? 200 : 500).json(result);
+    } catch (error) {
+      console.error('Error applying click protection:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to apply click protection", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // API route to enable click protection bypass
+  app.post("/api/system/click-protection/bypass", async (req: Request, res: Response) => {
+    try {
+      const enable = req.body.enable === true;
+      await storage.setClickProtectionBypass(enable);
+      return res.json({
+        success: true,
+        message: `Click protection bypass ${enable ? 'enabled' : 'disabled'} successfully`,
+        status: {
+          bypassEnabled: enable,
+          protectionActive: !enable
+        }
+      });
+    } catch (error) {
+      console.error('Error setting click protection bypass:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to set click protection bypass", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Legacy implementation - kept for reference
+  app.post("/api/system/click-protection/legacy", async (_req: Request, res: Response) => {
+    try {
+      console.log('=== Applying Legacy Click Protection ===');
       console.log('This will install database triggers to prevent automatic updates to click values');
       
       // Create settings table for protection configuration
