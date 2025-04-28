@@ -11,7 +11,7 @@ export async function apiRequest<T = any>(
   method: string,
   url: string,
   data?: unknown | undefined,
-): Promise<T> {
+): Promise<Response> {
   console.log(`🔍 DEBUG: API Request - ${method} ${url}`, data);
   
   try {
@@ -26,16 +26,8 @@ export async function apiRequest<T = any>(
     
     await throwIfResNotOk(res);
     
-    // For JSON responses, parse and return the data
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.indexOf('application/json') !== -1) {
-      const jsonData = await res.json();
-      console.log(`🔍 DEBUG: API Response data:`, jsonData);
-      return jsonData as T;
-    }
-    
-    // For non-JSON responses, return the Response object
-    return res as unknown as T;
+    // Return the entire response object to let the caller handle the parsing
+    return res;
   } catch (error) {
     console.error(`🔴 ERROR: API Request failed - ${method} ${url}`, error);
     throw error;

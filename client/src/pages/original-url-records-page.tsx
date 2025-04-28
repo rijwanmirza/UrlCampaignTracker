@@ -112,8 +112,14 @@ export default function OriginalUrlRecordsPage() {
   // Mutation for creating a new original URL record
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const res = await apiRequest("POST", "/api/original-url-records", data);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", "/api/original-url-records", data);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error in create mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -136,8 +142,14 @@ export default function OriginalUrlRecordsPage() {
   // Mutation for updating an existing original URL record
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number, data: UpdateFormData }) => {
-      const res = await apiRequest("PUT", `/api/original-url-records/${data.id}`, data.data);
-      return res.json();
+      try {
+        const res = await apiRequest("PUT", `/api/original-url-records/${data.id}`, data.data);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error in update mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -161,8 +173,14 @@ export default function OriginalUrlRecordsPage() {
   // Mutation for deleting an original URL record
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/original-url-records/${id}`);
-      return res.json();
+      try {
+        const res = await apiRequest("DELETE", `/api/original-url-records/${id}`);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error in delete mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -185,8 +203,14 @@ export default function OriginalUrlRecordsPage() {
   // Mutation for syncing an original URL record
   const syncMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("POST", `/api/original-url-records/${id}/sync`);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", `/api/original-url-records/${id}/sync`);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error in sync mutation:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
