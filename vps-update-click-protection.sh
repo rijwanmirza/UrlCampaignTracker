@@ -263,53 +263,53 @@ const syncMethod = `
     try {
       // First, get the original record
       const originalRecord = await this.getOriginalUrlRecord(originalRecordId);
-      
+
       if (!originalRecord) {
         throw new Error(\`Original URL record with ID \${originalRecordId} not found\`);
       }
-      
+
       // Find all URLs that need to be updated based on the original record name
       const urls = await db.query(
         \`SELECT * FROM urls WHERE name = $1\`,
         [originalRecord.name]
       );
-      
+
       if (urls.rows.length === 0) {
         console.log(\`No URLs found matching original record name '\${originalRecord.name}'\`);
         return { success: true, message: 'No matching URLs found', updatedCount: 0 };
       }
-      
+
       console.log(\`Found \${urls.rows.length} URLs to update from original record\`);
-      
+
       // We use a direct SQL approach with ALTER TABLE to temporarily disable
       // the triggers that prevent click updates
-      
+
       // First, disable the trigger
       await db.query('ALTER TABLE urls DISABLE TRIGGER url_clicks_protection_trigger');
-      
+
       // Update each URL's click values using the original record
       let updatedCount = 0;
       let errors = [];
-      
+
       for (const url of urls.rows) {
         try {
           // Calculate the new click limit for the URL
           // If the URL belongs to a campaign, we apply the campaign multiplier
           let multiplier = 1.0;
-          
+
           if (url.campaign_id) {
             const campaignResult = await db.query(
               'SELECT multiplier FROM campaigns WHERE id = $1',
               [url.campaign_id]
             );
-            
+
             if (campaignResult.rows.length > 0 && campaignResult.rows[0].multiplier) {
               multiplier = parseFloat(campaignResult.rows[0].multiplier) || 1.0;
             }
           }
-          
+
           const newClickLimit = Math.round(originalRecord.click_limit * multiplier);
-          
+
           // Update the URL's click limit and click count
           await db.query(
             \`UPDATE urls 
@@ -320,7 +320,7 @@ const syncMethod = `
              WHERE id = $4\`,
             [originalRecord.clicks, newClickLimit, originalRecord.click_limit, url.id]
           );
-          
+
           updatedCount++;
           console.log(\`Updated URL ID \${url.id} with click limit \${newClickLimit} and clicks \${originalRecord.clicks}\`);
         } catch (urlError) {
@@ -328,10 +328,10 @@ const syncMethod = `
           console.error(\`Error updating URL ID \${url.id}:\`, urlError);
         }
       }
-      
+
       // Re-enable the trigger
       await db.query('ALTER TABLE urls ENABLE TRIGGER url_clicks_protection_trigger');
-      
+
       return { 
         success: true, 
         message: \`Updated \${updatedCount} URLs from original record\`, 
@@ -340,18 +340,18 @@ const syncMethod = `
       };
     } catch (error) {
       console.error('Error in syncUrlsWithOriginalRecord:', error);
-      
+
       // In case of error, try to re-enable the trigger
       try {
         await db.query('ALTER TABLE urls ENABLE TRIGGER url_clicks_protection_trigger');
       } catch (triggerError) {
         console.error('Failed to re-enable trigger:', triggerError);
       }
-      
+
       throw error;
     }
   }
-  
+
   /**
    * Get a single original URL record by ID
    */
@@ -362,35 +362,35 @@ const syncMethod = `
     );
     return result.rows.length > 0 ? result.rows[0] : null;
   }
-  
+
   /**
    * Get all original URL records
    */
   async getOriginalUrlRecords(options = {}) {
     const { limit = 100, offset = 0, status = null } = options;
-    
+
     let query = 'SELECT * FROM original_url_records';
     const params = [];
-    
+
     if (status !== null) {
       query += ' WHERE status = $1';
       params.push(status);
     }
-    
+
     query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
     params.push(limit, offset);
-    
+
     const result = await db.query(query, params);
-    
+
     // Get total count
     let countQuery = 'SELECT COUNT(*) as count FROM original_url_records';
     if (status !== null) {
       countQuery += ' WHERE status = $1';
     }
-    
+
     const countResult = await db.query(countQuery, status !== null ? [status] : []);
     const totalCount = parseInt(countResult.rows[0].count, 10);
-    
+
     return {
       records: result.rows,
       pagination: {
@@ -401,7 +401,7 @@ const syncMethod = `
       }
     };
   }
-  
+
   /**
    * Create a new original URL record
    */
@@ -419,10 +419,10 @@ const syncMethod = `
         data.notes || null
       ]
     );
-    
+
     return result.rows[0];
   }
-  
+
   /**
    * Update an original URL record
    */
@@ -430,7 +430,7 @@ const syncMethod = `
     const fields = [];
     const values = [];
     let paramIndex = 1;
-    
+
     // Build dynamic update query based on provided fields
     for (const [key, value] of Object.entries(data)) {
       if (['name', 'target_url', 'click_limit', 'clicks', 'status', 'notes'].includes(key)) {
@@ -438,23 +438,23 @@ const syncMethod = `
         values.push(value);
       }
     }
-    
+
     if (fields.length === 0) {
       throw new Error('No valid fields provided for update');
     }
-    
+
     fields.push(\`updated_at = NOW()\`);
-    
+
     values.push(id);
-    
+
     const result = await db.query(
       \`UPDATE original_url_records SET \${fields.join(', ')} WHERE id = $\${paramIndex} RETURNING *\`,
       values
     );
-    
+
     return result.rows[0];
   }
-  
+
   /**
    * Delete an original URL record
    */
@@ -463,7 +463,7 @@ const syncMethod = `
       'DELETE FROM original_url_records WHERE id = $1 RETURNING *',
       [id]
     );
-    
+
     return result.rows.length > 0;
   }
 
@@ -530,14 +530,14 @@ if (insertionPoint === -1) {
 // Add our routes
 const newRoutes = `
   // ===== Original URL Records API =====
-  
+
   // Get all original URL records
   app.get('/api/original-url-records', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit || '100', 10);
       const offset = parseInt(req.query.offset || '0', 10);
       const status = req.query.status || null;
-      
+
       const result = await storage.getOriginalUrlRecords({ limit, offset, status });
       res.json(result);
     } catch (error) {
@@ -545,23 +545,23 @@ const newRoutes = `
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Get a single original URL record by ID
   app.get('/api/original-url-records/:id', async (req, res) => {
     try {
       const record = await storage.getOriginalUrlRecord(parseInt(req.params.id, 10));
-      
+
       if (!record) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       res.json(record);
     } catch (error) {
       console.error('Error getting original URL record:', error);
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Create a new original URL record
   app.post('/api/original-url-records', async (req, res) => {
     try {
@@ -569,7 +569,7 @@ const newRoutes = `
       if (!req.body.name || !req.body.target_url) {
         return res.status(400).json({ error: 'Name and target URL are required' });
       }
-      
+
       // Create the record
       const record = await storage.createOriginalUrlRecord(req.body);
       res.status(201).json(record);
@@ -578,18 +578,18 @@ const newRoutes = `
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Update an original URL record
   app.patch('/api/original-url-records/:id', async (req, res) => {
     try {
       const recordId = parseInt(req.params.id, 10);
-      
+
       // Check if record exists
       const existingRecord = await storage.getOriginalUrlRecord(recordId);
       if (!existingRecord) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       // Update the record
       const updatedRecord = await storage.updateOriginalUrlRecord(recordId, req.body);
       res.json(updatedRecord);
@@ -598,21 +598,21 @@ const newRoutes = `
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Delete an original URL record
   app.delete('/api/original-url-records/:id', async (req, res) => {
     try {
       const recordId = parseInt(req.params.id, 10);
-      
+
       // Check if record exists
       const existingRecord = await storage.getOriginalUrlRecord(recordId);
       if (!existingRecord) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       // Delete the record
       const success = await storage.deleteOriginalUrlRecord(recordId);
-      
+
       if (success) {
         res.status(204).send();
       } else {
@@ -623,18 +623,18 @@ const newRoutes = `
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   // Sync URLs with original URL record
   app.post('/api/original-url-records/:id/sync', async (req, res) => {
     try {
       const recordId = parseInt(req.params.id, 10);
-      
+
       // Check if record exists
       const existingRecord = await storage.getOriginalUrlRecord(recordId);
       if (!existingRecord) {
         return res.status(404).json({ error: 'Original URL record not found' });
       }
-      
+
       // Perform the sync
       const result = await storage.syncUrlsWithOriginalRecord(recordId);
       res.json(result);

@@ -723,7 +723,7 @@ export default function OriginalUrlRecordsPage() {
               This will update all URLs matching "{currentRecord?.name}" with the click values from this original record.
             </DialogDescription>
           </DialogHeader>
-          
+
           {currentRecord && (
             <div className="py-4">
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -736,7 +736,7 @@ export default function OriginalUrlRecordsPage() {
                   <div className="mt-1">{currentRecord.click_limit.toLocaleString()}</div>
                 </div>
               </div>
-              
+
               <div className="border rounded-md p-4 bg-muted/30 mb-4">
                 <h4 className="font-medium mb-2">What this does:</h4>
                 <ul className="text-sm space-y-1 list-disc pl-4">
@@ -745,7 +745,7 @@ export default function OriginalUrlRecordsPage() {
                   <li>Applies campaign multipliers if they exist</li>
                 </ul>
               </div>
-              
+
               <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-md p-4 text-orange-800 dark:text-orange-300 mb-4">
                 <h4 className="font-medium mb-1">Important:</h4>
                 <p className="text-sm">
