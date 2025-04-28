@@ -3608,6 +3608,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to sync original URL record" });
     }
   });
+  
+  // API route to fix data inconsistency between original URL records and URLs
+  app.post("/api/system/fix-click-limits", async (_req: Request, res: Response) => {
+    try {
+      console.log('🔧 Running the fix-click-limits script to repair data inconsistencies...');
+      
+      // Step 1: Temporarily disable triggers to allow direct updates
+      await db.execute(sql`
+        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
+      `);
+      
+      console.log('✅ Triggers disabled temporarily');
+      
+      // Step 2: Find mismatched records where the original_click_limit values don't match
+      const mismatchedRecords = await db.execute(sql`
+        SELECT 
+          ou.id AS original_record_id,
+          ou.name AS url_name,
+          ou.original_click_limit AS original_limit,
+          u.id AS url_id, 
+          u.original_click_limit AS url_original_limit,
+          u.click_limit AS url_click_limit,
+          c.multiplier AS campaign_multiplier,
+          c.id AS campaign_id
+        FROM original_url_records ou
+        JOIN urls u ON ou.name = u.name
+        JOIN campaigns c ON u.campaign_id = c.id
+        WHERE ou.original_click_limit != u.original_click_limit
+      `);
+      
+      const mismatchCount = Array.isArray(mismatchedRecords) ? mismatchedRecords.length : 0;
+      console.log(`Found ${mismatchCount} mismatched records`);
+      
+      // Step 3: Fix all mismatched records
+      const updateResult = await db.execute(sql`
+        UPDATE urls u
+        SET 
+          original_click_limit = ou.original_click_limit,
+          click_limit = ROUND(ou.original_click_limit * COALESCE(c.multiplier, 1))
+        FROM original_url_records ou, campaigns c
+        WHERE 
+          u.name = ou.name AND
+          u.campaign_id = c.id AND
+          ou.original_click_limit != u.original_click_limit
+      `);
+      
+      console.log('Fixed records:', updateResult);
+      
+      // Step 4: Verify the fixes worked
+      const verificationResult = await db.execute(sql`
+        SELECT 
+          COUNT(*) AS total_records,
+          SUM(CASE WHEN ou.original_click_limit = u.original_click_limit THEN 1 ELSE 0 END) AS matched_records,
+          SUM(CASE WHEN ou.original_click_limit != u.original_click_limit THEN 1 ELSE 0 END) AS mismatched_records
+        FROM original_url_records ou
+        JOIN urls u ON ou.name = u.name
+      `);
+      
+      // Step 5: Re-enable the triggers
+      await db.execute(sql`
+        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
+        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+      `);
+      
+      console.log('✅ Triggers re-enabled');
+      
+      const summary = Array.isArray(verificationResult) && verificationResult.length > 0 
+        ? verificationResult[0] 
+        : { total_records: 0, matched_records: 0, mismatched_records: 0 };
+      
+      return res.json({
+        success: true,
+        message: "Successfully fixed click limit inconsistencies",
+        before: { mismatched: mismatchCount },
+        after: summary,
+        fixedCount: mismatchCount
+      });
+    } catch (error) {
+      console.error("Error fixing click limits:", error);
+      
+      // Make sure to re-enable triggers even if there's an error
+      try {
+        await db.execute(sql`
+          ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
+          ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
+        `);
+        console.log('✅ Triggers re-enabled after error');
+      } catch (triggerError) {
+        console.error("Failed to re-enable triggers:", triggerError);
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fix click limit inconsistencies",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
