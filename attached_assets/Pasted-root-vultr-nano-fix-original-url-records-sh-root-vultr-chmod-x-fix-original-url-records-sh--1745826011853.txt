@@ -1,0 +1,109 @@
+root@vultr:~# nano fix-original-url-records.sh
+root@vultr:~# chmod +x fix-original-url-records.sh
+./fix-original-url-records.sh
+╔══════════════════════════════════════════════════════════════╗
+║             FIXING ORIGINAL URL RECORDS PAGE                 ║
+╚══════════════════════════════════════════════════════════════╝
+
+📦 Creating backup before fixes...
+✓ Backup created at /root/url-campaign-fix-backup-20250428073849
+
+🔧 Creating missing system_settings table...
+NOTICE:  relation "system_settings" already exists, skipping
+CREATE TABLE
+INSERT 0 1
+INSERT 0 1
+✓ system_settings table created
+
+📝 Creating module-compatible navigation fix script...
+🔧 Fixing navigation menu...
+/var/www/url-campaign/fix-navigation.cjs:171
+  const appTsxPath = path.join(appDir, 'client/src/App.tsx');
+        ^
+
+SyntaxError: Identifier 'appTsxPath' has already been declared
+    at wrapSafe (node:internal/modules/cjs/loader:1472:18)
+    at Module._compile (node:internal/modules/cjs/loader:1501:20)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+    at node:internal/main/run_main_module:28:49
+
+Node.js v20.19.1
+✓ Navigation fix applied
+
+📝 Ensuring Original URL Records page is correctly created...
+✓ Original URL Records page component exists
+🔧 Ensuring App.tsx has the Original URL Records route...
+✓ Ensured App.tsx has the correct route
+
+🔧 Adding Original URL Records API routes...
+Found routes file at /var/www/url-campaign/server/routes.ts
+Original URL Records API routes already exist
+🚀 Rebuilding and restarting application...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+✓ 3 modules transformed.
+x Build failed in 567ms
+error during build:
+[vite:esbuild] Transform failed with 2 errors:
+/var/www/url-campaign/client/src/App.tsx:50:2: ERROR: The character "}" is not valid inside a JSX element
+/var/www/url-campaign/client/src/App.tsx:54:4: ERROR: Unexpected "return"
+file: /var/www/url-campaign/client/src/App.tsx:50:2
+
+The character "}" is not valid inside a JSX element
+48 |        </Switch>
+49 |      );
+50 |    }
+   |    ^
+51 |
+52 |    if (isLoginRoute) {
+
+Unexpected "return"
+52 |    if (isLoginRoute) {
+53 |      // Login route without navbar or protected route wrapper
+54 |      return (
+   |      ^
+55 |        <Switch>
+56 |          <Route path="/login" component={LoginPage} />
+
+    at failureErrorWithLog (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 5958     │ 0s     │ 4    │ online    │ 0%       │ 3.4mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+✓ Application rebuilt and restarted
+
+╔══════════════════════════════════════════════════════════════╗
+║                     FIX COMPLETED                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+✓ The Original URL Records feature should now be fully functional
+✓ You can access it at: https://views.yoyoprime.com/original-url-records
+
+If you still encounter any issues:
+1. Check PM2 logs: pm2 logs url-campaign
+2. Check server errors: sudo -u postgres psql postgres -c "SELECT * FROM system_settings;"
+3. Verify the URL Records table: sudo -u postgres psql postgres -c "SELECT * FROM original_url_records LIMIT 5;"
+4. Check if trigger exists: sudo -u postgres psql postgres -c "SELECT * FROM pg_trigger WHERE tgname = 'url_clicks_protection_trigger';"
+
+Backup of your application is available at: /root/url-campaign-fix-backup-20250428073849
+
+root@vultr:~#
