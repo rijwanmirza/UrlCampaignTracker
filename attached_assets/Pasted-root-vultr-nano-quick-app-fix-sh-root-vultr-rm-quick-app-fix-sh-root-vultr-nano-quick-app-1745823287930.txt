@@ -1,0 +1,72 @@
+root@vultr:~# nano quick-app-fix.sh
+root@vultr:~# rm quick-app-fix.sh
+root@vultr:~# nano quick-app-fix.sh
+root@vultr:~# chmod +x quick-app-fix.sh
+./quick-app-fix.sh
+╔══════════════════════════════════════════════════════════════╗
+║           QUICK FIX FOR APPLICATION STARTUP                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+🛑 Stopping application...
+[PM2] Applying action stopProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 1    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+✓ Application stopped
+📝 Creating start.sh script...
+✓ Created start.sh script
+📝 Creating PM2 ecosystem config...
+✓ Created PM2 ecosystem config
+📝 Setting up environment variables...
+🚀 Starting application with new configuration...
+[PM2] Applying action deleteProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2][ERROR] File ecosystem.config.js malformated
+ReferenceError: module is not defined
+    at file:///var/www/url-campaign/ecosystem.config.js:1:1
+    at ModuleJobSync.runSync (node:internal/modules/esm/module_job:387:35)
+    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:323:47)
+    at loadESMFromCJS (node:internal/modules/cjs/loader:1371:24)
+    at Module._compile (node:internal/modules/cjs/loader:1511:5)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1572:16)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+[PM2] Saving current process list...
+[PM2][WARN] PM2 is not managing any process, skipping save...
+[PM2][WARN] To force saving use: pm2 save --force
+✓ Application started with new configuration
+📝 Updating Nginx configuration...
+✓ Backed up Nginx configuration
+✓ Updated Nginx configuration
+nginx: [warn] conflicting server name "views.yoyoprime.com" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+✓ Nginx restarted successfully
+╔══════════════════════════════════════════════════════════════╗
+║                     FIX COMPLETED                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+✓ Application startup has been fixed
+✓ PM2 configuration has been updated
+✓ Nginx configuration has been updated
+
+Your site should now be accessible at: https://views.yoyoprime.com
+
+If you still encounter issues:
+1. Check the application logs: pm2 logs url-campaign
+2. Check Nginx error logs: tail -f /var/log/nginx/error.log
+3. Verify the application is running: pm2 list
+
+If you need to restore your previous version:
+cp -r /root/url-campaign-backup-*/* /var/www/url-campaign/
+sudo -u postgres psql postgres < /root/url-campaign-backup-*/database-*.sql
+pm2 restart url-campaign
+root@vultr:~#

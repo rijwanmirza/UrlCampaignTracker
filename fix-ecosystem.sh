@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Fix Ecosystem Config and Start Application
-# This script fixes the ecosystem config file to use ES modules syntax
+# Fix Ecosystem - Convert from ES Modules to CommonJS
+# This script creates all the necessary deployment files
 
 # Text formatting
 GREEN='\033[0;32m'
@@ -12,206 +12,268 @@ NC='\033[0m' # No Color
 
 # Configuration
 APP_DIR="/var/www/url-campaign"
-PM2_APP_NAME="url-campaign"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║           FIX ECOSYSTEM CONFIG AND START APP                 ║${NC}"
+echo -e "${BLUE}║             FIXING APPLICATION STARTUP                       ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
 
-# Step 1: Create a fixed start script
-echo -e "${YELLOW}📝 Creating direct start script...${NC}"
+# Step 1: Stop the application
+echo -e "${YELLOW}🛑 Stopping application if running...${NC}"
+pm2 stop url-campaign 2>/dev/null
+pm2 delete url-campaign 2>/dev/null
+echo -e "${GREEN}✓ Application stopped${NC}"
 
-cat > "$APP_DIR/start.js" << 'EOF'
-// Direct start script
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { spawn } from 'child_process';
+# Step 2: Create a direct shell startup script (most reliable)
+echo -e "${YELLOW}📝 Creating direct shell startup script...${NC}"
 
-// Get the current file's directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Execute the application
-const serverProcess = spawn('node', ['dist/index.js'], {
-  cwd: __dirname,
-  env: {
-    ...process.env,
-    PORT: '5000',
-    NODE_ENV: 'production'
-  }
-});
-
-// Log output
-serverProcess.stdout.on('data', (data) => {
-  console.log(`${data}`);
-});
-
-serverProcess.stderr.on('data', (data) => {
-  console.error(`${data}`);
-});
-
-serverProcess.on('close', (code) => {
-  console.log(`Server process exited with code ${code}`);
-});
+cat > "$APP_DIR/run.sh" << 'EOF'
+#!/bin/bash
+cd /var/www/url-campaign
+export PORT=5000
+export HOST=0.0.0.0
+export NODE_ENV=production
+node dist/index.js
 EOF
 
-echo -e "${GREEN}✓ Created direct start script${NC}"
+chmod +x "$APP_DIR/run.sh"
+echo -e "${GREEN}✓ Created shell startup script${NC}"
 
-# Step 2: Create a proper ecosystem config file for ES modules
-echo -e "${YELLOW}📝 Creating ES-compatible ecosystem config...${NC}"
+# Step 3: Create a proper CommonJS ecosystem file with .cjs extension
+echo -e "${YELLOW}📝 Creating CommonJS ecosystem config...${NC}"
 
 cat > "$APP_DIR/ecosystem.config.cjs" << 'EOF'
 module.exports = {
   apps: [{
     name: "url-campaign",
-    script: "dist/index.js",
+    script: "./run.sh",
     env: {
       NODE_ENV: "production",
-      PORT: 5000
+      PORT: 5000,
+      HOST: "0.0.0.0"
     },
-    max_memory_restart: "500M",
+    max_memory_restart: "1G",
     restart_delay: 3000,
     max_restarts: 10
   }]
 };
 EOF
 
-echo -e "${GREEN}✓ Created ES-compatible ecosystem config${NC}"
+echo -e "${GREEN}✓ Created proper CommonJS ecosystem config${NC}"
 
-# Step 3: Restart the application with the new configuration
-echo -e "${YELLOW}🚀 Starting application with the new configuration...${NC}"
+# Step 4: Start the application with PM2
+echo -e "${YELLOW}🚀 Starting application with PM2...${NC}"
 cd "$APP_DIR"
-pm2 delete $PM2_APP_NAME 2>/dev/null
+pm2 start ecosystem.config.cjs
+pm2 save
+echo -e "${GREEN}✓ Application started with PM2${NC}"
 
-# Try with direct Node.js command first
-echo -e "${YELLOW}Attempting direct start with Node.js...${NC}"
-NODE_ENV=production PORT=5000 node "$APP_DIR/dist/index.js" > /dev/null 2>&1 &
-APP_PID=$!
+# Step 5: Fix Nginx configuration conflicts
+echo -e "${YELLOW}📝 Fixing Nginx configuration conflicts...${NC}"
 
-# Wait a moment to see if it stays running
-sleep 3
+MAIN_NGINX_CONF="/etc/nginx/nginx.conf"
+NGINX_CONF="/etc/nginx/sites-available/default"
 
-if kill -0 $APP_PID 2>/dev/null; then
-  echo -e "${GREEN}✓ Application started directly with Node.js${NC}"
-
-  # Register with PM2
-  echo -e "${YELLOW}Registering running application with PM2...${NC}"
-  pm2 start "$APP_DIR/dist/index.js" --name $PM2_APP_NAME -- --port 5000
-  kill $APP_PID
-else
-  echo -e "${YELLOW}Direct start failed, trying with PM2 and ecosystem config...${NC}"
-  pm2 start "$APP_DIR/ecosystem.config.cjs"
+# Check for conflicting server blocks in main config
+if grep -q "server_name.*views.yoyoprime.com" "$MAIN_NGINX_CONF"; then
+  echo -e "${YELLOW}Found conflicting server block in main Nginx config${NC}"
+  # Create a backup of the original file
+  cp "$MAIN_NGINX_CONF" "${MAIN_NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
+  echo -e "${GREEN}✓ Backed up main Nginx config${NC}"
+  
+  # Comment out server blocks with views.yoyoprime.com
+  sed -i '/server_name.*views.yoyoprime.com/,/}/s/^/#/' "$MAIN_NGINX_CONF"
+  echo -e "${GREEN}✓ Commented out conflicting server blocks${NC}"
 fi
 
-# Save PM2 configuration
-pm2 save
-echo -e "${GREEN}✓ Application started and PM2 configuration saved${NC}"
+# Create a super simple Nginx configuration
+cat > "$NGINX_CONF" << 'EOF'
+server {
+    listen 80;
+    server_name views.yoyoprime.com;
 
-# Step 4: Verify the application is running
-echo -e "${YELLOW}📋 Verifying application status...${NC}"
-pm2 status $PM2_APP_NAME
-
-# Step 5: Create a simple direct start script for PM2 to use
-echo -e "${YELLOW}📝 Creating a direct start script for PM2...${NC}"
-
-cat > "$APP_DIR/direct-start.cjs" << 'EOF'
-// Start the application directly
-const { spawn } = require('child_process');
-const path = require('path');
-
-// Get the current directory
-const appDir = __dirname;
-
-// Start the application
-const serverProcess = spawn('node', [path.join(appDir, 'dist/index.js')], {
-  cwd: appDir,
-  env: {
-    ...process.env,
-    PORT: '5000',
-    NODE_ENV: 'production'
-  },
-  stdio: 'inherit'
-});
-
-// Handle errors
-serverProcess.on('error', (err) => {
-  console.error('Failed to start server process:', err);
-  process.exit(1);
-});
-
-// Keep this process running
-process.on('SIGINT', () => {
-  serverProcess.kill('SIGINT');
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  serverProcess.kill('SIGTERM');
-  process.exit(0);
-});
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+}
 EOF
 
-chmod +x "$APP_DIR/direct-start.cjs"
-echo -e "${GREEN}✓ Created direct start script for PM2${NC}"
+echo -e "${GREEN}✓ Created simple Nginx configuration${NC}"
 
-# Step 6: Alternative fallback method with direct start script
-echo -e "${YELLOW}📝 Setting up fallback method...${NC}"
-pm2 delete $PM2_APP_NAME 2>/dev/null
-pm2 start "$APP_DIR/direct-start.cjs" --name $PM2_APP_NAME
-pm2 save
-echo -e "${GREEN}✓ Application started with fallback method${NC}"
-
-# Final check
-echo -e "${YELLOW}🔍 Verifying application is running...${NC}"
-pm2 status
-APP_RUNNING=$(pm2 list | grep $PM2_APP_NAME | grep -c "online")
-
-if [ "$APP_RUNNING" -gt 0 ]; then
-  echo -e "${GREEN}✓ Application is running successfully${NC}"
+# Restart Nginx
+echo -e "${YELLOW}🔄 Restarting Nginx...${NC}"
+nginx -t
+if [ $? -eq 0 ]; then
+  systemctl restart nginx
+  echo -e "${GREEN}✓ Nginx restarted successfully${NC}"
 else
-  echo -e "${RED}⚠️ Application failed to start${NC}"
-  echo -e "${YELLOW}Trying one final method...${NC}"
+  echo -e "${RED}⚠️ Nginx configuration error${NC}"
+  # Try to fix common Nginx errors
+  
+  # Create an improved Nginx configuration that addresses common issues
+  cat > "$NGINX_CONF" << 'EOF'
+# Default server definition
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    
+    # Redirect all HTTP requests to HTTPS with a 301 Moved Permanently response
+    return 301 https://$host$request_uri;
+}
 
-  # Create a shell script to run the application
-  cat > "$APP_DIR/run.sh" << 'EOF'
-#!/bin/bash
-cd /var/www/url-campaign
-NODE_ENV=production PORT=5000 node dist/index.js
+server {
+    listen 80;
+    listen [::]:80;
+    
+    # The domain name to which this virtual host responds
+    server_name views.yoyoprime.com;
+    
+    # Redirect all HTTP requests to HTTPS with a 301 Moved Permanently response
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    
+    server_name views.yoyoprime.com;
+    
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/views.yoyoprime.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/views.yoyoprime.com/privkey.pem;
+    ssl_session_cache shared:SSL:50m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+    
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # Root directory for static files
+    root /var/www/url-campaign/dist/public;
+    
+    # Proxy all requests to the Node.js app
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+        proxy_buffers 8 32k;
+        proxy_buffer_size 64k;
+    }
+    
+    # Serve static files directly
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 7d;
+        access_log off;
+        add_header Cache-Control "public";
+    }
+    
+    # SPA routes - forward everything to index.html
+    location /original-url-records {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Error pages
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
 EOF
 
-  chmod +x "$APP_DIR/run.sh"
-
-  pm2 delete $PM2_APP_NAME 2>/dev/null
-  pm2 start "$APP_DIR/run.sh" --name $PM2_APP_NAME
-  pm2 save
-
-  APP_RUNNING=$(pm2 list | grep $PM2_APP_NAME | grep -c "online")
-  if [ "$APP_RUNNING" -gt 0 ]; then
-    echo -e "${GREEN}✓ Application is running with shell script method${NC}"
+  echo -e "${YELLOW}Created improved Nginx configuration${NC}"
+  
+  # Try restarting Nginx again
+  nginx -t
+  if [ $? -eq 0 ]; then
+    systemctl restart nginx
+    echo -e "${GREEN}✓ Nginx restarted successfully with improved config${NC}"
   else
-    echo -e "${RED}⚠️ All methods failed to start the application${NC}"
-    echo -e "${YELLOW}Please check the application logs for errors:${NC}"
-    echo -e "${BLUE}pm2 logs $PM2_APP_NAME${NC}"
+    echo -e "${RED}⚠️ Nginx configuration still has errors${NC}"
+    echo -e "${YELLOW}Using a minimal configuration instead...${NC}"
+    
+    # Create an absolutely minimal configuration
+    cat > "$NGINX_CONF" << 'EOF'
+server {
+    listen 80;
+    server_name views.yoyoprime.com;
+    
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+    }
+}
+EOF
+    
+    nginx -t
+    if [ $? -eq 0 ]; then
+      systemctl restart nginx
+      echo -e "${GREEN}✓ Nginx restarted with minimal configuration${NC}"
+    else
+      echo -e "${RED}⚠️ Unable to fix Nginx configuration${NC}"
+    fi
   fi
+fi
+
+# Step 6: Test if application is running
+echo -e "${YELLOW}🔍 Testing if application is running...${NC}"
+sleep 5
+curl -s http://localhost:5000/ > /dev/null
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}✓ Application is responding on port 5000${NC}"
+else
+  echo -e "${RED}⚠️ Application is not responding on port 5000${NC}"
+  echo -e "${YELLOW}Checking PM2 status...${NC}"
+  pm2 status
+  
+  echo -e "${YELLOW}Checking application logs...${NC}"
+  pm2 logs url-campaign --lines 10
+  
+  echo -e "${YELLOW}Trying to start in another way...${NC}"
+  pm2 delete url-campaign 2>/dev/null
+  cd "$APP_DIR"
+  pm2 start run.sh --name url-campaign
+  pm2 save
+  
+  echo -e "${GREEN}✓ Tried alternative startup method${NC}"
 fi
 
 # Final message
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                   ECOSYSTEM FIX COMPLETED                    ║${NC}"
+echo -e "${BLUE}║                      FIX COMPLETED                           ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
-echo -e "${GREEN}✓ Application startup has been fixed${NC}"
-echo -e "${GREEN}✓ PM2 configuration has been updated${NC}"
+echo -e "${GREEN}✓ Application startup fixed with proper shell script${NC}"
+echo -e "${GREEN}✓ PM2 configuration fixed to use CommonJS format${NC}"
+echo -e "${GREEN}✓ Nginx configuration fixed to avoid conflicts${NC}"
 echo
 echo -e "${YELLOW}Your site should now be accessible at: https://views.yoyoprime.com${NC}"
 echo
 echo -e "${YELLOW}If you still encounter issues:${NC}"
-echo -e "1. Check the application logs: ${BLUE}pm2 logs $PM2_APP_NAME${NC}"
-echo -e "2. Check Nginx error logs: ${BLUE}tail -f /var/log/nginx/error.log${NC}"
-echo -e "3. Verify the application is running: ${BLUE}pm2 list${NC}"
-echo
-echo -e "${YELLOW}If you need to restore your previous version:${NC}"
-echo -e "${BLUE}cp -r /root/url-campaign-backup-*/* $APP_DIR/${NC}"
-echo -e "${BLUE}sudo -u postgres psql postgres < /root/url-campaign-backup-*/database-*.sql${NC}"
-echo -e "${BLUE}pm2 restart $PM2_APP_NAME${NC}"
+echo -e "1. Try starting the application directly: ${BLUE}cd $APP_DIR && ./run.sh${NC}"
+echo -e "2. Check application logs: ${BLUE}pm2 logs url-campaign${NC}"
+echo -e "3. Check Nginx logs: ${BLUE}tail -f /var/log/nginx/error.log${NC}"

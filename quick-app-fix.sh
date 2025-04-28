@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Quick App Fix - Restore backup and fix Nginx config
-# This script fixes the broken build and restores from backup
+# Quick Fix for URL Campaign Application
+# This script resolves the start.sh issue and creates proper PM2 configuration
 
 # Text formatting
 GREEN='\033[0;32m'
@@ -12,219 +12,179 @@ NC='\033[0m' # No Color
 
 # Configuration
 APP_DIR="/var/www/url-campaign"
-NGINX_CONF="/etc/nginx/sites-available/default"
-BACKUP_DIR="/root/url-campaign-route-fix-backup-20250428065040"
-NGINX_MAIN_CONF="/etc/nginx/nginx.conf"
+PM2_APP_NAME="url-campaign"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║            QUICK FIX FOR BROKEN BUILD                        ║${NC}"
+echo -e "${BLUE}║           QUICK FIX FOR APPLICATION STARTUP                  ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
 
-# Step 1: Check if backup exists
-echo -e "${YELLOW}📋 Checking for backups...${NC}"
-if [ ! -d "$BACKUP_DIR" ]; then
-  echo -e "${RED}⚠️ Backup directory not found at $BACKUP_DIR${NC}"
-  BACKUP_DIR=$(find /root -maxdepth 1 -type d -name "url-campaign-*-backup-*" | sort -r | head -1)
-  if [ -z "$BACKUP_DIR" ]; then
-    echo -e "${RED}⚠️ No backup directories found${NC}"
-  else
-    echo -e "${GREEN}✓ Found alternate backup at $BACKUP_DIR${NC}"
-  fi
-else
-  echo -e "${GREEN}✓ Found backup at $BACKUP_DIR${NC}"
-fi
+# Step 1: Stop the application
+echo -e "${YELLOW}🛑 Stopping application...${NC}"
+pm2 stop $PM2_APP_NAME
+echo -e "${GREEN}✓ Application stopped${NC}"
 
-# Step 2: Restore client source files from backup if available
-if [ -d "$BACKUP_DIR/client" ]; then
-  echo -e "${YELLOW}🔄 Restoring client files from backup...${NC}"
-  cp -r "$BACKUP_DIR/client/src" "$APP_DIR/client/"
-  echo -e "${GREEN}✓ Client files restored from backup${NC}"
-else
-  echo -e "${RED}⚠️ No client files found in backup${NC}"
-  
-  # Simple fix for App.tsx
-  echo -e "${YELLOW}🔧 Applying direct fix to App.tsx...${NC}"
-  cat > "$APP_DIR/client/src/App.tsx" << 'EOF'
-import { Route, Switch, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import "./App.css";
-import LoginPage from "@/pages/auth/login-page";
-import HomePage from "@/pages/home-page";
-import CampaignsPage from "@/pages/campaigns-page";
-import CampaignDetailsPage from "@/pages/campaign-details-page";
-import UrlsPage from "@/pages/urls-page";
-import SettingsPage from "@/pages/settings-page";
-import TrafficstarPage from "@/pages/trafficstar-page";
-import GmailIntegrationPage from "@/pages/gmail-integration-page";
-import { Toaster } from "@/components/ui/toaster";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { AuthProvider } from "@/hooks/use-auth";
-import OriginalUrlRecordsPage from "@/pages/original-url-records-page";
-import { SideNav } from "@/components/navigation/side-nav";
+# Step 2: Create a proper start script
+echo -e "${YELLOW}📝 Creating start.sh script...${NC}"
 
-function App() {
-  const [location] = useLocation();
-  const isLoginRoute = location === "/login";
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppInner isLoginRoute={isLoginRoute} />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-}
-
-function AppInner({ isLoginRoute }: { isLoginRoute: boolean }) {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user && !isLoginRoute) {
-    window.location.href = "/login";
-    return null;
-  }
-
-  if (isLoginRoute) {
-    // Login route without navbar or protected route wrapper
-    return (
-      <Switch>
-        <Route path="/login" component={LoginPage} />
-      </Switch>
-    );
-  }
-
-  // Regular routes with navbar and protected
-  return (
-    <div className="flex h-screen bg-background">
-      <SideNav />
-
-      <main className="flex-1 overflow-y-auto p-6">
-        <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/campaigns" component={CampaignsPage} />
-          <Route path="/campaigns/:id" component={CampaignDetailsPage} />
-          <Route path="/urls" component={UrlsPage} />
-          <Route path="/settings" component={SettingsPage} />
-          <Route path="/trafficstar" component={TrafficstarPage} />
-          <Route path="/gmail-integration" component={GmailIntegrationPage} />
-          <Route path="/original-url-records" component={OriginalUrlRecordsPage} />
-        </Switch>
-      </main>
-    </div>
-  );
-}
-
-export default App;
+mkdir -p "$APP_DIR"
+cat > "$APP_DIR/start.sh" << 'EOF'
+#!/bin/bash
+cd /var/www/url-campaign
+PORT=5000 node dist/index.js
 EOF
-  echo -e "${GREEN}✓ Applied direct fix to App.tsx${NC}"
+
+chmod +x "$APP_DIR/start.sh"
+echo -e "${GREEN}✓ Created start.sh script${NC}"
+
+# Step 3: Create a proper PM2 ecosystem config
+echo -e "${YELLOW}📝 Creating PM2 ecosystem config...${NC}"
+
+cat > "$APP_DIR/ecosystem.config.js" << 'EOF'
+module.exports = {
+  apps: [{
+    name: "url-campaign",
+    script: "./start.sh",
+    env: {
+      NODE_ENV: "production",
+      PORT: 5000
+    },
+    max_memory_restart: "500M",
+    restart_delay: 3000,
+    max_restarts: 10
+  }]
+};
+EOF
+
+echo -e "${GREEN}✓ Created PM2 ecosystem config${NC}"
+
+# Step 4: Make sure the application has the right environment variables
+echo -e "${YELLOW}📝 Setting up environment variables...${NC}"
+
+if [ ! -f "$APP_DIR/.env" ]; then
+  cat > "$APP_DIR/.env" << 'EOF'
+PORT=5000
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres
+NODE_ENV=production
+EOF
+  echo -e "${GREEN}✓ Created .env file${NC}"
+else
+  # Ensure PORT is set in the .env file
+  if ! grep -q "PORT=" "$APP_DIR/.env"; then
+    echo "PORT=5000" >> "$APP_DIR/.env"
+    echo -e "${GREEN}✓ Added PORT to .env file${NC}"
+  fi
 fi
 
-# Step 3: Create a super simple Nginx configuration
-echo -e "${YELLOW}📝 Creating simple Nginx configuration...${NC}"
+# Step 5: Restart the application with the new configuration
+echo -e "${YELLOW}🚀 Starting application with new configuration...${NC}"
+cd "$APP_DIR"
+pm2 delete $PM2_APP_NAME 2>/dev/null
+pm2 start ecosystem.config.js
+pm2 save
+echo -e "${GREEN}✓ Application started with new configuration${NC}"
 
-# Backup the original configuration
-cp "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
-echo -e "${GREEN}✓ Backed up Nginx configuration${NC}"
+# Step 6: Update Nginx configuration
+echo -e "${YELLOW}📝 Updating Nginx configuration...${NC}"
 
-# Create a super simple configuration file
-cat > "$NGINX_CONF" << 'EOF'
+# First, find the main Nginx configuration
+NGINX_CONF="/etc/nginx/sites-available/default"
+if [ ! -f "$NGINX_CONF" ]; then
+  NGINX_CONF="/etc/nginx/conf.d/default.conf"
+  if [ ! -f "$NGINX_CONF" ]; then
+    # Try to find any Nginx configuration file
+    NGINX_CONF=$(find /etc/nginx -name "*.conf" | grep -v "nginx.conf" | head -1)
+  fi
+fi
+
+if [ -f "$NGINX_CONF" ]; then
+  # Backup the original configuration
+  cp "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
+  echo -e "${GREEN}✓ Backed up Nginx configuration${NC}"
+
+  # Create a new minimal configuration
+  cat > "$NGINX_CONF" << EOF
 server {
     listen 80;
+    listen [::]:80;
     server_name views.yoyoprime.com;
 
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options "nosniff";
+
+    # Root directory
+    root $APP_DIR/dist/public;
+    index index.html;
+
+    # Add API key for authentication bypass
+    proxy_set_header X-API-Key "TraffiCS10928";
+
+    # Proxy all requests to the Node.js application
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-API-Key "TraffiCS10928";
-        proxy_read_timeout 300;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+
+        # Longer timeouts for TrafficStar API calls
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
+        proxy_read_timeout 300;
+        send_timeout 300;
+    }
+
+    # Serve static files directly
+    location ~ ^/(assets|public|images|favicon.ico) {
+        expires 7d;
+        access_log off;
+        add_header Cache-Control "public";
+    }
+
+    # Original URL Records fallback
+    location /original-url-records {
+        try_files \$uri \$uri/ /index.html;
     }
 }
 EOF
 
-echo -e "${GREEN}✓ Created simple Nginx configuration${NC}"
+  echo -e "${GREEN}✓ Updated Nginx configuration${NC}"
 
-# Step 4: Restart Nginx
-echo -e "${YELLOW}🔄 Restarting Nginx...${NC}"
-nginx -t
-if [ $? -eq 0 ]; then
-  systemctl restart nginx
-  echo -e "${GREEN}✓ Nginx restarted successfully${NC}"
-else
-  echo -e "${RED}⚠️ Nginx configuration is invalid${NC}"
-fi
-
-# Step 5: Reset PM2 application
-echo -e "${YELLOW}🔄 Restarting application...${NC}"
-cd "$APP_DIR"
-
-# Create a direct start script
-cat > "$APP_DIR/start.sh" << 'EOF'
-#!/bin/bash
-cd /var/www/url-campaign
-export PORT=5000
-export HOST=0.0.0.0
-export NODE_ENV=production
-node dist/index.js
-EOF
-
-chmod +x "$APP_DIR/start.sh"
-
-# Restart
-pm2 delete url-campaign 2>/dev/null
-pm2 start "$APP_DIR/start.sh" --name url-campaign
-pm2 save
-
-echo -e "${GREEN}✓ Application restarted${NC}"
-
-# Step 6: Rebuild the frontend
-echo -e "${YELLOW}🔄 Rebuilding frontend...${NC}"
-cd "$APP_DIR"
-npm run build
-
-if [ $? -eq 0 ]; then
-  echo -e "${GREEN}✓ Frontend rebuilt successfully${NC}"
-  pm2 restart url-campaign
-else
-  echo -e "${RED}⚠️ Frontend build failed${NC}"
-  echo -e "${YELLOW}Using fallback: restoring directly from backup...${NC}"
-  
-  if [ -d "$BACKUP_DIR/dist" ]; then
-    cp -r "$BACKUP_DIR/dist" "$APP_DIR/"
-    echo -e "${GREEN}✓ Restored dist folder from backup${NC}"
-    pm2 restart url-campaign
+  # Test and reload Nginx
+  nginx -t
+  if [ $? -eq 0 ]; then
+    systemctl restart nginx
+    echo -e "${GREEN}✓ Nginx restarted successfully${NC}"
   else
-    echo -e "${RED}⚠️ No dist folder found in backup${NC}"
+    echo -e "${RED}⚠️ Nginx configuration test failed, please check the configuration${NC}"
   fi
+else
+  echo -e "${RED}⚠️ Could not find Nginx configuration file${NC}"
 fi
 
 # Final message
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                      FIX COMPLETED                           ║${NC}"
+echo -e "${BLUE}║                     FIX COMPLETED                            ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
-echo -e "${GREEN}✓ Application has been restored and restarted${NC}"
-echo -e "${GREEN}✓ Nginx has been configured with a minimal setup${NC}"
+echo -e "${GREEN}✓ Application startup has been fixed${NC}"
+echo -e "${GREEN}✓ PM2 configuration has been updated${NC}"
+echo -e "${GREEN}✓ Nginx configuration has been updated${NC}"
 echo
 echo -e "${YELLOW}Your site should now be accessible at: https://views.yoyoprime.com${NC}"
 echo
 echo -e "${YELLOW}If you still encounter issues:${NC}"
 echo -e "1. Check the application logs: ${BLUE}pm2 logs url-campaign${NC}"
 echo -e "2. Check Nginx error logs: ${BLUE}tail -f /var/log/nginx/error.log${NC}"
+echo -e "3. Verify the application is running: ${BLUE}pm2 list${NC}"
 echo
-echo -e "${YELLOW}To verify the Original URL Records page is working:${NC}"
-echo -e "1. Visit ${BLUE}https://views.yoyoprime.com/original-url-records${NC}"
-echo -e "2. If it's not working, you may need to run: ${BLUE}./fix-original-url-records.sh${NC}"
+echo -e "${YELLOW}If you need to restore your previous version:${NC}"
+echo -e "${BLUE}cp -r /root/url-campaign-backup-*/* $APP_DIR/${NC}"
+echo -e "${BLUE}sudo -u postgres psql postgres < /root/url-campaign-backup-*/database-*.sql${NC}"
+echo -e "${BLUE}pm2 restart $PM2_APP_NAME${NC}"
