@@ -1,0 +1,86 @@
+root@vultr:~# chmod +x fix-navigation-route.sh
+root@vultr:~# ./fix-navigation-route.sh
+╔══════════════════════════════════════════════════════════════╗
+║          FIXING ORIGINAL URL RECORDS ROUTE                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+📦 Creating backup before fixes...
+✓ Backup created at /root/url-campaign-route-fix-backup-20250428060501
+
+🔧 Creating direct-fix script...
+✓ Direct-fix script created
+
+🔧 Running direct fix...
+Copied Original URL Records page to /var/www/url-campaign/client/src/pages
+Updated /var/www/url-campaign/client/src/App.tsx with Original URL Records route
+Created simple navigation component at /var/www/url-campaign/client/src/components/SimpleNav.jsx
+Added SimpleNav to App.tsx
+Direct fix applied successfully
+✓ Direct fix applied
+
+🚀 Rebuilding and restarting application...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+✓ 3 modules transformed.
+x Build failed in 613ms
+error during build:
+[vite:esbuild] Transform failed with 2 errors:
+/var/www/url-campaign/client/src/App.tsx:70:2: ERROR: The character "}" is not valid inside a JSX element
+/var/www/url-campaign/client/src/App.tsx:74:4: ERROR: Unexpected "return"
+file: /var/www/url-campaign/client/src/App.tsx:70:2
+
+The character "}" is not valid inside a JSX element
+68 |        </Switch>
+69 |      );
+70 |    }
+   |    ^
+71 |
+72 |    if (isLoginRoute) {
+
+Unexpected "return"
+72 |    if (isLoginRoute) {
+73 |      // Login route without navbar or protected route wrapper
+74 |      return (
+   |      ^
+75 |        <Switch>
+76 |          <Route path="/login" component={LoginPage} />
+
+    at failureErrorWithLog (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/var/www/url-campaign/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [url-campaign](ids: [ 0 ])
+[PM2] [url-campaign](0) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-campaign    │ default     │ 1.0.0   │ fork    │ 1918     │ 0s     │ 3    │ online    │ 0%       │ 3.5mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+✓ Application rebuilt and restarted
+
+╔══════════════════════════════════════════════════════════════╗
+║                     FIX COMPLETED                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+✓ Route to Original URL Records page should now be working
+✓ You can access it at: https://views.yoyoprime.com/original-url-records
+✓ A simple navigation bar has been added to access all pages
+
+If the page is still not accessible:
+1. Check application logs with: pm2 logs url-campaign
+2. The fallback solution is to add the page manually in App.tsx:
+
+import OriginalUrlRecordsPage from './pages/original-url-records-page';
+<Route path="/original-url-records" component={OriginalUrlRecordsPage} />
+
+Backup of your frontend files is available at: /root/url-campaign-route-fix-backup-20250428060501

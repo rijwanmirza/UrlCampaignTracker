@@ -145,7 +145,7 @@ if (fs.existsSync(sourceFile)) {
 // Fix App.tsx
 if (fs.existsSync(APP_TSX)) {
   let appContent = fs.readFileSync(APP_TSX, 'utf8');
-  
+
   // Check if import exists
   if (!appContent.includes('import OriginalUrlRecordsPage')) {
     // Add import
@@ -153,7 +153,7 @@ if (fs.existsSync(APP_TSX)) {
     appContent = importLine + appContent;
     console.log('Added import for OriginalUrlRecordsPage');
   }
-  
+
   // Check if route exists
   if (!appContent.includes('/original-url-records')) {
     // Find the Switch component
@@ -167,7 +167,7 @@ if (fs.existsSync(APP_TSX)) {
     } else if (appContent.includes('function App()')) {
       // No Switch found, try to add a complete Router
       console.log('No Switch component found, adding custom Router with route');
-      
+
       // Add a complete Router component with our route
       const routerComponent = `
 function Router() {
@@ -179,13 +179,13 @@ function Router() {
   );
 }
 `;
-      
+
       // Insert the Router component before App
       appContent = appContent.replace(
         /function App\(\)/,
         `${routerComponent}\nfunction App()`
       );
-      
+
       // Replace the content in App with our Router
       appContent = appContent.replace(
         /return \([^)]*\);/s,
@@ -195,17 +195,17 @@ function Router() {
       console.log('Could not find suitable place to add route. Manual intervention needed.');
     }
   }
-  
+
   // Write updated App.tsx
   fs.writeFileSync(APP_TSX, appContent);
   console.log(`Updated ${APP_TSX} with Original URL Records route`);
-  
+
   // Create a very minimal navigation component if needed
   const NAV_COMP = path.join(CLIENT_SRC, 'components/SimpleNav.jsx');
   if (!fs.existsSync(path.dirname(NAV_COMP))) {
     fs.mkdirSync(path.dirname(NAV_COMP), { recursive: true });
   }
-  
+
   fs.writeFileSync(NAV_COMP, `
 import React from 'react';
 
@@ -229,13 +229,13 @@ export default function SimpleNav() {
   );
 }
   `);
-  
+
   console.log(`Created simple navigation component at ${NAV_COMP}`);
-  
+
   // Add the navigation to App.tsx if it doesn't have navigation
   if (!appContent.includes('SimpleNav')) {
     let updatedContent = fs.readFileSync(APP_TSX, 'utf8');
-    
+
     // Add import for SimpleNav
     if (!updatedContent.includes('import SimpleNav')) {
       updatedContent = updatedContent.replace(
@@ -243,24 +243,24 @@ export default function SimpleNav() {
         "import SimpleNav from './components/SimpleNav';\nimport"
       );
     }
-    
+
     // Add SimpleNav to the App component
     if (updatedContent.includes('return (')) {
       updatedContent = updatedContent.replace(
         /return \(/,
         'return (\n    <>\n      <SimpleNav />'
       );
-      
+
       updatedContent = updatedContent.replace(
         /<\/(.*)>(\s*);/,
         '</\\1>\n    </>\n  );'
       );
     }
-    
+
     fs.writeFileSync(APP_TSX, updatedContent);
     console.log('Added SimpleNav to App.tsx');
   }
-  
+
 } else {
   console.error(`App.tsx not found at ${APP_TSX}`);
   process.exit(1);
