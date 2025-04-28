@@ -1604,6 +1604,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
       
+      // Record analytics data for the click
+      await storage.recordClick(
+        selectedUrl.id, 
+        campaignId, 
+        {
+          userAgent: req.headers['user-agent'],
+          ipAddress: req.ip || req.connection.remoteAddress,
+          referer: req.headers.referer
+        }
+      );
+      
       // Performance metrics
       const endTime = process.hrtime(startTime);
       const timeInMs = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
