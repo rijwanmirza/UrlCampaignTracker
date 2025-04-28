@@ -1557,11 +1557,26 @@ export class DatabaseStorage implements IStorage {
       }
       
       try {
-        // Update this URL with the new values, but DO NOT RESET clicks
-        await db
-          .update(urls)
-          .set(updateData)
-          .where(eq(urls.id, url.id));
+        // CRITICAL FIX: Use raw SQL to bypass protection for direct updates from Original URL Records
+        // This ensures the update goes through without being blocked by trigger protection
+        await db.execute(`
+          -- Explicitly set the bypass flag for this update
+          SET app.bypass_click_protection = 'true';
+
+          -- Update the URL record directly with SQL
+          UPDATE urls
+          SET 
+            original_click_limit = ${record.originalClickLimit},
+            click_limit = ${updateData.clickLimit || record.originalClickLimit},
+            updated_at = NOW()
+          WHERE id = ${url.id};
+          
+          -- Reset the bypass flag
+          SET app.bypass_click_protection = 'false';
+        `);
+
+        // Log success
+        console.log(`✅ Successfully updated URL #${url.id}`);
         
         // Invalidate cache for this URL and its campaign to ensure changes are visible immediately
         this.invalidateUrlCache(url.id);
