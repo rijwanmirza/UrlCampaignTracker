@@ -930,31 +930,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if this is a click limit update with new multiplier needed
       let updateData = { ...req.body };
 
-      // If updating clickLimit and the URL belongs to a campaign
-      if (updateData.clickLimit && existingUrl.campaignId) {
+      // Handle click limit updates for both campaign and non-campaign URLs
+      if (updateData.clickLimit) {
         console.log('🔍 DEBUG: URL edit - updating click limit');
         
-        // Get campaign to check for multiplier
-        const campaign = await storage.getCampaign(existingUrl.campaignId);
-        if (campaign && campaign.multiplier) {
-          // Convert multiplier to number if it's a string
-          const multiplierValue = typeof campaign.multiplier === 'string'
-            ? parseFloat(campaign.multiplier)
-            : campaign.multiplier;
-          
-          // Apply multiplier if greater than 0.01
-          if (multiplierValue > 0.01) {
-            // Save the new originalClickLimit (user input)
-            const newOriginalLimit = parseInt(updateData.clickLimit, 10);
+        // Save the original click limit (user input) first before any multiplier
+        const newOriginalLimit = parseInt(updateData.clickLimit, 10);
+        
+        // Set originalClickLimit to preserve the user input value
+        updateData.originalClickLimit = newOriginalLimit;
+        
+        // First check if we need to update the master record in originalUrlRecords
+        const existingRecord = await storage.getOriginalUrlRecordByName(existingUrl.name);
+        if (existingRecord) {
+          try {
+            // IMPORTANT: This is the key change - update the master record when editing from URL management
+            await storage.updateOriginalUrlRecord(existingRecord.id, {
+              originalClickLimit: newOriginalLimit
+            });
+            console.log(`🔍 DEBUG: Updated original URL record #${existingRecord.id} with new click limit: ${newOriginalLimit}`);
+          } catch (error) {
+            console.error('Error updating original URL record from URL management:', error);
+          }
+        }
+        
+        // If URL belongs to a campaign, apply campaign multiplier
+        if (existingUrl.campaignId) {
+          // Get campaign to check for multiplier
+          const campaign = await storage.getCampaign(existingUrl.campaignId);
+          if (campaign && campaign.multiplier) {
+            // Convert multiplier to number if it's a string
+            const multiplierValue = typeof campaign.multiplier === 'string'
+              ? parseFloat(campaign.multiplier)
+              : campaign.multiplier;
             
-            // Apply campaign multiplier to get the new required limit
-            updateData.clickLimit = Math.ceil(newOriginalLimit * multiplierValue);
-            updateData.originalClickLimit = newOriginalLimit;
-            
-            console.log('🔍 DEBUG: URL updated with new limits:');
-            console.log(`  - Original user input: ${newOriginalLimit}`);
-            console.log(`  - After multiplier (${multiplierValue}x): ${updateData.clickLimit}`);
-            console.log(`  - Calculation: ${newOriginalLimit} × ${multiplierValue} = ${updateData.clickLimit}`);
+            // Apply multiplier if greater than 0.01
+            if (multiplierValue > 0.01) {
+              // Apply campaign multiplier to get the new required limit
+              updateData.clickLimit = Math.ceil(newOriginalLimit * multiplierValue);
+              
+              console.log('🔍 DEBUG: URL updated with new limits:');
+              console.log(`  - Original user input: ${newOriginalLimit}`);
+              console.log(`  - After multiplier (${multiplierValue}x): ${updateData.clickLimit}`);
+              console.log(`  - Calculation: ${newOriginalLimit} × ${multiplierValue} = ${updateData.clickLimit}`);
+            }
           }
         }
       }
