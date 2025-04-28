@@ -110,7 +110,6 @@ export async function getServerStats(): Promise<ServerStats> {
     const uptime = await si.time();
     const loadavg = await si.currentLoad();
     console.log("Load average data:", JSON.stringify(loadavg, null, 2));
-    console.log("OS load averages:", await si.osInfo().then(os => os.platform), require('os').loadavg());
     
     // Calculate memory usage percentage
     const memoryUsagePercent = (memory.total - memory.available) / memory.total * 100;
@@ -122,11 +121,9 @@ export async function getServerStats(): Promise<ServerStats> {
     try {
       console.log("========== SYSTEM LOAD CALCULATION ==========");
       
-      // Get load average from OS
-      const osLoadAvg = require('os').loadavg();
-      console.log("Raw OS load averages:", JSON.stringify(osLoadAvg));
-      const oneMinLoad = osLoadAvg[0] || 0;
-      console.log("Using 1-minute load average:", oneMinLoad);
+      // Use the CPU load data from the systeminformation API instead of os.loadavg()
+      const oneMinLoad = loadavg.currentLoad || 0;
+      console.log("Using current CPU load:", oneMinLoad);
       
       // Get CPU information 
       const cpuInfoRaw = require('os').cpus();
