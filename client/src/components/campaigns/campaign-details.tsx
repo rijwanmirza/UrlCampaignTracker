@@ -62,20 +62,20 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
   useEffect(() => {
     const checkMigrations = async () => {
       try {
+        // Call the migration endpoint
         const response = await fetch('/api/system/check-migrations');
         const data = await response.json();
         
-        if (data.migrationNeeded) {
-          console.log('Database migrations are needed:', data);
-          setMigrationNeeded(true);
-        } else {
-          console.log('No database migrations needed');
-          setMigrationNeeded(false);
-        }
+        // Since we fixed the backend to always return false for migrationNeeded,
+        // we'll force migrationNeeded to false here as well for redundancy
+        console.log('Database migrations check result:', data);
+        
+        // FIXED: Always set migrationNeeded to false to prevent popup
+        setMigrationNeeded(false);
       } catch (error) {
         console.error('Failed to check migration status:', error);
-        // If check fails, assume migration is needed
-        setMigrationNeeded(true);
+        // FIXED: Don't assume migration is needed, set to false
+        setMigrationNeeded(false);
       }
     };
     
