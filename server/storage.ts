@@ -755,16 +755,25 @@ export class DatabaseStorage implements IStorage {
     // Get all active URLs for this campaign
     const allUrls = await this.getUrls(campaignId, true);
     
+    // Debug output
+    console.log(`getWeightedUrlDistribution for campaign ${campaignId}: found ${allUrls.length} total URLs`);
+    
     // Filter for active URLs with weight > 0
     // A URL is considered active if:
     // 1. Its status is "active"
-    // 2. Its weight is > 0
+    // 2. Its weight is > 0 (default to 1 if not set)
     // 3. Either it has unlimited clicks (clickLimit = 0) OR it hasn't reached its click limit
-    const activeUrls = allUrls.filter(url => 
-      url.status === "active" && 
-      url.weight > 0 && 
-      (url.clickLimit === 0 || url.clickLimit === null || url.clicks < url.clickLimit)
-    );
+    const activeUrls = allUrls.filter(url => {
+      const isStatusActive = url.status === "active";
+      const weight = url.weight || 1; // Default weight to 1 if not set
+      const isUnlimited = url.clickLimit === 0 || url.clickLimit === null;
+      const hasAvailableClicks = !isUnlimited ? (url.clicks < url.clickLimit) : true;
+      
+      // Debug output for each URL
+      console.log(`URL ${url.id}: isStatusActive=${isStatusActive}, weight=${weight}, isUnlimited=${isUnlimited}, hasAvailableClicks=${hasAvailableClicks}`);
+      
+      return isStatusActive && weight > 0 && (isUnlimited || hasAvailableClicks);
+    });
     
     // If no active URLs, return empty result
     if (!activeUrls.length) {

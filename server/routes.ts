@@ -1439,7 +1439,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Found campaign ID ${campaign.id} for custom path: ${customPath}`);
       console.log(`Campaign has ${campaign.urls.length} total URLs`);
-      console.log(`Campaign has ${campaign.urls.filter(url => url.isActive).length} active URLs`);
+      
+      // Filter active URLs using the same logic as in getWeightedUrlDistribution
+      const activeUrls = campaign.urls.filter(url => 
+        url.status === "active" && 
+        (url.clickLimit === 0 || url.clickLimit === null || url.clicks < url.clickLimit)
+      );
+      
+      console.log(`Campaign has ${activeUrls.length} active URLs`);
       
       // Use our optimized method to get a URL based on weighted distribution
       const selectedUrl = await storage.getRandomWeightedUrl(campaign.id);
