@@ -1283,6 +1283,10 @@ export class DatabaseStorage implements IStorage {
   private invalidateCampaignCache(campaignId: number) {
     this.campaignUrlsCache.delete(campaignId);
   }
+
+  private invalidateUrlCache(urlId: number) {
+    this.urlCache.delete(urlId);
+  }
   
   // Helper to update URL status (used for async marking URLs as completed)
   async updateUrlStatus(id: number, status: string): Promise<void> {
