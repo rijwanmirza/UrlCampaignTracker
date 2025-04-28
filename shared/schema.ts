@@ -1,210 +1,253 @@
-import { pgTable, serial, text, timestamp, integer, boolean, pgEnum, uniqueIndex, varchar, date, numeric } from 'drizzle-orm/pg-core';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
-// Redirect methods enum
+// Redirect method enum
 export const RedirectMethod = {
+  DIRECT: "direct",
   META_REFRESH: "meta_refresh",
   DOUBLE_META_REFRESH: "double_meta_refresh",
   HTTP_307: "http_307",
   HTTP2_307_TEMPORARY: "http2_307_temporary",
   HTTP2_FORCED_307: "http2_forced_307",
-  DIRECT: "direct"
 } as const;
 
-// Timezones for analytics
-export const timezones = [
-  'UTC',
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'Europe/London',
-  'Europe/Paris',
-  'Asia/Tokyo',
-  'Asia/Shanghai',
-  'Asia/Kolkata',
-  'Australia/Sydney'
-] as const;
+export type RedirectMethodType = typeof RedirectMethod[keyof typeof RedirectMethod];
 
-// Campaigns table
-export const campaigns = pgTable('campaigns', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  redirectMethod: text('redirect_method').notNull(),
-  customPath: text('custom_path'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  trafficstarCampaignId: text('trafficstar_campaign_id'),
-  budgetUpdateTime: text('budget_update_time').default('23:59:00'),
-  multiplier: numeric('multiplier'),
-  pricePerThousand: numeric('price_per_thousand'),
-  dailySpent: numeric('daily_spent'),
-  dailySpentDate: date('daily_spent_date'),
-  lastSpentCheck: timestamp('last_spent_check'),
-  lastTrafficstarSync: timestamp('last_trafficstar_sync'),
-  autoManageTrafficstar: boolean('auto_manage_trafficstar'),
+// URL status enum
+export const urlStatusEnum = pgEnum('url_status', [
+  'active',    // URL is active and receiving traffic
+  'paused',    // URL is paused by user
+  'completed', // URL has reached its click limit
+  'deleted',   // URL is soft-deleted
+  'rejected'   // URL was rejected due to duplicate name
+]);
+
+// Campaign schema
+export const campaigns = pgTable("campaigns", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  redirectMethod: text("redirect_method").default(RedirectMethod.DIRECT).notNull(),
+  customPath: text("custom_path").unique(), // Custom path for campaign URLs
+  multiplier: numeric("multiplier", { precision: 10, scale: 2 }).default("1").notNull(), // Multiplier for URL click limits (supports decimals)
+  pricePerThousand: numeric("price_per_thousand", { precision: 10, scale: 4 }).default("0").notNull(), // Price per 1000 clicks in dollars (supports 4 decimal places)
+  trafficstarCampaignId: text("trafficstar_campaign_id"), // Link to TrafficStar campaign ID
+  autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // Auto-manage TrafficStar campaign
+  budgetUpdateTime: text("budget_update_time").default("00:00:00"), // Daily budget update time in UTC (HH:MM:SS format)
+  lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Insert schema for campaigns
-export const insertCampaignSchema = createInsertSchema(campaigns).omit({ 
+export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  lastTrafficstarSync: true,
-  lastSpentCheck: true
+}).extend({
+  redirectMethod: z.enum([
+    RedirectMethod.DIRECT,
+    RedirectMethod.META_REFRESH,
+    RedirectMethod.DOUBLE_META_REFRESH,
+    RedirectMethod.HTTP_307,
+    RedirectMethod.HTTP2_307_TEMPORARY,
+    RedirectMethod.HTTP2_FORCED_307
+  ]).default(RedirectMethod.DIRECT),
+  customPath: z.string().optional(),
+  multiplier: z.number().min(0.01).default(1),
+  pricePerThousand: z.number().min(0).max(10000).default(0),
+  // TrafficStar fields
+  trafficstarCampaignId: z.string().optional(),
+  autoManageTrafficstar: z.boolean().default(false).optional(),
+  lastTrafficstarSync: z.date().optional().nullable(),
 });
 
-// Select schema/type for campaigns
-export const selectCampaignSchema = createSelectSchema(campaigns);
-export type Campaign = typeof campaigns.$inferSelect;
-export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
+export const updateCampaignSchema = z.object({
+  name: z.string().min(1).optional(),
+  redirectMethod: z.enum([
+    RedirectMethod.DIRECT,
+    RedirectMethod.META_REFRESH,
+    RedirectMethod.DOUBLE_META_REFRESH,
+    RedirectMethod.HTTP_307,
+    RedirectMethod.HTTP2_307_TEMPORARY,
+    RedirectMethod.HTTP2_FORCED_307
+  ]).optional(),
+  customPath: z.string().optional(),
+  multiplier: z.number().min(0.01).optional(),
+  pricePerThousand: z.number().min(0).max(10000).optional(),
+  // TrafficStar fields
+  trafficstarCampaignId: z.string().optional(),
+  autoManageTrafficstar: z.boolean().optional(),
+  budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
+  lastTrafficstarSync: z.date().optional().nullable(),
+});
 
-// Update schema for campaigns
-export const updateCampaignSchema = createInsertSchema(campaigns).omit({
+// URL schema
+export const urls = pgTable("urls", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id"), // Can be null if not linked to a campaign
+  name: text("name").notNull(),
+  targetUrl: text("target_url").notNull(),
+  clickLimit: integer("click_limit").notNull(),
+  originalClickLimit: integer("original_click_limit").default(0).notNull(), // The original click limit entered by user
+  clicks: integer("clicks").default(0).notNull(),
+  status: text("status").default('active').notNull(), // Using text for now as pgEnum causes issues with drizzle-kit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUrlSchema = createInsertSchema(urls).omit({
   id: true,
-  createdAt: true, 
-  updatedAt: true,
-  lastTrafficstarSync: true,
-  lastSpentCheck: true
-});
-
-// URLs table
-export const urls = pgTable('urls', {
-  id: serial('id').primaryKey(),
-  campaignId: integer('campaign_id').references(() => campaigns.id),
-  name: text('name').notNull(),
-  targetUrl: text('target_url'),
-  clicks: integer('clicks').default(0),
-  clickLimit: integer('click_limit'),
-  originalClickLimit: integer('original_click_limit'),
-  status: text('status'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
-
-// Insert schema for URLs
-export const insertUrlSchema = createInsertSchema(urls).omit({ 
-  id: true, 
+  clicks: true,
+  status: true,
   createdAt: true,
-  updatedAt: true 
+  updatedAt: true,
+}).extend({
+  // No upper limit on click limit values - any positive integer is allowed
+  clickLimit: z.number().int().min(1),
+  originalClickLimit: z.number().int().min(1), // Allow explicitly setting the original click limit
 });
 
-// Select schema/type for URLs
-export const selectUrlSchema = createSelectSchema(urls);
-export type Url = typeof urls.$inferSelect;
-export type InsertUrl = z.infer<typeof insertUrlSchema>;
-
-// Update schema for URLs
 export const updateUrlSchema = createInsertSchema(urls).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+}).extend({
+  campaignId: z.number().int().optional(),
+  name: z.string().optional(),
+  targetUrl: z.string().url().optional(),
+  clickLimit: z.number().int().min(1).optional(),
+  originalClickLimit: z.number().int().min(1).optional(),
+  clicks: z.number().int().min(0).optional(),
+  status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected']).optional(),
 });
 
-// Bulk URL action schema
+// Schema for bulk actions
 export const bulkUrlActionSchema = z.object({
   urlIds: z.array(z.number()),
-  action: z.enum(['activate', 'pause', 'deactivate', 'delete'])
+  action: z.enum(['pause', 'activate', 'delete', 'permanent_delete'])
 });
 
-// Original URL Records table
-export const originalUrlRecords = pgTable('original_url_records', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  targetUrl: text('target_url'),
-  originalClickLimit: integer('original_click_limit'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+// Types
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
+export type UpdateCampaign = z.infer<typeof updateCampaignSchema>;
+
+export type Url = typeof urls.$inferSelect;
+export type InsertUrl = z.infer<typeof insertUrlSchema>;
+export type UpdateUrl = z.infer<typeof updateUrlSchema>;
+export type BulkUrlAction = z.infer<typeof bulkUrlActionSchema>;
+
+// Extended schemas with campaign relationship
+export type UrlWithActiveStatus = Url & {
+  isActive: boolean;
+};
+
+export type CampaignWithUrls = Campaign & {
+  urls: UrlWithActiveStatus[];
+};
+
+// TrafficStar API schema
+export const trafficstarCredentials = pgTable("trafficstar_credentials", {
+  id: serial("id").primaryKey(),
+  apiKey: text("api_key").notNull(),
+  accessToken: text("access_token"),
+  tokenExpiry: timestamp("token_expiry"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Insert schema for Original URL Records
-export const insertOriginalUrlRecordSchema = createInsertSchema(originalUrlRecords).omit({ 
-  id: true, 
+export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
+  id: serial("id").primaryKey(),
+  trafficstarId: text("trafficstar_id").notNull().unique(), // Store as text for compatibility
+  name: text("name").notNull(),
+  status: text("status").notNull(),
+  active: boolean("active").default(true),
+  isArchived: boolean("is_archived").default(false),
+  maxDaily: numeric("max_daily", { precision: 10, scale: 2 }), // Budget
+  pricingModel: text("pricing_model"),
+  scheduleEndTime: text("schedule_end_time"),
+  lastRequestedAction: text("last_requested_action"), // 'activate' or 'pause' - what we last asked the API to do
+  lastRequestedActionAt: timestamp("last_requested_action_at"), // When we last sent a request
+  lastRequestedActionSuccess: boolean("last_requested_action_success"), // Whether API reported success
+  lastVerifiedStatus: text("last_verified_status"), // Last status we verified directly from the API
+  syncStatus: text("sync_status").default('synced'), // 'synced', 'pending_activation', 'pending_pause'
+  
+  // New tracking fields for immediate updates
+  lastBudgetUpdate: timestamp("last_budget_update"), // When budget was last updated
+  lastBudgetUpdateValue: numeric("last_budget_update_value", { precision: 10, scale: 2 }), // The value set
+  lastEndTimeUpdate: timestamp("last_end_time_update"), // When end time was last updated
+  lastEndTimeUpdateValue: text("last_end_time_update_value"), // The value set
+  
+  campaignData: json("campaign_data"), // Store full campaign data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTrafficstarCredentialSchema = createInsertSchema(trafficstarCredentials).omit({
+  id: true,
+  accessToken: true,
+  tokenExpiry: true,
   createdAt: true,
-  updatedAt: true 
+  updatedAt: true,
 });
 
-// Update schema for Original URL Records
+export const updateTrafficstarCredentialSchema = createInsertSchema(trafficstarCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const trafficstarCampaignActionSchema = z.object({
+  campaignId: z.number(),
+  action: z.enum(['pause', 'activate', 'archive']),
+});
+
+export const trafficstarCampaignBudgetSchema = z.object({
+  campaignId: z.number(),
+  maxDaily: z.number().min(0),
+});
+
+export const trafficstarCampaignEndTimeSchema = z.object({
+  campaignId: z.number(),
+  scheduleEndTime: z.string(),
+});
+
+// Original URL Records schema
+export const originalUrlRecords = pgTable("original_url_records", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Unique name for reference
+  targetUrl: text("target_url").notNull(),
+  originalClickLimit: integer("original_click_limit").notNull(), // Master value for click limit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertOriginalUrlRecordSchema = createInsertSchema(originalUrlRecords).omit({
+  id: true,
+  createdAt: true, 
+  updatedAt: true,
+});
+
 export const updateOriginalUrlRecordSchema = createInsertSchema(originalUrlRecords).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+}).extend({
+  name: z.string().optional(),
+  targetUrl: z.string().url().optional(),
+  originalClickLimit: z.number().int().min(1).optional(),
 });
 
-// Select schema/type for Original URL Records
-export const selectOriginalUrlRecordSchema = createSelectSchema(originalUrlRecords);
+// Types
+export type TrafficstarCredential = typeof trafficstarCredentials.$inferSelect;
+export type InsertTrafficstarCredential = z.infer<typeof insertTrafficstarCredentialSchema>;
+export type UpdateTrafficstarCredential = z.infer<typeof updateTrafficstarCredentialSchema>;
+
+export type TrafficstarCampaign = typeof trafficstarCampaigns.$inferSelect;
+export type TrafficstarCampaignAction = z.infer<typeof trafficstarCampaignActionSchema>;
+export type TrafficstarCampaignBudget = z.infer<typeof trafficstarCampaignBudgetSchema>;
+export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTimeSchema>;
+
 export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
 export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
-
-// Analytics tables
-export const clickAnalytics = pgTable('click_analytics', {
-  id: serial('id').primaryKey(),
-  urlId: integer('url_id').references(() => urls.id).notNull(),
-  campaignId: integer('campaign_id').references(() => campaigns.id).notNull(),
-  timestamp: timestamp('timestamp').defaultNow().notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  referer: text('referer'),
-  country: text('country'),
-  city: text('city'),
-  deviceType: text('device_type'),
-  browser: text('browser'),
-  operatingSystem: text('operating_system'),
-});
-
-// Analytics filter schema
-export const analyticsFilterSchema = z.object({
-  type: z.enum(['campaign', 'url']),
-  id: z.number(),
-  timeRange: z.enum([
-    'today',
-    'yesterday',
-    'last_2_days',
-    'last_3_days',
-    'last_7_days',
-    'this_week',
-    'last_week',
-    'this_month',
-    'last_month',
-    'this_year',
-    'last_year',
-    'last_6_months',
-    'all_time',
-    'custom'
-  ]),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  groupBy: z.enum(['hour', 'day', 'week', 'month']),
-  timezone: z.enum(timezones),
-  page: z.number().default(1),
-  pageSize: z.number().default(10),
-});
-
-// Type for analytics filter
-export type AnalyticsFilter = z.infer<typeof analyticsFilterSchema>;
-
-// Type for analytics response
-export type AnalyticsResponse = {
-  summary: {
-    totalClicks: number;
-    resourceType: 'campaign' | 'url';
-    resourceId: number;
-    resourceName: string;
-    dateRangeStart: string;
-    dateRangeEnd: string;
-    timezone: string;
-  };
-  timeseries: {
-    period: string;
-    clicks: number;
-  }[];
-};
-
-// TrafficStar credentials table
-export const trafficstarCredentials = pgTable('trafficstar_credentials', {
-  id: serial('id').primaryKey(),
-  apiKey: text('api_key').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;

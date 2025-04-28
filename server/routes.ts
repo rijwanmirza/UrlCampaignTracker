@@ -5,7 +5,6 @@ import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
-import analyticsRoutes from './routes/analytics';
 import { 
   optimizeResponseHeaders,
   ultraFastMetaRefresh,
@@ -16,22 +15,29 @@ import {
   millionRequestsHttp2Redirect,
   optimizedDirectRedirect
 } from './high-performance-redirects';
-import { trafficStarService } from './trafficstar-service';
 import { 
   insertCampaignSchema, 
+  updateCampaignSchema,
   insertUrlSchema, 
+  updateUrlSchema,
+  bulkUrlActionSchema,
+  insertTrafficstarCredentialSchema,
+  trafficstarCampaignActionSchema,
+  trafficstarCampaignBudgetSchema,
+  trafficstarCampaignEndTimeSchema,
   insertOriginalUrlRecordSchema,
   updateOriginalUrlRecordSchema,
+  trafficstarCampaigns,
   campaigns,
   urls,
-  originalUrlRecords,
-  clickAnalytics
+  originalUrlRecords
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
+import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
-import { eq, and, isNotNull, sql } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1261,9 +1267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "URL does not belong to this campaign" });
       }
 
-      // Only check click limit if it's greater than 0
-      // This ensures the URL works if click limit is 0 (unlimited)
-      if (url.clickLimit > 0 && url.clicks >= url.clickLimit) {
+      if (url.clicks >= url.clickLimit) {
         return res.status(410).json({ message: "This link has reached its click limit" });
       }
 
@@ -1275,17 +1279,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment click count 
       await storage.incrementUrlClicks(urlId);
-      
-      // Record analytics data for the click
-      await storage.recordClick(
-        urlId, 
-        campaignId, 
-        {
-          userAgent: req.headers['user-agent'],
-          ipAddress: req.ip || req.connection.remoteAddress,
-          referer: req.headers.referer
-        }
-      );
 
       // ULTRA-OPTIMIZED REDIRECT HANDLERS - For maximum throughput (millions of redirects per second)
       // Pre-calculate the target URL and remove all unnecessary processing
@@ -1383,19 +1376,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!url) {
         return res.status(404).json({ message: "URL not found" });
       }
-      
-      // Record analytics data for the second-stage click
-      await storage.recordClick(
-        urlId, 
-        campaignId, 
-        {
-          userAgent: req.headers['user-agent'],
-          ipAddress: req.ip || req.connection.remoteAddress,
-          referer: req.headers.referer,
-          // Add flag to indicate this is a bridge page click
-          deviceType: 'bridge_page'
-        }
-      );
 
       // ULTRA-FAST SECOND STAGE: Hyper-optimized for instant browser parsing and execution
       // Remove all unnecessary headers for maximum throughput
@@ -1439,14 +1419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Found campaign ID ${campaign.id} for custom path: ${customPath}`);
       console.log(`Campaign has ${campaign.urls.length} total URLs`);
-      
-      // Filter active URLs using the same logic as in getWeightedUrlDistribution
-      const activeUrls = campaign.urls.filter(url => 
-        url.status === "active" && 
-        (url.clickLimit === 0 || url.clickLimit === null || url.clicks < url.clickLimit)
-      );
-      
-      console.log(`Campaign has ${activeUrls.length} active URLs`);
+      console.log(`Campaign has ${campaign.urls.filter(url => url.isActive).length} active URLs`);
       
       // Use our optimized method to get a URL based on weighted distribution
       const selectedUrl = await storage.getRandomWeightedUrl(campaign.id);
@@ -1457,28 +1430,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
       }
       
-      // Only check click limit if it's greater than 0
-      // This ensures the URL works if click limit is 0 (unlimited)
-      if (selectedUrl.clickLimit > 0 && selectedUrl.clicks >= selectedUrl.clickLimit) {
-        console.log(`URL ${selectedUrl.id} has reached its click limit: ${selectedUrl.clicks}/${selectedUrl.clickLimit}`);
-        return res.status(410).json({ message: "This link has reached its click limit" });
-      }
-      
       console.log(`Selected URL ID ${selectedUrl.id} (${selectedUrl.name}) for redirect`);
       
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);
-      
-      // Record analytics data for the click
-      await storage.recordClick(
-        selectedUrl.id, 
-        campaign.id, 
-        {
-          userAgent: req.headers['user-agent'],
-          ipAddress: req.ip || req.connection.remoteAddress,
-          referer: req.headers.referer
-        }
-      );
       
       // Performance metrics
       const endTime = process.hrtime(startTime);
@@ -1640,13 +1595,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
       }
       
-      // Only check click limit if it's greater than 0
-      // This ensures the URL works if click limit is 0 (unlimited)
-      if (selectedUrl.clickLimit > 0 && selectedUrl.clicks >= selectedUrl.clickLimit) {
-        console.log(`URL ${selectedUrl.id} has reached its click limit: ${selectedUrl.clicks}/${selectedUrl.clickLimit}`);
-        return res.status(410).json({ message: "This link has reached its click limit" });
-      }
-      
       console.log(`Selected URL ID ${selectedUrl.id} (${selectedUrl.name}) for redirect`);
       
       // Redirect to the specific URL directly without going through the /r/ endpoint
@@ -1654,17 +1602,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
-      
-      // Record analytics data for the click
-      await storage.recordClick(
-        selectedUrl.id, 
-        campaignId, 
-        {
-          userAgent: req.headers['user-agent'],
-          ipAddress: req.ip || req.connection.remoteAddress,
-          referer: req.headers.referer
-        }
-      );
       
       // Performance metrics
       const endTime = process.hrtime(startTime);
@@ -3699,25 +3636,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the updateData with all fields to update
       const updateData = validationResult.data;
       
-      // Create a clean object with only the fields we know exist in the database schema
-      const cleanUpdateData: any = {};
-      
-      if (updateData.name !== undefined) cleanUpdateData.name = updateData.name;
-      if (updateData.targetUrl !== undefined) cleanUpdateData.targetUrl = updateData.targetUrl;
-      if (updateData.originalClickLimit !== undefined) cleanUpdateData.originalClickLimit = updateData.originalClickLimit;
-      
       // Log what values are changing
-      console.log(`📝 Updating Original URL Record #${id}:`, cleanUpdateData);
+      console.log(`📝 Updating Original URL Record #${id}:`, updateData);
       
       // Check if we're updating click limit (the key value that will propagate to all instances)
-      const isUpdatingClickLimit = cleanUpdateData.originalClickLimit !== undefined;
+      const isUpdatingClickLimit = updateData.originalClickLimit !== undefined;
       if (isUpdatingClickLimit) {
-        console.log(`📊 Original Click Limit being updated to: ${cleanUpdateData.originalClickLimit}`);
+        console.log(`📊 Original Click Limit being updated to: ${updateData.originalClickLimit}`);
       }
       
       try {
-        // Update the record with clean data
-        const updatedRecord = await storage.updateOriginalUrlRecord(id, cleanUpdateData);
+        // Update the record
+        const updatedRecord = await storage.updateOriginalUrlRecord(id, updateData);
         
         if (!updatedRecord) {
           return res.status(404).json({ message: "Original URL record not found" });
@@ -3725,16 +3655,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If updating click limit, use our force fix function that bypasses all protections
         if (isUpdatingClickLimit) {
-          console.log(`✅ Successfully updated original click limit to ${cleanUpdateData.originalClickLimit}`);
+          console.log(`✅ Successfully updated original click limit to ${updateData.originalClickLimit}`);
           console.log(`🔄 Force-updating all linked URL instances...`);
           
-          // Use syncUrlsWithOriginalRecord instead of forceFixUrlClickLimits
-          const updatedCount = await storage.syncUrlsWithOriginalRecord(id);
+          // CRITICAL FIX: Force update using direct SQL instead of the ORM method
+          const success = await forceFixUrlClickLimits(id);
           
-          if (updatedCount > 0) {
-            console.log(`✅ Successfully updated ${updatedCount} URLs with name "${updatedRecord.name}"`);
+          if (success) {
+            console.log(`✅ Successfully force-updated all URLs with name "${updatedRecord.name}"`);
           } else {
-            console.log(`ℹ️ No URLs found with name "${updatedRecord.name}" to update`);
+            console.error(`❌ Failed to force-update URLs with name "${updatedRecord.name}"`);
           }
         }
         
@@ -3971,9 +3901,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create an HTTP/2 capable server
   // We're using a regular HTTP server instead of SPDY for now due to compatibility issues
   // We'll handle the HTTP/2.0 headers in the individual route handlers
-  
-  // Register analytics routes
-  app.use(analyticsRoutes);
   
   // Initialize server monitoring
   initServerMonitor();

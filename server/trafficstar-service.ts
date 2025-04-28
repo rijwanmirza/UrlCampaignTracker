@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 import { db } from './db';
-import { campaigns, urls } from '@shared/schema';
+import { trafficstarCredentials, trafficstarCampaigns, campaigns, urls } from '@shared/schema';
 import { eq, sql, and, isNotNull } from 'drizzle-orm';
 import { storage } from './storage';
 
@@ -133,7 +133,7 @@ class TrafficStarService {
       return this.accessToken;
     }
 
-    // Get API key from environment variable
+    // Get API key from environment variable first, then try database
     const apiKeyFromEnv = process.env.TRAFFICSTAR_API_KEY;
     let apiKey: string;
     
@@ -141,9 +141,13 @@ class TrafficStarService {
       apiKey = apiKeyFromEnv;
       console.log("Using TrafficStar API key from environment variable");
     } else {
-      // Use default API key if no environment variable
-      apiKey = "TraffiCS10928"; // Default API key from project requirements
-      console.log("Using default TrafficStar API key");
+      // Fallback to database if no environment variable
+      const [credential] = await db.select().from(trafficstarCredentials).limit(1);
+      if (!credential) {
+        throw new Error('No TrafficStar API credentials found');
+      }
+      apiKey = credential.apiKey;
+      console.log("Using TrafficStar API key from database");
     }
 
     // Get a new token using OAuth flow (API key is the refresh token)
@@ -194,6 +198,26 @@ class TrafficStarService {
     expiryDate.setSeconds(expiryDate.getSeconds() + tokenResponse.expires_in - 60);
     
     console.log(`Received new access token, expires in ${tokenResponse.expires_in} seconds`);
+
+    // Save credentials to database
+    const [existingCredential] = await db.select().from(trafficstarCredentials).limit(1);
+    
+    if (existingCredential) {
+      // Update existing record
+      await db.update(trafficstarCredentials).set({
+        apiKey: apiKey, // Ensure we store the API key (in case it came from env)
+        accessToken: tokenResponse.access_token,
+        tokenExpiry: expiryDate,
+        updatedAt: new Date(),
+      }).where(eq(trafficstarCredentials.id, existingCredential.id));
+    } else {
+      // Create new record
+      await db.insert(trafficstarCredentials).values({
+        apiKey: apiKey,
+        accessToken: tokenResponse.access_token,
+        tokenExpiry: expiryDate,
+      });
+    }
 
     // Update in-memory values
     this.accessToken = tokenResponse.access_token;
@@ -296,721 +320,1552 @@ class TrafficStarService {
         const savedCampaigns = await this.getSavedCampaigns();
         
         if (savedCampaigns && savedCampaigns.length > 0) {
-          console.log(`Failed to get campaigns from API, returning ${savedCampaigns.length} saved campaigns from database`);
-          return savedCampaigns;
-        } else {
-          console.log('No saved campaigns found in database, returning empty array');
-          return [];
+          console.log(`Returning ${savedCampaigns.length} saved campaigns from database as API calls failed`);
+          
+          // Get an array of campaigns from the database and convert to Campaign objects
+          const campaignArray: Campaign[] = [];
+          
+          for (const dbCampaign of savedCampaigns) {
+            // If we have full campaign data stored, use it
+            if (dbCampaign.campaignData) {
+              campaignArray.push(dbCampaign.campaignData as Campaign);
+            } else {
+              // Otherwise construct a basic Campaign object from DB fields
+              campaignArray.push({
+                id: parseInt(dbCampaign.trafficstarId),
+                name: dbCampaign.name || '',
+                status: dbCampaign.status || '',
+                approved: dbCampaign.status || '',
+                active: !!dbCampaign.active,
+                is_archived: !!dbCampaign.isArchived,
+                max_daily: dbCampaign.maxDaily ? parseFloat(dbCampaign.maxDaily) : 0,
+                pricing_model: dbCampaign.pricingModel || '',
+                schedule_end_time: dbCampaign.scheduleEndTime || ''
+              });
+            }
+          }
+          
+          return campaignArray;
         }
+        
+        // If no saved campaigns, throw error
+        throw new Error(`All API endpoints failed and no saved campaigns available. Last error: ${lastError}`);
       }
-      
+
       return campaigns;
     } catch (error) {
-      // If there's a general error, try to return any saved campaigns as a fallback
-      console.error('Error getting campaigns from TrafficStar API:', error);
-      
-      try {
-        const savedCampaigns = await this.getSavedCampaigns();
-        if (savedCampaigns && savedCampaigns.length > 0) {
-          console.log(`Error calling TrafficStar API, returning ${savedCampaigns.length} saved campaigns from database`);
-          return savedCampaigns;
-        }
-      } catch (dbError) {
-        console.error('Error getting saved campaigns from database:', dbError);
-      }
-      
-      return [];
-    }
-  }
-  
-  /**
-   * Get saved campaigns from the database
-   */
-  private async getSavedCampaigns(): Promise<Campaign[]> {
-    // Fetch saved campaigns from database
-    const dbCampaigns = await db.select().from(campaigns);
-    
-    // Convert to TrafficStar API format
-    return dbCampaigns.map(dbCampaign => {
-      return {
-        id: dbCampaign.id,
-        name: dbCampaign.name,
-        status: dbCampaign.status || '',
-        approved: dbCampaign.status || '',
-        active: !!dbCampaign.active,
-        is_archived: !!dbCampaign.isArchived,
-        max_daily: dbCampaign.maxDaily || 0,
-        pricing_model: 'cpv', // Default pricing model
-        schedule_end_time: dbCampaign.endTime || ''
-      };
-    });
-  }
-
-  /**
-   * Sync campaigns from TrafficStar to local database
-   * @param apiCampaigns List of campaigns from TrafficStar API
-   */
-  private async syncCampaignsToDatabase(apiCampaigns: Campaign[]): Promise<void> {
-    // Map to store campaigns by ID for efficient lookup
-    const campaignMap = new Map<number, Campaign>();
-    apiCampaigns.forEach(campaign => {
-      campaignMap.set(campaign.id, campaign);
-    });
-    
-    // For each campaign in API, update or create in database
-    for (const apiCampaign of apiCampaigns) {
-      try {
-        // Check if campaign already exists
-        const campaignId = Number(apiCampaign.id);
-        const [existingCampaign] = await db
-          .select()
-          .from(campaigns)
-          .where(eq(campaigns.trafficstarCampaignId, String(campaignId)));
-        
-        if (existingCampaign) {
-          // Update existing campaign
-          await db
-            .update(campaigns)
-            .set({
-              name: apiCampaign.name,
-              status: apiCampaign.status,
-              active: apiCampaign.active,
-              isArchived: apiCampaign.is_archived,
-              maxDaily: apiCampaign.max_daily,
-              pricingModel: apiCampaign.pricing_model,
-              endTime: apiCampaign.schedule_end_time,
-              updatedAt: new Date()
-            })
-            .where(eq(campaigns.trafficstarCampaignId, String(campaignId)));
-          
-          console.log(`Updated campaign ${apiCampaign.id} (${apiCampaign.name}) in database`);
-        } else {
-          // Create new campaign
-          await db
-            .insert(campaigns)
-            .values({
-              name: apiCampaign.name,
-              trafficstarCampaignId: String(campaignId),
-              status: apiCampaign.status,
-              active: apiCampaign.active,
-              isArchived: apiCampaign.is_archived,
-              maxDaily: apiCampaign.max_daily,
-              pricingModel: apiCampaign.pricing_model,
-              endTime: apiCampaign.schedule_end_time,
-              redirectMethod: 'weighted', // Default redirect method
-              autoManagement: true // Auto-management is usually enabled
-            });
-          
-          console.log(`Created new campaign ${apiCampaign.id} (${apiCampaign.name}) in database`);
-        }
-      } catch (error) {
-        console.error(`Error syncing campaign ${apiCampaign.id} to database:`, error);
-      }
+      console.error('Error getting TrafficStar campaigns:', error);
+      throw new Error('Failed to get campaigns from TrafficStar API');
     }
   }
 
   /**
-   * Get a single campaign by ID
+   * Get a single campaign from TrafficStar
    */
-  async getCampaign(id: number): Promise<Campaign | null> {
+  async getCampaign(id: number): Promise<Campaign> {
     try {
       const token = await this.ensureToken();
       
-      // Try all base URLs to find the campaign
+      let campaign: Campaign | null = null;
+      let success = false;
+      let lastError = null;
+      
+      // Try different endpoint patterns
       for (const baseUrl of API_BASE_URLS) {
         try {
+          console.log(`Trying to get campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
           const response = await axios.get(`${baseUrl}/campaigns/${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Accept': 'application/json'
-            }
-          });
-          
-          if (response.data && response.data.response) {
-            return response.data.response;
-          } else if (response.data && (response.data.id || response.data.campaign_id)) {
-            // Direct campaign data
-            return response.data;
-          }
-        } catch (error) {
-          console.log(`Failed to get campaign ${id} from ${baseUrl}/campaigns/${id}:`, error);
-          // Continue to next attempt
-        }
-      }
-      
-      // Fall back to database
-      const [savedCampaign] = await db
-        .select()
-        .from(campaigns)
-        .where(eq(campaigns.trafficstarCampaignId, String(id)));
-      
-      if (savedCampaign) {
-        return {
-          id: Number(savedCampaign.trafficstarCampaignId),
-          name: savedCampaign.name,
-          status: savedCampaign.status || '',
-          approved: savedCampaign.status || '',
-          active: !!savedCampaign.active,
-          is_archived: !!savedCampaign.isArchived,
-          max_daily: savedCampaign.maxDaily || 0,
-          pricing_model: savedCampaign.pricingModel || 'cpv',
-          schedule_end_time: savedCampaign.endTime || ''
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error(`Error getting campaign ${id} from TrafficStar:`, error);
-      return null;
-    }
-  }
-  
-  /**
-   * Get campaign spent value for a given date range
-   */
-  async getCampaignSpentValue(id: number, dateFrom?: string, dateUntil?: string): Promise<any> {
-    try {
-      // If in test mode, return mock data
-      if (process.env.TEST_MODE === 'true') {
-        console.log(`TEST MODE: Returning mock spent value data for campaign ${id}`);
-        return {
-          id: id,
-          spent: 15.75, // Mock value over $10 to trigger protection
-          impressions: 7825,
-          clicks: 325,
-          cpm: 2.01,
-          ctr: 4.15,
-          date_from: dateFrom || new Date().toISOString().split('T')[0],
-          date_until: dateUntil || new Date().toISOString().split('T')[0]
-        };
-      }
-      
-      const token = await this.ensureToken();
-      
-      // Try all base URLs
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          // Build URL with query parameters
-          let url = `${baseUrl}/campaigns/${id}/statistics`;
-          const params = new URLSearchParams();
-          
-          if (dateFrom) params.append('date_from', dateFrom);
-          if (dateUntil) params.append('date_until', dateUntil);
-          
-          if (params.toString()) {
-            url += `?${params.toString()}`;
-          }
-          
-          const response = await axios.get(url, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            }
+            },
           });
           
           if (response.data) {
-            // Try to extract the statistics from various response formats
-            if (response.data.response) {
-              return response.data.response;
-            } else if (response.data.statistics) {
-              return response.data.statistics;
-            } else if (response.data.data) {
-              return response.data.data;
+            // Check if response has the expected format (direct Campaign object)
+            if (response.data.id && (
+                response.data.name || 
+                response.data.status || 
+                typeof response.data.active !== 'undefined'
+            )) {
+              console.log(`Successfully retrieved campaign ${id} from ${baseUrl}/campaigns/${id}`);
+              campaign = response.data;
+              success = true;
+              break;
+            } 
+            // Check if response has a 'response' wrapper (common in some APIs)
+            else if (response.data.response && (
+                response.data.response.id || 
+                response.data.response.name || 
+                typeof response.data.response.active !== 'undefined'
+            )) {
+              console.log(`Successfully retrieved campaign ${id} from ${baseUrl}/campaigns/${id} (wrapped in 'response' field)`);
+              campaign = response.data.response;
+              success = true;
+              break;
+            }
+            // Check if response has a 'data' wrapper (common in some APIs)
+            else if (response.data.data && (
+                response.data.data.id || 
+                response.data.data.name || 
+                typeof response.data.data.active !== 'undefined'
+            )) {
+              console.log(`Successfully retrieved campaign ${id} from ${baseUrl}/campaigns/${id} (wrapped in 'data' field)`);
+              campaign = response.data.data;
+              success = true;
+              break;
+            }
+            
+            console.log(`Received response from ${baseUrl}/campaigns/${id} but campaign data not found`);
+            console.log(`Response structure: ${JSON.stringify(Object.keys(response.data))}`);
+          }
+        } catch (error) {
+          console.log(`Failed to get campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          lastError = error;
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        // If we get here, all attempts failed, try to find the campaign in the database
+        const [savedCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        if (savedCampaign) {
+          console.log(`Returning saved campaign ${id} from database as API calls failed`);
+          
+          // Convert database record to Campaign format
+          if (savedCampaign.campaignData) {
+            return savedCampaign.campaignData as Campaign;
+          } else {
+            return {
+              id: parseInt(savedCampaign.trafficstarId),
+              name: savedCampaign.name || '',
+              status: savedCampaign.status || '',
+              approved: savedCampaign.status || '',
+              active: !!savedCampaign.active,
+              is_archived: !!savedCampaign.isArchived,
+              max_daily: savedCampaign.maxDaily ? parseFloat(savedCampaign.maxDaily) : 0,
+              pricing_model: savedCampaign.pricingModel || '',
+              schedule_end_time: savedCampaign.scheduleEndTime || ''
+            } as Campaign;
+          }
+        }
+        
+        // If no saved campaign found, throw error
+        throw new Error(`All API endpoints failed and campaign ${id} not found in database. Last error: ${lastError}`);
+      }
+
+      return campaign as Campaign;
+    } catch (error) {
+      console.error(`Error getting TrafficStar campaign ${id}:`, error);
+      throw new Error(`Failed to get campaign ${id} from TrafficStar API`);
+    }
+  }
+
+  /**
+   * Pause a campaign - SIMPLIFIED IMPLEMENTATION
+   */
+  async pauseCampaign(id: number): Promise<void> {
+    try {
+      console.log(`USING V2 API: Checking campaign ${id} status before pausing...`);
+      
+      // First, check if the campaign is already paused to avoid unnecessary API calls
+      let needsToBePaused = true;
+      
+      try {
+        // Check current status from database first (faster lookup)
+        const [dbCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+        if (dbCampaign) {
+          // If campaign is already marked as inactive/paused in our database
+          // and was recently set that way successfully, don't make another API call
+          const recentSuccessfulPause = 
+            dbCampaign.lastRequestedAction === 'pause' && 
+            dbCampaign.lastRequestedActionSuccess === true &&
+            dbCampaign.lastRequestedActionAt &&
+            (new Date().getTime() - new Date(dbCampaign.lastRequestedActionAt).getTime() < 5 * 60 * 1000); // Within last 5 minutes
+          
+          if (dbCampaign.active === false && 
+              (dbCampaign.status === 'paused' || recentSuccessfulPause)) {
+            console.log(`Campaign ${id} is already paused according to our database - skipping API call`);
+            needsToBePaused = false;
+          } else {
+            console.log(`Campaign ${id} needs to be paused (current status: ${dbCampaign.status}, active: ${dbCampaign.active})`);
+          }
+        } else {
+          // No database record, check via API
+          const apiCampaign = await this.getCampaign(id);
+          if (apiCampaign.active === false || apiCampaign.status === 'paused') {
+            console.log(`Campaign ${id} is already paused according to TrafficStar API - skipping API call`);
+            needsToBePaused = false;
+            
+            // Save this status to database for future reference
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                active: false, 
+                status: 'paused',
+                lastVerifiedStatus: 'paused',
+                updatedAt: new Date()
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          }
+        }
+      } catch (statusCheckError) {
+        console.log(`Error checking campaign ${id} status, proceeding with pause:`, statusCheckError);
+      }
+      
+      // Skip API call if already paused
+      if (!needsToBePaused) {
+        return;
+      }
+      
+      // Update our local record FIRST for instant UI feedback
+      await db.update(trafficstarCampaigns)
+        .set({ 
+          active: false, 
+          status: 'paused',
+          updatedAt: new Date(),
+          lastRequestedAction: 'pause',
+          lastRequestedActionAt: new Date() 
+        })
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      
+      // Make a direct API call using the CORRECT v2 endpoint from documentation
+      try {
+        // Get token
+        const token = await this.ensureToken();
+        console.log(`Making V2 API call to pause campaign ${id}`);
+        
+        // Using the documented V2 endpoint for pausing multiple campaigns
+        const response = await axios.put(
+          `https://api.trafficstars.com/v2/campaigns/pause`, 
+          { 
+            campaign_ids: [id]
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
+          }
+        );
+        
+        console.log(`✅ V2 Campaign pause API call made. Response:`, response.data);
+          
+        // Check if pause was successful
+        if (response.data && response.data.success && response.data.success.includes(id)) {
+          console.log(`Campaign ${id} paused successfully via V2 API`);
+          
+          // Update database with success status
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: true,
+              lastVerifiedStatus: 'paused',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        } else {
+          // Campaign pause failed according to API response
+          console.error(`⚠️ Campaign ${id} pause failed according to API response`);
+          
+          // Record error in database
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: false,
+              lastVerifiedStatus: 'error',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        }
+      } catch (error: any) {
+        console.error(`⚠️ Error pausing campaign ${id}:`, error);
+        
+        // Record error in database
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            lastRequestedActionSuccess: false,
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      }
+      
+      // Verify status - simple check only, without affecting user experience
+      try {
+        // Wait 2 seconds for API to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check if it worked
+        const updatedCampaign = await this.getCampaign(id);
+        
+        console.log(`Campaign ${id} status after pause attempt: ${JSON.stringify({
+          name: updatedCampaign.name,
+          active: updatedCampaign.active,
+          status: updatedCampaign.status
+        })}`);
+      } catch (verifyError) {
+        console.log(`Unable to verify pause status: ${verifyError}`);
+      }
+      
+    } catch (error) {
+      console.error(`Error pausing TrafficStar campaign ${id}:`, error);
+      throw new Error(`Failed to pause campaign ${id}`);
+    }
+  }
+
+  /**
+   * Activate a campaign - SIMPLIFIED IMPLEMENTATION
+   */
+  async activateCampaign(id: number): Promise<void> {
+    try {
+      console.log(`USING V2 API: Checking campaign ${id} status before activating...`);
+      
+      // First, check if the campaign is already active to avoid unnecessary API calls
+      let needsToBeActivated = true;
+      
+      try {
+        // Check current status from database first (faster lookup)
+        const [dbCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+        if (dbCampaign) {
+          // If campaign is already marked as active/enabled in our database
+          // and was recently set that way successfully, don't make another API call
+          const recentSuccessfulActivation = 
+            dbCampaign.lastRequestedAction === 'activate' && 
+            dbCampaign.lastRequestedActionSuccess === true &&
+            dbCampaign.lastRequestedActionAt &&
+            (new Date().getTime() - new Date(dbCampaign.lastRequestedActionAt).getTime() < 5 * 60 * 1000); // Within last 5 minutes
+          
+          if (dbCampaign.active === true && 
+              (dbCampaign.status === 'enabled' || recentSuccessfulActivation)) {
+            console.log(`Campaign ${id} is already active according to our database - skipping API call`);
+            needsToBeActivated = false;
+          } else {
+            console.log(`Campaign ${id} needs to be activated (current status: ${dbCampaign.status}, active: ${dbCampaign.active})`);
+          }
+        } else {
+          // No database record, check via API
+          const apiCampaign = await this.getCampaign(id);
+          if (apiCampaign.active === true || apiCampaign.status === 'enabled') {
+            console.log(`Campaign ${id} is already active according to TrafficStar API - skipping API call`);
+            needsToBeActivated = false;
+            
+            // Save this status to database for future reference
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                active: true, 
+                status: 'enabled',
+                lastVerifiedStatus: 'enabled',
+                updatedAt: new Date()
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          }
+        }
+      } catch (statusCheckError) {
+        console.log(`Error checking campaign ${id} status, proceeding with activation:`, statusCheckError);
+      }
+      
+      // Skip API call if already active
+      if (!needsToBeActivated) {
+        return;
+      }
+      
+      // Set end date to current UTC date at 23:59:00 (with seconds for API)
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const endTimeFormatted = `${currentDate} 23:59:00`; // YYYY-MM-DD 23:59:00 with seconds
+      
+      console.log(`Setting campaign ${id} end time to end of current UTC day: ${endTimeFormatted}`);
+      
+      // Update our local record FIRST for instant UI feedback
+      await db.update(trafficstarCampaigns)
+        .set({ 
+          active: true, 
+          status: 'enabled',
+          scheduleEndTime: endTimeFormatted,
+          updatedAt: new Date(),
+          lastRequestedAction: 'activate',
+          lastRequestedActionAt: new Date() 
+        })
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      
+      // Make a direct API call using the CORRECT v2 endpoint from documentation
+      try {
+        // Get token
+        const token = await this.ensureToken();
+        console.log(`Making V2 API call to activate campaign ${id}`);
+        
+        // Using the documented V2 endpoint for activating multiple campaigns
+        const response = await axios.put(
+          `https://api.trafficstars.com/v2/campaigns/run`, 
+          { 
+            campaign_ids: [id]
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
+          }
+        );
+        
+        console.log(`✅ V2 Campaign activation API call made. Response:`, response.data);
+          
+        // Check if activation was successful
+        if (response.data && response.data.success && response.data.success.includes(id)) {
+          console.log(`Campaign ${id} activated successfully via V2 API`);
+          
+          // Now set the end time
+          try {
+            // Set end time to end of current day in TrafficStar
+            await this.updateCampaignEndTime(id, endTimeFormatted);
+            console.log(`✅ Set end time to ${endTimeFormatted} for activated campaign ${id}`);
+            
+            // Update database with success status
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                scheduleEndTime: endTimeFormatted,
+                lastRequestedActionSuccess: true,
+                lastVerifiedStatus: 'enabled',
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          } catch (endTimeError) {
+            console.error(`⚠️ Error setting end time for campaign ${id}:`, endTimeError);
+          }
+        } else {
+          // Campaign activation failed according to API response
+          console.error(`⚠️ Campaign ${id} activation failed according to API response`);
+          
+          // Record error in database
+          await db.update(trafficstarCampaigns)
+            .set({ 
+              lastRequestedActionSuccess: false,
+              lastVerifiedStatus: 'error',
+              updatedAt: new Date() 
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        }
+      } catch (error: any) {
+        console.error(`⚠️ Error activating campaign ${id}:`, error);
+        
+        // Record error in database
+        await db.update(trafficstarCampaigns)
+          .set({ 
+            lastRequestedActionSuccess: false,
+            updatedAt: new Date() 
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      }
+      
+      // Verify status - simple check only, without affecting user experience
+      try {
+        // Wait 2 seconds for API to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check if it worked
+        const updatedCampaign = await this.getCampaign(id);
+        
+        console.log(`Campaign ${id} status after activation attempt: ${JSON.stringify({
+          name: updatedCampaign.name,
+          active: updatedCampaign.active,
+          status: updatedCampaign.status,
+          schedule_end_time: updatedCampaign.schedule_end_time
+        })}`);
+      } catch (verifyError) {
+        console.log(`Unable to verify activation status: ${verifyError}`);
+      }
+      
+    } catch (error) {
+      console.error(`Error activating TrafficStar campaign ${id}:`, error);
+      throw new Error(`Failed to activate campaign ${id}`);
+    }
+  }
+
+  /**
+   * Update a campaign's daily budget
+   */
+  async updateCampaignDailyBudget(id: number, maxDaily: number): Promise<void> {
+    try {
+      // If mock mode is enabled, try all endpoints but fall back to local update
+      if (ENABLE_MOCK_MODE) {
+        try {
+          const token = await this.ensureToken();
+          let success = false;
+          let lastError = null;
+          
+          // Use the v1.1 API endpoint directly for budget updates
+          // We know this endpoint works based on previous testing
+          try {
+            console.log(`Updating budget for campaign ${id} using direct v1.1 API endpoint`);
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              max_daily: maxDaily
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000 // 10 second timeout
+            });
+            console.log(`Successfully updated budget for campaign ${id} to $${maxDaily} using v1.1 PATCH endpoint`);
+            success = true;
+          } catch (error) {
+            console.log(`Failed to update budget for campaign ${id} using v1.1 endpoint: ${error.message}`);
+            lastError = error;
+            
+            // If the direct approach fails, try a few other formats just in case
+            for (const baseUrl of ['https://api.trafficstars.com/v1.1', 'https://api.trafficstars.com/v1']) {
+              try {
+                console.log(`Trying alternate endpoint: ${baseUrl}/campaigns/${id}`);
+                await axios.patch(`${baseUrl}/campaigns/${id}`, {
+                  max_daily: maxDaily
+                }, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  timeout: 5000 // 5 second timeout
+                });
+                console.log(`Successfully updated budget for campaign ${id} to $${maxDaily} using ${baseUrl}`);
+                success = true;
+                break;
+              } catch (altError) {
+                console.log(`Failed with alternate endpoint ${baseUrl}: ${altError.message}`);
+                // Continue to next attempt
+              }
+            }
+          }
+          
+          if (!success) {
+            // If API calls failed but mock mode is enabled, continue with local update
+            console.log(`API calls failed but mock mode is enabled. Proceeding with local update only.`);
+            
+            // In mock mode, just update the local database
+            const [campaign] = await db
+              .select()
+              .from(trafficstarCampaigns)
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            
+            if (!campaign) {
+              // Create a new campaign record if it doesn't exist
+              await db.insert(trafficstarCampaigns).values({
+                trafficstarId: id.toString(),
+                name: `Campaign ${id}`,
+                maxDaily: maxDaily.toString(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+              console.log(`Created new campaign record for ID ${id} with budget ${maxDaily} in mock mode`);
+              return;
             } else {
-              return response.data;
+              // Update existing campaign record
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  maxDaily: maxDaily.toString(),
+                  updatedAt: new Date() 
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+              console.log(`Updated campaign ${id} budget to ${maxDaily} in mock mode`);
+              return;
             }
           }
         } catch (error) {
-          console.log(`Failed to get campaign ${id} statistics from ${baseUrl}:`, error);
-          // Continue to next attempt
+          // If any error occurs during API call attempt and mock mode is enabled,
+          // proceed with local update only
+          console.log(`Error during API calls but mock mode is enabled. Proceeding with local update only.`);
+          
+          // Update local record in database
+          const [campaign] = await db
+            .select()
+            .from(trafficstarCampaigns)
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+          if (!campaign) {
+            // Create a new campaign record if it doesn't exist
+            await db.insert(trafficstarCampaigns).values({
+              trafficstarId: id.toString(),
+              name: `Campaign ${id}`,
+              maxDaily: maxDaily.toString(),
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            console.log(`Created new campaign record for ID ${id} with budget ${maxDaily} in mock mode`);
+            return;
+          } else {
+            // Update existing campaign record
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                maxDaily: maxDaily.toString(),
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            console.log(`Updated campaign ${id} budget to ${maxDaily} in mock mode`);
+            return;
+          }
+        }
+      } else {
+        // If mock mode is disabled, use the v1.1 API directly
+        const token = await this.ensureToken();
+        
+        try {
+          console.log(`Updating campaign ${id} budget to $${maxDaily} using v1.1 API (real mode)`);
+          await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+            max_daily: maxDaily
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+          });
+          console.log(`Successfully updated campaign ${id} budget to $${maxDaily} using v1.1 API (real mode)`);
+        } catch (error) {
+          console.error(`Failed to update campaign ${id} budget: ${error.message}`);
+          throw error;
+        }
+      }
+
+      // Update local record if we got here (real API was successful)
+      await db.update(trafficstarCampaigns)
+        .set({ 
+          maxDaily: maxDaily.toString(),
+          updatedAt: new Date() 
+        })
+        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+    } catch (error) {
+      console.error(`Error updating TrafficStar campaign ${id} budget:`, error);
+      throw new Error(`Failed to update campaign ${id} budget`);
+    }
+  }
+
+  /**
+   * Update a campaign's end time
+   */
+  async updateCampaignEndTime(id: number, scheduleEndTime: string): Promise<void> {
+    try {
+      const token = await this.ensureToken();
+      
+      // If we're getting a date string in DD/MM/YYYY format from our code,
+      // we need to convert it to YYYY-MM-DD format for the API
+      let formattedEndTime = scheduleEndTime;
+      
+      if (scheduleEndTime.includes('/')) {
+        // Input format: DD/MM/YYYY HH:MM:SS
+        const parts = scheduleEndTime.split(' ');
+        if (parts.length === 2) {
+          const dateParts = parts[0].split('/');
+          if (dateParts.length === 3) {
+            // Convert DD/MM/YYYY to YYYY-MM-DD
+            formattedEndTime = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]} ${parts[1]}`;
+          }
+        }
+      } else if (scheduleEndTime.includes('T')) {
+        // Handle ISO format if present
+        formattedEndTime = scheduleEndTime.replace('T', ' ').replace(/\.\d+Z$/, '');
+      }
+      
+      // Make sure we have the correct time format with seconds (HH:MM:SS)
+      // TrafficStar API requires YYYY-MM-DD HH:MM:SS format
+      if (formattedEndTime.includes(' ')) {
+        const parts = formattedEndTime.split(' ');
+        if (parts.length === 2) {
+          const timePart = parts[1];
+          // Count the number of colons to determine if we need to add seconds
+          const colonCount = (timePart.match(/:/g) || []).length;
+          
+          if (colonCount === 1) {
+            // Time is in HH:MM format, add :00 for seconds
+            formattedEndTime = `${parts[0]} ${timePart}:00`;
+          }
         }
       }
       
-      // No data found
-      return {
-        id: id,
-        spent: 0,
-        impressions: 0,
-        clicks: 0,
-        cpm: 0,
-        ctr: 0,
-        date_from: dateFrom || new Date().toISOString().split('T')[0],
-        date_until: dateUntil || new Date().toISOString().split('T')[0]
-      };
+      console.log(`Setting campaign ${id} end time to: ${formattedEndTime} (original input: ${scheduleEndTime})`);
+      
+      try {
+        // Use the v1.1 API endpoint directly
+        const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+          schedule_end_time: formattedEndTime
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000 // 30 second timeout
+        });
+        
+        console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime}`);
+        console.log(`API Response:`, response.data);
+
+        // Update local record
+        await db.update(trafficstarCampaigns)
+          .set({ scheduleEndTime, updatedAt: new Date() })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        return;
+      } catch (error: any) {
+        console.error(`Error from TrafficStar API when updating end time:`, error.response?.data);
+        
+        // If the error is related to date format, try another format
+        if (error.response?.data?.msg?.includes('parsing time')) {
+          try {
+            // Try with full HH:MM:SS format if not already using it
+            if (!formattedEndTime.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
+              const datePart = formattedEndTime.split(' ')[0];
+              let timePart = formattedEndTime.split(' ')[1] || '00:00';
+              
+              // Ensure time has seconds
+              if ((timePart.match(/:/g) || []).length === 1) {
+                timePart = `${timePart}:00`;
+              }
+              
+              const fullFormat = `${datePart} ${timePart}`;
+              console.log(`Retrying with full time format: ${fullFormat}`);
+              
+              await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+                schedule_end_time: fullFormat
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 30000
+              });
+              
+              console.log(`Successfully updated campaign ${id} end time to ${fullFormat}`);
+              
+              // Update local record
+              await db.update(trafficstarCampaigns)
+                .set({ scheduleEndTime: fullFormat, updatedAt: new Date() })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+                
+              return;
+            }
+          } catch (retryError: any) {
+            console.error(`Retry with full format failed:`, retryError.response?.data || retryError.message);
+          }
+          
+          // As a last resort, try date-only format
+          const dateOnly = formattedEndTime.split(' ')[0];
+          console.log(`Retrying with date-only format: ${dateOnly}`);
+          
+          try {
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              schedule_end_time: dateOnly
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000
+            });
+            
+            console.log(`Successfully updated campaign ${id} end time to ${dateOnly} (date-only format)`);
+            
+            // Update local record
+            await db.update(trafficstarCampaigns)
+              .set({ scheduleEndTime: dateOnly, updatedAt: new Date() })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+              
+            return;
+          } catch (dateOnlyError: any) {
+            console.error(`All format attempts failed:`, dateOnlyError.response?.data || dateOnlyError.message);
+          }
+        }
+        
+        throw error;
+      }
+    } catch (error: any) {
+      console.error(`Error updating TrafficStar campaign ${id} end time:`, error.message);
+      throw new Error(`Failed to update campaign ${id} end time`);
+    }
+  }
+
+  /**
+   * Save API key
+   */
+  async saveApiKey(apiKey: string): Promise<boolean> {
+    try {
+      // Try to get a token with this key to validate it
+      const response = await axios.post<TokenResponse>(
+        `${API_BASE_URL}/auth/token`,
+        new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: apiKey,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+
+      // Calculate token expiry (subtract 60 seconds for safety)
+      const expiryDate = new Date();
+      expiryDate.setSeconds(expiryDate.getSeconds() + response.data.expires_in - 60);
+
+      // Check if we already have credentials
+      const [existingCredential] = await db.select().from(trafficstarCredentials).limit(1);
+
+      if (existingCredential) {
+        // Update existing record
+        await db.update(trafficstarCredentials)
+          .set({
+            apiKey,
+            accessToken: response.data.access_token,
+            tokenExpiry: expiryDate,
+            updatedAt: new Date(),
+          })
+          .where(eq(trafficstarCredentials.id, existingCredential.id));
+      } else {
+        // Create new record
+        await db.insert(trafficstarCredentials)
+          .values({
+            apiKey,
+            accessToken: response.data.access_token,
+            tokenExpiry: expiryDate,
+          });
+      }
+
+      // Update in-memory token
+      this.accessToken = response.data.access_token;
+      this.tokenExpiry = expiryDate;
+
+      return true;
     } catch (error) {
-      console.error(`Error getting spent value for campaign ${id}:`, error);
-      return {
-        id: id,
-        spent: 0,
-        impressions: 0,
-        clicks: 0,
-        cpm: 0,
-        ctr: 0,
-        error: String(error)
-      };
+      console.error('Error saving TrafficStar API key:', error);
+      throw new Error('Invalid TrafficStar API key');
+    }
+  }
+
+  /**
+   * Sync campaigns from API to database
+   */
+  private async syncCampaignsToDatabase(campaigns: Campaign[]): Promise<void> {
+    try {
+      // For each campaign from the API
+      for (const campaign of campaigns) {
+        // Check if it exists in our database
+        const [existingCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, campaign.id.toString()));
+
+        if (existingCampaign) {
+          // Update existing campaign
+          await db.update(trafficstarCampaigns)
+            .set({
+              name: campaign.name,
+              status: campaign.status,
+              active: campaign.active,
+              isArchived: campaign.is_archived,
+              maxDaily: campaign.max_daily ? campaign.max_daily.toString() : null,
+              pricingModel: campaign.pricing_model,
+              scheduleEndTime: campaign.schedule_end_time,
+              campaignData: campaign,
+              updatedAt: new Date(),
+            })
+            .where(eq(trafficstarCampaigns.id, existingCampaign.id));
+        } else {
+          // Insert new campaign
+          await db.insert(trafficstarCampaigns)
+            .values({
+              trafficstarId: campaign.id.toString(),
+              name: campaign.name,
+              status: campaign.status,
+              active: campaign.active,
+              isArchived: campaign.is_archived,
+              maxDaily: campaign.max_daily ? campaign.max_daily.toString() : null,
+              pricingModel: campaign.pricing_model,
+              scheduleEndTime: campaign.schedule_end_time,
+              campaignData: campaign,
+            });
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing campaigns to database:', error);
+      // Continue operation rather than failing completely
+    }
+  }
+
+  /**
+   * Auto-manage TrafficStar campaigns based on application parameters
+   * Implementation of the requirement to automatically manage linked TrafficStar campaigns
+   */
+  async autoManageCampaigns(): Promise<void> {
+    try {
+      // Find all campaigns with auto-management enabled
+      const campaignsToManage = await db
+        .select()
+        .from(campaigns)
+        .where(
+          sql`${campaigns.autoManageTrafficstar} = true AND ${campaigns.trafficstarCampaignId} IS NOT NULL`
+        );
+      
+      if (campaignsToManage.length === 0) {
+        console.log('No campaigns with auto-management enabled found');
+        return; // No campaigns to auto-manage
+      }
+      
+      console.log(`Found ${campaignsToManage.length} campaigns with auto-management enabled`);
+      
+      for (const campaign of campaignsToManage) {
+        try {
+          await this.autoManageCampaign(campaign);
+        } catch (error) {
+          console.error(`Error auto-managing campaign ${campaign.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in autoManageCampaigns:', error);
     }
   }
   
   /**
-   * Save API key to environment and memory
+   * Auto-manage a single campaign based on its settings
    */
-  async saveApiKey(apiKey: string): Promise<void> {
-    // Store in environment variable
-    process.env.TRAFFICSTAR_API_KEY = apiKey;
+  private async autoManageCampaign(campaign: any): Promise<void> {
+    try {
+      // Skip if no TrafficStar campaign ID
+      if (!campaign.trafficstarCampaignId) {
+        console.log(`Campaign ${campaign.id} has no TrafficStar campaign ID, skipping auto-management`);
+        return;
+      }
+      
+      // Get TrafficStar campaign ID converted to number
+      const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
+        parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+        Number(campaign.trafficstarCampaignId);
+      
+      // Get current date in UTC
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
+      // Check if this campaign is paused due to spent value
+      // If it is, skip the click threshold management for today
+      if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
+        console.log(`Campaign ${campaign.id} is paused due to high spent value - skipping click threshold management`);
+        return;
+      }
+      
+      // Get current TrafficStar campaign status
+      let currentTrafficstarStatus;
+      try {
+        // Get the current TrafficStar campaign status from database first (faster)
+        const [dbCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
+        
+        if (dbCampaign) {
+          currentTrafficstarStatus = {
+            active: dbCampaign.active,
+            status: dbCampaign.status,
+            lastRequestedAction: dbCampaign.lastRequestedAction,
+            lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
+            lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
+          };
+          
+          console.log(`Using cached status for campaign ${trafficstarId}: ${JSON.stringify(currentTrafficstarStatus)}`);
+        } else {
+          // If not in database, try API call
+          console.log(`No cached status for campaign ${trafficstarId}, fetching from API`);
+          const apiCampaign = await this.getCampaign(trafficstarId);
+          currentTrafficstarStatus = {
+            active: apiCampaign.active,
+            status: apiCampaign.status,
+            lastRequestedAction: null,
+            lastRequestedActionAt: null,
+            lastRequestedActionSuccess: null
+          };
+        }
+      } catch (error) {
+        console.log(`Error getting current status for campaign ${trafficstarId}, proceeding without status check:`, error);
+        currentTrafficstarStatus = null;
+      }
+      
+      // Get the campaign's URLs to calculate remaining clicks
+      const urlsResult = await storage.getUrls(campaign.id);
+      const urls = urlsResult.filter(url => url.isActive);
+      
+      const lastSyncDate = campaign.lastTrafficstarSync ? 
+        new Date(campaign.lastTrafficstarSync).toISOString().split('T')[0] : null;
+      
+      // Get current time in UTC to check if it's time for budget update
+      const now = new Date();
+      const currentUtcTime = now.getUTCHours().toString().padStart(2, '0') + ':' + 
+                           now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
+                           now.getUTCSeconds().toString().padStart(2, '0');
+      
+      // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
+      // TrafficStar API requires YYYY-MM-DD HH:MM:SS format with seconds
+      const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
+      
+      // Get the campaign's budget update time setting (default to midnight if not set)
+      const budgetUpdateTime = campaign.budgetUpdateTime || '00:00:00';
+      
+      // Get the last update time
+      const lastUpdateTime = campaign.lastTrafficstarSync ? 
+        new Date(campaign.lastTrafficstarSync).getUTCHours().toString().padStart(2, '0') + ':' + 
+        new Date(campaign.lastTrafficstarSync).getUTCMinutes().toString().padStart(2, '0') + ':' + 
+        new Date(campaign.lastTrafficstarSync).getUTCSeconds().toString().padStart(2, '0') : null;
+      
+      // Check if we have no active URLs - this always takes precedence
+      if (urls.length === 0) {
+        console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
+        
+        // Only call pauseCampaign if campaign is currently active
+        // Skip if campaign is already paused or a pause request was recently successful
+        if (!currentTrafficstarStatus || 
+            currentTrafficstarStatus.active === true || 
+            currentTrafficstarStatus.status === 'enabled') {
+          
+          console.log(`Campaign ${trafficstarId} is active or status unknown - pausing now`);
+          
+          try {
+            // Pause the campaign
+            await this.pauseCampaign(trafficstarId);
+            
+            // Set end time to current UTC time
+            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+            
+            // Update campaign's last sync timestamp
+            await db.update(campaigns)
+              .set({
+                lastTrafficstarSync: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaign.id));
+              
+            console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${formattedCurrentDateTime}`);
+          } catch (error) {
+            console.error(`Error pausing campaign with no active URLs:`, error);
+          }
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already paused (${currentTrafficstarStatus.status}) - no API call needed`);
+        }
+        
+        return; // No need to continue with regular auto-management when there are no active URLs
+      }
+      
+      // Calculate remaining clicks across all active URLs
+      const totalRemainingClicks = urls.reduce((total, url) => {
+        const remainingClicks = url.clickLimit - url.clicks;
+        return total + (remainingClicks > 0 ? remainingClicks : 0);
+      }, 0);
+      
+      console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
+      console.log(`Campaign ${campaign.id} - Current UTC time: ${currentUtcTime}, Budget update time: ${budgetUpdateTime}, Last sync time: ${lastUpdateTime || 'never'}`);
+      
+      // Get the previously used budget update time from database
+      const [campaignSettings] = await db
+        .select({ lastBudgetUpdateTime: campaigns.budgetUpdateTime })
+        .from(campaigns)
+        .where(eq(campaigns.id, campaign.id));
+      
+      // Check if budget update time has been changed since last sync
+      const budgetUpdateTimeChanged = campaign.lastTrafficstarSync && 
+        campaignSettings?.lastBudgetUpdateTime !== budgetUpdateTime;
+      
+      if (budgetUpdateTimeChanged) {
+        console.log(`Budget update time changed from ${campaignSettings?.lastBudgetUpdateTime} to ${budgetUpdateTime} - triggering immediate update`);
+      }
+      
+      // Determine if budget update should happen:
+      // 1. If this is first time (no lastSyncDate) OR
+      // 2. If date has changed since last update OR
+      // 3. If we're within 5 minutes after the configured budget update time and haven't updated today OR
+      // 4. If the budgetUpdateTime setting has changed (immediate effect)
+      const isTimeForBudgetUpdate = !lastSyncDate || 
+        currentUtcDate !== lastSyncDate || 
+        budgetUpdateTimeChanged ||
+        (this.isWithinTimeWindow(currentUtcTime, budgetUpdateTime, 5) && 
+         (!lastUpdateTime || !this.isWithinTimeWindow(lastUpdateTime, budgetUpdateTime, 5)));
+      
+      // NEW BEHAVIOR: If UTC date has changed, first pause the campaign, then check remaining clicks
+      if (isTimeForBudgetUpdate) {
+        console.log(`Setting daily budget for campaign ${campaign.id} to $10.15 (UTC time: ${currentUtcTime}, configured time: ${budgetUpdateTime})`);
+        
+        // Set daily budget to $10.15 as per requirements
+        try {
+          await this.updateCampaignDailyBudget(trafficstarId, 10.15);
+          
+          // First pause the campaign when UTC date changes
+          if (currentUtcDate !== lastSyncDate && 
+              (!currentTrafficstarStatus || 
+               currentTrafficstarStatus.active === true || 
+               currentTrafficstarStatus.status === 'enabled')) {
+            
+            console.log(`New UTC date detected - first pausing TrafficStar campaign ${trafficstarId}`);
+            await this.pauseCampaign(trafficstarId);
+            console.log(`✅ TrafficStar campaign ${trafficstarId} paused due to new UTC date`);
+            
+            // Update current status after pause
+            currentTrafficstarStatus = {
+              active: false,
+              status: 'paused',
+              lastRequestedAction: 'pause',
+              lastRequestedActionAt: new Date(),
+              lastRequestedActionSuccess: true
+            };
+          }
+          
+          // Update last sync time in the database
+          await db.update(campaigns)
+            .set({
+              lastTrafficstarSync: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+          
+          console.log(`Successfully updated daily budget for campaign ${campaign.id}`);
+        } catch (error) {
+          console.error(`Error updating daily budget for campaign ${campaign.id}:`, error);
+        }
+      }
+      
+      // Check if campaign is registered as paused due to spent value
+      const pauseInfo = this.spentValuePausedCampaigns.get(trafficstarId);
+      
+      // If campaign is registered as paused by spent value for today, skip the threshold logic
+      if (pauseInfo && pauseInfo.disabledThresholdForDate === currentUtcDate) {
+        console.log(`Campaign ${campaign.id} clicks threshold management is disabled for today (${currentUtcDate}) due to high spent value`);
+        return;
+      }
+      
+      // NOW IMPLEMENT NEW CLICK THRESHOLD LOGIC
+      
+      // If total remaining clicks > 15000, activate the campaign
+      if (totalRemainingClicks > 15000) {
+        // Only call activateCampaign if campaign is not already active
+        if (!currentTrafficstarStatus || 
+            currentTrafficstarStatus.active === false || 
+            currentTrafficstarStatus.status === 'paused' || 
+            (currentTrafficstarStatus.lastRequestedAction === 'activate' && 
+             currentTrafficstarStatus.lastRequestedActionSuccess === false)) {
+          
+          console.log(`Activating TrafficStar campaign ${trafficstarId} (${totalRemainingClicks} remaining clicks > 15,000)`);
+          
+          try {
+            // Activate the campaign
+            await this.activateCampaign(trafficstarId);
+            console.log(`✅ Successfully activated TrafficStar campaign ${trafficstarId}`);
+          } catch (error) {
+            console.error(`Error activating TrafficStar campaign ${trafficstarId}:`, error);
+          }
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already active (${currentTrafficstarStatus.status}) - no API call needed`);
+        }
+      } 
+      // Only pause if remaining clicks <= 5000 (lower threshold)
+      else if (totalRemainingClicks <= 5000) {
+        // If remaining clicks <= 5000, ensure the campaign is paused
+        if (currentTrafficstarStatus && 
+            (currentTrafficstarStatus.active === true || 
+             currentTrafficstarStatus.status === 'enabled')) {
+          
+          console.log(`Pausing TrafficStar campaign ${trafficstarId} due to low remaining clicks (${totalRemainingClicks} <= 5,000)`);
+          
+          try {
+            // Pause the campaign
+            await this.pauseCampaign(trafficstarId);
+            
+            // Set end time to current UTC time
+            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+            
+            console.log(`✅ Successfully paused TrafficStar campaign ${trafficstarId} due to low remaining clicks`);
+          } catch (error) {
+            console.error(`Error pausing TrafficStar campaign ${trafficstarId}:`, error);
+          }
+        } else {
+          console.log(`TrafficStar campaign ${trafficstarId} is already paused (${currentTrafficstarStatus?.status}) - no API call needed`);
+        }
+      } 
+      // For clicks between 5000 and 15000, maintain current status (hysteresis)
+      else {
+        console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} remaining clicks (between 5,000 and 15,000) - maintaining current status`);
+      }
+      
+    } catch (error) {
+      console.error(`Error auto-managing campaign ${campaign.id}:`, error);
+    }
+  }
+  
+  /**
+   * Track when campaigns were paused due to spent value exceeding the threshold
+   * Maps campaign ID to the time when it was paused due to spent value (and time to recheck)
+   */
+  private spentValuePausedCampaigns: Map<number, { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string }> = new Map();
+  
+  /**
+   * Track campaigns that have already had budget adjustment performed
+   * Maps campaign ID to the UTC date when budget adjustment was performed
+   * Prevents multiple budget adjustments for the same campaign on the same day
+   */
+  private budgetAdjustedCampaigns: Map<number, string> = new Map();
+  
+  /**
+   * Check if a campaign was paused due to high spent value and should still be paused
+   * @param campaignId The campaign ID to check
+   * @param currentUtcDate The current UTC date in YYYY-MM-DD format
+   * @returns true if the campaign should remain paused due to spent value
+   */
+  private shouldRemainPausedDueToSpentValue(campaignId: number, currentUtcDate: string): boolean {
+    // First check if the campaign already had a budget adjustment today
+    // If so, we don't need to do another one
+    if (this.budgetAdjustedCampaigns.has(campaignId)) {
+      const adjustedDate = this.budgetAdjustedCampaigns.get(campaignId);
+      if (adjustedDate === currentUtcDate) {
+        console.log(`Campaign ${campaignId} already had budget adjustment on ${currentUtcDate} - skipping further checks`);
+        return false;
+      } else {
+        // Clear the adjustment status for a new day
+        this.budgetAdjustedCampaigns.delete(campaignId);
+      }
+    }
     
-    // Clear token to force re-authentication
-    this.accessToken = null;
-    this.tokenExpiry = null;
+    // Handle test mode specifically for budget adjustment testing
+    if (process.env.TEST_MODE_SPENT_VALUE_PAUSE === 'true' &&
+        process.env.TEST_CAMPAIGN_ID === campaignId.toString()) {
+      
+      console.log(`🧪 TEST MODE: Checking spent value pause for test campaign ${campaignId}`);
+      
+      // If we're in test mode with specific campaign ID, simulate a pause that
+      // just reached the recheck time
+      const pauseTime = process.env.TEST_PAUSE_TIME ? new Date(process.env.TEST_PAUSE_TIME) : new Date(Date.now() - 15 * 60 * 1000);
+      const recheckTime = process.env.TEST_RECHECK_TIME ? new Date(process.env.TEST_RECHECK_TIME) : new Date(Date.now() - 5 * 60 * 1000);
+      const testDate = process.env.TEST_UTC_DATE || currentUtcDate;
+      
+      console.log(`🧪 TEST MODE: Campaign ${campaignId} has a simulated pause at ${pauseTime.toISOString()}`);
+      console.log(`🧪 TEST MODE: Recheck time is ${recheckTime.toISOString()} (${new Date() >= recheckTime ? 'ELAPSED' : 'not elapsed'})`);
+      
+      // Check if recheck time has passed
+      if (new Date() >= recheckTime) {
+        console.log(`🧪 TEST MODE: Campaign ${campaignId} 10-minute pause has elapsed, time to recheck`);
+        
+        // Run the recheck process to adjust budget and reactivate
+        this.handlePauseRecheckAndBudgetAdjustment(campaignId, testDate)
+          .catch(err => console.error(`Error running pause recheck for campaign ${campaignId}:`, err));
+          
+        // Clean up test environment variables
+        process.env.TEST_MODE_SPENT_VALUE_PAUSE = 'false';
+        delete process.env.TEST_CAMPAIGN_ID;
+        delete process.env.TEST_PAUSE_TIME;
+        delete process.env.TEST_RECHECK_TIME;
+        delete process.env.TEST_UTC_DATE;
+        
+        return false;
+      }
+      
+      // Still within the pause period
+      const remainingMinutes = Math.ceil((recheckTime.getTime() - new Date().getTime()) / (60 * 1000));
+      console.log(`🧪 TEST MODE: Campaign ${campaignId} is paused due to high spent value - ${remainingMinutes} minutes remaining until recheck`);
+      return true;
+    }
     
-    // Test the API key by attempting to get a token
-    try {
-      await this.ensureToken();
-      console.log('Successfully authenticated with TrafficStar using new API key');
-    } catch (error) {
-      console.error('Error testing new TrafficStar API key:', error);
-      throw new Error('Failed to authenticate with provided API key');
+    // Normal (non-test) mode
+    const pauseInfo = this.spentValuePausedCampaigns.get(campaignId);
+    
+    if (!pauseInfo) {
+      return false;
     }
+    
+    // If this is for a different date, we can clear the pause status
+    if (pauseInfo.disabledThresholdForDate !== currentUtcDate) {
+      console.log(`Campaign ${campaignId} was paused due to spent value on ${pauseInfo.disabledThresholdForDate}, but current date is ${currentUtcDate} - clearing pause status`);
+      this.spentValuePausedCampaigns.delete(campaignId);
+      return false;
+    }
+    
+    // Check if we've reached the recheck time
+    if (new Date() >= pauseInfo.recheckAt) {
+      console.log(`Campaign ${campaignId} has reached recheck time after being paused due to spent value - starting budget adjustment process`);
+      // Trigger the budget adjustment and reactivation process
+      this.handlePauseRecheckAndBudgetAdjustment(campaignId, currentUtcDate);
+      return false;
+    }
+    
+    // Still within the pause period
+    const minutesRemaining = Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000));
+    console.log(`Campaign ${campaignId} remains paused due to spent value - ${minutesRemaining} minutes until recheck`);
+    return true;
   }
-  
+
   /**
-   * Activate a campaign in TrafficStar
+   * Handle the 10-minute recheck for a campaign paused due to spent value
+   * This will check current spent value, add pending click pricing, 
+   * and set as new daily budget before reactivating
+   * @param campaignId The TrafficStar campaign ID
+   * @param currentUtcDate The current UTC date
    */
-  async activateCampaign(id: number): Promise<boolean> {
+  private async handlePauseRecheckAndBudgetAdjustment(campaignId: number, currentUtcDate: string): Promise<void> {
     try {
-      // In test mode, just return success
-      if (process.env.TEST_MODE === 'true') {
-        console.log(`TEST MODE: Pretending to activate campaign ${id}`);
-        return true;
-      }
-      
-      const token = await this.ensureToken();
-      
-      // Try all base URLs
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          const response = await axios.patch(
-            `${baseUrl}/campaigns/${id}`,
-            { status: 'active' },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            }
-          );
-          
-          if (response.status >= 200 && response.status < 300) {
-            console.log(`Successfully activated campaign ${id}`);
-            return true;
-          }
-        } catch (error) {
-          console.log(`Failed to activate campaign ${id} using ${baseUrl}:`, error);
-          // Continue to next attempt
+      // First check if the campaign already had a budget adjustment today
+      // If so, we don't need to do another one
+      if (this.budgetAdjustedCampaigns.has(campaignId)) {
+        const adjustedDate = this.budgetAdjustedCampaigns.get(campaignId);
+        if (adjustedDate === currentUtcDate) {
+          console.log(`Campaign ${campaignId} already had budget adjustment on ${currentUtcDate} - skipping duplicate adjustment`);
+          return;
         }
       }
       
-      // All attempts failed
-      return false;
-    } catch (error) {
-      console.error(`Error activating campaign ${id}:`, error);
-      return false;
-    }
-  }
-  
-  /**
-   * Pause a campaign in TrafficStar
-   */
-  async pauseCampaign(id: number): Promise<boolean> {
-    try {
-      // In test mode, just return success
-      if (process.env.TEST_MODE === 'true') {
-        console.log(`TEST MODE: Pretending to pause campaign ${id}`);
-        return true;
-      }
+      console.log(`⏱️ 10-minute pause period completed for campaign ${campaignId} - handling budget adjustment...`);
       
-      const token = await this.ensureToken();
+      // Remove from paused campaigns map if it exists
+      this.spentValuePausedCampaigns.delete(campaignId);
       
-      // Try all base URLs
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          const response = await axios.patch(
-            `${baseUrl}/campaigns/${id}`,
-            { status: 'paused' },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            }
-          );
-          
-          if (response.status >= 200 && response.status < 300) {
-            console.log(`Successfully paused campaign ${id}`);
-            return true;
-          }
-        } catch (error) {
-          console.log(`Failed to pause campaign ${id} using ${baseUrl}:`, error);
-          // Continue to next attempt
-        }
-      }
+      // 1. Get current spent value for today
+      console.log(`Checking current spent value for campaign ${campaignId} on ${currentUtcDate}`);
+      const spentValue = await this.getCampaignSpentValue(campaignId, currentUtcDate, currentUtcDate);
+      const currentSpentValue = spentValue?.totalSpent || 0;
+      console.log(`Current spent value for campaign ${campaignId}: $${currentSpentValue.toFixed(4)}`);
       
-      // All attempts failed
-      return false;
-    } catch (error) {
-      console.error(`Error pausing campaign ${id}:`, error);
-      return false;
-    }
-  }
-  
-  /**
-   * Update campaign budget in TrafficStar
-   */
-  async updateCampaignBudget(id: number, budget: number): Promise<boolean> {
-    try {
-      // In test mode, just return success
-      if (process.env.TEST_MODE === 'true') {
-        console.log(`TEST MODE: Pretending to update budget for campaign ${id} to ${budget}`);
-        return true;
-      }
-      
-      const token = await this.ensureToken();
-      
-      // Try all base URLs
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          const response = await axios.patch(
-            `${baseUrl}/campaigns/${id}`,
-            { max_daily: budget },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            }
-          );
-          
-          if (response.status >= 200 && response.status < 300) {
-            console.log(`Successfully updated budget for campaign ${id} to ${budget}`);
-            return true;
-          }
-        } catch (error) {
-          console.log(`Failed to update budget for campaign ${id} using ${baseUrl}:`, error);
-          // Continue to next attempt
-        }
-      }
-      
-      // All attempts failed
-      return false;
-    } catch (error) {
-      console.error(`Error updating budget for campaign ${id}:`, error);
-      return false;
-    }
-  }
-  
-  /**
-   * Get cached campaign status from database
-   */
-  async getCachedCampaignStatus(id: number): Promise<any> {
-    try {
+      // 2. Calculate pending click pricing for the campaign
+      // First, find our campaign that is linked to this TrafficStar ID
       const [campaign] = await db
         .select()
         .from(campaigns)
-        .where(eq(campaigns.trafficstarCampaignId, String(id)));
+        .where(eq(campaigns.trafficstarCampaignId, campaignId.toString()));
+        
+      if (!campaign) {
+        console.log(`⚠️ Cannot find local campaign for TrafficStar campaign ${campaignId} - skipping budget adjustment`);
+        return;
+      }
       
-      if (campaign) {
+      // Get all URLs for the campaign to calculate pending click pricing
+      const urlsData = await db
+        .select()
+        .from(urls)
+        .where(
+          and(
+            eq(urls.campaignId, campaign.id),
+            eq(urls.status, 'active')
+          )
+        );
+        
+      // Calculate the pending click pricing
+      let pendingClickPricing = 0;
+      for (const url of urlsData) {
+        const remainingClicks = url.clickLimit - url.clicks;
+        if (remainingClicks > 0) {
+          // Calculate the value of remaining clicks using the price per click
+          // We need to convert from price per 1000 clicks to price per click
+          const pricePerClick = parseFloat(campaign.pricePerThousand?.toString() || '1000') / 1000;
+          pendingClickPricing += remainingClicks * pricePerClick;
+        }
+      }
+      
+      console.log(`Pending click pricing for campaign ${campaignId}: $${pendingClickPricing.toFixed(4)}`);
+      
+      // 3. Calculate new daily budget (current spent + pending clicks)
+      const newDailyBudget = currentSpentValue + pendingClickPricing;
+      console.log(`New daily budget for campaign ${campaignId}: $${newDailyBudget.toFixed(4)}`);
+      
+      // 4. Update the campaign's daily budget
+      await this.updateCampaignDailyBudget(campaignId, newDailyBudget);
+      
+      // 5. Reactivate the campaign with end date set to current UTC date 23:59
+      const endDateStr = `${currentUtcDate} 23:59:00`;
+      console.log(`Reactivating campaign ${campaignId} with end date ${endDateStr}`);
+      
+      // Set end date first
+      await this.updateCampaignEndTime(campaignId, endDateStr);
+      
+      // Then activate the campaign
+      await this.activateCampaign(campaignId);
+      
+      // Mark this campaign as having had its budget adjusted for today
+      // This prevents multiple budget adjustments for the same campaign on the same day
+      this.budgetAdjustedCampaigns.set(campaignId, currentUtcDate);
+      
+      console.log(`✅ Campaign ${campaignId} reactivated with new daily budget $${newDailyBudget.toFixed(4)} and end date ${endDateStr}`);
+      console.log(`✅ Campaign ${campaignId} marked as having budget adjusted for ${currentUtcDate} - will not repeat today`);
+    } catch (error) {
+      console.error(`Error handling pause recheck and budget adjustment for campaign ${campaignId}:`, error);
+    }
+  }
+  
+  /**
+   * Get pause info for a campaign paused due to high spent value
+   * @param campaignId The campaign ID to check
+   * @param currentUtcDate The current UTC date in YYYY-MM-DD format
+   * @returns The pause info or null if not paused due to spent value
+   */
+  public getSpentValuePauseInfo(campaignId: number, currentUtcDate: string): { 
+    pausedAt: Date; 
+    recheckAt: Date; 
+    disabledThresholdForDate: string;
+  } | null {
+    // First check if the campaign already had a budget adjustment today
+    // If so, return null to indicate no pause info (budget was already adjusted)
+    if (this.budgetAdjustedCampaigns.has(campaignId)) {
+      const adjustedDate = this.budgetAdjustedCampaigns.get(campaignId);
+      if (adjustedDate === currentUtcDate) {
+        console.log(`Campaign ${campaignId} already had budget adjustment on ${currentUtcDate} - budget adjustment completed`);
+        return null;
+      }
+    }
+    
+    // Handle test mode
+    if (process.env.TEST_MODE_SPENT_VALUE_PAUSE === 'true' && 
+        process.env.TEST_CAMPAIGN_ID === campaignId.toString()) {
+      
+      // If in test mode with specific campaign ID, return simulated pause info
+      const pauseTime = process.env.TEST_PAUSE_TIME ? new Date(process.env.TEST_PAUSE_TIME) : new Date(Date.now() - 15 * 60 * 1000);
+      const recheckTime = process.env.TEST_RECHECK_TIME ? new Date(process.env.TEST_RECHECK_TIME) : new Date(Date.now() - 5 * 60 * 1000);
+      const testDate = process.env.TEST_UTC_DATE || currentUtcDate;
+      
+      // If recheck time has elapsed, don't return pause info
+      if (new Date() >= recheckTime) {
+        return null;
+      }
+      
+      // Still within simulated pause period
+      console.log(`🧪 TEST MODE: Returning simulated pause info for campaign ${campaignId}`);
+      return {
+        pausedAt: pauseTime,
+        recheckAt: recheckTime,
+        disabledThresholdForDate: testDate
+      };
+    }
+    
+    // Normal mode
+    const pauseInfo = this.spentValuePausedCampaigns.get(campaignId);
+    
+    if (!pauseInfo) {
+      return null;
+    }
+    
+    // If this is for a different date, we shouldn't return pause info
+    if (pauseInfo.disabledThresholdForDate !== currentUtcDate) {
+      return null;
+    }
+    
+    // Check if we've reached the recheck time
+    if (new Date() >= pauseInfo.recheckAt) {
+      return null;
+    }
+    
+    // Still within the pause period - return pause info
+    return pauseInfo;
+  }
+  
+  /**
+   * Clear the spent value pause state for a campaign (for testing purposes)
+   * @param campaignId The campaign ID to clear
+   */
+  public clearSpentValuePause(campaignId: number): void {
+    if (this.spentValuePausedCampaigns.has(campaignId)) {
+      console.log(`Clearing spent value pause state for campaign ${campaignId}`);
+      this.spentValuePausedCampaigns.delete(campaignId);
+    }
+    
+    // Also clear budget adjustment tracking
+    if (this.budgetAdjustedCampaigns.has(campaignId)) {
+      console.log(`Clearing budget adjustment tracking for campaign ${campaignId}`);
+      this.budgetAdjustedCampaigns.delete(campaignId);
+    }
+  }
+  
+  /**
+   * Get the cached campaign status from database
+   * @param campaignId The campaign ID to get status for
+   * @returns The current campaign status or null if not found
+   */
+  public async getCachedCampaignStatus(campaignId: number): Promise<{
+    active: boolean;
+    status: string;
+    lastRequestedAction?: string;
+    lastRequestedActionAt?: Date;
+    lastRequestedActionSuccess?: boolean;
+  } | null> {
+    try {
+      const [dbCampaign] = await db
+        .select()
+        .from(trafficstarCampaigns)
+        .where(eq(trafficstarCampaigns.trafficstarId, campaignId.toString()));
+      
+      if (dbCampaign) {
         return {
-          id: Number(campaign.trafficstarCampaignId),
-          status: campaign.status,
-          active: campaign.active
+          active: dbCampaign.active,
+          status: dbCampaign.status,
+          lastRequestedAction: dbCampaign.lastRequestedAction,
+          lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
+          lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
         };
       }
       
       return null;
     } catch (error) {
-      console.error(`Error getting cached status for campaign ${id}:`, error);
+      console.error(`Error getting cached status for campaign ${campaignId}:`, error);
       return null;
     }
   }
   
   /**
-   * Check if campaign is paused due to spent value and get recheck info
+   * Scheduled function to run daily budget updates and start campaigns as needed
+   * This should be called on application startup and at appropriate intervals
    */
-  getSpentValuePauseInfo(id: number, currentDate: Date): { pausedAt: Date, recheckAt: Date, disabledThresholdForDate: string } | null {
-    // Check if campaign is in the paused map
-    const pauseInfo = this.spentValuePausedCampaigns.get(id);
-    
-    if (pauseInfo) {
-      // If this pause is for today's date, return the info
-      if (pauseInfo.disabledThresholdForDate === currentDate.toISOString().split('T')[0]) {
-        return pauseInfo;
-      }
-    }
-    
-    return null;
-  }
-  
   /**
-   * Auto-manage campaigns based on click thresholds
+   * Track a newly received URL for budget updates
+   * This records the URL's click value for updating the campaign's 
+   * daily budget after 10 minutes
+   * 
+   * @param urlId The ID of the URL
+   * @param campaignId The campaign ID that the URL belongs to
+   * @param tsTrafficstarId The TrafficStar campaign ID
+   * @param clickLimit The click limit for the URL
+   * @param pricePerThousand The price per thousand clicks
    */
-  async autoManageCampaigns(): Promise<void> {
+  public async trackNewUrlForBudgetUpdate(
+    urlId: number, 
+    campaignId: number, 
+    tsTrafficstarId: string, 
+    clickLimit: number, 
+    pricePerThousand: number
+  ): Promise<void> {
     try {
-      // Get campaigns with TrafficStar IDs
-      const campaignsWithTrafficStar = await db
-        .select()
-        .from(campaigns)
-        .where(and(
-          isNotNull(campaigns.trafficstarCampaignId),
-          eq(campaigns.autoManagement, true)
-        ));
-      
-      console.log(`Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
-      
-      // Process each campaign
-      for (const campaign of campaignsWithTrafficStar) {
-        try {
-          // Skip campaigns that are not active
-          if (campaign.status !== 'active' && !campaign.active) {
-            console.log(`Skipping inactive campaign ${campaign.id} (${campaign.name})`);
-            continue;
-          }
-          
-          // Get all URLs for this campaign
-          const campaignUrls = await storage.getUrls(campaign.id);
-          const activeUrls = campaignUrls.filter(url => url.status === 'active');
-          
-          console.log(`Campaign ${campaign.id} (${campaign.name}) has ${activeUrls.length} active URLs`);
-          
-          // Calculate total clicks for active URLs
-          let totalClicks = 0;
-          for (const url of activeUrls) {
-            totalClicks += url.clicks || 0;
-          }
-          
-          console.log(`Campaign ${campaign.id} has ${totalClicks} total clicks across all URLs`);
-          
-          // Check if total clicks exceeds threshold
-          const clickThreshold = campaign.clickThreshold || 15000; // Default to 15000
-          
-          if (totalClicks >= clickThreshold) {
-            console.log(`Campaign ${campaign.id} has exceeded click threshold (${totalClicks}/${clickThreshold})`);
-            
-            // Check if campaign is already paused due to spent value
-            const currentDate = new Date();
-            const currentDateString = currentDate.toISOString().split('T')[0];
-            const pauseInfo = this.getSpentValuePauseInfo(Number(campaign.trafficstarCampaignId), currentDate);
-            
-            if (pauseInfo) {
-              console.log(`Campaign ${campaign.id} is already paused due to spent value - won't pause again due to clicks`);
-              continue;
-            }
-            
-            // Pause the campaign in TrafficStar
-            const trafficstarId = Number(campaign.trafficstarCampaignId);
-            const success = await this.pauseCampaign(trafficstarId);
-            
-            if (success) {
-              console.log(`Successfully paused campaign ${campaign.id} due to click threshold`);
-              
-              // Update local database status
-              await db
-                .update(campaigns)
-                .set({
-                  status: 'paused',
-                  active: false,
-                  updatedAt: new Date()
-                })
-                .where(eq(campaigns.id, campaign.id));
-            } else {
-              console.log(`Failed to pause campaign ${campaign.id} in TrafficStar`);
-            }
-          } else {
-            // Check if campaign is paused but clicks are now below threshold
-            if (campaign.status === 'paused' || !campaign.active) {
-              console.log(`Campaign ${campaign.id} is paused but clicks are below threshold (${totalClicks}/${clickThreshold})`);
-              
-              // Check if campaign is paused due to spent value
-              const currentDate = new Date();
-              const pauseInfo = this.getSpentValuePauseInfo(Number(campaign.trafficstarCampaignId), currentDate);
-              
-              if (pauseInfo) {
-                console.log(`Campaign ${campaign.id} is paused due to spent value - can't reactivate yet`);
-                console.log(`Recheck scheduled for ${pauseInfo.recheckAt.toISOString()}`);
-                continue;
-              }
-              
-              // Activate the campaign in TrafficStar
-              const trafficstarId = Number(campaign.trafficstarCampaignId);
-              const success = await this.activateCampaign(trafficstarId);
-              
-              if (success) {
-                console.log(`Successfully reactivated campaign ${campaign.id} as clicks are now below threshold`);
-                
-                // Update local database status
-                await db
-                  .update(campaigns)
-                  .set({
-                    status: 'active',
-                    active: true,
-                    updatedAt: new Date()
-                  })
-                  .where(eq(campaigns.id, campaign.id));
-              } else {
-                console.log(`Failed to reactivate campaign ${campaign.id} in TrafficStar`);
-              }
-            }
-          }
-        } catch (error) {
-          console.error(`Error processing campaign ${campaign.id}:`, error);
-        }
+      // Convert TrafficStar ID to number
+      const tsId = parseInt(tsTrafficstarId);
+      if (isNaN(tsId)) {
+        console.log(`Invalid TrafficStar campaign ID: ${tsTrafficstarId}`);
+        return;
       }
-    } catch (error) {
-      console.error('Error auto-managing campaigns:', error);
-    }
-  }
-  
-  /**
-   * Check all campaigns' spent values
-   */
-  async checkCampaignsSpentValue(): Promise<void> {
-    try {
-      // Get campaigns with TrafficStar IDs
-      const campaignsWithTrafficStar = await db
-        .select()
-        .from(campaigns)
-        .where(and(
-          isNotNull(campaigns.trafficstarCampaignId),
-          eq(campaigns.autoManagement, true)
-        ));
       
-      console.log(`Checking spent values for ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
+      // Calculate the click value using price per thousand
+      const pricePerClick = parseFloat(pricePerThousand?.toString() || '1000') / 1000;
+      const clickValue = clickLimit * pricePerClick;
       
-      // Get current date in YYYY-MM-DD format
-      const currentDate = new Date();
-      const dateString = currentDate.toISOString().split('T')[0];
+      console.log(`Tracking new URL ${urlId} for budget update in campaign ${campaignId} (TrafficStar ID: ${tsId})`);
+      console.log(`  - Click limit: ${clickLimit}`);
+      console.log(`  - Price per thousand: $${pricePerThousand}`);
+      console.log(`  - Click value: $${clickValue.toFixed(4)}`);
       
-      // Process each campaign
-      for (const campaign of campaignsWithTrafficStar) {
-        try {
-          const trafficstarId = Number(campaign.trafficstarCampaignId);
-          
-          // If in mock/test mode, get mock data
-          let spentData;
-          if (process.env.TEST_MODE === 'true') {
-            spentData = {
-              spent: 12.50, // Mock value over $10 to trigger protection
-              impressions: 6250,
-              clicks: 250
-            };
-          } else {
-            // Get spent value for today only
-            spentData = await this.getCampaignSpentValue(trafficstarId, dateString, dateString);
-          }
-          
-          console.log(`Campaign ${campaign.id} (${campaign.name}): spent $${spentData.spent} today`);
-          
-          // Check if spent is over $10
-          if (spentData.spent > 10) {
-            console.log(`Campaign ${campaign.id} has exceeded $10 daily spend: $${spentData.spent}`);
-            
-            // Pause the campaign in TrafficStar
-            const success = await this.pauseCampaign(trafficstarId);
-            
-            if (success) {
-              console.log(`Successfully paused campaign ${campaign.id} due to high spent value`);
-              
-              // Update local database status
-              await db
-                .update(campaigns)
-                .set({
-                  status: 'paused',
-                  active: false,
-                  updatedAt: new Date()
-                })
-                .where(eq(campaigns.id, campaign.id));
-              
-              // Record this campaign as paused due to spent value
-              // Set recheck time to 10 minutes from now
-              const pausedAt = new Date();
-              const recheckAt = new Date(pausedAt.getTime() + 10 * 60 * 1000);
-              
-              this.spentValuePausedCampaigns.set(trafficstarId, {
-                pausedAt,
-                recheckAt,
-                disabledThresholdForDate: dateString
-              });
-              
-              console.log(`Scheduled recheck for campaign ${campaign.id} at ${recheckAt.toISOString()}`);
-            } else {
-              console.log(`Failed to pause campaign ${campaign.id} in TrafficStar due to high spent value`);
-            }
-          } else {
-            // Check if campaign is paused due to spent value and recheck time has passed
-            const pauseInfo = this.spentValuePausedCampaigns.get(trafficstarId);
-            
-            if (pauseInfo && pauseInfo.disabledThresholdForDate === dateString) {
-              // Check if recheck time has passed
-              if (new Date() >= pauseInfo.recheckAt) {
-                console.log(`Recheck time has passed for campaign ${campaign.id} paused due to spent value`);
-                console.log(`Current spent value is $${spentData.spent}, below $10 threshold`);
-                
-                // Activate the campaign in TrafficStar
-                const success = await this.activateCampaign(trafficstarId);
-                
-                if (success) {
-                  console.log(`Successfully reactivated campaign ${campaign.id} after spent value recheck`);
-                  
-                  // Update local database status
-                  await db
-                    .update(campaigns)
-                    .set({
-                      status: 'active',
-                      active: true,
-                      updatedAt: new Date()
-                    })
-                    .where(eq(campaigns.id, campaign.id));
-                  
-                  // Remove from paused campaigns map
-                  this.spentValuePausedCampaigns.delete(trafficstarId);
-                } else {
-                  console.log(`Failed to reactivate campaign ${campaign.id} in TrafficStar after spent value recheck`);
-                }
-              } else {
-                console.log(`Campaign ${campaign.id} is paused due to spent value, recheck scheduled for ${pauseInfo.recheckAt.toISOString()}`);
-                console.log(`Minutes until recheck: ${Math.ceil((pauseInfo.recheckAt.getTime() - Date.now()) / (60 * 1000))}`);
-              }
-            }
-          }
-        } catch (error) {
-          console.error(`Error checking spent value for campaign ${campaign.id}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking campaigns spent values:', error);
-    }
-  }
-  
-  /**
-   * Track a URL for budget update after a delay
-   */
-  async trackNewUrlForBudgetUpdate(urlId: number, campaignId: number, clickValue: number): Promise<void> {
-    try {
-      // Calculate update time (10 minutes from now)
+      // Create received time and update time (10 minutes later)
       const receivedAt = new Date();
       const updateAt = new Date(receivedAt.getTime() + 10 * 60 * 1000);
       
-      console.log(`Tracking URL ${urlId} in campaign ${campaignId} for budget update at ${updateAt.toISOString()}`);
-      console.log(`URL click value: ${clickValue}`);
+      console.log(`  - Received at: ${receivedAt.toISOString()}`);
+      console.log(`  - Will update budget at: ${updateAt.toISOString()}`);
       
-      // Add to pending URL budgets map
-      if (!this.pendingUrlBudgets.has(campaignId)) {
-        this.pendingUrlBudgets.set(campaignId, []);
+      // Get or create the array for this campaign
+      if (!this.pendingUrlBudgets.has(tsId)) {
+        this.pendingUrlBudgets.set(tsId, []);
       }
       
-      const pendingList = this.pendingUrlBudgets.get(campaignId)!;
-      pendingList.push({
+      // Add this URL to the pending updates
+      const pendingUrls = this.pendingUrlBudgets.get(tsId)!;
+      pendingUrls.push({
         urlId,
         campaignId,
         receivedAt,
@@ -1019,41 +1874,8 @@ class TrafficStarService {
         processed: false
       });
       
-      // Store the pending update in database
-      const [existingCampaign] = await db
-        .select()
-        .from(campaigns)
-        .where(eq(campaigns.id, campaignId));
-      
-      if (existingCampaign && existingCampaign.trafficstarCampaignId) {
-        try {
-          // Execute a raw SQL query to insert into table (in case it doesn't exist yet)
-          await db.execute(sql`
-            CREATE TABLE IF NOT EXISTS "pending_url_budget_updates" (
-              "id" SERIAL PRIMARY KEY,
-              "urlId" INTEGER NOT NULL REFERENCES "urls"("id") ON DELETE CASCADE,
-              "campaignId" INTEGER NOT NULL REFERENCES "campaigns"("id") ON DELETE CASCADE,
-              "receivedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              "updateAt" TIMESTAMP NOT NULL,
-              "clickValue" INTEGER NOT NULL,
-              "processed" BOOLEAN NOT NULL DEFAULT FALSE
-            )
-          `);
-          
-          // Insert the pending update
-          await db.execute(sql`
-            INSERT INTO "pending_url_budget_updates" 
-            ("urlId", "campaignId", "receivedAt", "updateAt", "clickValue", "processed") 
-            VALUES (${urlId}, ${campaignId}, ${receivedAt.toISOString()}, ${updateAt.toISOString()}, ${clickValue}, FALSE)
-          `);
-          
-          console.log(`Stored pending URL budget update in database for URL ${urlId}`);
-        } catch (error) {
-          console.error(`Error storing pending URL budget update in database:`, error);
-        }
-      } else {
-        console.log(`Campaign ${campaignId} not found or has no TrafficStar ID, not storing pending URL budget update`);
-      }
+      console.log(`Added URL ${urlId} to pending budget updates for campaign ${tsId}`);
+      console.log(`Total pending URLs for campaign ${tsId}: ${pendingUrls.length}`);
     } catch (error) {
       console.error(`Error tracking URL ${urlId} for budget update:`, error);
     }
@@ -1061,95 +1883,92 @@ class TrafficStarService {
   
   /**
    * Process pending URL budget updates
+   * This checks for URLs that have passed their 10-minute wait period
+   * and updates the campaign's daily budget accordingly
+   * Made public for testing purposes
    */
-  async processPendingUrlBudgetUpdates(): Promise<void> {
+  public async processPendingUrlBudgets(): Promise<void> {
     try {
-      console.log('Processing pending URL budget updates...');
+      console.log('Processing pending URL budget updates');
       
-      // Get current time
+      // Get current time for comparison
       const now = new Date();
       
-      // Loop through all campaign IDs with pending updates
-      for (const [campaignId, pendingUpdates] of this.pendingUrlBudgets.entries()) {
-        try {
-          // Filter updates that are ready to process and not processed yet
-          const readyUpdates = pendingUpdates.filter(update => 
-            !update.processed && now >= update.updateAt
-          );
+      // Get current UTC date for tracking updates
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
+      // Track campaigns that need updates
+      const campaignsToUpdate = new Set<number>();
+      
+      // Check each campaign for pending updates
+      for (const [tsId, pendingUrls] of this.pendingUrlBudgets.entries()) {
+        // Filter URLs that need updating (past their update time and not processed)
+        const urlsToUpdate = pendingUrls.filter(url => 
+          !url.processed && now >= url.updateAt
+        );
+        
+        if (urlsToUpdate.length > 0) {
+          console.log(`Found ${urlsToUpdate.length} URLs ready for budget update in campaign ${tsId}`);
+          campaignsToUpdate.add(tsId);
           
-          if (readyUpdates.length > 0) {
-            console.log(`Found ${readyUpdates.length} pending URL budget updates ready for campaign ${campaignId}`);
-            
-            // Get campaign from database
-            const [campaign] = await db
-              .select()
-              .from(campaigns)
-              .where(eq(campaigns.id, campaignId));
-            
-            if (campaign && campaign.trafficstarCampaignId) {
-              // Calculate total click value
-              let totalClickValue = 0;
-              for (const update of readyUpdates) {
-                totalClickValue += update.clickValue;
-              }
-              
-              console.log(`Total click value to add to budget: ${totalClickValue}`);
-              
-              // Get current campaign max daily budget
-              const trafficstarId = Number(campaign.trafficstarCampaignId);
-              const currentCampaign = await this.getCampaign(trafficstarId);
-              
-              if (currentCampaign) {
-                const currentBudget = currentCampaign.max_daily || 0;
-                const newBudget = currentBudget + totalClickValue;
-                
-                console.log(`Current budget: ${currentBudget}, New budget: ${newBudget}`);
-                
-                // Update budget in TrafficStar
-                const success = await this.updateCampaignBudget(trafficstarId, newBudget);
-                
-                if (success) {
-                  console.log(`Successfully updated budget for campaign ${campaignId} to ${newBudget}`);
-                  
-                  // Mark updates as processed
-                  for (const update of readyUpdates) {
-                    update.processed = true;
-                  }
-                  
-                  // Update in database
-                  try {
-                    await db.execute(sql`
-                      UPDATE "pending_url_budget_updates"
-                      SET "processed" = TRUE
-                      WHERE "campaignId" = ${campaignId} AND "processed" = FALSE
-                    `);
-                  } catch (error) {
-                    console.error(`Error updating pending URL budget updates in database:`, error);
-                  }
-                } else {
-                  console.log(`Failed to update budget for campaign ${campaignId} in TrafficStar`);
-                }
-              } else {
-                console.log(`Failed to get current campaign data for ${campaignId} from TrafficStar`);
-              }
-            } else {
-              console.log(`Campaign ${campaignId} not found or has no TrafficStar ID, skipping budget update`);
-            }
-          }
-        } catch (error) {
-          console.error(`Error processing pending URL budget updates for campaign ${campaignId}:`, error);
+          // Mark these URLs as being processed
+          urlsToUpdate.forEach(url => {
+            console.log(`  - URL ${url.urlId} ready for budget update (received ${url.receivedAt.toISOString()})`);
+            url.processed = true;
+          });
         }
       }
       
-      // Clean up processed updates
-      for (const [campaignId, pendingUpdates] of this.pendingUrlBudgets.entries()) {
-        const remainingUpdates = pendingUpdates.filter(update => !update.processed);
-        if (remainingUpdates.length === 0) {
-          // If all updates processed, remove campaign from map
-          this.pendingUrlBudgets.delete(campaignId);
-        } else {
-          // Otherwise, update the list with only unprocessed updates
-          this.pendingUrlBudgets.set(campaignId, remainingUpdates);
+      // Process each campaign that needs updates
+      for (const tsId of campaignsToUpdate) {
+        try {
+          console.log(`Processing budget update for campaign ${tsId}`);
+          
+          // Get all pending URLs for this campaign
+          const pendingUrls = this.pendingUrlBudgets.get(tsId) || [];
+          const processedUrls = pendingUrls.filter(url => url.processed);
+          
+          // Skip if no URLs to process
+          if (processedUrls.length === 0) {
+            console.log(`No processed URLs found for campaign ${tsId}`);
+            continue;
+          }
+          
+          // Calculate total click value for processed URLs
+          let totalClickValue = 0;
+          processedUrls.forEach(url => {
+            totalClickValue += url.clickValue;
+          });
+          
+          console.log(`Total click value for ${processedUrls.length} URLs: $${totalClickValue.toFixed(4)}`);
+          
+          // Get current spent value for today
+          const spentValue = await this.getCampaignSpentValue(tsId, currentUtcDate, currentUtcDate);
+          const currentSpentValue = spentValue?.totalSpent || 0;
+          console.log(`Current spent value for campaign ${tsId}: $${currentSpentValue.toFixed(4)}`);
+          
+          // Get current daily budget
+          const campaign = await this.getCampaign(tsId);
+          const currentBudget = campaign?.max_daily || 0;
+          console.log(`Current daily budget for campaign ${tsId}: $${currentBudget.toFixed(4)}`);
+          
+          // Calculate new daily budget (current budget + total click value)
+          const newDailyBudget = currentBudget + totalClickValue;
+          console.log(`New daily budget for campaign ${tsId}: $${newDailyBudget.toFixed(4)}`);
+          
+          // Update the campaign's daily budget
+          await this.updateCampaignDailyBudget(tsId, newDailyBudget);
+          console.log(`Updated daily budget for campaign ${tsId} to $${newDailyBudget.toFixed(4)}`);
+          
+          // Remove processed URLs from pending updates
+          this.pendingUrlBudgets.set(
+            tsId, 
+            pendingUrls.filter(url => !url.processed)
+          );
+          
+          console.log(`Removed ${processedUrls.length} processed URLs from pending updates for campaign ${tsId}`);
+        } catch (error) {
+          console.error(`Error processing budget update for campaign ${tsId}:`, error);
         }
       }
     } catch (error) {
@@ -1158,84 +1977,321 @@ class TrafficStarService {
   }
   
   /**
-   * Get all saved campaigns from database
+   * Clear pending URL budget updates for a campaign
+   * This can be used for testing or debugging
+   * @param tsId The TrafficStar campaign ID
    */
-  async getSavedCampaigns(): Promise<any[]> {
+  public clearPendingUrlBudgets(tsId: number): void {
+    if (this.pendingUrlBudgets.has(tsId)) {
+      console.log(`Clearing pending URL budget updates for campaign ${tsId}`);
+      this.pendingUrlBudgets.delete(tsId);
+    }
+  }
+  
+  async scheduleAutoManagement(): Promise<void> {
     try {
-      const dbCampaigns = await db.select().from(campaigns);
-      return dbCampaigns.filter(c => c.trafficstarCampaignId).map(c => ({
-        id: Number(c.trafficstarCampaignId),
-        name: c.name,
-        status: c.status,
-        active: c.active,
-        max_daily: c.maxDaily
-      }));
+      // Run initial auto-management
+      await this.autoManageCampaigns();
+      
+      // Schedule spent value check to run every 2 minutes
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled spent value check for TrafficStar campaigns');
+          await this.checkCampaignsSpentValue();
+        } catch (error) {
+          console.error('Error in scheduled spent value check:', error);
+        }
+      }, 2 * 60 * 1000); // Every 2 minutes
+      
+      // Schedule to run regular auto-management every minute for immediate effect
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled auto-management for TrafficStar campaigns');
+          await this.autoManageCampaigns();
+        } catch (error) {
+          console.error('Error in scheduled auto-management:', error);
+        }
+      }, 60 * 1000); // Every minute
+      
+      // Schedule processing of pending URL budget updates every minute
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled processing of pending URL budget updates');
+          await this.processPendingUrlBudgets();
+        } catch (error) {
+          console.error('Error in scheduled processing of pending URL budget updates:', error);
+        }
+      }, 60 * 1000); // Every minute
+      
+      console.log('TrafficStar auto-management scheduler initialized');
     } catch (error) {
-      console.error('Error getting saved campaigns:', error);
-      return [];
+      console.error('Error scheduling auto-management:', error);
     }
   }
   
   /**
-   * Schedule automatic management of TrafficStar campaigns
-   * Sets up periodic checks for campaign monitoring
+   * Check all campaigns for their spent value and pause if over threshold
    */
-  async scheduleAutoManagement(): Promise<void> {
-    console.log('Setting up TrafficStar campaign auto-management scheduler');
-    
-    // Initial checks
+  public async checkCampaignsSpentValue(): Promise<void> {
     try {
-      await this.autoManageCampaigns();
-      console.log('Initial campaign auto-management completed successfully');
+      // Get all campaigns with auto-management enabled
+      const campaignsToCheck = await db
+        .select()
+        .from(campaigns)
+        .where(
+          and(
+            eq(campaigns.autoManageTrafficstar, true),
+            isNotNull(campaigns.trafficstarCampaignId)
+          )
+        );
+      
+      console.log(`Found ${campaignsToCheck.length} campaigns with auto-management enabled for spent value check`);
+      
+      // Check each campaign
+      for (const campaign of campaignsToCheck) {
+        if (!campaign.trafficstarCampaignId) continue;
+        
+        // Get TrafficStar campaign ID
+        const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
+          parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+          Number(campaign.trafficstarCampaignId);
+          
+        // Get current date in UTC
+        const currentUtcDate = new Date().toISOString().split('T')[0];
+        
+        // Skip if campaign should remain paused due to spent value
+        if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
+          continue;
+        }
+        
+        // Get current campaign status
+        let currentTrafficstarStatus;
+        try {
+          const [dbCampaign] = await db
+            .select()
+            .from(trafficstarCampaigns)
+            .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
+          
+          if (dbCampaign) {
+            currentTrafficstarStatus = {
+              active: dbCampaign.active,
+              status: dbCampaign.status,
+              lastRequestedAction: dbCampaign.lastRequestedAction,
+              lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
+              lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
+            };
+          }
+        } catch (error) {
+          console.error(`Error getting status for campaign ${trafficstarId}:`, error);
+        }
+        
+        // Skip if campaign is already paused
+        if (currentTrafficstarStatus && 
+            (currentTrafficstarStatus.active === false || 
+             currentTrafficstarStatus.status === 'paused')) {
+          console.log(`Campaign ${trafficstarId} is already paused - skipping spent value check`);
+          continue;
+        }
+        
+        // Get current spent value for today only
+        console.log(`Checking spent value for campaign ${trafficstarId} on ${currentUtcDate}`);
+        try {
+          const spentValue = await this.getCampaignSpentValue(trafficstarId, currentUtcDate, currentUtcDate);
+          
+          // Check if spent value exceeds $10
+          if (spentValue && spentValue.totalSpent > 10) {
+            console.log(`⚠️ Campaign ${trafficstarId} has spent $${spentValue.totalSpent.toFixed(2)}, which exceeds $10 threshold`);
+            
+            // Pause the campaign
+            console.log(`Pausing campaign ${trafficstarId} due to high spent value ($${spentValue.totalSpent.toFixed(2)} > $10)`);
+            
+            // Format current date and time
+            const now = new Date();
+            const currentUtcTime = now.getUTCHours().toString().padStart(2, '0') + ':' + 
+                                  now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
+                                  now.getUTCSeconds().toString().padStart(2, '0');
+            const formattedCurrentDateTime = `${currentUtcDate} ${currentUtcTime}`;
+            
+            // Pause the campaign and set end time
+            try {
+              await this.pauseCampaign(trafficstarId);
+              await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
+              
+              // Mark this campaign as paused due to spent value
+              // Schedule recheck after 10 minutes
+              const pausedAt = new Date();
+              const recheckAt = new Date(pausedAt.getTime() + 10 * 60 * 1000); // 10 minutes later
+              this.spentValuePausedCampaigns.set(trafficstarId, {
+                pausedAt,
+                recheckAt,
+                disabledThresholdForDate: currentUtcDate
+              });
+              
+              console.log(`✅ Campaign ${trafficstarId} paused due to high spent value. Will recheck at ${recheckAt.toISOString()}`);
+              
+              // Disable click threshold checks for this campaign until next UTC date
+              console.log(`Click threshold checks for campaign ${trafficstarId} disabled until next UTC date change`);
+            } catch (error) {
+              console.error(`Error pausing campaign ${trafficstarId} due to high spent value:`, error);
+            }
+          } else {
+            const spentAmount = spentValue ? spentValue.totalSpent.toFixed(2) : '0.00';
+            console.log(`Campaign ${trafficstarId} spent value: $${spentAmount} (below $10 threshold)`);
+          }
+        } catch (error) {
+          console.error(`Error checking spent value for campaign ${trafficstarId}:`, error);
+        }
+      }
     } catch (error) {
-      console.error('Error during initial campaign auto-management:', error);
+      console.error('Error checking campaigns spent value:', error);
+    }
+  }
+
+  /**
+   * Get saved campaigns from database
+   */
+  async getSavedCampaigns() {
+    return db.select().from(trafficstarCampaigns).orderBy(trafficstarCampaigns.name);
+  }
+  
+  /**
+   * Get campaign spent value by date range
+   * @param id Campaign ID
+   * @param dateFrom Optional start date in YYYY-MM-DD format (defaults to 7 days ago)
+   * @param dateUntil Optional end date in YYYY-MM-DD format (defaults to today)
+   * @returns Campaign stats including daily costs
+   */
+  async getCampaignSpentValue(id: number, dateFrom?: string, dateUntil?: string): Promise<any> {
+    // In test mode, return consistent test data so we can verify the logic
+    if (process.env.TEST_MODE === 'true') {
+      console.log(`🧪 TEST MODE: Returning mock spent value data for campaign ${id}`);
+      
+      // Set default date range if not provided (last 7 days)
+      const today = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      const fromDate = dateFrom || sevenDaysAgo.toISOString().split('T')[0];
+      const untilDate = dateUntil || today.toISOString().split('T')[0];
+      
+      // Use a fixed test value of $10.30 for today (above threshold)
+      const testTotalSpent = 10.30;
+      
+      // Create daily costs with $10.30 for today, different values for other days
+      const dailyCosts: {date: string, cost: number}[] = [];
+      
+      // Add current date with test cost
+      dailyCosts.push({
+        date: untilDate,
+        cost: testTotalSpent
+      });
+      
+      return {
+        campaignId: id,
+        totalSpent: testTotalSpent,
+        dailyCosts,
+        dateFrom: fromDate,
+        dateUntil: untilDate,
+        testMode: true
+      };
     }
     
+    // Normal operation (non-test mode)
     try {
-      await this.checkCampaignsSpentValue();
-      console.log('Initial spent value check completed successfully');
-    } catch (error) {
-      console.error('Error during initial spent value check:', error);
+      const token = await this.ensureToken();
+      
+      // Set default date range if not provided (last 7 days)
+      const today = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      const fromDate = dateFrom || sevenDaysAgo.toISOString().split('T')[0];
+      const untilDate = dateUntil || today.toISOString().split('T')[0];
+      
+      // Add one day to untilDate as the API excludes the end date from the range
+      const untilPlusOneDay = new Date(untilDate);
+      untilPlusOneDay.setDate(untilPlusOneDay.getDate() + 1);
+      const untilPlusOneDayFormatted = untilPlusOneDay.toISOString().split('T')[0];
+      
+      console.log(`Fetching spent value for campaign ${id} from ${fromDate} to ${untilDate}`);
+      
+      // We already handled TEST_MODE at the beginning of the method,
+      // so we just proceed with normal API call here
+      
+      // Use the stats API to get campaign costs by day
+      const response = await axios.get(
+        `${API_BASE_URL}/stats/advertiser/day`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            campaign_id: id,
+            date_from: fromDate,
+            date_until: untilPlusOneDayFormatted,
+            total: true
+          },
+          timeout: 30000 // 30 second timeout
+        }
+      );
+      
+      console.log(`Successfully retrieved spent value for campaign ${id}`);
+      
+      // Process the response to calculate totals and return detailed stats
+      let totalSpent = 0;
+      let totalImpressions = 0;
+      let totalClicks = 0;
+      let totalLeads = 0;
+      
+      if (response.data && response.data.response) {
+        response.data.response.forEach((day: any) => {
+          totalSpent += parseFloat(day.price || 0);
+          totalImpressions += parseInt(day.impressions || 0, 10);
+          totalClicks += parseInt(day.clicks || 0, 10);
+          totalLeads += parseInt(day.leads || 0, 10);
+        });
+      }
+      
+      return {
+        campaignId: id,
+        dateRange: {
+          from: fromDate,
+          to: untilDate
+        },
+        dailyStats: response.data.response || [],
+        totalSpent: parseFloat(totalSpent.toFixed(4)), // Add this field for direct access
+        totals: {
+          spent: parseFloat(totalSpent.toFixed(4)),
+          impressions: totalImpressions,
+          clicks: totalClicks,
+          leads: totalLeads,
+          ecpm: totalImpressions > 0 ? parseFloat((totalSpent * 1000 / totalImpressions).toFixed(4)) : 0,
+          ecpc: totalClicks > 0 ? parseFloat((totalSpent / totalClicks).toFixed(4)) : 0,
+          ecpa: totalLeads > 0 ? parseFloat((totalSpent / totalLeads).toFixed(4)) : 0,
+          ctr: totalImpressions > 0 ? parseFloat((totalClicks * 100 / totalImpressions).toFixed(2)) : 0
+        }
+      };
+    } catch (error: any) {
+      console.error(`Error getting spent value for campaign ${id}:`, error.response?.data || error.message);
+      throw new Error(`Failed to get spent value for campaign ${id}: ${error.response?.data?.msg || error.message}`);
+    }
+  }
+
+  /**
+   * Check if API key is set (either in environment variables or database)
+   */
+  async isConfigured(): Promise<boolean> {
+    // Check environment variable first
+    if (process.env.TRAFFICSTAR_API_KEY) {
+      return true;
     }
     
-    try {
-      await this.processPendingUrlBudgetUpdates();
-      console.log('Initial URL budget updates processed successfully');
-    } catch (error) {
-      console.error('Error during initial URL budget updates processing:', error);
-    }
-    
-    // Schedule periodic checks
-    setInterval(async () => {
-      try {
-        await this.autoManageCampaigns();
-        console.log('Periodic campaign auto-management completed');
-      } catch (error) {
-        console.error('Error during periodic campaign auto-management:', error);
-      }
-    }, 5 * 60 * 1000); // Every 5 minutes
-    
-    setInterval(async () => {
-      try {
-        await this.checkCampaignsSpentValue();
-        console.log('Periodic spent value check completed');
-      } catch (error) {
-        console.error('Error during periodic spent value check:', error);
-      }
-    }, 10 * 60 * 1000); // Every 10 minutes
-    
-    setInterval(async () => {
-      try {
-        await this.processPendingUrlBudgetUpdates();
-        console.log('Periodic URL budget updates processed');
-      } catch (error) {
-        console.error('Error during periodic URL budget updates processing:', error);
-      }
-    }, 3 * 60 * 1000); // Every 3 minutes
-    
-    console.log('TrafficStar campaign auto-management scheduler configured successfully');
+    // Fallback to database check
+    const [credential] = await db.select().from(trafficstarCredentials).limit(1);
+    return !!credential;
   }
 }
 
-// Export singleton instance
+// Export a singleton instance
 export const trafficStarService = new TrafficStarService();

@@ -14,7 +14,6 @@ import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
 import TestSpentValuePage from "@/pages/test-spent-value";
 import OriginalUrlRecordsPage from "@/pages/original-url-records-page";
-import AnalyticsPage from "@/pages/analytics-page";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -90,9 +89,6 @@ function Router() {
           </Route>
           <Route path="/original-url-records">
             <OriginalUrlRecordsPage />
-          </Route>
-          <Route path="/analytics">
-            <AnalyticsPage />
           </Route>
           <Route>
             <NotFound />

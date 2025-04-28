@@ -110,6 +110,7 @@ export async function getServerStats(): Promise<ServerStats> {
     const uptime = await si.time();
     const loadavg = await si.currentLoad();
     console.log("Load average data:", JSON.stringify(loadavg, null, 2));
+    console.log("OS load averages:", await si.osInfo().then(os => os.platform), require('os').loadavg());
     
     // Calculate memory usage percentage
     const memoryUsagePercent = (memory.total - memory.available) / memory.total * 100;
@@ -121,13 +122,17 @@ export async function getServerStats(): Promise<ServerStats> {
     try {
       console.log("========== SYSTEM LOAD CALCULATION ==========");
       
-      // Use the CPU load data from the systeminformation API instead of os.loadavg()
-      const oneMinLoad = loadavg.currentLoad || 0;
-      console.log("Using current CPU load:", oneMinLoad);
+      // Get load average from OS
+      const osLoadAvg = require('os').loadavg();
+      console.log("Raw OS load averages:", JSON.stringify(osLoadAvg));
+      const oneMinLoad = osLoadAvg[0] || 0;
+      console.log("Using 1-minute load average:", oneMinLoad);
       
-      // Get CPU information from SI data instead of os.cpus()
-      const numCPUs = loadavg.cpus?.length || 4; // Default to 4 CPUs if we can't detect
-      console.log("Number of CPUs detected from SI:", numCPUs);
+      // Get CPU information 
+      const cpuInfoRaw = require('os').cpus();
+      console.log("CPU Info raw length:", cpuInfoRaw.length);
+      const numCPUs = cpuInfoRaw.length || 1;
+      console.log("Number of CPUs detected:", numCPUs);
       
       // Get SI data too
       console.log("SI current load data:", JSON.stringify(loadavg));
@@ -214,11 +219,7 @@ export async function getServerStats(): Promise<ServerStats> {
       },
       timestamp: new Date(),
       uptime: uptime.uptime,
-      loadAverage: [
-        loadavg.avgLoad || (cpu.currentLoad / 100), 
-        loadavg.avgLoad || (cpu.currentLoad / 100), 
-        loadavg.avgLoad || (cpu.currentLoad / 100)
-      ],
+      loadAverage: require('os').loadavg() || (loadavg.avgLoad ? [loadavg.avgLoad] : [cpu.currentLoad / 100, cpu.currentLoad / 100, cpu.currentLoad / 100]),
       systemLoad: systemLoad
     };
     
