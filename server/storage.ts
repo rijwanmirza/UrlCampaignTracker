@@ -1633,17 +1633,56 @@ export class DatabaseStorage implements IStorage {
   async setClickProtectionBypass(enabled: boolean): Promise<void> {
     try {
       if (enabled) {
-        console.log('⚠️ Setting database session variable app.bypass_click_protection = TRUE');
-        await db.execute(sql`SET app.bypass_click_protection = 'true'`);
+        console.log('⚠️ Setting click protection bypass to ENABLED');
+        // Use a direct database table approach instead of session variables
+        await db.execute(sql`
+          INSERT INTO protection_settings (key, value)
+          VALUES ('click_protection_enabled', FALSE)
+          ON CONFLICT (key) DO UPDATE SET value = FALSE
+        `);
         this.clickProtectionBypassed = true;
       } else {
-        console.log('✅ Setting database session variable app.bypass_click_protection = FALSE');
-        await db.execute(sql`SET app.bypass_click_protection = 'false'`);
+        console.log('✅ Setting click protection bypass to DISABLED (protection enabled)');
+        await db.execute(sql`
+          INSERT INTO protection_settings (key, value)
+          VALUES ('click_protection_enabled', TRUE)
+          ON CONFLICT (key) DO UPDATE SET value = TRUE
+        `);
         this.clickProtectionBypassed = false;
       }
     } catch (error) {
       console.error(`Error setting click protection bypass to ${enabled}:`, error);
-      throw error;
+      
+      // Check if the protection_settings table doesn't exist, and create it if needed
+      try {
+        console.log('Attempting to create protection_settings table...');
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS protection_settings (
+            key TEXT PRIMARY KEY,
+            value BOOLEAN NOT NULL
+          )
+        `);
+        
+        // Try again after creating the table
+        if (enabled) {
+          await db.execute(sql`
+            INSERT INTO protection_settings (key, value)
+            VALUES ('click_protection_enabled', FALSE)
+            ON CONFLICT (key) DO UPDATE SET value = FALSE
+          `);
+          this.clickProtectionBypassed = true;
+        } else {
+          await db.execute(sql`
+            INSERT INTO protection_settings (key, value)
+            VALUES ('click_protection_enabled', TRUE)
+            ON CONFLICT (key) DO UPDATE SET value = TRUE
+          `);
+          this.clickProtectionBypassed = false;
+        }
+      } catch (secondError) {
+        console.error('Failed to create protection_settings table:', secondError);
+        throw secondError;
+      }
     }
   }
 }

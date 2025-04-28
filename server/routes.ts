@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import spdy from 'spdy';
 import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
+import { applyClickProtection } from "./click-protection";
 import { 
   insertCampaignSchema, 
   updateCampaignSchema,
