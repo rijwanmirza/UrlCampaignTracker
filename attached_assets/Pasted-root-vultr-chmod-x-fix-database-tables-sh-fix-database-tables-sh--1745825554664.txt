@@ -1,0 +1,86 @@
+root@vultr:~# chmod +x fix-database-tables.sh
+./fix-database-tables.sh
+╔══════════════════════════════════════════════════════════════╗
+║               DIRECT DATABASE TABLE FIX                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+🔄 Recreating all database tables...
+BEGIN
+DROP TABLE
+DROP TABLE
+DROP TABLE
+DROP TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+NOTICE:  trigger "prevent_click_limit_update" for relation "urls" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+COMMIT
+✓ Database tables recreated
+🔍 Verifying database tables...
+                  List of relations
+ Schema |          Name           | Type  |  Owner
+--------+-------------------------+-------+----------
+ public | api_error_logs          | table | postgres
+ public | auto_sync_operations    | table | postgres
+ public | campaigns               | table | postgres
+ public | original_url_records    | table | postgres
+ public | protection_settings     | table | postgres
+ public | sessions                | table | postgres
+ public | system_settings         | table | postgres
+ public | trafficstar_campaigns   | table | postgres
+ public | trafficstar_credentials | table | postgres
+ public | urls                    | table | postgres
+ public | users                   | table | postgres
+(11 rows)
+
+🔍 Verifying campaigns table...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ id |     name      |                     description                     | trafficstar_id | auto_management | multiplier |         created_at         |         updated_at
+----+---------------+-----------------------------------------------------+----------------+-----------------+------------+----------------------------+----------------------------
+  1 | Test Campaign | This is a test campaign created during database fix |                | f               |       1.00 | 2025-04-28 07:32:12.632349 | 2025-04-28 07:32:12.632349
+(1 row)
+
+(END)

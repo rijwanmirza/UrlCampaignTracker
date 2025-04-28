@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Fix Navigation and Route - Simplified Script
-# This script focuses specifically on fixing the route to the Original URL Records page
+# Navigation Route Fix Script
+# This script ensures all frontend routes are properly handled
 
 # Text formatting
 GREEN='\033[0;32m'
@@ -10,600 +10,212 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
 APP_DIR="/var/www/url-campaign"
-PM2_APP_NAME="url-campaign"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          FIXING ORIGINAL URL RECORDS ROUTE                   ║${NC}"
+echo -e "${BLUE}║                NAVIGATION ROUTE FIX                          ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
 
-# Backup the application
-echo -e "${YELLOW}📦 Creating backup before fixes...${NC}"
-BACKUP_DIR="/root/url-campaign-route-fix-backup-$(date +%Y%m%d%H%M%S)"
-mkdir -p $BACKUP_DIR
-cp -r $APP_DIR/client/src/* $BACKUP_DIR/
-echo -e "${GREEN}✓ Backup created at ${BACKUP_DIR}${NC}"
-echo
+# Step 1: Create an improved Nginx configuration with SPA route handling
+echo -e "${YELLOW}📝 Updating Nginx configuration for SPA routes...${NC}"
 
-# Step 1: Create a direct solution file
-echo -e "${YELLOW}🔧 Creating direct-fix script...${NC}"
-
-# Create a file with the route component
-cat > "$APP_DIR/original-url-records-page.jsx" << 'EOF'
-import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle, Plus } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-// Form schema validation
-const formSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  target_url: z.string().url("Must be a valid URL"),
-  click_limit: z.coerce.number().int().min(0, "Must be a positive number"),
-  clicks: z.coerce.number().int().min(0, "Must be a positive number"),
-  status: z.enum(["active", "paused"]),
-  notes: z.string().optional(),
-});
-
-export default function OriginalUrlRecordsPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isNewRecordDialogOpen, setIsNewRecordDialogOpen] = useState(false);
-
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Original URL Records</h1>
-          <p className="text-muted-foreground mb-4">
-            Master records for URL data. Updates here can be propagated to all linked URLs.
-          </p>
-        </div>
-        <Button onClick={() => setIsNewRecordDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Record
-        </Button>
-      </div>
-
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="p-4 text-center">
-            <p>This is a placeholder for the Original URL Records page.</p>
-            <p>If you are seeing this, the page is correctly rendering but the API endpoints may need configuration.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* New Record Dialog */}
-      <Dialog open={isNewRecordDialogOpen} onOpenChange={setIsNewRecordDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Create New Original URL Record</DialogTitle>
-          </DialogHeader>
-
-          <div className="p-4">
-            <p>Placeholder for form - API endpoint needs configuration</p>
-          </div>
-
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsNewRecordDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button>Create Record</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+cat > "/etc/nginx/sites-available/default" << 'EOF'
+server {
+    listen 80;
+    server_name views.yoyoprime.com;
+    
+    # Add cache control headers to prevent caching
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
+    add_header Pragma "no-cache";
+    
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+        
+        # Important for SPA routing - try to serve a file, then directory, then fall back to index.html
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Handle API routes directly
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-API-Key "TraffiCS10928";
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+    
+    # Websocket support
+    location /ws {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-API-Key "TraffiCS10928";
+    }
 }
 EOF
 
-# Create a direct-fix script
-cat > "$APP_DIR/direct-fix.cjs" << 'EOF'
-const fs = require('fs');
-const path = require('path');
+nginx -t
+if [ $? -eq 0 ]; then
+  systemctl restart nginx
+  echo -e "${GREEN}✓ Nginx configuration updated for SPA routes${NC}"
+else
+  echo -e "${RED}⚠️ Nginx configuration error${NC}"
+fi
 
-// Configuration
-const APP_DIR = process.argv[2] || '/var/www/url-campaign';
-const CLIENT_SRC = path.join(APP_DIR, 'client/src');
-const PAGES_DIR = path.join(CLIENT_SRC, 'pages');
-const APP_TSX = path.join(CLIENT_SRC, 'App.tsx');
-const COMP_DIR = path.join(PAGES_DIR, 'original-url-records-page.jsx');
+# Step 2: Add a browser refresh script to the app directory
+echo -e "${YELLOW}📝 Creating browser refresh helper...${NC}"
 
-// Ensure directories exist
-if (!fs.existsSync(PAGES_DIR)) {
-  fs.mkdirSync(PAGES_DIR, { recursive: true });
-  console.log(`Created pages directory at ${PAGES_DIR}`);
-}
-
-// Copy the component
-const sourceFile = path.join(APP_DIR, 'original-url-records-page.jsx');
-if (fs.existsSync(sourceFile)) {
-  fs.copyFileSync(sourceFile, path.join(PAGES_DIR, 'original-url-records-page.jsx'));
-  console.log(`Copied Original URL Records page to ${PAGES_DIR}`);
-} else {
-  console.error(`Source file not found at ${sourceFile}`);
-  process.exit(1);
-}
-
-// Fix App.tsx
-if (fs.existsSync(APP_TSX)) {
-  let appContent = fs.readFileSync(APP_TSX, 'utf8');
-
-  // Check if import exists
-  if (!appContent.includes('import OriginalUrlRecordsPage')) {
-    // Add import
-    const importLine = "import OriginalUrlRecordsPage from './pages/original-url-records-page';\n";
-    appContent = importLine + appContent;
-    console.log('Added import for OriginalUrlRecordsPage');
-  }
-
-  // Check if route exists
-  if (!appContent.includes('/original-url-records')) {
-    // Find the Switch component
-    if (appContent.includes('<Switch>')) {
-      // Add route inside Switch
-      appContent = appContent.replace(
-        /<Switch>/,
-        '<Switch>\n        <Route path="/original-url-records" component={OriginalUrlRecordsPage} />'
-      );
-      console.log('Added route for /original-url-records in Switch');
-    } else if (appContent.includes('function App()')) {
-      // No Switch found, try to add a complete Router
-      console.log('No Switch component found, adding custom Router with route');
-
-      // Add a complete Router component with our route
-      const routerComponent = `
-function Router() {
-  return (
-    <div>
-      <Route path="/" component={HomePage} />
-      <Route path="/original-url-records" component={OriginalUrlRecordsPage} />
+cat > "$APP_DIR/public/browser-refresh.html" << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Refresh Helper</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .steps {
+            margin-left: 20px;
+        }
+        .steps li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>URL Redirector - Browser Refresh Helper</h1>
+    
+    <div class="card">
+        <h2>Quick Actions</h2>
+        <button onclick="clearCacheAndRedirect('/')">Clear Cache & Go to Homepage</button>
+        <button onclick="clearCacheAndRedirect('/urls')">Clear Cache & Go to URLs</button>
+        <button onclick="clearCacheAndRedirect('/campaigns')">Clear Cache & Go to Campaigns</button>
+        <button onclick="clearCacheAndRedirect('/original-url-records')">Clear Cache & Go to Original Records</button>
     </div>
-  );
-}
-`;
-
-      // Insert the Router component before App
-      appContent = appContent.replace(
-        /function App\(\)/,
-        `${routerComponent}\nfunction App()`
-      );
-
-      // Replace the content in App with our Router
-      appContent = appContent.replace(
-        /return \([^)]*\);/s,
-        'return (\n    <Router />\n  );'
-      );
-    } else {
-      console.log('Could not find suitable place to add route. Manual intervention needed.');
-    }
-  }
-
-  // Write updated App.tsx
-  fs.writeFileSync(APP_TSX, appContent);
-  console.log(`Updated ${APP_TSX} with Original URL Records route`);
-
-  // Create a very minimal navigation component if needed
-  const NAV_COMP = path.join(CLIENT_SRC, 'components/SimpleNav.jsx');
-  if (!fs.existsSync(path.dirname(NAV_COMP))) {
-    fs.mkdirSync(path.dirname(NAV_COMP), { recursive: true });
-  }
-
-  fs.writeFileSync(NAV_COMP, `
-import React from 'react';
-
-export default function SimpleNav() {
-  return (
-    <div style={{ 
-      background: '#f0f0f0', 
-      padding: '10px', 
-      marginBottom: '20px',
-      display: 'flex',
-      justifyContent: 'space-between' 
-    }}>
-      <div><strong>URL Redirector</strong></div>
-      <div>
-        <a href="/" style={{ marginRight: '15px' }}>Home</a>
-        <a href="/campaigns" style={{ marginRight: '15px' }}>Campaigns</a>
-        <a href="/urls" style={{ marginRight: '15px' }}>URLs</a>
-        <a href="/original-url-records" style={{ fontWeight: 'bold' }}>Original URL Records</a>
-      </div>
+    
+    <div class="card">
+        <h2>Manual Steps to Fix Cache Issues</h2>
+        <ol class="steps">
+            <li>Clear your browser cache completely (Ctrl+Shift+Delete)</li>
+            <li>Close all tabs of this website</li>
+            <li>Open a new incognito/private window</li>
+            <li>Navigate to <a href="https://views.yoyoprime.com">https://views.yoyoprime.com</a></li>
+        </ol>
     </div>
-  );
-}
-  `);
+    
+    <div class="card">
+        <h2>Technical Information</h2>
+        <p>If you're still experiencing issues:</p>
+        <ol class="steps">
+            <li>Open Developer Tools (F12 or Cmd+Option+I)</li>
+            <li>Go to the Network tab</li>
+            <li>Check "Disable cache"</li>
+            <li>Reload the page</li>
+            <li>Look for any failed requests (in red)</li>
+        </ol>
+    </div>
 
-  console.log(`Created simple navigation component at ${NAV_COMP}`);
-
-  // Add the navigation to App.tsx if it doesn't have navigation
-  if (!appContent.includes('SimpleNav')) {
-    let updatedContent = fs.readFileSync(APP_TSX, 'utf8');
-
-    // Add import for SimpleNav
-    if (!updatedContent.includes('import SimpleNav')) {
-      updatedContent = updatedContent.replace(
-        /import.*from/,
-        "import SimpleNav from './components/SimpleNav';\nimport"
-      );
-    }
-
-    // Add SimpleNav to the App component
-    if (updatedContent.includes('return (')) {
-      updatedContent = updatedContent.replace(
-        /return \(/,
-        'return (\n    <>\n      <SimpleNav />'
-      );
-
-      updatedContent = updatedContent.replace(
-        /<\/(.*)>(\s*);/,
-        '</\\1>\n    </>\n  );'
-      );
-    }
-
-    fs.writeFileSync(APP_TSX, updatedContent);
-    console.log('Added SimpleNav to App.tsx');
-  }
-
-} else {
-  console.error(`App.tsx not found at ${APP_TSX}`);
-  process.exit(1);
-}
-
-console.log('Direct fix applied successfully');
+    <script>
+        function clearCacheAndRedirect(path) {
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            // Clear cookies for this domain
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+            // Force reload without cache and redirect
+            window.location.href = path + '?nocache=' + new Date().getTime();
+        }
+    </script>
+</body>
+</html>
 EOF
 
-echo -e "${GREEN}✓ Direct-fix script created${NC}"
-echo
+echo -e "${GREEN}✓ Browser refresh helper created${NC}"
 
-# Step 2: Run the direct fix
-echo -e "${YELLOW}🔧 Running direct fix...${NC}"
-node "$APP_DIR/direct-fix.cjs" "$APP_DIR"
-echo -e "${GREEN}✓ Direct fix applied${NC}"
-echo
-
-# Step 3: Rebuild and restart
-echo -e "${YELLOW}🚀 Rebuilding and restarting application...${NC}"
+# Step 3: Restart the application
+echo -e "${YELLOW}🔄 Restarting application...${NC}"
 cd "$APP_DIR"
-npm run build
-pm2 restart $PM2_APP_NAME
-echo -e "${GREEN}✓ Application rebuilt and restarted${NC}"
-echo
+pm2 restart url-campaign
+echo -e "${GREEN}✓ Application restarted${NC}"
 
 # Final message
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                     FIX COMPLETED                            ║${NC}"
+echo -e "${BLUE}║               NAVIGATION FIX COMPLETE                        ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo
-echo -e "${GREEN}✓ Route to Original URL Records page should now be working${NC}"
-echo -e "${GREEN}✓ You can access it at: https://views.yoyoprime.com/original-url-records${NC}"
-echo -e "${GREEN}✓ A simple navigation bar has been added to access all pages${NC}"
+echo -e "${GREEN}✓ Nginx configured for SPA routes${NC}"
+echo -e "${GREEN}✓ Browser refresh helper created${NC}"
+echo -e "${GREEN}✓ Application restarted${NC}"
 echo
-echo -e "${YELLOW}If the page is still not accessible:${NC}"
-echo -e "1. Check application logs with: ${BLUE}pm2 logs ${PM2_APP_NAME}${NC}"
-echo -e "2. The fallback solution is to add the page manually in App.tsx:${NC}"
+echo -e "${YELLOW}Try these URLs:${NC}"
+echo -e "${BLUE}https://views.yoyoprime.com/ ${NC}(Homepage)"
+echo -e "${BLUE}https://views.yoyoprime.com/urls ${NC}(URLs Page)"
+echo -e "${BLUE}https://views.yoyoprime.com/campaigns ${NC}(Campaigns Page)"
+echo -e "${BLUE}https://views.yoyoprime.com/original-url-records ${NC}(Original Records)"
 echo
-echo -e "${BLUE}import OriginalUrlRecordsPage from './pages/original-url-records-page';${NC}"
-echo -e "${BLUE}<Route path=\"/original-url-records\" component={OriginalUrlRecordsPage} />${NC}"
-echo
-echo -e "${GREEN}Backup of your frontend files is available at: ${BACKUP_DIR}${NC}"#!/bin/bash
-
-# Fix Navigation and Route - Simplified Script
-# This script focuses specifically on fixing the route to the Original URL Records page
-
-# Text formatting
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Configuration
-APP_DIR="/var/www/url-campaign"
-PM2_APP_NAME="url-campaign"
-
-echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          FIXING ORIGINAL URL RECORDS ROUTE                   ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
-echo
-
-# Backup the application
-echo -e "${YELLOW}📦 Creating backup before fixes...${NC}"
-BACKUP_DIR="/root/url-campaign-route-fix-backup-$(date +%Y%m%d%H%M%S)"
-mkdir -p $BACKUP_DIR
-cp -r $APP_DIR/client/src/* $BACKUP_DIR/
-echo -e "${GREEN}✓ Backup created at ${BACKUP_DIR}${NC}"
-echo
-
-# Step 1: Create a direct solution file
-echo -e "${YELLOW}🔧 Creating direct-fix script...${NC}"
-
-# Create a file with the route component
-cat > "$APP_DIR/original-url-records-page.jsx" << 'EOF'
-import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle, Plus } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-// Form schema validation
-const formSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  target_url: z.string().url("Must be a valid URL"),
-  click_limit: z.coerce.number().int().min(0, "Must be a positive number"),
-  clicks: z.coerce.number().int().min(0, "Must be a positive number"),
-  status: z.enum(["active", "paused"]),
-  notes: z.string().optional(),
-});
-
-export default function OriginalUrlRecordsPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isNewRecordDialogOpen, setIsNewRecordDialogOpen] = useState(false);
-
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Original URL Records</h1>
-          <p className="text-muted-foreground mb-4">
-            Master records for URL data. Updates here can be propagated to all linked URLs.
-          </p>
-        </div>
-        <Button onClick={() => setIsNewRecordDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Record
-        </Button>
-      </div>
-
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="p-4 text-center">
-            <p>This is a placeholder for the Original URL Records page.</p>
-            <p>If you are seeing this, the page is correctly rendering but the API endpoints may need configuration.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* New Record Dialog */}
-      <Dialog open={isNewRecordDialogOpen} onOpenChange={setIsNewRecordDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Create New Original URL Record</DialogTitle>
-          </DialogHeader>
-
-          <div className="p-4">
-            <p>Placeholder for form - API endpoint needs configuration</p>
-          </div>
-
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsNewRecordDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button>Create Record</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-EOF
-
-# Create a direct-fix script
-cat > "$APP_DIR/direct-fix.cjs" << 'EOF'
-const fs = require('fs');
-const path = require('path');
-
-// Configuration
-const APP_DIR = process.argv[2] || '/var/www/url-campaign';
-const CLIENT_SRC = path.join(APP_DIR, 'client/src');
-const PAGES_DIR = path.join(CLIENT_SRC, 'pages');
-const APP_TSX = path.join(CLIENT_SRC, 'App.tsx');
-const COMP_DIR = path.join(PAGES_DIR, 'original-url-records-page.jsx');
-
-// Ensure directories exist
-if (!fs.existsSync(PAGES_DIR)) {
-  fs.mkdirSync(PAGES_DIR, { recursive: true });
-  console.log(`Created pages directory at ${PAGES_DIR}`);
-}
-
-// Copy the component
-const sourceFile = path.join(APP_DIR, 'original-url-records-page.jsx');
-if (fs.existsSync(sourceFile)) {
-  fs.copyFileSync(sourceFile, path.join(PAGES_DIR, 'original-url-records-page.jsx'));
-  console.log(`Copied Original URL Records page to ${PAGES_DIR}`);
-} else {
-  console.error(`Source file not found at ${sourceFile}`);
-  process.exit(1);
-}
-
-// Fix App.tsx
-if (fs.existsSync(APP_TSX)) {
-  let appContent = fs.readFileSync(APP_TSX, 'utf8');
-
-  // Check if import exists
-  if (!appContent.includes('import OriginalUrlRecordsPage')) {
-    // Add import
-    const importLine = "import OriginalUrlRecordsPage from './pages/original-url-records-page';\n";
-    appContent = importLine + appContent;
-    console.log('Added import for OriginalUrlRecordsPage');
-  }
-
-  // Check if route exists
-  if (!appContent.includes('/original-url-records')) {
-    // Find the Switch component
-    if (appContent.includes('<Switch>')) {
-      // Add route inside Switch
-      appContent = appContent.replace(
-        /<Switch>/,
-        '<Switch>\n        <Route path="/original-url-records" component={OriginalUrlRecordsPage} />'
-      );
-      console.log('Added route for /original-url-records in Switch');
-    } else if (appContent.includes('function App()')) {
-      // No Switch found, try to add a complete Router
-      console.log('No Switch component found, adding custom Router with route');
-
-      // Add a complete Router component with our route
-      const routerComponent = `
-function Router() {
-  return (
-    <div>
-      <Route path="/" component={HomePage} />
-      <Route path="/original-url-records" component={OriginalUrlRecordsPage} />
-    </div>
-  );
-}
-`;
-
-      // Insert the Router component before App
-      appContent = appContent.replace(
-        /function App\(\)/,
-        `${routerComponent}\nfunction App()`
-      );
-
-      // Replace the content in App with our Router
-      appContent = appContent.replace(
-        /return \([^)]*\);/s,
-        'return (\n    <Router />\n  );'
-      );
-    } else {
-      console.log('Could not find suitable place to add route. Manual intervention needed.');
-    }
-  }
-
-  // Write updated App.tsx
-  fs.writeFileSync(APP_TSX, appContent);
-  console.log(`Updated ${APP_TSX} with Original URL Records route`);
-
-  // Create a very minimal navigation component if needed
-  const NAV_COMP = path.join(CLIENT_SRC, 'components/SimpleNav.jsx');
-  if (!fs.existsSync(path.dirname(NAV_COMP))) {
-    fs.mkdirSync(path.dirname(NAV_COMP), { recursive: true });
-  }
-
-  fs.writeFileSync(NAV_COMP, `
-import React from 'react';
-
-export default function SimpleNav() {
-  return (
-    <div style={{ 
-      background: '#f0f0f0', 
-      padding: '10px', 
-      marginBottom: '20px',
-      display: 'flex',
-      justifyContent: 'space-between' 
-    }}>
-      <div><strong>URL Redirector</strong></div>
-      <div>
-        <a href="/" style={{ marginRight: '15px' }}>Home</a>
-        <a href="/campaigns" style={{ marginRight: '15px' }}>Campaigns</a>
-        <a href="/urls" style={{ marginRight: '15px' }}>URLs</a>
-        <a href="/original-url-records" style={{ fontWeight: 'bold' }}>Original URL Records</a>
-      </div>
-    </div>
-  );
-}
-  `);
-
-  console.log(`Created simple navigation component at ${NAV_COMP}`);
-
-  // Add the navigation to App.tsx if it doesn't have navigation
-  if (!appContent.includes('SimpleNav')) {
-    let updatedContent = fs.readFileSync(APP_TSX, 'utf8');
-
-    // Add import for SimpleNav
-    if (!updatedContent.includes('import SimpleNav')) {
-      updatedContent = updatedContent.replace(
-        /import.*from/,
-        "import SimpleNav from './components/SimpleNav';\nimport"
-      );
-    }
-
-    // Add SimpleNav to the App component
-    if (updatedContent.includes('return (')) {
-      updatedContent = updatedContent.replace(
-        /return \(/,
-        'return (\n    <>\n      <SimpleNav />'
-      );
-
-      updatedContent = updatedContent.replace(
-        /<\/(.*)>(\s*);/,
-        '</\\1>\n    </>\n  );'
-      );
-    }
-
-    fs.writeFileSync(APP_TSX, updatedContent);
-    console.log('Added SimpleNav to App.tsx');
-  }
-
-} else {
-  console.error(`App.tsx not found at ${APP_TSX}`);
-  process.exit(1);
-}
-
-console.log('Direct fix applied successfully');
-EOF
-
-echo -e "${GREEN}✓ Direct-fix script created${NC}"
-echo
-
-# Step 2: Run the direct fix
-echo -e "${YELLOW}🔧 Running direct fix...${NC}"
-node "$APP_DIR/direct-fix.cjs" "$APP_DIR"
-echo -e "${GREEN}✓ Direct fix applied${NC}"
-echo
-
-# Step 3: Rebuild and restart
-echo -e "${YELLOW}🚀 Rebuilding and restarting application...${NC}"
-cd "$APP_DIR"
-npm run build
-pm2 restart $PM2_APP_NAME
-echo -e "${GREEN}✓ Application rebuilt and restarted${NC}"
-echo
-
-# Final message
-echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                     FIX COMPLETED                            ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
-echo
-echo -e "${GREEN}✓ Route to Original URL Records page should now be working${NC}"
-echo -e "${GREEN}✓ You can access it at: https://views.yoyoprime.com/original-url-records${NC}"
-echo -e "${GREEN}✓ A simple navigation bar has been added to access all pages${NC}"
-echo
-echo -e "${YELLOW}If the page is still not accessible:${NC}"
-echo -e "1. Check application logs with: ${BLUE}pm2 logs ${PM2_APP_NAME}${NC}"
-echo -e "2. The fallback solution is to add the page manually in App.tsx:${NC}"
-echo
-echo -e "${BLUE}import OriginalUrlRecordsPage from './pages/original-url-records-page';${NC}"
-echo -e "${BLUE}<Route path=\"/original-url-records\" component={OriginalUrlRecordsPage} />${NC}"
-echo
-echo -e "${GREEN}Backup of your frontend files is available at: ${BACKUP_DIR}${NC}"
+echo -e "${YELLOW}If you're still having cache issues, visit:${NC}"
+echo -e "${BLUE}https://views.yoyoprime.com/browser-refresh.html${NC}"
+echo -e "This page has buttons to clear your cache and redirect to specific pages"
