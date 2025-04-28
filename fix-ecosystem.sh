@@ -94,7 +94,7 @@ sleep 3
 
 if kill -0 $APP_PID 2>/dev/null; then
   echo -e "${GREEN}✓ Application started directly with Node.js${NC}"
-  
+
   # Register with PM2
   echo -e "${YELLOW}Registering running application with PM2...${NC}"
   pm2 start "$APP_DIR/dist/index.js" --name $PM2_APP_NAME -- --port 5000
@@ -172,7 +172,7 @@ if [ "$APP_RUNNING" -gt 0 ]; then
 else
   echo -e "${RED}⚠️ Application failed to start${NC}"
   echo -e "${YELLOW}Trying one final method...${NC}"
-  
+
   # Create a shell script to run the application
   cat > "$APP_DIR/run.sh" << 'EOF'
 #!/bin/bash
@@ -181,11 +181,11 @@ NODE_ENV=production PORT=5000 node dist/index.js
 EOF
 
   chmod +x "$APP_DIR/run.sh"
-  
+
   pm2 delete $PM2_APP_NAME 2>/dev/null
   pm2 start "$APP_DIR/run.sh" --name $PM2_APP_NAME
   pm2 save
-  
+
   APP_RUNNING=$(pm2 list | grep $PM2_APP_NAME | grep -c "online")
   if [ "$APP_RUNNING" -gt 0 ]; then
     echo -e "${GREEN}✓ Application is running with shell script method${NC}"
