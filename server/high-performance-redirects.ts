@@ -166,7 +166,7 @@ export function millionRequestsHttp2Redirect(res: Response, targetUrl: string): 
     'location': targetUrl,
     'cf-ray': STATIC_CF_RAY_VALUE, // Use module constant to avoid string allocation
     'alt-svc': HTTP3_ALT_SVC, // Reuse constant for zero allocation
-    'set-cookie': STATIC_COOKIE_VALUE
+    'set-cookie': STATIC_COOKIE_ARRAY // Use pre-allocated array for zero GC pressure
   });
   
   // Zero-allocation response end
