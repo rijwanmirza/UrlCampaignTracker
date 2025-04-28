@@ -26,10 +26,10 @@ LATEST_BACKUP=$(find /root -name "App.tsx.bak.*" -type f -printf '%T@ %p\n' | so
 
 if [ -z "$LATEST_BACKUP" ]; then
   echo -e "${RED}⚠️ No App.tsx backup found!${NC}"
-  
+
   # Try to find from URL campaign backup
   LATEST_BACKUP=$(find /root -name "url-campaign-backup-*" -type d -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
-  
+
   if [ -z "$LATEST_BACKUP" ]; then
     echo -e "${RED}⚠️ No application backup found either!${NC}"
     exit 1
