@@ -122,19 +122,37 @@ export async function getServerStats(): Promise<ServerStats> {
     try {
       // Get load average from OS or systeminformation
       const osLoadAvg = require('os').loadavg()[0];
+      console.log("Raw load average:", osLoadAvg);
+      
       const numCPUs = require('os').cpus().length || 1;
+      console.log("Number of CPUs for load calculation:", numCPUs);
+      
       // Convert load average to percentage (normalized by CPU count)
-      systemLoad = Math.min(Math.round((osLoadAvg / numCPUs) * 100), 100);
+      // Use a minimum of 1 for CPUs to avoid division by zero
+      const effectiveCPUs = Math.max(numCPUs, 1);
+      systemLoad = Math.min(Math.round((osLoadAvg / effectiveCPUs) * 100), 100);
+      console.log("Calculated system load:", systemLoad);
+      
+      // If system load is very low but not zero, set a minimum sensible value
+      // This is because completely 0.0% is unrealistic for a running system
+      if (systemLoad === 0 && osLoadAvg > 0) {
+        systemLoad = Math.max(1, Math.round(osLoadAvg * 25)); // Convert load average to percentage directly
+        console.log("Applied minimum system load:", systemLoad);
+      }
       
       // Fallback to loadavg.avgLoad or cpu.currentLoad if available
-      if (isNaN(systemLoad) && loadavg.avgLoad) {
+      if ((isNaN(systemLoad) || systemLoad === 0) && loadavg.avgLoad) {
         systemLoad = Math.min(Math.round(loadavg.avgLoad * 100), 100);
-      } else if (isNaN(systemLoad)) {
+        console.log("Using avgLoad fallback for system load:", systemLoad);
+      } else if (isNaN(systemLoad) || systemLoad === 0) {
         systemLoad = Math.min(Math.round(cpu.currentLoad), 100);
+        console.log("Using CPU currentLoad fallback for system load:", systemLoad);
       }
     } catch (err) {
       console.error("Error calculating system load:", err);
+      // Fallback to CPU load if there's an error
       systemLoad = Math.min(Math.round(cpu.currentLoad), 100);
+      console.log("Using error fallback for system load:", systemLoad);
     }
     
     // Create stats object with hard-coded values for CPU to avoid nulls
