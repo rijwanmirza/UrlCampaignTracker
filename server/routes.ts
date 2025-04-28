@@ -1261,7 +1261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "URL does not belong to this campaign" });
       }
 
-      if (url.clicks >= url.clickLimit) {
+      // Only check click limit if it's greater than 0
+      // This ensures the URL works if click limit is 0 (unlimited)
+      if (url.clickLimit > 0 && url.clicks >= url.clickLimit) {
         return res.status(410).json({ message: "This link has reached its click limit" });
       }
 
@@ -1448,6 +1450,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
       }
       
+      // Only check click limit if it's greater than 0
+      // This ensures the URL works if click limit is 0 (unlimited)
+      if (selectedUrl.clickLimit > 0 && selectedUrl.clicks >= selectedUrl.clickLimit) {
+        console.log(`URL ${selectedUrl.id} has reached its click limit: ${selectedUrl.clicks}/${selectedUrl.clickLimit}`);
+        return res.status(410).json({ message: "This link has reached its click limit" });
+      }
+      
       console.log(`Selected URL ID ${selectedUrl.id} (${selectedUrl.name}) for redirect`);
       
       // Increment click count
@@ -1622,6 +1631,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!selectedUrl) {
         console.log(`No active URLs available for campaign ID ${campaignId}`);
         return res.status(410).json({ message: "All URLs in this campaign have reached their click limits" });
+      }
+      
+      // Only check click limit if it's greater than 0
+      // This ensures the URL works if click limit is 0 (unlimited)
+      if (selectedUrl.clickLimit > 0 && selectedUrl.clicks >= selectedUrl.clickLimit) {
+        console.log(`URL ${selectedUrl.id} has reached its click limit: ${selectedUrl.clicks}/${selectedUrl.clickLimit}`);
+        return res.status(410).json({ message: "This link has reached its click limit" });
       }
       
       console.log(`Selected URL ID ${selectedUrl.id} (${selectedUrl.name}) for redirect`);
