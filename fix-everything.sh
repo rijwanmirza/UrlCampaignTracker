@@ -274,13 +274,13 @@ if [ $? -eq 0 ]; then
   echo -e "${GREEN}✓ Nginx configuration fixed and restarted${NC}"
 else
   echo -e "${RED}⚠️ Nginx configuration has errors - using fallback${NC}"
-  
+
   # Create minimal Nginx configuration
   cat > "/etc/nginx/sites-available/default" << 'EOF'
   server {
       listen 80;
       server_name views.yoyoprime.com;
-      
+
       location / {
           proxy_pass http://127.0.0.1:5000;
           proxy_http_version 1.1;
@@ -290,7 +290,7 @@ else
       }
   }
 EOF
-  
+
   nginx -t
   if [ $? -eq 0 ]; then
     systemctl restart nginx
@@ -318,15 +318,15 @@ if [ $? -eq 0 ]; then
 else
   echo -e "${RED}⚠️ Application is not responding - checking logs${NC}"
   pm2 logs url-campaign --lines 20
-  
+
   echo -e "${YELLOW}Trying alternative approach...${NC}"
   pm2 delete url-campaign
-  
+
   source "$APP_DIR/.env"
   cd "$APP_DIR"
   ./start.sh > app.log 2>&1 &
   APP_PID=$!
-  
+
   echo -e "${GREEN}✓ Started application directly with PID $APP_PID${NC}"
 fi
 
