@@ -648,6 +648,9 @@ export class DatabaseStorage implements IStorage {
     // However, routes.ts should be sending this correctly!
     const originalClickLimit = insertUrl.originalClickLimit || insertUrl.clickLimit;
     
+    // Make sure originalClickLimit is an exact copy of what was provided and not affected by multiplier calculations
+    const safeOriginalClickLimit = originalClickLimit;
+    
     console.log('🔍 DEBUG: Storage - Creating URL');
     console.log('  - Name:', insertUrl.name);
     console.log('  - Target URL:', insertUrl.targetUrl);
@@ -664,7 +667,7 @@ export class DatabaseStorage implements IStorage {
         await this.createOriginalUrlRecord({
           name: insertUrl.name,
           targetUrl: insertUrl.targetUrl,
-          originalClickLimit: originalClickLimit
+          originalClickLimit: safeOriginalClickLimit
         });
         console.log('🔍 DEBUG: Created original URL record for', insertUrl.name);
       } catch (error) {
@@ -1640,16 +1643,18 @@ export class DatabaseStorage implements IStorage {
           }
           
           try {
-            // Log actual values being applied
-            console.log(`⚙️ Setting click_limit=${updateData.clickLimit || record.originalClickLimit}, original_click_limit=${record.originalClickLimit}`);
+            // Log actual values being applied - explicitly use the value from the master original URL record
+            const newOriginalClickLimit = record.originalClickLimit;
+            const newClickLimit = updateData.clickLimit || newOriginalClickLimit;
+            console.log(`⚙️ Setting click_limit=${newClickLimit}, original_click_limit=${newOriginalClickLimit}`);
           
             // Update the URL directly with the new values
             // The bypass_click_protection session variable is already set to TRUE
             const [updatedUrl] = await db
               .update(urls)
               .set({
-                originalClickLimit: record.originalClickLimit,
-                clickLimit: updateData.clickLimit || record.originalClickLimit,
+                originalClickLimit: newOriginalClickLimit,
+                clickLimit: newClickLimit,
                 updatedAt: new Date()
               })
               .where(eq(urls.id, url.id))
