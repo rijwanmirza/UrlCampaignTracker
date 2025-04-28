@@ -795,7 +795,7 @@ export class DatabaseStorage implements IStorage {
       .insert(urls)
       .values({
         ...insertUrl,
-        originalClickLimit, // This should be the raw user input
+        originalClickLimit: safeOriginalClickLimit, // Explicitly use the safe original value
         clicks: 0,
         status: 'active',
         createdAt: now,
@@ -1644,9 +1644,12 @@ export class DatabaseStorage implements IStorage {
           
           try {
             // Log actual values being applied - explicitly use the value from the master original URL record
-            const newOriginalClickLimit = record.originalClickLimit;
+            // Make sure we preserve the exact value from the original record
+            const newOriginalClickLimit = parseInt(String(record.originalClickLimit), 10);
             const newClickLimit = updateData.clickLimit || newOriginalClickLimit;
+            
             console.log(`⚙️ Setting click_limit=${newClickLimit}, original_click_limit=${newOriginalClickLimit}`);
+            console.log(`⚙️ Raw original click limit value: ${record.originalClickLimit} (type: ${typeof record.originalClickLimit})`);
           
             // Update the URL directly with the new values
             // The bypass_click_protection session variable is already set to TRUE
