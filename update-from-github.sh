@@ -192,14 +192,14 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Only allow the trigger to be bypassed with ALTER TABLE disable trigger statement
   -- This function prevents any SQL UPDATE statement from changing click_limit directly
-  
+
   -- Log the attempted change
   RAISE NOTICE 'Attempted change to URL clicks blocked: id=%, old_limit=%, new_limit=%', 
                 NEW.id, OLD.click_limit, NEW.click_limit;
-  
+
   -- Keep the original click_limit value
   NEW.click_limit = OLD.click_limit;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -240,7 +240,7 @@ cd $APP_DIR
 pm2 start $PM2_APP_NAME
 if [ $? -ne 0 ]; then
   echo -e "${RED}⚠️ Failed to start application directly, attempting alternative method...${NC}"
-  
+
   # Try to start it using ecosystem file if it exists
   if [ -f "$APP_DIR/ecosystem.config.js" ]; then
     pm2 start ecosystem.config.js
@@ -250,16 +250,16 @@ if [ $? -ne 0 ]; then
     # Try to start the main file directly
     pm2 start server/index.js --name $PM2_APP_NAME
   fi
-  
+
   if [ $? -ne 0 ]; then
     echo -e "${RED}⚠️ All startup methods failed${NC}"
     echo -e "${YELLOW}Restoring from backup...${NC}"
-    
+
     # Restore from backup
     rm -rf $APP_DIR/*
     cp -r $BACKUP_DIR/* $APP_DIR/
     pm2 start $PM2_APP_NAME
-    
+
     echo -e "${RED}⚠️ Update failed, application restored from backup${NC}"
     exit 1
   fi
