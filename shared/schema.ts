@@ -267,13 +267,10 @@ export const clickAnalytics = pgTable("click_analytics", {
   id: serial("id").primaryKey(),
   urlId: integer("url_id").notNull(), // Reference to URL
   campaignId: integer("campaign_id"), // Reference to Campaign (if available)
-  clickTime: timestamp("click_time").defaultNow().notNull(), // When the click happened
-  clickHour: integer("click_hour").notNull(), // Hour of the day (0-23)
-  clickDate: timestamp("click_date", { mode: 'date' }).defaultNow().notNull(), // Date of the click (date only)
-  timezone: text("timezone").default("UTC").notNull(), // Timezone the click was recorded in
+  timestamp: timestamp("timestamp").defaultNow().notNull(), // When the click happened (field in DB is timestamp)
   userAgent: text("user_agent"), // User agent of the clicker
   ipAddress: text("ip_address"), // IP address (can be hashed for privacy)
-  referrer: text("referrer"), // Referrer URL if available
+  referrer: text("referer"), // Referrer URL if available
   country: text("country"), // Country based on IP
   city: text("city"), // City based on IP
   metadata: jsonb("metadata"), // Additional metadata as JSON

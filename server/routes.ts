@@ -1441,13 +1441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         db.insert(clickAnalytics).values({
           urlId,
           campaignId,
-          clickTime: now,
-          clickHour,
-          clickDate: now,
-          timezone: "UTC",
+          timestamp: now,
           userAgent,
           ipAddress,
-          referrer,
+          referrer: referrer || null,
         }).execute().catch(err => {
           console.error("Error recording click analytics:", err);
         });
@@ -1626,13 +1623,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         db.insert(clickAnalytics).values({
           urlId: selectedUrl.id,
           campaignId: campaign.id,
-          clickTime: now,
-          clickHour,
-          clickDate: now,
-          timezone: "UTC",
+          timestamp: now,
           userAgent,
           ipAddress,
-          referrer,
+          referrer: referrer || null,
         }).execute().catch(err => {
           console.error("Error recording click analytics for custom path:", err);
         });
@@ -1824,13 +1818,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         db.insert(clickAnalytics).values({
           urlId: selectedUrl.id,
           campaignId,
-          clickTime: now,
-          clickHour,
-          clickDate: now,
-          timezone: "UTC",
+          timestamp: now,
           userAgent,
           ipAddress,
-          referrer,
+          referrer: referrer || null,
         }).execute().catch(err => {
           console.error("Error recording click analytics for campaign:", err);
         });
