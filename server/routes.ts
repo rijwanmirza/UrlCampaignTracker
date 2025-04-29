@@ -1536,6 +1536,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!url) {
         return res.status(404).json({ message: "URL not found" });
       }
+      
+      // Increment click count for URL tracking (used for click limits)
+      await storage.incrementUrlClicks(urlId);
+      
+      // Record campaign click analytics data that will persist even if URL is deleted
+      // This makes analytics completely independent from URLs for the bridge page as well
+      try {
+        // Asynchronously record permanent campaign click without blocking the redirect
+        // Using the new storage method that ensures analytics data persists
+        storage.recordCampaignClick(campaignId, urlId).catch(err => {
+          console.error("Error recording campaign click analytics for bridge page:", err);
+        });
+      } catch (analyticsError) {
+        // Log but don't block the redirect if analytics recording fails
+        console.error("Failed to record campaign click analytics for bridge page:", analyticsError);
+      }
 
       // ULTRA-FAST SECOND STAGE: Hyper-optimized for instant browser parsing and execution
       // Remove all unnecessary headers for maximum throughput
