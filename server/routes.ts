@@ -37,7 +37,7 @@ import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
-import { eq, and, isNotNull, sql } from "drizzle-orm";
+import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -3466,7 +3466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the status to paused for all selected records
       await db.update(originalUrlRecords)
         .set({ status: 'paused', updatedAt: new Date() })
-        .where(sql`id = ANY(${ids})`);
+        .where(inArray(originalUrlRecords.id, ids));
       
       // Update all URLs that link to these original records to be paused
       const result = await db.execute(sql`
@@ -3474,7 +3474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SET status = 'paused', updated_at = NOW()
         FROM original_url_records
         WHERE urls.name = original_url_records.name
-        AND original_url_records.id = ANY(${ids})
+        AND original_url_records.id IN (${ids.join(',')})
       `);
       
       console.log(`✅ Bulk paused ${ids.length} original URL records and connected URLs`);
@@ -3507,7 +3507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the status to active for all selected records
       await db.update(originalUrlRecords)
         .set({ status: 'active', updatedAt: new Date() })
-        .where(sql`id = ANY(${ids})`);
+        .where(inArray(originalUrlRecords.id, ids));
       
       // Update all URLs that link to these original records to be active
       const result = await db.execute(sql`
@@ -3515,7 +3515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SET status = 'active', updated_at = NOW()
         FROM original_url_records
         WHERE urls.name = original_url_records.name
-        AND original_url_records.id = ANY(${ids})
+        AND original_url_records.id IN (${ids.join(',')})
       `);
       
       console.log(`✅ Bulk resumed ${ids.length} original URL records and connected URLs`);
@@ -3547,7 +3547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Delete the original records
       const result = await db.delete(originalUrlRecords)
-        .where(sql`id = ANY(${ids})`);
+        .where(inArray(originalUrlRecords.id, ids));
       
       console.log(`✅ Bulk deleted ${ids.length} original URL records`);
       
