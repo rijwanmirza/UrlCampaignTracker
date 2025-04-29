@@ -399,6 +399,7 @@ export default function OriginalUrlRecordsPage() {
       name: record.name,
       targetUrl: record.targetUrl,
       originalClickLimit: record.originalClickLimit,
+      status: record.status || 'active',
     });
     setIsEditDialogOpen(true);
   };
@@ -806,6 +807,18 @@ export default function OriginalUrlRecordsPage() {
                               <AlertTriangle className="mr-1 h-3 w-3" />
                               Paused
                             </span>
+                          ) : record.status === 'completed' ? (
+                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                              Completed
+                            </span>
+                          ) : record.status === 'deleted' ? (
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
+                              Deleted
+                            </span>
+                          ) : record.status === 'rejected' ? (
+                            <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800">
+                              Rejected
+                            </span>
                           ) : (
                             <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                               Active
@@ -975,6 +988,31 @@ export default function OriginalUrlRecordsPage() {
                     </FormControl>
                     <FormDescription>
                       The maximum number of clicks allowed for this URL
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="completed">Completed</option>
+                        <option value="deleted">Deleted</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </FormControl>
+                    <FormDescription>
+                      Current status of this URL record
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
