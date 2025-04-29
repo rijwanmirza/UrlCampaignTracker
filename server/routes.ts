@@ -5,6 +5,7 @@ import type { Server as SpdyServer } from 'spdy';
 import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
+import { requireAuth } from "./auth/middleware";
 import { 
   optimizeResponseHeaders,
   ultraFastMetaRefresh,
@@ -1232,6 +1233,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update URL status and sync with original URL records
+  app.post("/api/urls/:id/status", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!id || isNaN(id)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      if (!status || !['active', 'paused', 'completed', 'deleted', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value. Must be one of: active, paused, completed, deleted, rejected" });
+      }
+      
+      console.log(`🔄 Updating URL ID ${id} status to "${status}" with bidirectional sync`);
+      
+      // Get the URL first to check if it exists and to get its name
+      const url = await storage.getUrl(id);
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // First sync status to original record (if it exists)
+      if (url.name) {
+        try {
+          const syncResult = await storage.syncStatusFromUrlToOriginalRecord(url.name, status);
+          console.log(`📊 Sync result for original record with name "${url.name}": ${syncResult ? "✅ Success" : "⚠️ No matching record found"}`);
+        } catch (syncError) {
+          console.error(`❌ Error syncing status to original record:`, syncError);
+          // Continue with URL update even if sync fails
+        }
+      }
+      
+      // Update the URL status
+      const updatedUrl = await storage.updateUrlStatus(id, status);
+      if (!updatedUrl) {
+        return res.status(404).json({ message: "Failed to update URL status" });
+      }
+      
+      return res.status(200).json({
+        message: `URL status updated to "${status}" successfully`,
+        url: updatedUrl,
+        originalRecordSynced: !!url.name
+      });
+    } catch (error) {
+      console.error("Error updating URL status:", error);
+      return res.status(500).json({ message: "Failed to update URL status" });
+    }
+  });
+  
+  // BIDIRECTIONAL SYNC: Update Original URL Record status and sync with URLs
+  app.post("/api/original-url-records/:id/status", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!id || isNaN(id)) {
+        return res.status(400).json({ message: "Invalid Original URL Record ID" });
+      }
+      
+      if (!status || !['active', 'paused', 'completed', 'deleted', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value. Must be one of: active, paused, completed, deleted, rejected" });
+      }
+      
+      console.log(`🔄 Updating Original URL Record ID ${id} status to "${status}" with bidirectional sync`);
+      
+      // Get the original record first
+      const originalRecord = await storage.getOriginalUrlRecord(id);
+      if (!originalRecord) {
+        return res.status(404).json({ message: "Original URL Record not found" });
+      }
+      
+      // Update the original record status
+      const updatedRecord = await storage.updateOriginalUrlRecord(id, { status });
+      if (!updatedRecord) {
+        return res.status(404).json({ message: "Failed to update Original URL Record status" });
+      }
+      
+      // Sync status to all URLs with matching name
+      if (originalRecord.name) {
+        try {
+          const syncResult = await storage.syncUrlsWithOriginalRecord(originalRecord.name, true);
+          console.log(`📊 Sync result for URLs with name "${originalRecord.name}": ${syncResult ? "✅ Success" : "⚠️ No matching URLs found"}`);
+        } catch (syncError) {
+          console.error(`❌ Error syncing status to URLs:`, syncError);
+          // Continue even if sync fails
+        }
+      }
+      
+      return res.status(200).json({
+        message: `Original URL Record status updated to "${status}" successfully`,
+        originalRecord: updatedRecord,
+        urlsSynced: true
+      });
+    } catch (error) {
+      console.error("Error updating Original URL Record status:", error);
+      return res.status(500).json({ message: "Failed to update Original URL Record status" });
+    }
+  });
+  
+  // Run full bidirectional synchronization 
+  app.post("/api/sync/status", requireAuth, async (req: Request, res: Response) => {
+    try {
+      console.log(`🔄 Starting full bidirectional status synchronization between URLs and Original URL Records`);
+      
+      // 1. First sync all URL statuses TO original records
+      const urlResults = await db.select({ name: urls.name, status: urls.status }).from(urls);
+      
+      let urlsUpdated = 0;
+      let originalRecordsUpdated = 0;
+      
+      // Sync URL statuses to original records
+      for (const url of urlResults) {
+        if (url.name) {
+          try {
+            const syncResult = await storage.syncStatusFromUrlToOriginalRecord(url.name, url.status);
+            if (syncResult) originalRecordsUpdated++;
+          } catch (err) {
+            console.error(`Error syncing URL ${url.name} status to original record:`, err);
+          }
+        }
+      }
+      
+      // 2. Then sync all original record statuses TO URLs
+      const originalRecords = await db.select().from(originalUrlRecords);
+      
+      for (const record of originalRecords) {
+        if (record.name) {
+          try {
+            const syncResult = await storage.syncUrlsWithOriginalRecord(record.name, true);
+            if (syncResult) urlsUpdated++;
+          } catch (err) {
+            console.error(`Error syncing original record ${record.name} status to URLs:`, err);
+          }
+        }
+      }
+      
+      return res.status(200).json({
+        message: "Full bidirectional status synchronization completed",
+        stats: {
+          urlsUpdated,
+          originalRecordsUpdated,
+          totalUrlsProcessed: urlResults.length,
+          totalOriginalRecordsProcessed: originalRecords.length
+        }
+      });
+    } catch (error) {
+      console.error("Error performing full status synchronization:", error);
+      return res.status(500).json({ message: "Failed to perform full status synchronization" });
+    }
+  });
+
   // Get all URLs with pagination, search and filtering
   app.get("/api/urls", async (req: Request, res: Response) => {
     try {

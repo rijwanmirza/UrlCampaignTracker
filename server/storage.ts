@@ -1420,7 +1420,7 @@ export class DatabaseStorage implements IStorage {
    * @param urlName The name of the URL to sync from
    * @param status The status to apply to the original URL record
    */
-  private async syncStatusFromUrlToOriginalRecord(urlName: string, status: string): Promise<void> {
+  async syncStatusFromUrlToOriginalRecord(urlName: string, status: string): Promise<boolean> {
     try {
       console.log(`🔄 Bidirectional sync: Updating Original URL Record for "${urlName}" with status "${status}"`);
       
