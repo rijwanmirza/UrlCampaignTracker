@@ -298,8 +298,8 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.campaignId} = ${campaignId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY device
       ORDER BY click_count DESC
     `);
@@ -325,8 +325,8 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.campaignId} = ${campaignId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY browser
       ORDER BY click_count DESC
     `);
@@ -352,8 +352,8 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
       JOIN urls u ON u.id = ${clickAnalytics.urlId}
       WHERE 
         ${clickAnalytics.campaignId} = ${campaignId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY ${clickAnalytics.urlId}, u.name, u.target_url
       ORDER BY clicks DESC
       LIMIT 10
@@ -434,13 +434,13 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
     // Get clicks by date
     const clicksByDateQuery = await db.execute(sql`
       SELECT 
-        DATE_TRUNC('day', ${clickAnalytics.clickTime}) as click_date,
+        DATE_TRUNC('day', ${clickAnalytics.timestamp}) as click_date,
         COUNT(*) as click_count
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY click_date
       ORDER BY click_date
     `);
@@ -454,13 +454,13 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
     // Get clicks by hour
     const clicksByHourQuery = await db.execute(sql`
       SELECT 
-        EXTRACT(HOUR FROM ${clickAnalytics.clickTime}) as hour,
+        EXTRACT(HOUR FROM ${clickAnalytics.timestamp}) as hour,
         COUNT(*) as click_count
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY hour
       ORDER BY hour
     `);
@@ -478,8 +478,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY referrer
       ORDER BY click_count DESC
     `);
@@ -505,8 +505,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY device
       ORDER BY click_count DESC
     `);
@@ -532,8 +532,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.clickTime} >= ${start.toISOString()} AND 
-        ${clickAnalytics.clickTime} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
+        ${clickAnalytics.timestamp} <= ${end.toISOString()}
       GROUP BY browser
       ORDER BY click_count DESC
     `);
