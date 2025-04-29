@@ -16,6 +16,7 @@ import TestSpentValuePage from "@/pages/test-spent-value";
 import OriginalUrlRecordsPage from "@/pages/original-url-records-page";
 import CampaignClickRecordsPage from "@/pages/campaign-click-records-page";
 import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
+import UrlClickRecordsPage from "@/pages/url-click-records-page";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -92,6 +93,9 @@ function Router() {
           <Route path="/campaign-click-detail/:id">
             <CampaignClickDetailPage />
           </Route>
+          <Route path="/url-click-records">
+            <UrlClickRecordsPage />
+          </Route>
           <Route>
             <NotFound />
           </Route>
@@ -148,6 +152,9 @@ function Router() {
           </Route>
           <Route path="/campaign-click-detail/:id">
             <CampaignClickDetailPage />
+          </Route>
+          <Route path="/url-click-records">
+            <UrlClickRecordsPage />
           </Route>
           <Route>
             <NotFound />
