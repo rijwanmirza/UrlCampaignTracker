@@ -1428,9 +1428,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Record campaign click analytics data that will persist even if URL is deleted
       // This makes analytics completely independent from URLs
       try {
+        // Get request details
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || null;
+        const userAgent = req.headers['user-agent'] || null;
+        const referer = req.headers['referer'] || null;
+        
         // Asynchronously record permanent campaign click without blocking the redirect
         // Using the new storage method that ensures analytics data persists
-        storage.recordCampaignClick(campaignId, urlId).catch(err => {
+        storage.recordCampaignClick(
+          campaignId, 
+          urlId,
+          ipAddress,
+          userAgent,
+          referer
+        ).catch(err => {
           console.error("Error recording campaign click analytics:", err);
         });
       } catch (analyticsError) {
