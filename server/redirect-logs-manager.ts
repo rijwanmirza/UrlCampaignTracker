@@ -141,7 +141,7 @@ export class RedirectLogsManager {
     let dailyBreakdown = {};
     let hourlyBreakdown = [];
     
-    // Get daily breakdown
+    // Get daily breakdown only for the filtered time range
     const dailyBreakdownQuery = await db
       .select({
         dateKey: campaignRedirectLogs.dateKey,
@@ -164,7 +164,7 @@ export class RedirectLogsManager {
       return acc;
     }, {});
     
-    // Get hourly breakdown if requested
+    // Get hourly breakdown if requested, only for the filtered time range
     if (filter.showHourly) {
       const hourlyBreakdownQuery = await db
         .select({
@@ -189,10 +189,17 @@ export class RedirectLogsManager {
       }));
     }
     
+    // Get the date range description for the filter
+    const dateRangeText = this.getDateRangeText(filter, startDate, endDate);
+    
     return {
       totalClicks,
       dailyBreakdown,
-      hourlyBreakdown: filter.showHourly ? hourlyBreakdown : []
+      hourlyBreakdown: filter.showHourly ? hourlyBreakdown : [],
+      filterInfo: {
+        type: filter.filterType,
+        dateRange: dateRangeText
+      }
     };
   }
   
@@ -319,6 +326,37 @@ export class RedirectLogsManager {
     } catch (error) {
       console.error(`Error deleting redirect logs for campaign ${campaignId}:`, error);
       return Promise.reject(error);
+    }
+  }
+  
+  /**
+   * Get a formatted date range text based on the filter type
+   */
+  private getDateRangeText(filter: z.infer<typeof timeRangeFilterSchema>, startDate: Date, endDate: Date): string {
+    const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
+    
+    switch (filter.filterType) {
+      case 'today':
+        return 'Today';
+      case 'yesterday':
+        return 'Yesterday';
+      case 'last_7_days':
+        return `Last 7 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+      case 'last_30_days':
+        return `Last 30 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+      case 'this_month':
+        return `This month (${formatDate(startDate)} to ${formatDate(endDate)})`;
+      case 'last_month':
+        return `Last month (${formatDate(startDate)} to ${formatDate(endDate)})`;
+      case 'this_year':
+        return `This year (${formatDate(startDate)} to ${formatDate(endDate)})`;
+      case 'last_year':
+        return `Last year (${formatDate(startDate)} to ${formatDate(endDate)})`;
+      case 'custom_range':
+        return `${formatDate(startDate)} to ${formatDate(endDate)}`;
+      case 'total':
+      default:
+        return 'All time';
     }
   }
 }

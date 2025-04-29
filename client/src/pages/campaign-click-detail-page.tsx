@@ -374,7 +374,20 @@ export default function CampaignClickDetailPage() {
               <div className="grid md:grid-cols-1 gap-6 mb-6">
                 <Card className="shadow-sm">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      {summaryData?.filterInfo?.dateRange ?
+                       `Clicks (${summaryData.filterInfo.dateRange})` :
+                       filterType === 'total' ? 'Total Clicks' : 
+                       filterType === 'today' ? 'Today\'s Clicks' : 
+                       filterType === 'yesterday' ? 'Yesterday\'s Clicks' : 
+                       filterType === 'last_7_days' ? 'Clicks (Last 7 Days)' : 
+                       filterType === 'last_30_days' ? 'Clicks (Last 30 Days)' : 
+                       filterType === 'this_month' ? 'Clicks (This Month)' : 
+                       filterType === 'last_month' ? 'Clicks (Last Month)' : 
+                       filterType === 'custom_range' && startDate && endDate ? 
+                       `Clicks (${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')})` : 
+                       'Filtered Clicks'}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{summaryData?.totalClicks || 0}</div>
