@@ -173,6 +173,23 @@ export default function OriginalUrlRecordsPage() {
       return res.json();
     }
   });
+  
+  // Reset selected records when the record data changes
+  useEffect(() => {
+    if (recordsData?.records) {
+      // Only keep selected records that still exist in the current data
+      const existingIds = recordsData.records.map((record: any) => record.id);
+      setSelectedRecords(prev => prev.filter(id => existingIds.includes(id)));
+      
+      // Update selectAll to be true only if all current records are selected
+      const allSelected = 
+        selectedRecords.length > 0 && 
+        existingIds.length > 0 && 
+        existingIds.every((id: number) => selectedRecords.includes(id));
+        
+      setSelectAll(allSelected);
+    }
+  }, [recordsData, selectedRecords]);
 
   // Mutation for creating a new original URL record
   const createMutation = useMutation({
@@ -715,6 +732,7 @@ export default function OriginalUrlRecordsPage() {
                   // Refresh data
                   queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
                 }}
+                defaultValue=""
               >
                 <SelectTrigger className="w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
@@ -734,6 +752,7 @@ export default function OriginalUrlRecordsPage() {
               <Select 
                 value={pageSize.toString()} 
                 onValueChange={handlePageSizeChange}
+                defaultValue="10"
               >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Records per page" />
