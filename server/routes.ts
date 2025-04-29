@@ -32,7 +32,8 @@ import {
   trafficstarCampaigns,
   campaigns,
   urls,
-  originalUrlRecords
+  originalUrlRecords,
+  clickAnalytics
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -4382,8 +4383,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🧪 Generating test click analytics data`);
       
-      const { generateTestClickData } = require("./test-click-generator");
-      await generateTestClickData();
+      // Generate test data directly using our built-in function
+      const result = await generateAnalyticsTestData();
+      // We already generated the test data with generateAnalyticsTestData()
       
       return res.json({
         success: true,
