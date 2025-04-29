@@ -620,23 +620,72 @@ export default function OriginalUrlRecordsPage() {
                         <TableCell className="text-center">
                           {record.originalClickLimit ? record.originalClickLimit.toLocaleString() : 0}
                         </TableCell>
+                        <TableCell>
+                          {record.status === 'paused' ? (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                              <AlertTriangle className="mr-1 h-3 w-3" />
+                              Paused
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                              Active
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-muted-foreground">
                           {record.updatedAt ? formatDistanceToNow(new Date(record.updatedAt), { addSuffix: true }) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            {record.status === 'paused' ? (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleResumeClick(record.id)}
+                                title="Resume this URL"
+                                className="text-green-500"
+                                disabled={resumeMutation.isPending}
+                              >
+                                {resumeMutation.isPending && resumeMutation.variables === record.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Play className="h-4 w-4" />
+                                )}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handlePauseClick(record.id)}
+                                title="Pause this URL"
+                                className="text-amber-500"
+                                disabled={pauseMutation.isPending}
+                              >
+                                {pauseMutation.isPending && pauseMutation.variables === record.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Pause className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="icon"
                               onClick={() => handleSyncClick(record.id)}
                               title="Sync with all linked URLs"
+                              disabled={syncMutation.isPending && syncMutation.variables === record.id}
                             >
-                              <RefreshCw className="h-4 w-4" />
+                              {syncMutation.isPending && syncMutation.variables === record.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
                             </Button>
                             <Button
                               variant="outline"
                               size="icon"
                               onClick={() => handleEditClick(record)}
+                              title="Edit record"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -645,6 +694,7 @@ export default function OriginalUrlRecordsPage() {
                               size="icon"
                               onClick={() => handleDeleteClick(record.id)}
                               className="text-red-500"
+                              title="Delete record"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

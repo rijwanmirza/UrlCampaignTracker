@@ -37,7 +37,7 @@ import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq, and, isNotNull, sql } from "drizzle-orm";
 import Imap from "imap";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -3760,13 +3760,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(originalUrlRecords.id, id));
       
       // Update all URLs that link to this original record to be paused
-      const result = await db.execute(`
+      const result = await db.execute(sql`
         UPDATE urls 
         SET status = 'paused', updated_at = NOW()
         FROM original_url_records
         WHERE urls.name = original_url_records.name
-        AND original_url_records.id = $1
-      `, [id]);
+        AND original_url_records.id = ${id}
+      `);
       
       console.log(`✅ Paused original URL record #${id} (${record.name}) and all connected URLs`);
       
@@ -3805,13 +3805,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(originalUrlRecords.id, id));
       
       // Update all URLs that link to this original record to be active
-      const result = await db.execute(`
+      const result = await db.execute(sql`
         UPDATE urls 
         SET status = 'active', updated_at = NOW()
         FROM original_url_records
         WHERE urls.name = original_url_records.name
-        AND original_url_records.id = $1
-      `, [id]);
+        AND original_url_records.id = ${id}
+      `);
       
       console.log(`✅ Resumed original URL record #${id} (${record.name}) and all connected URLs`);
       
