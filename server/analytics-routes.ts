@@ -88,6 +88,61 @@ const getDateRange = (filterType: string, startDate?: string, endDate?: string) 
   return { start, end };
 };
 
+// Helper function to generate hourly ranges for a day
+function generateHourlyRanges() {
+  const hourlyRanges = [];
+  for (let hour = 0; hour < 24; hour++) {
+    const startHour = hour.toString().padStart(2, '0');
+    const endHour = ((hour + 1) % 24).toString().padStart(2, '0');
+    hourlyRanges.push({
+      label: `${startHour}:00-${endHour}:00`,
+      startHour: hour,
+      endHour: (hour + 1) % 24
+    });
+  }
+  return hourlyRanges;
+}
+
+// Get timezone offset for a specific timezone
+function getTimezoneOffset(timezone: string): number {
+  try {
+    // Get current date in the specified timezone
+    const date = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(date);
+    
+    // Extract hours from the formatted date
+    const hour = parseInt(parts.find(part => part.type === 'hour')?.value || '0');
+    
+    // Calculate offset in hours from UTC
+    const utcHour = date.getUTCHours();
+    let offset = hour - utcHour;
+    
+    // Adjust for day boundary crossings
+    if (offset > 12) {
+      offset -= 24;
+    } else if (offset < -12) {
+      offset += 24;
+    }
+    
+    return offset;
+  } catch (error) {
+    console.error(`Error calculating timezone offset for ${timezone}:`, error);
+    return 0; // Default to UTC
+  }
+}
+
 // Get all campaigns with click counts
 analyticsRouter.get("/campaigns", async (req: Request, res: Response) => {
   try {
@@ -130,6 +185,379 @@ analyticsRouter.get("/campaigns", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching campaign clicks:", error);
     res.status(500).json({ error: "Failed to fetch campaign clicks" });
+  }
+});
+
+// Get detailed campaign analytics with hourly breakdown
+analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
+  try {
+    const campaignId = parseInt(req.params.id);
+    const filterType = (req.query.filterType as string) || 'today';
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const timezone = req.query.timezone as string || 'UTC';
+    
+    if (isNaN(campaignId)) {
+      return res.status(400).json({ error: "Invalid campaign ID" });
+    }
+    
+    const { start, end } = getDateRange(filterType, startDate, endDate);
+    
+    // Get campaign details
+    const campaignResult = await db.execute(sql`
+      SELECT 
+        id, 
+        name,
+        "redirectMethod",
+        "customPath",
+        multiplier,
+        "pricePerThousand",
+        "trafficstarCampaignId",
+        "createdAt",
+        "updatedAt"
+      FROM campaigns 
+      WHERE id = ${campaignId}
+    `);
+    
+    if (campaignResult.rows.length === 0) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+    
+    const campaign = campaignResult.rows[0];
+    
+    // Get total clicks for the campaign in the date range
+    const totalClicksResult = await db.execute(sql`
+      SELECT COUNT(*) as total
+      FROM ${clickAnalytics}
+      WHERE "campaignId" = ${campaignId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+    `);
+    
+    const totalClicks = parseInt(totalClicksResult.rows[0].total) || 0;
+    
+    // Get hourly breakdown for specific timezone
+    const timezoneOffset = getTimezoneOffset(timezone);
+    
+    // Using PostgreSQL's timezone conversion for accurate grouping
+    const hourlyBreakdownResult = await db.execute(sql`
+      SELECT 
+        EXTRACT(HOUR FROM ("timestamp" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone})) as hour,
+        COUNT(*) as clicks
+      FROM ${clickAnalytics}
+      WHERE "campaignId" = ${campaignId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY hour
+      ORDER BY hour
+    `);
+    
+    // Create hourly data structure with all 24 hours
+    const hourlyRanges = generateHourlyRanges();
+    const hourlyData = hourlyRanges.map(range => {
+      const hourRow = hourlyBreakdownResult.rows.find(row => parseInt(row.hour) === range.startHour);
+      return {
+        hour: range.label,
+        clicks: hourRow ? parseInt(hourRow.clicks) : 0
+      };
+    });
+    
+    // Get daily breakdown
+    const dailyBreakdownResult = await db.execute(sql`
+      SELECT 
+        DATE("timestamp" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}) as date,
+        COUNT(*) as clicks
+      FROM ${clickAnalytics}
+      WHERE "campaignId" = ${campaignId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY date
+      ORDER BY date
+    `);
+    
+    const dailyData = dailyBreakdownResult.rows.map((row: any) => ({
+      date: row.date,
+      clicks: parseInt(row.clicks) || 0
+    }));
+    
+    // Get clicks by URL for this campaign
+    const urlClicksResult = await db.execute(sql`
+      SELECT 
+        u.id,
+        u.name,
+        COUNT(ca.id) as clicks
+      FROM urls u
+      LEFT JOIN ${clickAnalytics} ca ON ca."urlId" = u.id
+        AND ca."timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND ca."timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      WHERE u."campaignId" = ${campaignId}
+      GROUP BY u.id, u.name
+      ORDER BY clicks DESC
+    `);
+    
+    const urlClicks = urlClicksResult.rows.map((row: any) => ({
+      id: parseInt(row.id),
+      name: row.name,
+      clicks: parseInt(row.clicks) || 0
+    }));
+    
+    res.json({
+      campaign: {
+        id: parseInt(campaign.id),
+        name: campaign.name,
+        redirectMethod: campaign.redirectMethod,
+        customPath: campaign.customPath,
+        multiplier: campaign.multiplier,
+        pricePerThousand: campaign.pricePerThousand,
+        trafficstarCampaignId: campaign.trafficstarCampaignId,
+        createdAt: campaign.createdAt,
+        updatedAt: campaign.updatedAt
+      },
+      analytics: {
+        totalClicks,
+        hourlyData,
+        dailyData,
+        urlClicks
+      },
+      dateRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        filterType
+      },
+      timezone,
+      timezoneOffset
+    });
+  } catch (error) {
+    console.error("Error fetching campaign analytics:", error);
+    res.status(500).json({ error: "Failed to fetch campaign analytics" });
+  }
+});
+
+// Get detailed URL analytics with hourly breakdown
+analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
+  try {
+    const urlId = parseInt(req.params.id);
+    const filterType = (req.query.filterType as string) || 'today';
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const timezone = req.query.timezone as string || 'UTC';
+    
+    if (isNaN(urlId)) {
+      return res.status(400).json({ error: "Invalid URL ID" });
+    }
+    
+    const { start, end } = getDateRange(filterType, startDate, endDate);
+    
+    // Get URL details with campaign info
+    const urlResult = await db.execute(sql`
+      SELECT 
+        u.id, 
+        u.name,
+        u."targetUrl",
+        u.status,
+        u."clickCount",
+        u."clickLimit",
+        u."originalClickLimit",
+        u."createdAt",
+        u."updatedAt",
+        c.id as "campaignId",
+        c.name as "campaignName",
+        c.multiplier
+      FROM urls u
+      JOIN campaigns c ON u."campaignId" = c.id
+      WHERE u.id = ${urlId}
+    `);
+    
+    if (urlResult.rows.length === 0) {
+      return res.status(404).json({ error: "URL not found" });
+    }
+    
+    const url = urlResult.rows[0];
+    
+    // Get total clicks for the URL in the date range
+    const totalClicksResult = await db.execute(sql`
+      SELECT COUNT(*) as total
+      FROM ${clickAnalytics}
+      WHERE "urlId" = ${urlId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+    `);
+    
+    const totalClicks = parseInt(totalClicksResult.rows[0].total) || 0;
+    
+    // Get hourly breakdown adjusted for timezone
+    const timezoneOffset = getTimezoneOffset(timezone);
+    
+    const hourlyBreakdownResult = await db.execute(sql`
+      SELECT 
+        EXTRACT(HOUR FROM ("timestamp" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone})) as hour,
+        COUNT(*) as clicks
+      FROM ${clickAnalytics}
+      WHERE "urlId" = ${urlId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY hour
+      ORDER BY hour
+    `);
+    
+    // Create hourly data structure with all 24 hours
+    const hourlyRanges = generateHourlyRanges();
+    const hourlyData = hourlyRanges.map(range => {
+      const hourRow = hourlyBreakdownResult.rows.find(row => parseInt(row.hour) === range.startHour);
+      return {
+        hour: range.label,
+        clicks: hourRow ? parseInt(hourRow.clicks) : 0
+      };
+    });
+    
+    // Get daily breakdown
+    const dailyBreakdownResult = await db.execute(sql`
+      SELECT 
+        DATE("timestamp" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}) as date,
+        COUNT(*) as clicks
+      FROM ${clickAnalytics}
+      WHERE "urlId" = ${urlId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY date
+      ORDER BY date
+    `);
+    
+    const dailyData = dailyBreakdownResult.rows.map((row: any) => ({
+      date: row.date,
+      clicks: parseInt(row.clicks) || 0
+    }));
+    
+    // Get referrer breakdown
+    const referrerBreakdownResult = await db.execute(sql`
+      SELECT 
+        COALESCE(referrer, 'Direct') as referrer,
+        COUNT(*) as clicks
+      FROM ${clickAnalytics}
+      WHERE "urlId" = ${urlId}
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY referrer
+      ORDER BY clicks DESC
+    `);
+    
+    const referrerData = referrerBreakdownResult.rows.map((row: any) => ({
+      referrer: row.referrer === '' ? 'Direct' : row.referrer,
+      clicks: parseInt(row.clicks) || 0
+    }));
+    
+    res.json({
+      url: {
+        id: parseInt(url.id),
+        name: url.name,
+        targetUrl: url.targetUrl,
+        status: url.status,
+        clickCount: parseInt(url.clickCount) || 0,
+        clickLimit: parseInt(url.clickLimit) || 0,
+        originalClickLimit: parseInt(url.originalClickLimit) || 0,
+        createdAt: url.createdAt,
+        updatedAt: url.updatedAt,
+        campaign: {
+          id: parseInt(url.campaignId),
+          name: url.campaignName,
+          multiplier: parseFloat(url.multiplier) || 1
+        }
+      },
+      analytics: {
+        totalClicks,
+        hourlyData,
+        dailyData,
+        referrerData
+      },
+      dateRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        filterType
+      },
+      timezone,
+      timezoneOffset
+    });
+  } catch (error) {
+    console.error("Error fetching URL analytics:", error);
+    res.status(500).json({ error: "Failed to fetch URL analytics" });
+  }
+});
+
+// Get clicks for a specific date range
+analyticsRouter.get("/clicks", async (req: Request, res: Response) => {
+  try {
+    const filterType = (req.query.filterType as string) || 'today';
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const timezone = req.query.timezone as string || 'UTC';
+    const campaignId = req.query.campaignId ? parseInt(req.query.campaignId as string) : undefined;
+    const urlId = req.query.urlId ? parseInt(req.query.urlId as string) : undefined;
+    
+    const { start, end } = getDateRange(filterType, startDate, endDate);
+    
+    // Build the query based on filters
+    let query = sql`
+      SELECT 
+        ca."timestamp",
+        ca."campaignId",
+        ca."urlId",
+        ca."userAgent",
+        ca."referrer",
+        ca."ipAddress",
+        c.name as "campaignName",
+        u.name as "urlName"
+      FROM ${clickAnalytics} ca
+      JOIN campaigns c ON ca."campaignId" = c.id
+      JOIN urls u ON ca."urlId" = u.id
+      WHERE ca."timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND ca."timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+    `;
+    
+    // Add campaign filter if provided
+    if (campaignId !== undefined) {
+      query = sql`${query} AND ca."campaignId" = ${campaignId}`;
+    }
+    
+    // Add URL filter if provided
+    if (urlId !== undefined) {
+      query = sql`${query} AND ca."urlId" = ${urlId}`;
+    }
+    
+    // Add ordering
+    query = sql`${query} ORDER BY ca."timestamp" DESC`;
+    
+    // Execute the query
+    const clicksResult = await db.execute(query);
+    
+    // Convert to the client's timezone
+    const clicks = clicksResult.rows.map((row: any) => {
+      // Format the timestamp in the client's timezone
+      const timestamp = new Date(row.timestamp);
+      
+      return {
+        timestamp: timestamp.toISOString(),
+        campaignId: parseInt(row.campaignId),
+        urlId: parseInt(row.urlId),
+        userAgent: row.userAgent,
+        referrer: row.referrer || 'Direct',
+        ipAddress: row.ipAddress,
+        campaignName: row.campaignName,
+        urlName: row.urlName
+      };
+    });
+    
+    res.json({
+      clicks,
+      dateRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        filterType
+      },
+      timezone
+    });
+  } catch (error) {
+    console.error("Error fetching clicks:", error);
+    res.status(500).json({ error: "Failed to fetch clicks" });
   }
 });
 

@@ -4548,6 +4548,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // API endpoint to generate test click data for analytics
+  app.post("/api/system/generate-test-clicks", async (_req: Request, res: Response) => {
+    try {
+      // Import the generateTestClickData function
+      const { generateTestClickData } = await import("./test-click-generator");
+      
+      // Generate test click data
+      const result = await generateTestClickData();
+      
+      res.json({
+        success: true,
+        message: "Test click data generated successfully",
+        ...result
+      });
+    } catch (error) {
+      console.error("Error generating test click data:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to generate test click data",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   return server;
 }
