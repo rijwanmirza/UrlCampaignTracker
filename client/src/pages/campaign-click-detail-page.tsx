@@ -158,23 +158,19 @@ export default function CampaignClickDetailPage() {
       }];
     }
     
+    // IMPORTANT: Use the totalClicks value directly from the API 
+    // instead of processing/transforming it
+    const totalClicksFromApi = parseInt(summaryData.totalClicks) || 0;
+    
     // Create a default structure even if there's no dailyBreakdown
     if (!summaryData.dailyBreakdown || Object.keys(summaryData.dailyBreakdown).length === 0) {
       console.log("No daily breakdown data available");
       
-      // If we have total clicks but no breakdown, create a data point with all clicks on today's date
-      if (summaryData.totalClicks > 0) {
-        const today = new Date().toISOString().split('T')[0];
-        return [{
-          date: today,
-          clicks: summaryData.totalClicks
-        }];
-      }
-      
-      // No clicks at all
+      // Always use exact data from the API - if there are 0 clicks, show 0
+      const today = new Date().toISOString().split('T')[0];
       return [{
-        date: new Date().toISOString().split('T')[0],
-        clicks: 0
+        date: today,
+        clicks: totalClicksFromApi
       }];
     }
     
@@ -186,19 +182,13 @@ export default function CampaignClickDetailPage() {
       clicks: count,
     }));
     
-    // If there's no data after mapping, create a single entry with the total clicks
-    if (formattedData.length === 0 && summaryData.totalClicks > 0) {
+    // If there's no data after mapping but API says we have clicks,
+    // create a single entry with the exact API-provided click count
+    if (formattedData.length === 0) {
       const today = new Date().toISOString().split('T')[0];
       formattedData.push({
         date: today,
-        clicks: summaryData.totalClicks
-      });
-    } else if (formattedData.length === 0) {
-      // No clicks at all
-      const today = new Date().toISOString().split('T')[0];
-      formattedData.push({
-        date: today,
-        clicks: 0
+        clicks: totalClicksFromApi
       });
     }
     
@@ -216,25 +206,27 @@ export default function CampaignClickDetailPage() {
       }));
     }
     
+    // IMPORTANT: Use the totalClicks value directly from the API 
+    // instead of processing/transforming it
+    const totalClicksFromApi = parseInt(summaryData.totalClicks) || 0;
+    
     if (!summaryData.hourlyBreakdown) {
       console.log("No hourly breakdown data available");
       
-      // Create a default hourly chart based on total clicks
-      const defaultData = Array.from({ length: 24 }, (_, i) => ({
+      // Always create an empty hourly chart - never distribute fake clicks
+      return Array.from({ length: 24 }, (_, i) => ({
         hour: `${i}:00`,
-        clicks: i === 12 && summaryData.totalClicks > 0 ? summaryData.totalClicks : 0 // Place all clicks at noon if we have totalClicks but no breakdown
+        clicks: 0
       }));
-      
-      return defaultData;
     }
     
     console.log("Raw hourly breakdown data:", summaryData.hourlyBreakdown);
     
-    // If hourlyBreakdown array is empty but we have totalClicks
-    if (summaryData.hourlyBreakdown.length === 0 && summaryData.totalClicks > 0) {
+    // If hourlyBreakdown array is empty, DON'T create fake distributed data
+    if (summaryData.hourlyBreakdown.length === 0) {
       return Array.from({ length: 24 }, (_, i) => ({
         hour: `${i}:00`,
-        clicks: i === 12 ? summaryData.totalClicks : 0 // Place all clicks at noon
+        clicks: 0
       }));
     }
     
