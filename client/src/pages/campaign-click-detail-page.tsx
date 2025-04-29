@@ -71,12 +71,15 @@ export default function CampaignClickDetailPage() {
   const queryParams: Record<string, string> = {
     filterType,
     showHourly: 'true',
+    _timestamp: Date.now().toString(), // Add timestamp to break cache
   };
   
   if (filterType === 'custom_range' && startDate && endDate) {
     queryParams.startDate = format(startDate, 'yyyy-MM-dd');
     queryParams.endDate = format(endDate, 'yyyy-MM-dd');
   }
+  
+  console.log(`📊 Client sending request with filter: ${filterType}`, queryParams);
   
   // Fetch campaign details
   const { data: campaignData, isLoading: isLoadingCampaign } = useQuery({

@@ -123,10 +123,10 @@ export class RedirectLogsManager {
     // Debug logging
     console.log(`📊 RedirectLogsManager: Getting summary for campaign ${campaignId} with filter type: ${filter.filterType}`);
     
-    // Set up time range filter conditions
+    // Set up time range filter conditions based on the requested filter type (today, yesterday, etc.)
     const { startDate, endDate } = this.getDateRangeForFilter(filter);
     
-    console.log(`📊 RedirectLogsManager: Date range calculated: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    console.log(`📊 RedirectLogsManager: Date range calculated for ${filter.filterType}: ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
     // Check if campaign exists but has no logs for the selected date range
     // This will happen in two scenarios:

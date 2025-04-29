@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { storage } from "./storage";
-import { TimeRangeFilter } from "@shared/schema";
+import { TimeRangeFilter, campaignRedirectLogs } from "@shared/schema";
+import { format } from "date-fns";
+import { db } from "./db";
+import { eq, and, gte, lte } from "drizzle-orm";
+import { redirectLogsManager } from "./redirect-logs-manager";
 
 // API Routes for Campaign Click Records
 export function registerCampaignClickRoutes(app: any) {
@@ -104,9 +108,11 @@ export function registerCampaignClickRoutes(app: any) {
       // Build filter from query parameters
       const filterType = req.query.filterType as string || 'today';
       const showHourly = req.query.showHourly === 'true';
+      const timestamp = req.query._timestamp; // Used for cache-busting on the client side
       
-      console.log(`📊 Filtering campaign ${campaignId} clicks with filter type: ${filterType}`);
+      console.log(`📊 Filtering campaign ${campaignId} clicks with filter type: ${filterType} (timestamp: ${timestamp})`);
       
+      // Create a properly typed filter object
       const filter: TimeRangeFilter = {
         filterType: filterType as any,
         timezone: (req.query.timezone as string) || "UTC",
@@ -126,18 +132,25 @@ export function registerCampaignClickRoutes(app: any) {
         }
       }
       
-      // IMPORTANT: Check if this is for a newly created campaign
-      // First, check when the campaign was created
+      // Check if the campaign exists
       const campaign = await storage.getCampaign(campaignId);
       
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
       
-      // Use the redirect logs system first to get correct click data
+      // Use the redirect logs system for accurate click data
       try {
-        // Pass the exact filter to the redirect logs system
-        const redirectLogsSummary = await storage.getRedirectLogsSummary(campaignId, filter);
+        // Create a fresh filter object to prevent any reference issues
+        const redirectLogsFilter: TimeRangeFilter = {
+          ...filter,
+          filterType: filterType as any, // Force the exact filterType to be used
+        };
+        
+        console.log(`📊 Using filter with type '${redirectLogsFilter.filterType}' for redirect logs query`);
+        
+        // Pass the filter to the redirect logs system
+        const redirectLogsSummary = await storage.getRedirectLogsSummary(campaignId, redirectLogsFilter);
         
         if (redirectLogsSummary) {
           console.log(`📊 Redirect logs summary for filter ${filterType}:`, {
@@ -256,7 +269,17 @@ export function registerCampaignClickRoutes(app: any) {
       let totalRecords = 0;
       const allRecords = [];
       
-      // 1. Generate clicks for today
+      // First clear existing logs for clean test data
+      console.log(`🧹 Clearing existing redirect logs for campaign ${campaignId} before generating new test data`);
+      try {
+        await db.delete(campaignRedirectLogs)
+          .where(eq(campaignRedirectLogs.campaignId, parseInt(campaignId)));
+      } catch (err) {
+        console.error("Error clearing existing logs:", err);
+      }
+      
+      // 1. Generate clicks for today - using the redirect logs approach for accurate time-based filtering
+      console.log(`📊 Generating ${clicksPerDay} clicks for today`);
       for (let i = 0; i < clicksPerDay; i++) {
         const url = urls[Math.floor(Math.random() * urls.length)];
         const timestamp = new Date(now);
@@ -264,14 +287,19 @@ export function registerCampaignClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
+        // Record in both systems
         await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        await redirectLogsManager.logRedirect(parseInt(campaignId), url.id);
+        
         allRecords.push({ timestamp, urlId: url.id });
         totalRecords++;
       }
       
       // 2. Generate clicks for yesterday
+      console.log(`📊 Generating ${clicksPerDay} clicks for yesterday`);
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
+      
       for (let i = 0; i < clicksPerDay; i++) {
         const url = urls[Math.floor(Math.random() * urls.length)];
         const timestamp = new Date(yesterday);
@@ -279,14 +307,31 @@ export function registerCampaignClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
-        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        // Insert directly into the campaign_redirect_logs table with yesterday's timestamp
+        const formattedDate = format(timestamp, 'yyyy-MM-dd');
+        const hour = timestamp.getHours();
+        
+        try {
+          await db.insert(campaignRedirectLogs).values({
+            campaignId: parseInt(campaignId),
+            urlId: url.id,
+            redirectTime: timestamp,
+            dateKey: formattedDate,
+            hourKey: hour
+          });
+        } catch (err) {
+          console.error("Error inserting test log for yesterday:", err);
+        }
+        
         allRecords.push({ timestamp, urlId: url.id });
         totalRecords++;
       }
       
       // 3. Generate clicks for last month
+      console.log(`📊 Generating ${clicksPerDay * 5} clicks for last month`);
       const lastMonth = new Date(now);
       lastMonth.setMonth(lastMonth.getMonth() - 1);
+      
       for (let i = 0; i < clicksPerDay * 5; i++) { // 5x more data for month
         const url = urls[Math.floor(Math.random() * urls.length)];
         const timestamp = new Date(lastMonth);
@@ -296,14 +341,31 @@ export function registerCampaignClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
-        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        // Insert directly into the campaign_redirect_logs table with last month's timestamp
+        const formattedDate = format(timestamp, 'yyyy-MM-dd');
+        const hour = timestamp.getHours();
+        
+        try {
+          await db.insert(campaignRedirectLogs).values({
+            campaignId: parseInt(campaignId),
+            urlId: url.id,
+            redirectTime: timestamp,
+            dateKey: formattedDate,
+            hourKey: hour
+          });
+        } catch (err) {
+          console.error("Error inserting test log for last month:", err);
+        }
+        
         allRecords.push({ timestamp, urlId: url.id });
         totalRecords++;
       }
       
       // 4. Generate clicks for last year
+      console.log(`📊 Generating ${clicksPerDay * 10} clicks for last year`);
       const lastYear = new Date(now);
       lastYear.setFullYear(lastYear.getFullYear() - 1);
+      
       for (let i = 0; i < clicksPerDay * 10; i++) { // 10x more data for year
         const url = urls[Math.floor(Math.random() * urls.length)];
         const timestamp = new Date(lastYear);
@@ -314,7 +376,22 @@ export function registerCampaignClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
-        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        // Insert directly into the campaign_redirect_logs table with last year's timestamp
+        const formattedDate = format(timestamp, 'yyyy-MM-dd');
+        const hour = timestamp.getHours();
+        
+        try {
+          await db.insert(campaignRedirectLogs).values({
+            campaignId: parseInt(campaignId),
+            urlId: url.id,
+            redirectTime: timestamp,
+            dateKey: formattedDate,
+            hourKey: hour
+          });
+        } catch (err) {
+          console.error("Error inserting test log for last year:", err);
+        }
+        
         allRecords.push({ timestamp, urlId: url.id });
         totalRecords++;
       }
