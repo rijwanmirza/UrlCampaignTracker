@@ -1422,50 +1422,77 @@ export class DatabaseStorage implements IStorage {
    */
   async syncStatusFromUrlToOriginalRecord(urlName: string, status: string): Promise<boolean> {
     try {
-      console.log(`🔄 Bidirectional sync: Updating Original URL Record for "${urlName}" with status "${status}"`);
+      if (!urlName) {
+        console.error("❌ Cannot sync status - URL name is empty or undefined");
+        return false;
+      }
+      
+      console.log(`🔄 BIDIRECTIONAL SYNC: Updating Original URL Record for "${urlName}" with status "${status}"`);
       
       // Find the original URL record with the matching name
       const [originalRecord] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.name, urlName));
       
       if (!originalRecord) {
         console.log(`⚠️ Could not find Original URL Record for "${urlName}" - skipping status sync`);
-        return;
+        return false;
       }
       
-      console.log(`✅ Found Original URL Record #${originalRecord.id} for "${urlName}", current status: "${originalRecord.status}"`);
+      console.log(`🔍 Found Original URL Record #${originalRecord.id} for "${urlName}", current status: "${originalRecord.status || 'none'}"`);
+      
+      // Don't update if status is already the same to avoid unnecessary DB operations
+      if (originalRecord.status === status) {
+        console.log(`ℹ️ Original URL Record #${originalRecord.id} already has status "${status}" - no update needed`);
+        return true;
+      }
       
       // Update the original URL record with the new status
-      await db
+      const result = await db
         .update(originalUrlRecords)
         .set({
           status,
           updatedAt: new Date()
         })
-        .where(eq(originalUrlRecords.id, originalRecord.id));
+        .where(eq(originalUrlRecords.id, originalRecord.id))
+        .returning();
+        
+      const success = result && result.length > 0;
       
-      console.log(`✅ Successfully updated Original URL Record #${originalRecord.id} status to "${status}"`);
+      if (success) {
+        console.log(`✅ Successfully updated Original URL Record #${originalRecord.id} status from "${originalRecord.status || 'none'}" to "${status}"`);
+      } else {
+        console.log(`⚠️ Failed to update Original URL Record #${originalRecord.id} status to "${status}"`);
+      }
+      
+      return success;
     } catch (error) {
       console.error(`❌ Error syncing status from URL "${urlName}" to Original URL Record:`, error);
+      return false;
     }
   }
   
-  async updateUrlStatus(id: number, status: string): Promise<void> {
+  async updateUrlStatus(id: number, status: string): Promise<Url | undefined> {
     // First, get the URL to find its campaign ID and name
     const [url] = await db.select().from(urls).where(eq(urls.id, id));
     if (!url) {
       console.log(`⚠️ URL with ID ${id} not found, cannot update status`);
-      return;
+      return undefined;
     }
     
     console.log(`🔄 Updating URL #${id} "${url.name}" status to "${status}"`);
     
     // CRITICAL FIX: When a URL status is changed, sync it with the Original URL Record
     if (url.name) {
-      // Start the bidirectional sync process in the background
-      this.syncStatusFromUrlToOriginalRecord(url.name, status).catch(err => {
-        console.error(`❌ Error in bidirectional sync:`, err);
-      });
+      // First sync status to original record
+      try {
+        const syncResult = await this.syncStatusFromUrlToOriginalRecord(url.name, status);
+        console.log(`📊 Original URL Record sync result: ${syncResult ? "✅ Success" : "⚠️ No matching record found"}`);
+      } catch (syncError) {
+        console.error(`❌ Error in bidirectional sync:`, syncError);
+        // Continue with URL update even if sync fails
+      }
     }
+    
+    let updatedUrl;
     
     // When a URL is completed, we need to remove it from the campaign
     if (status === 'completed') {
@@ -1474,44 +1501,55 @@ export class DatabaseStorage implements IStorage {
         const campaignId = url.campaignId;
         
         // Update the URL: set status to completed and remove from campaign (set campaignId to null)
-        await db
+        const [result] = await db
           .update(urls)
           .set({
             status,
             campaignId: null, // Remove from campaign
             updatedAt: new Date()
           })
-          .where(eq(urls.id, id));
+          .where(eq(urls.id, id))
+          .returning();
           
+        updatedUrl = result;
+        
         // Invalidate the campaign cache since we've removed a URL
         this.invalidateCampaignCache(campaignId);
         
         console.log(`URL ${id} marked as completed and removed from campaign ${campaignId}`);
       } else {
         // If there's no campaign ID, just update the status
-        await db
+        const [result] = await db
           .update(urls)
           .set({
             status,
             updatedAt: new Date()
           })
-          .where(eq(urls.id, id));
+          .where(eq(urls.id, id))
+          .returning();
+          
+        updatedUrl = result;
       }
     } else {
       // For non-completed status updates, use the original behavior
-      await db
+      const [result] = await db
         .update(urls)
         .set({
           status,
           updatedAt: new Date()
         })
-        .where(eq(urls.id, id));
+        .where(eq(urls.id, id))
+        .returning();
         
+      updatedUrl = result;
+      
       // Get the URL to find its campaign ID
       if (url?.campaignId) {
         this.invalidateCampaignCache(url.campaignId);
       }
     }
+    
+    return updatedUrl;
   }
   
   // Full system cleanup - deletes all campaigns and URLs

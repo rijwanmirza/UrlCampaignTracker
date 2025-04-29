@@ -1249,24 +1249,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`🔄 Updating URL ID ${id} status to "${status}" with bidirectional sync`);
       
-      // Get the URL first to check if it exists and to get its name
+      // Get the URL first to check if it exists
       const url = await storage.getUrl(id);
       if (!url) {
         return res.status(404).json({ message: "URL not found" });
       }
       
-      // First sync status to original record (if it exists)
-      if (url.name) {
-        try {
-          const syncResult = await storage.syncStatusFromUrlToOriginalRecord(url.name, status);
-          console.log(`📊 Sync result for original record with name "${url.name}": ${syncResult ? "✅ Success" : "⚠️ No matching record found"}`);
-        } catch (syncError) {
-          console.error(`❌ Error syncing status to original record:`, syncError);
-          // Continue with URL update even if sync fails
-        }
-      }
-      
-      // Update the URL status
+      // Update the URL status (now includes bidirectional sync in one operation)
       const updatedUrl = await storage.updateUrlStatus(id, status);
       if (!updatedUrl) {
         return res.status(404).json({ message: "Failed to update URL status" });
@@ -1311,15 +1300,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Failed to update Original URL Record status" });
       }
       
-      // Sync status to all URLs with matching name
-      if (originalRecord.name) {
-        try {
-          const syncResult = await storage.syncUrlsWithOriginalRecord(originalRecord.name, true);
-          console.log(`📊 Sync result for URLs with name "${originalRecord.name}": ${syncResult ? "✅ Success" : "⚠️ No matching URLs found"}`);
-        } catch (syncError) {
-          console.error(`❌ Error syncing status to URLs:`, syncError);
-          // Continue even if sync fails
-        }
+      // Sync all settings to URLs with matching name
+      try {
+        const syncResult = await storage.syncUrlsWithOriginalRecord(id);
+        console.log(`📊 Sync result: updated ${syncResult} URLs with settings from original record "${originalRecord.name}"`);
+      } catch (syncError) {
+        console.error(`❌ Error syncing settings to URLs:`, syncError);
+        // Continue even if sync fails
       }
       
       return res.status(200).json({
