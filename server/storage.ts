@@ -25,6 +25,7 @@ import {
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
 import { redirectLogsManager } from "./redirect-logs-manager";
+import { urlClickLogsManager } from "./url-click-logs-manager";
 
 export interface IStorage {
   // Campaign operations
@@ -94,6 +95,31 @@ export interface IStorage {
     totalClicks: number,
     hourlyBreakdown?: { hour: number, clicks: number }[],
     dailyBreakdown?: Record<string, number>
+  }>;
+  
+  // URL Click Records operations
+  recordUrlClick(
+    urlId: number,
+    ipAddress?: string,
+    userAgent?: string,
+    referer?: string
+  ): Promise<UrlClickRecord>;
+  
+  getUrlClickRecords(
+    page: number,
+    limit: number,
+    urlId?: number,
+    filter?: TimeRangeFilter
+  ): Promise<{ records: UrlClickRecord[], total: number }>;
+  
+  getUrlClickSummary(
+    urlId: number,
+    filter: TimeRangeFilter
+  ): Promise<{
+    totalClicks: string | number,
+    hourlyBreakdown?: { hour: number, clicks: string | number }[],
+    dailyBreakdown?: Record<string, string | number>,
+    filterInfo?: { type: string, dateRange: string }
   }>;
   
   // Redirect logs summary (more accurate click tracking)

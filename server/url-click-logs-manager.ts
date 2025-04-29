@@ -158,7 +158,7 @@ export class UrlClickLogsManager {
         
         hourlyBreakdown = hourlyBreakdownResult.map(row => ({
           hour: row.hour,
-          clicks: row.count.toString()
+          clicks: String(row.count)
         }));
       }
       
@@ -331,7 +331,7 @@ export class UrlClickLogsManager {
   /**
    * Get a formatted date range text based on the filter type
    */
-  private getDateRangeText(filter: z.infer<typeof timeRangeFilterSchema>, startDate: Date, endDate: Date): string {
+  private getDateRangeText(filter: TimeRangeFilter, startDate: Date, endDate: Date): string {
     const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
     
     switch (filter.filterType) {
