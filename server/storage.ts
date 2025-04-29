@@ -2601,7 +2601,7 @@ export class DatabaseStorage implements IStorage {
     const result = await pool.query(
       `INSERT INTO url_click_records (url_id, click_time) 
        VALUES ($1, $2) 
-       RETURNING id, url_id as "urlId", click_time as "timestamp", created_at as "createdAt"`,
+       RETURNING id, url_id as "urlId", click_time as "timestamp"`,
       [urlId, clickTime]
     );
     
@@ -2654,9 +2654,9 @@ export class DatabaseStorage implements IStorage {
       const countResult = await pool.query(countQuery, queryParams);
       const total = parseInt(countResult.rows[0].count);
       
-      // Then fetch the records with pagination
+      // Then fetch the records with pagination - no created_at field in the table
       const recordsQuery = `
-        SELECT id, url_id as "urlId", click_time as "timestamp", created_at as "createdAt"
+        SELECT id, url_id as "urlId", click_time as "timestamp"
         FROM url_click_records
         ${whereClause}
         ORDER BY click_time DESC
@@ -2665,13 +2665,8 @@ export class DatabaseStorage implements IStorage {
       
       const recordsResult = await pool.query(recordsQuery, queryParams);
       
-      // Map results to the expected record format
-      const records = recordsResult.rows.map(row => ({
-        id: row.id,
-        urlId: row.url_id,
-        timestamp: row.timestamp,
-        createdAt: row.createdAt
-      }));
+      // The query already returns correctly aliased fields, just use them directly
+      const records = recordsResult.rows;
       
       return { records, total };
     } catch (error) {
