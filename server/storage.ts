@@ -1838,10 +1838,19 @@ export class DatabaseStorage implements IStorage {
     const isUpdatingClickLimit = updateRecord.originalClickLimit !== undefined && 
       updateRecord.originalClickLimit !== existing.originalClickLimit;
     
-    // If updating click limit, include it in the update
+    // IMPORTANT: If updating original click limit, ALWAYS set status to "paused"
     if (isUpdatingClickLimit) {
       updateData.originalClickLimit = updateRecord.originalClickLimit;
+      // Force status to paused when original click limit is changed
+      updateData.status = "paused";
+      console.log(`🛑 ORIGINAL CLICK LIMIT CHANGED: Setting status to PAUSED automatically`);
       console.log(`🔄 Adding originalClickLimit = ${updateRecord.originalClickLimit} to update operation`);
+      console.log(`🔄 Setting status = "paused" due to original click limit change`);
+    } else {
+      // If status is explicitly set in the update, use it
+      if (updateRecord.status !== undefined) {
+        updateData.status = updateRecord.status;
+      }
     }
     
     // First update the original record
@@ -1854,10 +1863,11 @@ export class DatabaseStorage implements IStorage {
     // If the original click limit has changed, propagate that change
     if (isUpdatingClickLimit) {
       console.log(`🔄 Updating original click limit for record #${id} from ${existing.originalClickLimit} to ${updateRecord.originalClickLimit}`);
+      console.log(`🔴 URL PAUSED: Original click limit changed from ${existing.originalClickLimit} to ${updateRecord.originalClickLimit}`);
       
       // We're updating the original click limit, so sync with all related URLs
       const updatedCount = await this.syncUrlsWithOriginalRecord(id);
-      console.log(`✅ Successfully propagated original click limit update to ${updatedCount} URLs`);
+      console.log(`✅ Successfully propagated original click limit update and paused status to ${updatedCount} URLs`);
     }
     
     return updated;
