@@ -1343,17 +1343,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // 2. Then sync all original record statuses TO URLs
+      // 2. Then sync all original records settings TO URLs using record IDs
       const originalRecords = await db.select().from(originalUrlRecords);
       
       for (const record of originalRecords) {
-        if (record.name) {
-          try {
-            const syncResult = await storage.syncUrlsWithOriginalRecord(record.name, true);
-            if (syncResult) urlsUpdated++;
-          } catch (err) {
-            console.error(`Error syncing original record ${record.name} status to URLs:`, err);
+        try {
+          const syncCount = await storage.syncUrlsWithOriginalRecord(record.id);
+          console.log(`✅ Record ${record.id} (${record.name}): Updated ${syncCount} URLs`);
+          
+          if (syncCount > 0) {
+            urlsUpdated += syncCount;
           }
+        } catch (err) {
+          console.error(`Error syncing original record ${record.name} (ID: ${record.id}) settings to URLs:`, err);
         }
       }
       
