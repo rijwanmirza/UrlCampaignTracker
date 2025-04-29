@@ -85,7 +85,7 @@
     "react-hook-form": "^7.53.1",
     "react-icons": "^5.5.0",
     "react-resizable-panels": "^2.1.4",
-    "recharts": "^2.13.0",
+    "recharts": "^2.15.3",
     "spdy": "^4.0.2",
     "systeminformation": "^5.25.11",
     "tailwind-merge": "^2.5.4",

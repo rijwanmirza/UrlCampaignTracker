@@ -23,6 +23,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import AnalyticsPage from "@/pages/analytics";
 import CampaignAnalyticsPage from "@/pages/campaign-analytics";
 import UrlAnalyticsPage from "@/pages/url-analytics";
+import CampaignSelectorPage from "@/pages/campaign-selector";
+import UrlSelectorPage from "@/pages/url-selector";
 
 // TEMPORARY DEVELOPMENT MODE FLAG
 const BYPASS_LOGIN = true; // Completely bypass login and protected routes
