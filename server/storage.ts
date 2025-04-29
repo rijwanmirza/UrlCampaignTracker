@@ -820,6 +820,22 @@ export class DatabaseStorage implements IStorage {
       updateUrl.status = 'completed';
     }
     
+    // CRITICAL FIX: If status is changing, sync with original URL record
+    if (updateUrl.status && updateUrl.status !== existingUrl.status) {
+      console.log(`🔄 Status change detected for URL #${id}: ${existingUrl.status || 'none'} -> ${updateUrl.status}`);
+      
+      // Sync status with original URL record
+      if (existingUrl.name) {
+        try {
+          const syncResult = await this.syncStatusFromUrlToOriginalRecord(existingUrl.name, updateUrl.status);
+          console.log(`🔄 Status sync to original record result: ${syncResult ? 'success' : 'no matching record found'}`);
+        } catch (syncError) {
+          console.error(`❌ Error syncing status to original record:`, syncError);
+          // Continue with URL update even if sync fails
+        }
+      }
+    }
+    
     // If click limit is being updated, check for original URL record
     if (updateUrl.clickLimit !== undefined || updateUrl.originalClickLimit !== undefined) {
       console.log('🔍 DEBUG: URL edit - updating click limit');
@@ -839,7 +855,8 @@ export class DatabaseStorage implements IStorage {
             await this.createOriginalUrlRecord({
               name: existingUrl.name,
               targetUrl: updateUrl.targetUrl || existingUrl.targetUrl,
-              originalClickLimit: updateUrl.originalClickLimit
+              originalClickLimit: updateUrl.originalClickLimit,
+              status: updateUrl.status || existingUrl.status // Include status when creating record
             });
             console.log('🔍 DEBUG: Created original URL record for', existingUrl.name);
           } catch (error) {
@@ -850,7 +867,8 @@ export class DatabaseStorage implements IStorage {
         else {
           try {
             await this.updateOriginalUrlRecord(existingRecord.id, {
-              originalClickLimit: updateUrl.originalClickLimit
+              originalClickLimit: updateUrl.originalClickLimit,
+              status: updateUrl.status || existingUrl.status // Include status when updating record
             });
             console.log('🔍 DEBUG: Updated original URL record for', existingUrl.name);
           } catch (error) {
