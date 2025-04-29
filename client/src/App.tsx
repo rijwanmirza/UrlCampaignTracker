@@ -20,6 +20,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// TEMPORARY DEVELOPMENT MODE FLAG
+const BYPASS_LOGIN = true; // Completely bypass login and protected routes
+
 function Router() {
   const [location] = useLocation();
   const isMobile = useIsMobile();
@@ -29,9 +32,6 @@ function Router() {
     location.startsWith("/r/") || 
     location.startsWith("/views/") || 
     location.startsWith("/c/");
-  
-  // Check if current location is the login route
-  const isLoginRoute = location === "/login";
   
   // Render different route sets based on the current location
   if (isRedirectRoute) {
@@ -46,8 +46,54 @@ function Router() {
     );
   }
   
-  if (isLoginRoute) {
-    // Login route without navbar or protected route wrapper
+  // TEMPORARY FOR DEVELOPMENT: Bypass authentication completely
+  if (BYPASS_LOGIN) {
+    return (
+      <AppLayout>
+        <Switch>
+          <Route path="/login">
+            <Redirect to="/campaigns" />
+          </Route>
+          <Route path="/">
+            <Redirect to="/campaigns" />
+          </Route>
+          <Route path="/campaigns/:id">
+            <Home />
+          </Route>
+          <Route path="/campaigns">
+            <CampaignList />
+          </Route>
+          <Route path="/urls">
+            {isMobile ? <URLsMobilePage /> : <URLsPage />}
+          </Route>
+          <Route path="/gmail-settings">
+            <GmailSettingsPage />
+          </Route>
+          <Route path="/system-settings">
+            <SystemSettingsPage />
+          </Route>
+          <Route path="/trafficstar">
+            <TrafficstarPage />
+          </Route>
+          <Route path="/redirect-test">
+            <RedirectTest />
+          </Route>
+          <Route path="/test-spent-value">
+            <TestSpentValuePage />
+          </Route>
+          <Route path="/original-url-records">
+            <OriginalUrlRecordsPage />
+          </Route>
+          <Route>
+            <NotFound />
+          </Route>
+        </Switch>
+      </AppLayout>
+    );
+  }
+  
+  // Normal production mode with authentication
+  if (location === "/login") {
     return (
       <Switch>
         <Route path="/login" component={LoginPage} />
@@ -55,7 +101,6 @@ function Router() {
     );
   }
   
-  // Protected app routes with navbar
   return (
     <ProtectedRoute>
       <AppLayout>

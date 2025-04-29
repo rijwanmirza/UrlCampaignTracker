@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+// TEMPORARY DEVELOPMENT MODE - Always bypass authentication
+const BYPASS_AUTH = true;
+
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -9,8 +12,8 @@ interface AuthContextType {
 }
 
 const defaultContextValue: AuthContextType = {
-  isAuthenticated: false,
-  isLoading: true,
+  isAuthenticated: BYPASS_AUTH, // Auto-authenticate in dev mode
+  isLoading: false, // Skip loading in dev mode
   verifyApiKey: async () => {},
   logout: async () => {}
 };
@@ -22,11 +25,20 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // In development mode, always set authenticated to true
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(BYPASS_AUTH);
+  const [isLoading, setIsLoading] = useState<boolean>(!BYPASS_AUTH);
 
   // Check authentication status on mount
   useEffect(() => {
+    // Skip auth check if in development mode
+    if (BYPASS_AUTH) {
+      console.log('🔓 DEVELOPMENT MODE: Authentication bypassed on client');
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return;
+    }
+    
     const checkAuthStatus = async () => {
       try {
         const response = await axios.get('/api/auth/status');
@@ -44,6 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Verify API key function
   const verifyApiKey = async (apiKey: string) => {
+    // In development mode, always succeed with verification
+    if (BYPASS_AUTH) {
+      console.log('🔓 DEVELOPMENT MODE: API key verification bypassed');
+      setIsAuthenticated(true);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const response = await axios.post('/api/auth/verify-key', { apiKey });
@@ -59,6 +78,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout function - clears the API key cookie
   const logout = async () => {
+    // In development mode, logout is a no-op
+    if (BYPASS_AUTH) {
+      console.log('🔓 DEVELOPMENT MODE: Logout bypassed');
+      return;
+    }
+    
     setIsLoading(true);
     try {
       await axios.post('/api/auth/logout');
