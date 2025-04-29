@@ -268,7 +268,7 @@ function createClickData(url, campaign, timestamp) {
     campaignId: campaign.id,
     timestamp: timestamp,
     userAgent: userAgent,
-    referrer: referrer,
+    referer: referrer, // Note: database uses 'referer' (with one 'r')
     ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
   };
 }
