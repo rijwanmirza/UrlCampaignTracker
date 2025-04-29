@@ -1657,7 +1657,7 @@ export class DatabaseStorage implements IStorage {
       const [record] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.id, recordId));
       if (!record) return 0;
       
-      console.log(`✅ Successfully updated original click limit to ${record.originalClickLimit}`);
+      console.log(`✅ Syncing original record "${record.name}" with click limit ${record.originalClickLimit} and status "${record.status}"`);
       console.log(`🔄 Propagating changes to all linked URL instances...`);
       
       // CRITICAL FIX: Use direct SQL to update all URLs with matching name
@@ -1673,11 +1673,13 @@ export class DatabaseStorage implements IStorage {
       `);
       
       // Step 2: Update all URLs with the matching name
+      // FIXED: Also update the status from the original record
       await db.execute(sql`
         UPDATE urls
         SET 
           original_click_limit = ${record.originalClickLimit},
           click_limit = ROUND(${record.originalClickLimit} * COALESCE((SELECT multiplier FROM campaigns WHERE id = campaign_id), 1)),
+          status = ${record.status || 'active'},
           updated_at = NOW()
         WHERE name = ${record.name}
       `);
