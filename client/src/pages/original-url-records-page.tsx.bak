@@ -17,6 +17,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -540,8 +549,7 @@ export default function OriginalUrlRecordsPage() {
 
   const handlePageSizeChange = (value: string) => {
     setPageSize(parseInt(value));
-    // Back to page 1 when changing page size
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when changing page size
     queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
 
@@ -551,11 +559,11 @@ export default function OriginalUrlRecordsPage() {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
-        <h2 className="text-xl font-bold text-destructive mb-2">Error</h2>
-        <p className="text-muted-foreground">{(error as Error)?.message || "Failed to load records"}</p>
+        <p className="text-lg text-red-500">
+          Error loading original URL records: {String(error)}
+        </p>
         <Button 
-          variant="outline" 
-          className="mt-4"
+          className="mt-4" 
           onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] })}
         >
           Retry
@@ -569,29 +577,113 @@ export default function OriginalUrlRecordsPage() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold">Original URL Records</h1>
-          <Button
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
             onClick={() => fixClickProtectionMutation.mutate()}
-            variant="outline"
-            size="sm"
-            className="text-xs"
             disabled={fixClickProtectionMutation.isPending}
           >
             {fixClickProtectionMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                Fixing...
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <>
-                Fix Click Protection
-              </>
+              <RefreshCw className="h-4 w-4" />
             )}
+            Fix Click Protection
           </Button>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create New Record
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Original URL Record</DialogTitle>
+              <DialogDescription>
+                Create a new master record for URL click values that will be used across campaigns.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="URL name/identifier" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        A unique identifier for this URL
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        The destination URL
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="originalClickLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Original Click Limit</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={1}
+                          placeholder="1000" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        The master click limit that will be used as reference across campaigns
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsCreateDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={createMutation.isPending}
+                  >
+                    {createMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : "Create Record"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -921,8 +1013,11 @@ export default function OriginalUrlRecordsPage() {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="URL name or identifier" {...field} />
+                      <Input placeholder="URL name/identifier" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      A unique identifier for this URL
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -936,6 +1031,9 @@ export default function OriginalUrlRecordsPage() {
                     <FormControl>
                       <Input placeholder="https://example.com" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      The destination URL
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -945,17 +1043,21 @@ export default function OriginalUrlRecordsPage() {
                 name="originalClickLimit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Click Limit</FormLabel>
+                    <FormLabel>Original Click Limit</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
+                        min={1}
                         placeholder="1000" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        {...field} 
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          field.onChange(isNaN(value) ? 0 : value);
+                        }}
                       />
                     </FormControl>
                     <FormDescription>
-                      The maximum number of clicks allowed for this URL
+                      The master click limit that will be used as reference across campaigns
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -976,92 +1078,9 @@ export default function OriginalUrlRecordsPage() {
                   {updateMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      Updating...
                     </>
-                  ) : "Save Changes"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Original URL Record</DialogTitle>
-            <DialogDescription>
-              Add a new master URL record to the system.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="URL name or identifier" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="targetUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="originalClickLimit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Click Limit</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="1000" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      The maximum number of clicks allowed for this URL
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : "Create"}
+                  ) : "Update Record"}
                 </Button>
               </DialogFooter>
             </form>
@@ -1075,7 +1094,8 @@ export default function OriginalUrlRecordsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this original URL record? This action cannot be undone.
+              Are you sure you want to delete this original URL record? 
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1086,8 +1106,8 @@ export default function OriginalUrlRecordsPage() {
               Cancel
             </Button>
             <Button 
-              variant="destructive" 
-              onClick={() => recordToDelete !== null && deleteMutation.mutate(recordToDelete)}
+              variant="destructive"
+              onClick={() => recordToDelete && deleteMutation.mutate(recordToDelete)}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (
