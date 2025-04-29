@@ -52,7 +52,7 @@ export interface IStorage {
   
   // Redirect operation
   incrementUrlClicks(id: number): Promise<Url | undefined>;
-  recordCampaignClick(campaignId: number, urlId: number): Promise<void>; // New method for campaign analytics
+  recordCampaignClick(campaignId: number, urlId: number | null): Promise<void>; // Records each redirect as 1 campaign click
   getRandomWeightedUrl(campaignId: number): Promise<UrlWithActiveStatus | null>;
   getWeightedUrlDistribution(campaignId: number): Promise<{
     activeUrls: UrlWithActiveStatus[],
@@ -1003,20 +1003,16 @@ export class DatabaseStorage implements IStorage {
    * @param campaignId The campaign ID to record the click for
    * @param urlId Optional URL ID (only used for click attribution, not for analytics retrieval)
    */
-  async recordCampaignClick(campaignId: number, urlId: number): Promise<void> {
+  async recordCampaignClick(campaignId: number, urlId: number | null = null): Promise<void> {
     try {
-      // Get the current timestamp with full precision
-      const now = new Date();
+      // Record each redirect as exactly 1 click in campaign with precise timestamp
+      const timestamp = new Date();
       
-      // Record the click data directly in the analytics table
-      // Only store essential timestamp, campaignId, and urlId
-      // The timestamp is critical for hourly breakdowns (00:00-01:00, etc.)
+      // Save the redirect with exact timestamp for hourly analytics (00:00-01:00, 01:00-02:00, etc.)
       await db.insert(clickAnalytics).values({
         urlId,
         campaignId,
-        timestamp: now,
-        // No user tracking data is stored - completely privacy-friendly
-        // Explicitly setting null values ensures no tracking data will be collected
+        timestamp,
         userAgent: null,
         ipAddress: null,
         referer: null,
@@ -1027,10 +1023,10 @@ export class DatabaseStorage implements IStorage {
         operatingSystem: null
       });
       
-      console.log(`Recorded permanent campaign click for campaign ${campaignId} URL ${urlId} at ${now.toISOString()}`);
+      // This will count exactly 50 clicks if there are 50 redirects
+      console.log(`Campaign click recorded: Campaign #${campaignId} URL #${urlId || 'direct'} at ${timestamp.toISOString()}`);
     } catch (error) {
-      // Don't throw errors, just log them - analytics should never block redirects
-      console.error(`Error recording campaign click for campaign ${campaignId}:`, error);
+      console.error(`Error recording campaign click: ${error}`);
     }
   }
 
