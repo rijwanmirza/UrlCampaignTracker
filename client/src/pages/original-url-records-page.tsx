@@ -155,7 +155,10 @@ export default function OriginalUrlRecordsPage() {
       }
       
       if (campaignFilter) {
-        searchParams.append("campaignId", campaignFilter);
+        // Make sure to convert to a number
+        const campaignId = parseInt(campaignFilter, 10);
+        console.log(`Setting campaign filter to ${campaignId} (${typeof campaignId})`);
+        searchParams.append("campaignId", campaignId.toString());
       }
       
       // Add status filter if it's not "all"
@@ -669,10 +672,15 @@ export default function OriginalUrlRecordsPage() {
                   value={campaignFilter || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Convert to number or null
-                    const numericValue = value === "" ? null : parseInt(value, 10);
-                    setCampaignFilter(numericValue ? numericValue.toString() : null);
-                    console.log(`Setting campaign filter to: ${numericValue} (${typeof numericValue})`);
+                    if (value === "") {
+                      console.log('Clearing campaign filter');
+                      setCampaignFilter(null);
+                    } else {
+                      // Convert to number
+                      const numericValue = parseInt(value, 10);
+                      console.log(`Setting campaign filter to: ${numericValue} (${typeof numericValue})`);
+                      setCampaignFilter(numericValue.toString());
+                    }
                     // Reset to page 1 when filter changes
                     setCurrentPage(1);
                     // Refresh data

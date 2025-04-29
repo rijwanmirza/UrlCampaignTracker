@@ -1750,19 +1750,31 @@ export class DatabaseStorage implements IStorage {
     
     // Apply campaign filter if provided
     if (campaignId) {
-      // Find all URL names that belong to this campaign
-      const campaignUrls = await db.select({ name: urls.name })
-        .from(urls)
-        .where(eq(urls.campaignId, campaignId));
+      console.log(`Filtering original URL records by campaign ID: ${campaignId}`);
       
-      // If there are URLs, filter original records by these names
-      if (campaignUrls.length > 0) {
-        const urlNames = campaignUrls.map(url => url.name);
-        query = query.where(inArray(originalUrlRecords.name, urlNames));
-        countQuery = countQuery.where(inArray(originalUrlRecords.name, urlNames));
-      } else {
-        // If no URLs found for this campaign, return empty result
-        return { records: [], total: 0 };
+      try {
+        // Find all URL names that belong to this campaign
+        const campaignUrls = await db.select({ name: urls.name })
+          .from(urls)
+          .where(eq(urls.campaignId, campaignId));
+        
+        console.log(`Found ${campaignUrls.length} URLs for campaign ID ${campaignId}`);
+        
+        // If there are URLs, filter original records by these names
+        if (campaignUrls.length > 0) {
+          const urlNames = campaignUrls.map(url => url.name);
+          console.log('URL names to filter by:', urlNames);
+          
+          query = query.where(inArray(originalUrlRecords.name, urlNames));
+          countQuery = countQuery.where(inArray(originalUrlRecords.name, urlNames));
+        } else {
+          // If no URLs found for this campaign, return empty result
+          console.log(`No URLs found for campaign ID ${campaignId}, returning empty result`);
+          return { records: [], total: 0 };
+        }
+      } catch (error) {
+        console.error('Error filtering by campaign ID:', error);
+        // Continue without campaign filtering if there's an error
       }
     }
     
