@@ -3453,6 +3453,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk operation schema for original URL records
+  const bulkOriginalUrlRecordActionSchema = z.object({
+    ids: z.array(z.number()).min(1, "At least one ID is required")
+  });
+  
+  // Bulk operations for original URL records
+  app.post("/api/original-url-records/bulk/pause", async (req: Request, res: Response) => {
+    try {
+      const { ids } = bulkOriginalUrlRecordActionSchema.parse(req.body);
+      
+      // Update the status to paused for all selected records
+      await db.update(originalUrlRecords)
+        .set({ status: 'paused', updatedAt: new Date() })
+        .where(sql`id = ANY(${ids})`);
+      
+      // Update all URLs that link to these original records to be paused
+      const result = await db.execute(sql`
+        UPDATE urls 
+        SET status = 'paused', updated_at = NOW()
+        FROM original_url_records
+        WHERE urls.name = original_url_records.name
+        AND original_url_records.id = ANY(${ids})
+      `);
+      
+      console.log(`✅ Bulk paused ${ids.length} original URL records and connected URLs`);
+      
+      res.json({
+        message: `Successfully paused ${ids.length} records and ${result.rowCount} related URLs`,
+        pausedRecords: ids.length,
+        updatedUrls: result.rowCount
+      });
+    } catch (error) {
+      console.error('Error in bulk pause operation:', error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to pause records", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.post("/api/original-url-records/bulk/resume", async (req: Request, res: Response) => {
+    try {
+      const { ids } = bulkOriginalUrlRecordActionSchema.parse(req.body);
+      
+      // Update the status to active for all selected records
+      await db.update(originalUrlRecords)
+        .set({ status: 'active', updatedAt: new Date() })
+        .where(sql`id = ANY(${ids})`);
+      
+      // Update all URLs that link to these original records to be active
+      const result = await db.execute(sql`
+        UPDATE urls 
+        SET status = 'active', updated_at = NOW()
+        FROM original_url_records
+        WHERE urls.name = original_url_records.name
+        AND original_url_records.id = ANY(${ids})
+      `);
+      
+      console.log(`✅ Bulk resumed ${ids.length} original URL records and connected URLs`);
+      
+      res.json({
+        message: `Successfully resumed ${ids.length} records and ${result.rowCount} related URLs`,
+        resumedRecords: ids.length,
+        updatedUrls: result.rowCount
+      });
+    } catch (error) {
+      console.error('Error in bulk resume operation:', error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to resume records", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.post("/api/original-url-records/bulk/delete", async (req: Request, res: Response) => {
+    try {
+      const { ids } = bulkOriginalUrlRecordActionSchema.parse(req.body);
+      
+      // Delete the original records
+      const result = await db.delete(originalUrlRecords)
+        .where(sql`id = ANY(${ids})`);
+      
+      console.log(`✅ Bulk deleted ${ids.length} original URL records`);
+      
+      res.json({
+        message: `Successfully deleted ${ids.length} records`,
+        deletedRecords: ids.length
+      });
+    } catch (error) {
+      console.error('Error in bulk delete operation:', error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to delete records", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // Original URL Records operations
   app.get("/api/original-url-records", async (req: Request, res: Response) => {
     try {

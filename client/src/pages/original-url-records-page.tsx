@@ -470,19 +470,26 @@ export default function OriginalUrlRecordsPage() {
     if (selectedRecords.length === 0) return;
     setBulkActionLoading(true);
     try {
-      for (const id of selectedRecords) {
-        await pauseMutation.mutateAsync(id);
-      }
+      // Create a single request to pause all selected records
+      const res = await apiRequest("POST", "/api/original-url-records/bulk/pause", { ids: selectedRecords });
+      const result = await res.json();
+      
       toast({
         title: "Success",
         description: `${selectedRecords.length} records paused successfully.`,
       });
+      
+      // Refresh data after bulk action
+      queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      
       setSelectedRecords([]);
       setSelectAll(false);
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to pause some records: ${error instanceof Error ? error.message : String(error)}`,
+        description: `Failed to pause records: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
       });
     } finally {
@@ -494,19 +501,26 @@ export default function OriginalUrlRecordsPage() {
     if (selectedRecords.length === 0) return;
     setBulkActionLoading(true);
     try {
-      for (const id of selectedRecords) {
-        await resumeMutation.mutateAsync(id);
-      }
+      // Create a single request to resume all selected records
+      const res = await apiRequest("POST", "/api/original-url-records/bulk/resume", { ids: selectedRecords });
+      const result = await res.json();
+      
       toast({
         title: "Success",
         description: `${selectedRecords.length} records resumed successfully.`,
       });
+      
+      // Refresh data after bulk action
+      queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      
       setSelectedRecords([]);
       setSelectAll(false);
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to resume some records: ${error instanceof Error ? error.message : String(error)}`,
+        description: `Failed to resume records: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
       });
     } finally {
@@ -518,19 +532,24 @@ export default function OriginalUrlRecordsPage() {
     if (selectedRecords.length === 0) return;
     setBulkActionLoading(true);
     try {
-      for (const id of selectedRecords) {
-        await deleteMutation.mutateAsync(id);
-      }
+      // Create a single request to delete all selected records
+      const res = await apiRequest("POST", "/api/original-url-records/bulk/delete", { ids: selectedRecords });
+      const result = await res.json();
+      
       toast({
         title: "Success",
         description: `${selectedRecords.length} records deleted successfully.`,
       });
+      
+      // Refresh data after bulk action
+      queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+      
       setSelectedRecords([]);
       setSelectAll(false);
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to delete some records: ${error instanceof Error ? error.message : String(error)}`,
+        description: `Failed to delete records: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
       });
     } finally {
