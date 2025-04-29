@@ -319,3 +319,40 @@ export const timeRangeFilterSchema = z.object({
 });
 
 export type TimeRangeFilter = z.infer<typeof timeRangeFilterSchema>;
+
+// URL Click Records Schema - Tracking all clicks for URLs
+export const urlClickRecords = pgTable("url_click_records", {
+  id: serial("id").primaryKey(),
+  urlId: integer("url_id").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUrlClickRecordSchema = createInsertSchema(urlClickRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for URL Click Records
+export type UrlClickRecord = typeof urlClickRecords.$inferSelect;
+export type InsertUrlClickRecord = z.infer<typeof insertUrlClickRecordSchema>;
+
+// URL Click Logs Schema - For detailed tracking of each URL click with timestamps
+export const urlClickLogs = pgTable("url_click_logs", {
+  id: serial("id").primaryKey(),
+  urlId: integer("url_id").notNull(),
+  clickTime: timestamp("click_time").defaultNow().notNull(),
+  indianTime: text("indian_time").notNull(), // Format: "YYYY-MM-DD HH:MM:SS"
+  dateKey: text("date_key").notNull(), // Format: "YYYY-MM-DD" for faster filtering
+  hourKey: integer("hour_key").notNull(), // 0-23 for hour-based filtering
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUrlClickLogSchema = createInsertSchema(urlClickLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for URL Click Logs
+export type UrlClickLog = typeof urlClickLogs.$inferSelect;
+export type InsertUrlClickLog = z.infer<typeof insertUrlClickLogSchema>;
