@@ -4552,11 +4552,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint to generate test click data for analytics
   app.post("/api/system/generate-test-clicks", async (_req: Request, res: Response) => {
     try {
-      // Import the generateTestClickData function
-      const { generateTestClickData } = await import("./test-click-generator");
+      console.log("🧪 Generating test click analytics data");
       
-      // Generate test click data
-      const result = await generateTestClickData();
+      // Generate test click data directly in this function
+      const result = await generateAnalyticsTestData();
       
       res.json({
         success: true,
@@ -4572,6 +4571,213 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Function to generate test analytics data
+  async function generateAnalyticsTestData() {
+    console.log("Starting test click data generation...");
+    
+    // Clear existing test data to avoid duplication
+    try {
+      // Delete existing click analytics data - only for testing purposes
+      await db.execute(sql`TRUNCATE TABLE ${clickAnalytics}`);
+      console.log("Cleared existing click analytics data");
+    } catch (error) {
+      console.error("Error clearing existing click data:", error);
+    }
+    
+    // First, get all campaigns
+    const allCampaigns = await db.select().from(campaigns);
+    if (!allCampaigns.length) {
+      console.log("No campaigns found to generate clicks for");
+      return { success: false, message: "No campaigns found to generate clicks for" };
+    }
+    
+    // Get the URLs for each campaign
+    let totalClicksGenerated = 0;
+    
+    for (const campaign of allCampaigns) {
+      console.log(`Generating clicks for campaign "${campaign.name}" (ID: ${campaign.id})`);
+      
+      const campaignUrls = await db.select().from(urls).where(eq(urls.campaignId, campaign.id));
+      if (!campaignUrls.length) {
+        console.log(`No URLs found for campaign ${campaign.id}`);
+        continue;
+      }
+      
+      // Generate clicks for today, yesterday, past week and past month
+      const now = new Date();
+      
+      // Generate hourly clicks for today
+      await generateTodayClicks(campaign, campaignUrls[0]);
+      
+      // Generate clicks for yesterday
+      await generateYesterdayClicks(campaign, campaignUrls[0]);
+      
+      // Generate clicks for past week
+      await generatePastWeekClicks(campaign, campaignUrls);
+      
+      // Get total clicks inserted
+      const clicksCount = await db.execute(sql`
+        SELECT COUNT(*) as count FROM click_analytics 
+        WHERE "campaignId" = ${campaign.id}
+      `);
+      
+      const campaignClickCount = parseInt(clicksCount.rows[0].count);
+      totalClicksGenerated += campaignClickCount;
+      
+      console.log(`Generated ${campaignClickCount} total clicks for campaign ${campaign.id}`);
+    }
+    
+    console.log(`Test click data generation complete! Generated ${totalClicksGenerated} total clicks.`);
+    return { success: true, totalClicks: totalClicksGenerated };
+  }
+  
+  // Helper to generate today's clicks
+  async function generateTodayClicks(campaign: any, url: any) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const clicksPerHour = [];
+    
+    // Generate clicks for each hour (0-23)
+    for (let hour = 0; hour <= now.getHours(); hour++) {
+      // More clicks during business hours (9-17)
+      let clickCount = Math.floor(Math.random() * 5) + 1; // 1-5 clicks by default
+      
+      if (hour >= 9 && hour <= 17) {
+        clickCount = Math.floor(Math.random() * 15) + 5; // 5-20 clicks during business hours
+      }
+      
+      // Create timestamp for this hour with random minutes and seconds
+      for (let i = 0; i < clickCount; i++) {
+        const clickTime = new Date(today);
+        clickTime.setHours(hour);
+        clickTime.setMinutes(Math.floor(Math.random() * 60));
+        clickTime.setSeconds(Math.floor(Math.random() * 60));
+        
+        // Don't create clicks in the future
+        if (clickTime <= now) {
+          clicksPerHour.push(createClickData(url, campaign, clickTime));
+        }
+      }
+    }
+    
+    // Batch insert all today's hourly clicks
+    if (clicksPerHour.length > 0) {
+      await db.insert(clickAnalytics).values(clicksPerHour);
+      console.log(`Inserted ${clicksPerHour.length} hourly clicks for today for campaign ${campaign.id}`);
+    }
+  }
+  
+  // Helper to generate yesterday's clicks
+  async function generateYesterdayClicks(campaign: any, url: any) {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+    
+    const clicksYesterday = [];
+    
+    // Generate full day of clicks for yesterday
+    for (let hour = 0; hour < 24; hour++) {
+      // More clicks during business hours (9-17)
+      let clickCount = Math.floor(Math.random() * 3) + 1; // 1-3 clicks by default
+      
+      if (hour >= 9 && hour <= 17) {
+        clickCount = Math.floor(Math.random() * 10) + 3; // 3-13 clicks during business hours
+      }
+      
+      // Create timestamp for this hour with random minutes and seconds
+      for (let i = 0; i < clickCount; i++) {
+        const clickTime = new Date(yesterday);
+        clickTime.setHours(hour);
+        clickTime.setMinutes(Math.floor(Math.random() * 60));
+        clickTime.setSeconds(Math.floor(Math.random() * 60));
+        
+        clicksYesterday.push(createClickData(url, campaign, clickTime));
+      }
+    }
+    
+    // Batch insert all yesterday's clicks
+    if (clicksYesterday.length > 0) {
+      await db.insert(clickAnalytics).values(clicksYesterday);
+      console.log(`Inserted ${clicksYesterday.length} clicks for yesterday for campaign ${campaign.id}`);
+    }
+  }
+  
+  // Helper to generate past week's clicks
+  async function generatePastWeekClicks(campaign: any, campaignUrls: any[]) {
+    const now = new Date();
+    const pastWeekClicks = [];
+    
+    // Generate clicks for the past 7 days (excluding today and yesterday)
+    for (let dayOffset = 2; dayOffset < 7; dayOffset++) {
+      const pastDay = new Date(now);
+      pastDay.setDate(now.getDate() - dayOffset);
+      pastDay.setHours(0, 0, 0, 0);
+      
+      // Distribute clicks across all campaign URLs
+      for (const url of campaignUrls) {
+        // Generate 20-50 clicks per day per URL
+        const dailyClicks = Math.floor(Math.random() * 30) + 20;
+        
+        for (let i = 0; i < dailyClicks; i++) {
+          // Random hour of the day
+          const hour = Math.floor(Math.random() * 24);
+          const minute = Math.floor(Math.random() * 60);
+          const second = Math.floor(Math.random() * 60);
+          
+          const clickTime = new Date(pastDay);
+          clickTime.setHours(hour, minute, second);
+          
+          pastWeekClicks.push(createClickData(url, campaign, clickTime));
+        }
+      }
+    }
+    
+    // Batch insert all past week clicks
+    if (pastWeekClicks.length > 0) {
+      // Insert in batches to avoid memory issues
+      const batchSize = 1000;
+      for (let i = 0; i < pastWeekClicks.length; i += batchSize) {
+        const batch = pastWeekClicks.slice(i, i + batchSize);
+        await db.insert(clickAnalytics).values(batch);
+      }
+      
+      console.log(`Inserted ${pastWeekClicks.length} clicks for past week for campaign ${campaign.id}`);
+    }
+  }
+  
+  // Helper to create click data object
+  function createClickData(url: any, campaign: any, timestamp: Date) {
+    const userAgents = [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Linux; Android 11; SM-G991U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
+    ];
+    
+    const referrers = [
+      "https://www.google.com/",
+      "https://www.facebook.com/",
+      "https://www.youtube.com/",
+      "https://www.instagram.com/",
+      "https://www.twitter.com/",
+      "",  // Direct traffic
+    ];
+    
+    const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+    const referrer = referrers[Math.floor(Math.random() * referrers.length)];
+    
+    return {
+      urlId: url.id,
+      campaignId: campaign.id,
+      timestamp: timestamp,
+      userAgent: userAgent,
+      referrer: referrer,
+      ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+    };
+  }
   
   return server;
 }
