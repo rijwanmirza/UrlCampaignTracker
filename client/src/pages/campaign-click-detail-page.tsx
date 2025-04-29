@@ -239,31 +239,13 @@ export default function CampaignClickDetailPage() {
             </div>
           ) : (
             <>
-              <div className="grid md:grid-cols-3 gap-6 mb-6">
+              <div className="grid md:grid-cols-1 gap-6 mb-6">
                 <Card className="shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{summaryData?.totalClicks || 0}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Unique IPs</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{summaryData?.uniqueIPs || 0}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Top Countries</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{summaryData?.topCountries?.[0] || 'N/A'}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -322,30 +304,7 @@ export default function CampaignClickDetailPage() {
                 </TabsContent>
               </Tabs>
               
-              {summaryData?.topReferrers && (
-                <Card className="shadow-sm">
-                  <CardHeader>
-                    <CardTitle>Top Referrers</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Object.entries(summaryData.topReferrers).length > 0 ? (
-                        Object.entries(summaryData.topReferrers)
-                          .sort(([, a], [, b]) => (b as number) - (a as number))
-                          .slice(0, 5)
-                          .map(([referrer, count]) => (
-                            <div key={referrer} className="flex justify-between items-center">
-                              <span>{referrer || '(Direct)'}</span>
-                              <span className="font-medium">{count as number}</span>
-                            </div>
-                          ))
-                      ) : (
-                        <div className="text-muted-foreground">No referrer data available</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+
             </>
           )}
         </CardContent>
