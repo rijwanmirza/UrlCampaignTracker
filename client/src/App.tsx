@@ -14,6 +14,8 @@ import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
 import TestSpentValuePage from "@/pages/test-spent-value";
 import OriginalUrlRecordsPage from "@/pages/original-url-records-page";
+import CampaignClickRecordsPage from "@/pages/campaign-click-records-page";
+import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";

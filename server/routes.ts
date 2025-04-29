@@ -41,11 +41,15 @@ import { trafficStarService } from "./trafficstar-service";
 import { db } from "./db";
 import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
+import { registerCampaignClickRoutes } from "./campaign-click-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
   // We'll handle HTTP/2 headers in the route handlers
   const server = createServer(app);
+
+  // Register campaign click record routes
+  registerCampaignClickRoutes(app);
   
 
   
