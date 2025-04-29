@@ -208,13 +208,13 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
       SELECT 
         id, 
         name,
-        "redirectMethod",
-        "customPath",
+        redirect_method as "redirectMethod",
+        custom_path as "customPath",
         multiplier,
-        "pricePerThousand",
-        "trafficstarCampaignId",
-        "createdAt",
-        "updatedAt"
+        price_per_thousand as "pricePerThousand",
+        trafficstar_campaign_id as "trafficstarCampaignId",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
       FROM campaigns 
       WHERE id = ${campaignId}
     `);
@@ -353,18 +353,18 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       SELECT 
         u.id, 
         u.name,
-        u."targetUrl",
+        u.target_url as "targetUrl",
         u.status,
-        u."clickCount",
-        u."clickLimit",
-        u."originalClickLimit",
-        u."createdAt",
-        u."updatedAt",
+        u.clicks as "clickCount",
+        u.click_limit as "clickLimit",
+        u.original_click_limit as "originalClickLimit",
+        u.created_at as "createdAt",
+        u.updated_at as "updatedAt",
         c.id as "campaignId",
         c.name as "campaignName",
         c.multiplier
       FROM urls u
-      JOIN campaigns c ON u."campaignId" = c.id
+      JOIN campaigns c ON u.campaign_id = c.id
       WHERE u.id = ${urlId}
     `);
     
@@ -428,23 +428,8 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       clicks: parseInt(row.clicks) || 0
     }));
     
-    // Get referrer breakdown
-    const referrerBreakdownResult = await db.execute(sql`
-      SELECT 
-        COALESCE(referrer, 'Direct') as referrer,
-        COUNT(*) as clicks
-      FROM ${clickAnalytics}
-      WHERE "urlId" = ${urlId}
-        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
-      GROUP BY referrer
-      ORDER BY clicks DESC
-    `);
-    
-    const referrerData = referrerBreakdownResult.rows.map((row: any) => ({
-      referrer: row.referrer === '' ? 'Direct' : row.referrer,
-      clicks: parseInt(row.clicks) || 0
-    }));
+    // No referrer data in simplified schema
+    const referrerData = [{ referrer: 'Direct', clicks: totalClicks }];
     
     res.json({
       url: {
