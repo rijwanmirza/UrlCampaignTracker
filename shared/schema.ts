@@ -262,24 +262,16 @@ export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
 export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
 export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;
 
-// Click Analytics Schema
+// Click Analytics Schema - Simplified as requested
 export const clickAnalytics = pgTable("click_analytics", {
   id: serial("id").primaryKey(),
-  urlId: integer("url_id").notNull(), // Reference to URL
-  campaignId: integer("campaign_id"), // Reference to Campaign (if available)
-  timestamp: timestamp("timestamp").defaultNow().notNull(), // When the click happened (field in DB is timestamp)
-  userAgent: text("user_agent"), // User agent of the clicker
-  ipAddress: text("ip_address"), // IP address (can be hashed for privacy)
-  referrer: text("referer"), // Referrer URL if available
-  country: text("country"), // Country based on IP
-  city: text("city"), // City based on IP
-  metadata: jsonb("metadata"), // Additional metadata as JSON
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  urlId: integer("urlId").notNull(), // Reference to URL
+  campaignId: integer("campaignId"), // Reference to Campaign (if available)
+  timestamp: timestamp("timestamp").defaultNow().notNull(), // When the click happened - this is the ONLY field we need
 });
 
 export const insertClickAnalyticsSchema = createInsertSchema(clickAnalytics).omit({
   id: true,
-  createdAt: true,
 });
 
 export type ClickAnalytics = typeof clickAnalytics.$inferSelect;
