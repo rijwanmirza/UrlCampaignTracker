@@ -995,26 +995,28 @@ export class DatabaseStorage implements IStorage {
   
   /**
    * Records a campaign click directly in the analytics database
-   * This method separates campaign click analytics from URL tracking,
-   * ensuring that analytics data is preserved even if URLs are deleted
+   * Every successful redirect counts as 1 click in the campaign analytics
+   * This approach stores clicks with precise timestamps to enable hourly breakdowns (00:00-01:00, etc.)
+   * and ensures analytics data is preserved even if URLs are deleted
    * 
    * @param campaignId The campaign ID to record the click for
    * @param urlId Optional URL ID (only used for click attribution, not for analytics retrieval)
    */
   async recordCampaignClick(campaignId: number, urlId: number): Promise<void> {
     try {
-      // Get the current timestamp
+      // Get the current timestamp with full precision
       const now = new Date();
       
       // Record the click data directly in the analytics table
-      // Only store essential timestamp and campaignId
+      // Only store essential timestamp, campaignId, and urlId
+      // The timestamp is critical for hourly breakdowns (00:00-01:00, etc.)
       await db.insert(clickAnalytics).values({
         urlId,
         campaignId,
         timestamp: now
       });
       
-      console.log(`Recorded permanent campaign click for campaign ${campaignId}`);
+      console.log(`Recorded permanent campaign click for campaign ${campaignId} at ${now.toISOString()}`);
     } catch (error) {
       // Don't throw errors, just log them - analytics should never block redirects
       console.error(`Error recording campaign click for campaign ${campaignId}:`, error);
