@@ -310,7 +310,8 @@ export const timeRangeFilterSchema = z.object({
     'last_5_days', 'last_6_days', 'last_7_days',
     'last_30_days', // Added to match the UI options
     'this_month', 'last_month', 'last_6_months',
-    'this_year', 'last_year', 'custom_range'
+    'this_year', 'last_year', 'custom_range',
+    'all', 'all_time' // Both variants for backward compatibility
   ]),
   startDate: z.string().optional(), // Required for custom range
   endDate: z.string().optional(),   // Required for custom range
