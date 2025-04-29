@@ -32,8 +32,7 @@ import {
   trafficstarCampaigns,
   campaigns,
   urls,
-  originalUrlRecords,
-  clickAnalytics
+  originalUrlRecords
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";

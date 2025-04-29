@@ -13,8 +13,7 @@ import {
   OriginalUrlRecord,
   InsertOriginalUrlRecord,
   UpdateOriginalUrlRecord,
-  originalUrlRecords,
-  clickAnalytics
+  originalUrlRecords
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
@@ -1008,34 +1007,7 @@ export class DatabaseStorage implements IStorage {
    * @param campaignId The campaign ID that generated this redirect
    * @param urlId URL ID used for the redirect (null for direct campaign access)
    */
-  async recordCampaignClick(campaignId: number, urlId: number | null = null): Promise<void> {
-    try {
-      // Record each redirect as exactly 1 click in campaign with precise timestamp
-      const timestamp = new Date();
-      
-      // Save the redirect with exact timestamp for hourly analytics (00:00-01:00, 01:00-02:00, etc.)
-      const analyticsData = {
-        campaignId, // Campaign ID is required
-        timestamp,  // Timestamp is critical for hourly analytics
-        urlId: urlId ?? undefined, // Convert null to undefined for Drizzle
-        userAgent: null,
-        ipAddress: null,
-        referer: null,
-        country: null,
-        city: null, 
-        deviceType: null,
-        browser: null,
-        operatingSystem: null
-      };
-      
-      await db.insert(clickAnalytics).values(analyticsData);
-      
-      // This will count exactly 50 clicks if there are 50 redirects
-      console.log(`Campaign click recorded: Campaign #${campaignId} URL #${urlId || 'direct'} at ${timestamp.toISOString()}`);
-    } catch (error) {
-      console.error(`Error recording campaign click: ${error}`);
-    }
-  }
+
 
   async bulkUpdateUrls(ids: number[], action: string): Promise<boolean> {
     // Validate that URLs exist
