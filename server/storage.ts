@@ -52,7 +52,7 @@ export interface IStorage {
   
   // Redirect operation
   incrementUrlClicks(id: number): Promise<Url | undefined>;
-  recordCampaignClick(campaignId: number, urlId: number | null): Promise<void>; // Records each redirect as 1 campaign click
+
   getRandomWeightedUrl(campaignId: number): Promise<UrlWithActiveStatus | null>;
   getWeightedUrlDistribution(campaignId: number): Promise<{
     activeUrls: UrlWithActiveStatus[],

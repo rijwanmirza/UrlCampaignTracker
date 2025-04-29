@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
 import { requireAuth } from "./auth/middleware";
-import { registerAnalyticsRoutes } from "./analytics-routes";
+
 import { 
   optimizeResponseHeaders,
   ultraFastMetaRefresh,
@@ -48,8 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // We'll handle HTTP/2 headers in the route handlers
   const server = createServer(app);
   
-  // Register analytics routes
-  registerAnalyticsRoutes(app);
+
   
   // API route to apply click protection
   app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {
