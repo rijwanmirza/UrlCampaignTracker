@@ -23,7 +23,7 @@ import {
   TimeRangeFilter
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
+import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or, gte, lte } from "drizzle-orm";
 import { redirectLogsManager } from "./redirect-logs-manager";
 import { urlClickLogsManager } from "./url-click-logs-manager";
 
@@ -2582,6 +2582,123 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting campaign click summary:", error);
       throw error;
+    }
+  }
+  
+  /**
+   * Record a URL click in the database and click logs
+   */
+  async recordUrlClick(
+    urlId: number,
+    ipAddress?: string,
+    userAgent?: string,
+    referer?: string
+  ): Promise<UrlClickRecord> {
+    // First, log the click to the URL click logs for Indian timezone reporting
+    await urlClickLogsManager.logClick(urlId);
+    
+    // Then, record it in the database for API access
+    const timestamp = new Date();
+    
+    // Get the URL name
+    const url = await this.getUrl(urlId);
+    const urlName = url ? url.name : 'unknown';
+    
+    // Insert into URL click records
+    const [record] = await db.insert(urlClickRecords).values({
+      urlId,
+      urlName,
+      ipAddress: ipAddress || null,
+      userAgent: userAgent || null,
+      referer: referer || null,
+      clickTime: timestamp
+    }).returning();
+    
+    console.log(`📊 Recorded URL click for URL ID ${urlId} (${urlName})`);
+    
+    return record;
+  }
+  
+  /**
+   * Get URL click records with pagination and filtering
+   */
+  async getUrlClickRecords(
+    page: number,
+    limit: number,
+    urlId?: number,
+    filter?: TimeRangeFilter
+  ): Promise<{ records: UrlClickRecord[], total: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      let query = db.select().from(urlClickRecords).orderBy(desc(urlClickRecords.clickTime));
+      let countQuery = db.select({ count: sql`COUNT(*)` }).from(urlClickRecords);
+      
+      // Add URL filter if provided
+      if (urlId) {
+        query = query.where(eq(urlClickRecords.urlId, urlId));
+        countQuery = countQuery.where(eq(urlClickRecords.urlId, urlId));
+      }
+      
+      // Add date range filter if provided
+      if (filter) {
+        const { startDate, endDate } = this.getDateRangeForFilter(filter);
+        
+        query = query.where(
+          and(
+            gte(urlClickRecords.clickTime, startDate),
+            lte(urlClickRecords.clickTime, endDate)
+          )
+        );
+        
+        countQuery = countQuery.where(
+          and(
+            gte(urlClickRecords.clickTime, startDate),
+            lte(urlClickRecords.clickTime, endDate)
+          )
+        );
+      }
+      
+      // Add pagination
+      query = query.limit(limit).offset(offset);
+      
+      // Execute queries
+      const records = await query;
+      const [totalResult] = await countQuery;
+      const total = Number(totalResult?.count || 0);
+      
+      return { records, total };
+    } catch (error) {
+      console.error('Error retrieving URL click records:', error);
+      return { records: [], total: 0 };
+    }
+  }
+  
+  /**
+   * Get summary statistics for URL clicks
+   */
+  async getUrlClickSummary(
+    urlId: number,
+    filter: TimeRangeFilter
+  ): Promise<{
+    totalClicks: string | number,
+    hourlyBreakdown?: { hour: number, clicks: string | number }[],
+    dailyBreakdown?: Record<string, string | number>,
+    filterInfo?: { type: string, dateRange: string }
+  }> {
+    try {
+      // Use the URL Click Logs Manager to get detailed click statistics with Indian timezone
+      return await urlClickLogsManager.getUrlClickSummary(urlId, filter);
+    } catch (error) {
+      console.error(`Error getting URL click summary for URL ${urlId}:`, error);
+      return {
+        totalClicks: 0,
+        hourlyBreakdown: [],
+        dailyBreakdown: {},
+        filterInfo: {
+          type: filter.filterType,
+          dateRange: 'Error retrieving data'
+        }
+      };
     }
   }
 }
