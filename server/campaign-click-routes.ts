@@ -139,7 +139,7 @@ export function registerCampaignClickRoutes(app: any) {
   // Test endpoint to generate sample campaign click records
   app.post("/api/campaign-click-records/generate-test-data", async (req: Request, res: Response) => {
     try {
-      const { campaignId, count = 100 } = req.body;
+      const { campaignId, count = 100, days = 7 } = req.body;
       
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });
@@ -161,19 +161,21 @@ export function registerCampaignClickRoutes(app: any) {
       const now = new Date();
       const records = [];
       
-      // Generate random click records over the past week
+      // Generate random click records over the specified number of days
       for (let i = 0; i < parseInt(count.toString()); i++) {
         // Random URL from campaign
         const url = urls[Math.floor(Math.random() * urls.length)];
         
-        // Random timestamp in past 7 days
-        const timestamp = new Date(
-          now.getTime() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
-        );
+        // Random timestamp in past N days (specified by 'days' parameter)
+        const randomDayOffset = Math.floor(Math.random() * parseInt(days.toString()));
+        const timestamp = new Date(now);
+        timestamp.setDate(timestamp.getDate() - randomDayOffset);
         
         // Random hour of day bias (for realistic hourly patterns)
         const hour = Math.floor(Math.random() * 24);
         timestamp.setHours(hour);
+        timestamp.setMinutes(Math.floor(Math.random() * 60));
+        timestamp.setSeconds(Math.floor(Math.random() * 60));
         
         // Record a campaign click
         await storage.recordCampaignClick(
@@ -189,11 +191,119 @@ export function registerCampaignClickRoutes(app: any) {
       
       res.json({
         success: true,
-        message: `Generated ${count} test click records for campaign #${campaignId}`,
+        message: `Generated ${count} test click records for campaign #${campaignId} across ${days} days`,
         recordsGenerated: records.length
       });
     } catch (error) {
       console.error("Error generating test click records:", error);
+      res.status(500).json({
+        message: "Failed to generate test click records",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Advanced test endpoint to generate click data across specific time periods
+  app.post("/api/campaign-click-records/generate-specific-test-data", async (req: Request, res: Response) => {
+    try {
+      const { campaignId, clicksPerDay = 20 } = req.body;
+      
+      if (!campaignId) {
+        return res.status(400).json({ message: "Campaign ID is required" });
+      }
+      
+      // Verify campaign exists
+      const campaign = await storage.getCampaign(parseInt(campaignId));
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Get all URLs for this campaign
+      const urls = await storage.getUrls(parseInt(campaignId));
+      if (!urls || urls.length === 0) {
+        return res.status(400).json({ message: "Campaign has no URLs" });
+      }
+      
+      const now = new Date();
+      let totalRecords = 0;
+      const allRecords = [];
+      
+      // 1. Generate clicks for today
+      for (let i = 0; i < clicksPerDay; i++) {
+        const url = urls[Math.floor(Math.random() * urls.length)];
+        const timestamp = new Date(now);
+        timestamp.setHours(Math.floor(Math.random() * 24));
+        timestamp.setMinutes(Math.floor(Math.random() * 60));
+        timestamp.setSeconds(Math.floor(Math.random() * 60));
+        
+        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        allRecords.push({ timestamp, urlId: url.id });
+        totalRecords++;
+      }
+      
+      // 2. Generate clicks for yesterday
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      for (let i = 0; i < clicksPerDay; i++) {
+        const url = urls[Math.floor(Math.random() * urls.length)];
+        const timestamp = new Date(yesterday);
+        timestamp.setHours(Math.floor(Math.random() * 24));
+        timestamp.setMinutes(Math.floor(Math.random() * 60));
+        timestamp.setSeconds(Math.floor(Math.random() * 60));
+        
+        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        allRecords.push({ timestamp, urlId: url.id });
+        totalRecords++;
+      }
+      
+      // 3. Generate clicks for last month
+      const lastMonth = new Date(now);
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      for (let i = 0; i < clicksPerDay * 5; i++) { // 5x more data for month
+        const url = urls[Math.floor(Math.random() * urls.length)];
+        const timestamp = new Date(lastMonth);
+        // Set to random day within that month
+        timestamp.setDate(Math.floor(Math.random() * 28) + 1);
+        timestamp.setHours(Math.floor(Math.random() * 24));
+        timestamp.setMinutes(Math.floor(Math.random() * 60));
+        timestamp.setSeconds(Math.floor(Math.random() * 60));
+        
+        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        allRecords.push({ timestamp, urlId: url.id });
+        totalRecords++;
+      }
+      
+      // 4. Generate clicks for last year
+      const lastYear = new Date(now);
+      lastYear.setFullYear(lastYear.getFullYear() - 1);
+      for (let i = 0; i < clicksPerDay * 10; i++) { // 10x more data for year
+        const url = urls[Math.floor(Math.random() * urls.length)];
+        const timestamp = new Date(lastYear);
+        // Set to random month and day within that year
+        timestamp.setMonth(Math.floor(Math.random() * 12));
+        timestamp.setDate(Math.floor(Math.random() * 28) + 1);
+        timestamp.setHours(Math.floor(Math.random() * 24));
+        timestamp.setMinutes(Math.floor(Math.random() * 60));
+        timestamp.setSeconds(Math.floor(Math.random() * 60));
+        
+        await storage.recordCampaignClick(parseInt(campaignId), url.id);
+        allRecords.push({ timestamp, urlId: url.id });
+        totalRecords++;
+      }
+      
+      res.json({
+        success: true,
+        message: `Generated ${totalRecords} test click records for campaign #${campaignId} across different time periods`,
+        counts: {
+          today: clicksPerDay,
+          yesterday: clicksPerDay,
+          lastMonth: clicksPerDay * 5,
+          lastYear: clicksPerDay * 10,
+          total: totalRecords
+        }
+      });
+    } catch (error) {
+      console.error("Error generating specific test click records:", error);
       res.status(500).json({
         message: "Failed to generate test click records",
         error: error instanceof Error ? error.message : String(error)
