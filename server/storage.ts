@@ -1061,8 +1061,21 @@ export class DatabaseStorage implements IStorage {
       
       // Check if URL has reached its click limit
       const isCompleted = urlWithUpdatedClicks.clicks >= urlWithUpdatedClicks.clickLimit;
-      if (isCompleted) {
+      if (isCompleted && urlWithUpdatedClicks.status !== 'completed') {
+        // Update status to completed
         urlWithUpdatedClicks.status = 'completed';
+        
+        // CRITICAL FIX: Sync status change to original record
+        if (urlWithUpdatedClicks.name) {
+          // Use non-blocking promise to avoid slowing down redirect
+          this.syncStatusFromUrlToOriginalRecord(urlWithUpdatedClicks.name, 'completed')
+            .then(result => {
+              console.log(`🔄 Auto-sync to original record "${urlWithUpdatedClicks.name}" completed with result: ${result ? 'success' : 'no matching record'}`);
+            })
+            .catch(err => {
+              console.error(`❌ Error auto-syncing status to original record:`, err);
+            });
+        }
       }
       
       // Update pending clicks counter (batched DB updates)
@@ -1104,11 +1117,24 @@ export class DatabaseStorage implements IStorage {
       // Create updated URL with new click count
       const newClicks = url.clicks + 1;
       const isCompleted = newClicks >= url.clickLimit;
+      const newStatus = isCompleted ? 'completed' : url.status;
+      
+      // CRITICAL FIX: Sync status change to original record when URL is completed
+      if (isCompleted && url.status !== 'completed' && url.name) {
+        // Use non-blocking promise to avoid slowing down redirect
+        this.syncStatusFromUrlToOriginalRecord(url.name, 'completed')
+          .then(result => {
+            console.log(`🔄 Auto-sync to original record "${url.name}" completed with result: ${result ? 'success' : 'no matching record'}`);
+          })
+          .catch(err => {
+            console.error(`❌ Error auto-syncing status to original record:`, err);
+          });
+      }
       
       const updatedUrl = {
         ...url,
         clicks: newClicks,
-        status: isCompleted ? 'completed' : url.status
+        status: newStatus
       };
       
       // Cache the updated URL
@@ -1223,8 +1249,12 @@ export class DatabaseStorage implements IStorage {
           
           try {
             if (isCompleted) {
+              // First get the URL to check if we need to sync with original record
+              const [urlInfo] = await db.select().from(urls).where(eq(urls.id, id));
+              const needsStatusSync = urlInfo && urlInfo.status !== 'completed';
+              
               // If URL is completed, use our updateUrlStatus method which handles
-              // removing from campaign
+              // removing from campaign and status sync
               await this.updateUrlStatus(id, 'completed');
               
               // Also update the click count (updateUrlStatus only updates status and campaignId)
@@ -1235,6 +1265,16 @@ export class DatabaseStorage implements IStorage {
                   updatedAt: new Date()
                 })
                 .where(eq(urls.id, id));
+                
+              // CRITICAL FIX: Sync status to original record
+              if (needsStatusSync && urlInfo?.name) {
+                try {
+                  const syncResult = await this.syncStatusFromUrlToOriginalRecord(urlInfo.name, 'completed');
+                  console.log(`🔄 Batch sync to original record "${urlInfo.name}" completed with result: ${syncResult ? 'success' : 'no matching record'}`);
+                } catch (syncError) {
+                  console.error(`❌ Error batch syncing status to original record:`, syncError);
+                }
+              }
             } else {
               // Standard update for non-completed URLs
               await db
