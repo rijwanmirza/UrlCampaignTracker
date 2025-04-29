@@ -2136,7 +2136,8 @@ export class DatabaseStorage implements IStorage {
             break;
           case 'yesterday':
             startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-            endDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            // Set endDateObj to end of yesterday (23:59:59.999) instead of start of today
+            endDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
             break;
           case 'last_2_days':
             startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
@@ -2161,7 +2162,8 @@ export class DatabaseStorage implements IStorage {
             break;
           case 'last_month':
             startDateObj = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            endDateObj = new Date(now.getFullYear(), now.getMonth(), 0);
+            // Set endDateObj to end of last day of last month (23:59:59.999)
+            endDateObj = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
             break;
           case 'last_6_months':
             startDateObj = new Date(now.getFullYear(), now.getMonth() - 6, 1);
@@ -2171,7 +2173,8 @@ export class DatabaseStorage implements IStorage {
             break;
           case 'last_year':
             startDateObj = new Date(now.getFullYear() - 1, 0, 1);
-            endDateObj = new Date(now.getFullYear(), 0, 0);
+            // Set endDateObj to end of last day of last year (23:59:59.999)
+            endDateObj = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
             break;
           case 'custom_range':
             // For custom range, use the provided dates
@@ -2179,7 +2182,9 @@ export class DatabaseStorage implements IStorage {
               throw new Error("Start date and end date are required for custom range filter");
             }
             startDateObj = new Date(startDate);
+            // Include the entire day in end date
             endDateObj = new Date(endDate);
+            endDateObj.setHours(23, 59, 59, 999);
             break;
           case 'total':
           default:
@@ -2248,7 +2253,8 @@ export class DatabaseStorage implements IStorage {
           break;
         case 'yesterday':
           startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-          endDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          // Set endDateObj to end of yesterday (23:59:59.999) instead of start of today
+          endDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
           break;
         case 'last_2_days':
           startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
@@ -2276,7 +2282,8 @@ export class DatabaseStorage implements IStorage {
           break;
         case 'last_month':
           startDateObj = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          endDateObj = new Date(now.getFullYear(), now.getMonth(), 0);
+          // Set endDateObj to end of last day of last month (23:59:59.999)
+          endDateObj = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
           break;
         case 'last_6_months':
           startDateObj = new Date(now.getFullYear(), now.getMonth() - 6, 1);
@@ -2286,7 +2293,8 @@ export class DatabaseStorage implements IStorage {
           break;
         case 'last_year':
           startDateObj = new Date(now.getFullYear() - 1, 0, 1);
-          endDateObj = new Date(now.getFullYear(), 0, 0);
+          // Set endDateObj to end of last day of last year (23:59:59.999)
+          endDateObj = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
           break;
         case 'custom_range':
           // For custom range, use the provided dates
@@ -2294,7 +2302,9 @@ export class DatabaseStorage implements IStorage {
             throw new Error("Start date and end date are required for custom range filter");
           }
           startDateObj = new Date(startDate);
+          // Include the entire day in end date
           endDateObj = new Date(endDate);
+          endDateObj.setHours(23, 59, 59, 999);
           break;
         case 'total':
         default:
