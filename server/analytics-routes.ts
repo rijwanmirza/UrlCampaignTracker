@@ -495,15 +495,12 @@ analyticsRouter.get("/clicks", async (req: Request, res: Response) => {
     
     const { start, end } = getDateRange(filterType, startDate, endDate);
     
-    // Build the query based on filters
+    // Build the query based on filters - simplified for our minimal schema
     let query = sql`
       SELECT 
         ca."timestamp",
         ca."campaignId",
         ca."urlId",
-        ca."userAgent",
-        ca."referrer",
-        ca."ipAddress",
         c.name as "campaignName",
         u.name as "urlName"
       FROM ${clickAnalytics} ca
@@ -538,9 +535,6 @@ analyticsRouter.get("/clicks", async (req: Request, res: Response) => {
         timestamp: timestamp.toISOString(),
         campaignId: parseInt(row.campaignId),
         urlId: parseInt(row.urlId),
-        userAgent: row.userAgent,
-        referrer: row.referrer || 'Direct',
-        ipAddress: row.ipAddress,
         campaignName: row.campaignName,
         urlName: row.urlName
       };
