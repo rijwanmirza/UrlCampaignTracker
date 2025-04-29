@@ -51,6 +51,7 @@ export interface IStorage {
   
   // Redirect operation
   incrementUrlClicks(id: number): Promise<Url | undefined>;
+  recordCampaignClick(campaignId: number, urlId: number): Promise<void>; // New method for campaign analytics
   getRandomWeightedUrl(campaignId: number): Promise<UrlWithActiveStatus | null>;
   getWeightedUrlDistribution(campaignId: number): Promise<{
     activeUrls: UrlWithActiveStatus[],
@@ -989,6 +990,34 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Failed to permanently delete URL:", error);
       return false;
+    }
+  }
+  
+  /**
+   * Records a campaign click directly in the analytics database
+   * This method separates campaign click analytics from URL tracking,
+   * ensuring that analytics data is preserved even if URLs are deleted
+   * 
+   * @param campaignId The campaign ID to record the click for
+   * @param urlId Optional URL ID (only used for click attribution, not for analytics retrieval)
+   */
+  async recordCampaignClick(campaignId: number, urlId: number): Promise<void> {
+    try {
+      // Get the current timestamp
+      const now = new Date();
+      
+      // Record the click data directly in the analytics table
+      // Only store essential timestamp and campaignId
+      await db.insert(clickAnalytics).values({
+        urlId,
+        campaignId,
+        timestamp: now
+      });
+      
+      console.log(`Recorded permanent campaign click for campaign ${campaignId}`);
+    } catch (error) {
+      // Don't throw errors, just log them - analytics should never block redirects
+      console.error(`Error recording campaign click for campaign ${campaignId}:`, error);
     }
   }
 
