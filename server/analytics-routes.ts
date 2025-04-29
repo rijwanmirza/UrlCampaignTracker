@@ -428,7 +428,7 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       clicks: parseInt(row.clicks) || 0
     }));
     
-    // No referrer data in simplified schema
+    // No referrer breakdown - we don't want to track this data
     const referrerData = [{ referrer: 'Direct', clicks: totalClicks }];
     
     res.json({

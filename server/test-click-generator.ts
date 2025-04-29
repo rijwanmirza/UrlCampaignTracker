@@ -243,33 +243,12 @@ async function generateClicksForPastMonth(campaign, campaignUrls) {
  * Helper function to create click data object
  */
 function createClickData(url, campaign, timestamp) {
-  const userAgents = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (Linux; Android 11; SM-G991U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
-  ];
-  
-  const referrers = [
-    "https://www.google.com/",
-    "https://www.facebook.com/",
-    "https://www.youtube.com/",
-    "https://www.instagram.com/",
-    "https://www.twitter.com/",
-    "",  // Direct traffic
-  ];
-  
-  const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
-  const referrer = referrers[Math.floor(Math.random() * referrers.length)];
-  
+  // Only track the essential data as per requirements
+  // We don't want to track any user agent, IP address, or referrer information
   return {
     urlId: url.id,
     campaignId: campaign.id,
-    timestamp: timestamp,
-    userAgent: userAgent,
-    referer: referrer, // Note: database uses 'referer' (with one 'r')
-    ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+    timestamp: timestamp
   };
 }
 

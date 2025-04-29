@@ -262,16 +262,36 @@ export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
 export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
 export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;
 
-// Click Analytics Schema - Simplified as requested
+// Click Analytics Schema - Only tracking essential data
 export const clickAnalytics = pgTable("click_analytics", {
   id: serial("id").primaryKey(),
   urlId: integer("urlId").notNull(), // Reference to URL
   campaignId: integer("campaignId"), // Reference to Campaign (if available)
   timestamp: timestamp("timestamp").defaultNow().notNull(), // When the click happened - this is the ONLY field we need
+  
+  // The following fields exist in the DB table but we don't use them
+  // We're only including them in the schema so the ORM can work properly
+  userAgent: text("userAgent"),
+  ipAddress: text("ipAddress"),
+  referer: text("referer"),
+  country: text("country"),
+  city: text("city"),
+  deviceType: text("deviceType"),
+  browser: text("browser"),
+  operatingSystem: text("operatingSystem")
 });
 
 export const insertClickAnalyticsSchema = createInsertSchema(clickAnalytics).omit({
   id: true,
+  // Explicitly exclude tracking fields we don't want to use
+  userAgent: true,
+  ipAddress: true,
+  referer: true,
+  country: true,
+  city: true,
+  deviceType: true, 
+  browser: true,
+  operatingSystem: true
 });
 
 export type ClickAnalytics = typeof clickAnalytics.$inferSelect;
