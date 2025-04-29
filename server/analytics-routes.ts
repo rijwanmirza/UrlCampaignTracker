@@ -286,7 +286,7 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
     const urlClicksResult = await db.execute(sql`
       SELECT 
         ca."urlId" as id,
-        COALESCE(u.name, 'Deleted URL ' || ca."urlId") as name,
+        COALESCE(u.name, '🗑️ Deleted URL #' || ca."urlId") as name,
         COUNT(ca.id) as clicks
       FROM ${clickAnalytics} ca
       LEFT JOIN urls u ON ca."urlId" = u.id
@@ -398,8 +398,8 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       const urlData = analyticsCheckResult.rows[0];
       const url = {
         id: urlId,
-        name: "Deleted URL",
-        targetUrl: "Unknown (URL deleted)",
+        name: `🗑️ Deleted URL #${urlId}`,
+        targetUrl: "Unknown (URL was deleted)",
         status: "deleted",
         clickCount: parseInt(urlData.totalClicks) || 0,
         clickLimit: 0,
@@ -532,7 +532,7 @@ analyticsRouter.get("/clicks", async (req: Request, res: Response) => {
         ca."campaignId",
         ca."urlId",
         c.name as "campaignName",
-        COALESCE(u.name, 'Deleted URL') as "urlName"
+        COALESCE(u.name, '🗑️ Deleted URL #' || ca."urlId") as "urlName"
       FROM ${clickAnalytics} ca
       JOIN campaigns c ON ca."campaignId" = c.id
       LEFT JOIN urls u ON ca."urlId" = u.id
