@@ -287,6 +287,7 @@ export const timeRangeFilterSchema = z.object({
     'total', 'today', 'yesterday', 
     'last_2_days', 'last_3_days', 'last_4_days', 
     'last_5_days', 'last_6_days', 'last_7_days',
+    'last_30_days', // Added to match the UI options
     'this_month', 'last_month', 'last_6_months',
     'this_year', 'last_year', 'custom_range'
   ]),

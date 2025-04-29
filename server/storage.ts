@@ -2268,6 +2268,9 @@ export class DatabaseStorage implements IStorage {
         case 'last_7_days':
           startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
           break;
+        case 'last_30_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+          break;
         case 'this_month':
           startDateObj = new Date(now.getFullYear(), now.getMonth(), 1);
           break;

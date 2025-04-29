@@ -128,9 +128,9 @@ export default function CampaignClickDetailPage() {
   const formatHourlyChartData = () => {
     if (!summaryData || !summaryData.hourlyBreakdown) return [];
     
-    return Object.entries(summaryData.hourlyBreakdown).map(([hour, count]) => ({
-      hour: `${hour}:00`,
-      clicks: count,
+    return summaryData.hourlyBreakdown.map(item => ({
+      hour: `${item.hour}:00`,
+      clicks: item.clicks,
     }));
   };
   
