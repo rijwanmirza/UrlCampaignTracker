@@ -267,7 +267,7 @@ export default function CampaignClickDetailPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
                         <YAxis />
-                        <Tooltip formatter={(value) => [value, "Clicks"]} />
+                        <Tooltip />
                         <Legend />
                         <Area
                           type="monotone"
@@ -292,7 +292,7 @@ export default function CampaignClickDetailPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="hour" />
                         <YAxis />
-                        <Tooltip formatter={(value) => [value, "Clicks"]} />
+                        <Tooltip />
                         <Legend />
                         <Bar
                           dataKey="clicks"

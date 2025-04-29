@@ -78,37 +78,40 @@ export default function CampaignClickDetailPage() {
   
   // Fetch campaign details
   const { data: campaignData, isLoading: isLoadingCampaign } = useQuery({
-    queryKey: ['/api/campaigns', campaignId],
-    queryFn: async () => {
-      if (!campaignId) return null;
-      const response = await fetch(`/api/campaigns/${campaignId}`);
-      if (!response.ok) throw new Error('Failed to fetch campaign');
-      return response.json();
-    },
+    queryKey: [`/api/campaigns/${campaignId}`],
     enabled: !!campaignId,
   });
   
-  // Fetch click summary
+  // Fetch summary data
   const { data: summaryData, isLoading: isLoadingSummary } = useQuery({
-    queryKey: ['/api/campaign-click-records/summary', campaignId, queryParams],
-    queryFn: async () => {
-      if (!campaignId) return null;
-      const params = new URLSearchParams(queryParams);
-      const response = await fetch(`/api/campaign-click-records/summary/${campaignId}?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch click summary');
-      return response.json();
-    },
+    queryKey: [`/api/campaign-click-records/summary/${campaignId}`, queryParams],
     enabled: !!campaignId,
   });
   
   // Handle filter type change
   const handleFilterTypeChange = (value: string) => {
     setFilterType(value);
+    
+    // Reset custom date range when switching to a different filter
+    if (value !== 'custom_range') {
+      if (value === 'last_7_days') {
+        setStartDate(subDays(new Date(), 7));
+      } else if (value === 'last_30_days') {
+        setStartDate(subDays(new Date(), 30));
+      }
+      setEndDate(new Date());
+    }
   };
   
-  // Navigate back to records page
+  // Handle back button
   const handleBack = () => {
     setLocation('/campaign-click-records');
+  };
+  
+  // Handle apply filter
+  const handleApplyFilter = () => {
+    // Requery with new parameters
+    // The query will automatically refresh due to queryKey changes
   };
   
   // Format daily chart data
@@ -116,7 +119,7 @@ export default function CampaignClickDetailPage() {
     if (!summaryData || !summaryData.dailyBreakdown) return [];
     
     return Object.entries(summaryData.dailyBreakdown).map(([date, count]) => ({
-      date: format(parseISO(date), 'MMM dd'),
+      date,
       clicks: count,
     }));
   };
@@ -132,6 +135,11 @@ export default function CampaignClickDetailPage() {
   };
   
   const isLoading = isLoadingCampaign || isLoadingSummary;
+  
+  // Custom tooltip formatter
+  const customTooltipFormatter = (value: any, name: string) => {
+    return [value, "Clicks"];
+  };
   
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -198,17 +206,15 @@ export default function CampaignClickDetailPage() {
               <>
                 <div>
                   <DatePicker
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    disabled={isLoading}
+                    date={startDate}
+                    setDate={setStartDate}
                     placeholder="Start Date"
                   />
                 </div>
                 <div>
                   <DatePicker
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    disabled={isLoading}
+                    date={endDate}
+                    setDate={setEndDate}
                     placeholder="End Date"
                   />
                 </div>
@@ -216,45 +222,56 @@ export default function CampaignClickDetailPage() {
             )}
           </div>
           
+          {filterType === 'custom_range' && (
+            <div className="flex justify-end mb-6">
+              <Button 
+                onClick={handleApplyFilter}
+                disabled={!startDate || !endDate}
+              >
+                Apply Filter
+              </Button>
+            </div>
+          )}
+          
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <>
-              <div className="grid gap-4 md:grid-cols-3 mb-6">
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
                 <Card className="shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="text-5xl font-bold mb-2">
-                      {summaryData?.totalClicks || 0}
-                    </div>
-                    <p className="text-muted-foreground">Total Clicks</p>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summaryData?.totalClicks || 0}</div>
                   </CardContent>
                 </Card>
                 
                 <Card className="shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="text-5xl font-bold mb-2">
-                      {summaryData?.uniqueIPs || 0}
-                    </div>
-                    <p className="text-muted-foreground">Unique Visitors</p>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Unique IPs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summaryData?.uniqueIPs || 0}</div>
                   </CardContent>
                 </Card>
                 
                 <Card className="shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="text-5xl font-bold mb-2">
-                      {summaryData?.avgClicksPerHour || 0}
-                    </div>
-                    <p className="text-muted-foreground">Avg. Clicks per Hour</p>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Top Countries</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summaryData?.topCountries?.[0] || 'N/A'}</div>
                   </CardContent>
                 </Card>
               </div>
               
               <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="daily">Daily Breakdown</TabsTrigger>
-                  <TabsTrigger value="hourly">Hourly Breakdown</TabsTrigger>
+                <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+                  <TabsTrigger value="daily">Daily View</TabsTrigger>
+                  <TabsTrigger value="hourly">Hourly View</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="daily" className="pt-4">
@@ -267,7 +284,7 @@ export default function CampaignClickDetailPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
                         <YAxis />
-                        <Tooltip formatter={(value) => [value, "Clicks"]} />
+                        <Tooltip formatter={customTooltipFormatter} />
                         <Legend />
                         <Area
                           type="monotone"
@@ -292,7 +309,7 @@ export default function CampaignClickDetailPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="hour" />
                         <YAxis />
-                        <Tooltip formatter={(value) => [value, "Clicks"]} />
+                        <Tooltip formatter={customTooltipFormatter} />
                         <Legend />
                         <Bar
                           dataKey="clicks"
@@ -319,7 +336,7 @@ export default function CampaignClickDetailPage() {
                           .map(([referrer, count]) => (
                             <div key={referrer} className="flex justify-between items-center">
                               <span>{referrer || '(Direct)'}</span>
-                              <span className="font-medium">{count}</span>
+                              <span className="font-medium">{count as number}</span>
                             </div>
                           ))
                       ) : (
