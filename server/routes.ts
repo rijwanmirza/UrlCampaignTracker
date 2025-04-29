@@ -43,6 +43,7 @@ import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
+import { registerUrlClickRoutes } from "./url-click-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -56,7 +57,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register redirect logs routes
   registerRedirectLogsRoutes(app);
   
-
+  // Register URL click routes
+  registerUrlClickRoutes(app);
+  
   
   // API route to apply click protection
   app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {
