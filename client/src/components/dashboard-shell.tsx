@@ -1,16 +1,12 @@
-import { ReactNode } from "react";
+import React from "react";
 
 interface DashboardShellProps {
-  children: ReactNode;
-  className?: string;
+  children: React.ReactNode;
 }
 
-export function DashboardShell({
-  children,
-  className,
-}: DashboardShellProps) {
+export function DashboardShell({ children }: DashboardShellProps) {
   return (
-    <div className="flex-1 space-y-6 px-4 py-6 md:px-6 md:py-8">
+    <div className="flex-1 space-y-4 p-8 pt-6">
       {children}
     </div>
   );

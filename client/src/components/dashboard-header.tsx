@@ -1,9 +1,9 @@
-import { ReactNode } from "react";
+import React from "react";
 
 interface DashboardHeaderProps {
   heading: string;
   description?: string;
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 export function DashboardHeader({
@@ -14,11 +14,11 @@ export function DashboardHeader({
   return (
     <div className="flex items-center justify-between px-2">
       <div className="grid gap-1">
-        <h1 className="font-heading text-3xl font-bold md:text-4xl">
-          {heading}
-        </h1>
+        <h1 className="font-bold text-3xl">{heading}</h1>
         {description && (
-          <p className="text-muted-foreground">{description}</p>
+          <p className="text-muted-foreground">
+            {description}
+          </p>
         )}
       </div>
       {children}
