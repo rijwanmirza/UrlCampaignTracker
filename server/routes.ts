@@ -4377,6 +4377,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test endpoint to generate sample click analytics data
+  app.post("/api/system/generate-test-clicks", async (_req: Request, res: Response) => {
+    try {
+      console.log(`🧪 Generating test click analytics data`);
+      
+      const { generateTestClickData } = require("./test-click-generator");
+      await generateTestClickData();
+      
+      return res.json({
+        success: true,
+        message: "Successfully generated test click analytics data"
+      });
+    } catch (error) {
+      console.error("Error generating test click data:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate test click data",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // New route to FORCE UPDATE all original URL records to campaigns immediately
   app.post("/api/system/force-update-all-clicks", async (_req: Request, res: Response) => {
     try {
