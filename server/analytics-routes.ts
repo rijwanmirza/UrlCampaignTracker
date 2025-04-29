@@ -188,7 +188,7 @@ analyticsRouter.get("/campaigns", async (req: Request, res: Response) => {
   }
 });
 
-// Get detailed campaign analytics with hourly breakdown
+// Get detailed campaign analytics with hourly breakdown - COMPLETELY INDEPENDENT OF URLS
 analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
   try {
     const campaignId = parseInt(req.params.id);
@@ -225,8 +225,8 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
     
     const campaign = campaignResult.rows[0];
     
-    // Get total clicks for the campaign in the date range
-    const totalClicksResult = await db.execute(sql`
+    // Get total campaign clicks in the date range - this is the ONLY source of truth for campaign clicks
+    const campaignClicksResult = await db.execute(sql`
       SELECT COUNT(*) as total
       FROM ${clickAnalytics}
       WHERE "campaignId" = ${campaignId}
@@ -234,12 +234,13 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
         AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
     `);
     
-    const totalClicks = parseInt(totalClicksResult.rows[0].total) || 0;
+    // This is the ONLY click count that matters - completely independent of URLs
+    const campaignClicks = parseInt(campaignClicksResult.rows[0]?.total) || 0;
     
     // Get hourly breakdown for specific timezone
     const timezoneOffset = getTimezoneOffset(timezone);
     
-    // Using PostgreSQL's timezone conversion for accurate grouping
+    // Using PostgreSQL's timezone conversion for accurate grouping by hour
     const hourlyBreakdownResult = await db.execute(sql`
       SELECT 
         EXTRACT(HOUR FROM ("timestamp" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone})) as hour,
@@ -255,10 +256,12 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
     // Create hourly data structure with all 24 hours
     const hourlyRanges = generateHourlyRanges();
     const hourlyData = hourlyRanges.map(range => {
-      const hourRow = hourlyBreakdownResult.rows.find(row => parseInt(row.hour) === range.startHour);
+      const hourRow = hourlyBreakdownResult.rows.find(
+        row => parseInt(row.hour.toString()) === range.startHour
+      );
       return {
         hour: range.label,
-        clicks: hourRow ? parseInt(hourRow.clicks) : 0
+        clicks: hourRow ? parseInt(hourRow.clicks.toString()) : 0
       };
     });
     
@@ -276,50 +279,27 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
     `);
     
     const dailyData = dailyBreakdownResult.rows.map((row: any) => ({
-      date: row.date,
-      clicks: parseInt(row.clicks) || 0
-    }));
-    
-    // Get clicks by URL for this campaign 
-    // Use analytics data as the source of truth, not URLs table
-    // This ensures we can see analytics for deleted URLs too
-    const urlClicksResult = await db.execute(sql`
-      SELECT 
-        ca."urlId" as id,
-        COALESCE(u.name, '🗑️ Deleted URL #' || ca."urlId") as name,
-        COUNT(ca.id) as clicks
-      FROM ${clickAnalytics} ca
-      LEFT JOIN urls u ON ca."urlId" = u.id
-      WHERE ca."campaignId" = ${campaignId}
-        AND ca."timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-        AND ca."timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
-      GROUP BY ca."urlId", u.name
-      ORDER BY clicks DESC
-    `);
-    
-    const urlClicks = urlClicksResult.rows.map((row: any) => ({
-      id: parseInt(row.id),
-      name: row.name,
-      clicks: parseInt(row.clicks) || 0
+      date: row.date.toString(),
+      clicks: parseInt(row.clicks.toString()) || 0
     }));
     
     res.json({
       campaign: {
-        id: parseInt(campaign.id),
-        name: campaign.name,
-        redirectMethod: campaign.redirectMethod,
-        customPath: campaign.customPath,
-        multiplier: campaign.multiplier,
-        pricePerThousand: campaign.pricePerThousand,
-        trafficstarCampaignId: campaign.trafficstarCampaignId,
+        id: campaignId,
+        name: campaign.name.toString(),
+        redirectMethod: campaign.redirectMethod.toString(),
+        customPath: campaign.customPath?.toString() || null,
+        multiplier: parseFloat(campaign.multiplier.toString()) || 1,
+        pricePerThousand: parseFloat(campaign.pricePerThousand.toString()) || 0,
+        trafficstarCampaignId: campaign.trafficstarCampaignId?.toString() || null,
         createdAt: campaign.createdAt,
         updatedAt: campaign.updatedAt
       },
       analytics: {
-        totalClicks,
+        // The ONLY click number that matters for campaigns - completely independent of URLs
+        campaignClicks,
         hourlyData,
-        dailyData,
-        urlClicks
+        dailyData
       },
       dateRange: {
         start: start.toISOString(),
