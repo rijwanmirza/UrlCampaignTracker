@@ -995,13 +995,18 @@ export class DatabaseStorage implements IStorage {
   }
   
   /**
-   * Records a campaign click directly in the analytics database
-   * Every successful redirect counts as 1 click in the campaign analytics
-   * This approach stores clicks with precise timestamps to enable hourly breakdowns (00:00-01:00, etc.)
-   * and ensures analytics data is preserved even if URLs are deleted
+   * NEW CAMPAIGN CLICK TRACKING SYSTEM
+   * Each successful redirect counts as exactly 1 click in campaign record
+   * For example: 50 redirects = 50 clicks in campaign analytics
    * 
-   * @param campaignId The campaign ID to record the click for
-   * @param urlId Optional URL ID (only used for click attribution, not for analytics retrieval)
+   * - Stores redirect time to show hourly breakdowns (00:00-01:00, 01:00-02:00, etc.)
+   * - Preserves click data even when URLs are deleted
+   * - Analytics page shows clicks by date with time details
+   * - Detailed campaign analytics shows hourly breakdown for selected time frame
+   * - Supports timezone conversion and date range filtering
+   * 
+   * @param campaignId The campaign ID that generated this redirect
+   * @param urlId URL ID used for the redirect (null for direct campaign access)
    */
   async recordCampaignClick(campaignId: number, urlId: number | null = null): Promise<void> {
     try {
@@ -1009,19 +1014,21 @@ export class DatabaseStorage implements IStorage {
       const timestamp = new Date();
       
       // Save the redirect with exact timestamp for hourly analytics (00:00-01:00, 01:00-02:00, etc.)
-      await db.insert(clickAnalytics).values({
-        urlId,
-        campaignId,
-        timestamp,
+      const analyticsData = {
+        campaignId, // Campaign ID is required
+        timestamp,  // Timestamp is critical for hourly analytics
+        urlId: urlId ?? undefined, // Convert null to undefined for Drizzle
         userAgent: null,
         ipAddress: null,
         referer: null,
         country: null,
-        city: null,
+        city: null, 
         deviceType: null,
         browser: null,
         operatingSystem: null
-      });
+      };
+      
+      await db.insert(clickAnalytics).values(analyticsData);
       
       // This will count exactly 50 clicks if there are 50 redirects
       console.log(`Campaign click recorded: Campaign #${campaignId} URL #${urlId || 'direct'} at ${timestamp.toISOString()}`);
