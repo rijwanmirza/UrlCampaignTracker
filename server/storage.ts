@@ -2231,6 +2231,25 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Use redirect logs for more accurate campaign click tracking
+  async getRedirectLogsSummary(
+    campaignId: number,
+    filter: TimeRangeFilter
+  ): Promise<{
+    totalClicks: number | string,
+    hourlyBreakdown?: { hour: number, clicks: number | string }[],
+    dailyBreakdown?: Record<string, number | string>,
+    filterInfo?: { type: string, dateRange: string }
+  }> {
+    try {
+      const { redirectLogsManager } = require('./redirect-logs-manager');
+      return await redirectLogsManager.getCampaignSummary(campaignId, filter);
+    } catch (error) {
+      console.error('Error getting redirect logs summary:', error);
+      return null;
+    }
+  }
+  
   async getCampaignClickSummary(
     campaignId: number,
     filter: TimeRangeFilter

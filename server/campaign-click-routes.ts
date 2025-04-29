@@ -123,7 +123,31 @@ export function registerCampaignClickRoutes(app: any) {
         }
       }
       
-      // Get campaign click summary
+      // IMPORTANT: Check if this is for a newly created campaign
+      // First, check when the campaign was created
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Use the redirect logs system first to get correct click data (this is the system we just fixed)
+      try {
+        // Try to get the data from the redirect logs system
+        const redirectLogsFilter = { ...filter };
+        // Get summary from redirect logs which has accurate data
+        const redirectLogsSummary = await storage.getRedirectLogsSummary(campaignId, redirectLogsFilter);
+        
+        if (redirectLogsSummary) {
+          // Use the redirect logs data if available
+          return res.json(redirectLogsSummary);
+        }
+      } catch (redirectLogsError) {
+        console.error("Error getting redirect logs summary, falling back to campaign clicks:", redirectLogsError);
+        // Continue with the regular campaign click summary as fallback
+      }
+      
+      // Get campaign click summary from the original system (fallback)
       const summary = await storage.getCampaignClickSummary(campaignId, filter);
       
       res.json(summary);
