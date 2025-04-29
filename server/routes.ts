@@ -1776,23 +1776,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
       
-      // Record click analytics data (only essential data, no tracking)
+      // Record campaign click analytics data that will persist even if URL is deleted
+      // This makes analytics completely independent from URLs
       try {
-        // Get the current date and time
-        const now = new Date();
-        
-        // Asynchronously record analytics without blocking the redirect
-        // ONLY storing timestamp, urlId, and campaignId per user requirements
-        db.insert(clickAnalytics).values({
-          urlId: selectedUrl.id,
-          campaignId,
-          timestamp: now
-        }).execute().catch(err => {
-          console.error("Error recording click analytics for campaign:", err);
+        // Asynchronously record permanent campaign click without blocking the redirect
+        // Using the new storage method that ensures analytics data persists
+        storage.recordCampaignClick(campaignId, selectedUrl.id).catch(err => {
+          console.error("Error recording campaign click analytics for /c endpoint:", err);
         });
       } catch (analyticsError) {
         // Log but don't block the redirect if analytics recording fails
-        console.error("Failed to record click analytics for campaign:", analyticsError);
+        console.error("Failed to record campaign click analytics for /c endpoint:", analyticsError);
       }
       
       // Performance metrics

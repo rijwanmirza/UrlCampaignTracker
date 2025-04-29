@@ -348,7 +348,8 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
     
     const { start, end } = getDateRange(filterType, startDate, endDate);
     
-    // Get URL details with campaign info
+    // Check if URL exists, but even if it doesn't, we want to show analytics
+    // for deleted URLs using the click data from the analytics table
     const urlResult = await db.execute(sql`
       SELECT 
         u.id, 
@@ -367,6 +368,48 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       JOIN campaigns c ON u.campaign_id = c.id
       WHERE u.id = ${urlId}
     `);
+    
+    // If URL is not found in the URLs table, it may have been deleted
+    // We'll try to get information from click analytics
+    if (urlResult.rows.length === 0) {
+      // Check if there are any clicks for this URL ID in the analytics data
+      const analyticsCheckResult = await db.execute(sql`
+        SELECT 
+          ca."urlId",
+          ca."campaignId",
+          c.name as "campaignName",
+          COUNT(*) as "totalClicks",
+          MIN(ca."timestamp") as "firstClick",
+          MAX(ca."timestamp") as "lastClick"
+        FROM ${clickAnalytics} ca
+        JOIN campaigns c ON ca."campaignId" = c.id
+        WHERE ca."urlId" = ${urlId}
+        GROUP BY ca."urlId", ca."campaignId", c.name
+      `);
+      
+      if (analyticsCheckResult.rows.length === 0) {
+        // No URL or analytics data found
+        return res.status(404).json({ error: "URL not found and no analytics data available" });
+      }
+      
+      // Create a synthetic URL record based on analytics data
+      const urlData = analyticsCheckResult.rows[0];
+      const url = {
+        id: urlId,
+        name: "Deleted URL",
+        targetUrl: "Unknown (URL deleted)",
+        status: "deleted",
+        clickCount: parseInt(urlData.totalClicks) || 0,
+        clickLimit: 0,
+        originalClickLimit: 0,
+        createdAt: urlData.firstClick,
+        updatedAt: urlData.lastClick,
+        campaignId: parseInt(urlData.campaignId),
+        campaignName: urlData.campaignName,
+        multiplier: 1
+      };
+      urlResult.rows = [url];
+    }
     
     if (urlResult.rows.length === 0) {
       return res.status(404).json({ error: "URL not found" });
@@ -480,16 +523,17 @@ analyticsRouter.get("/clicks", async (req: Request, res: Response) => {
     const { start, end } = getDateRange(filterType, startDate, endDate);
     
     // Build the query based on filters - simplified for our minimal schema
+    // Use LEFT JOIN with URLs since URLs might be deleted but we still want to keep the analytics
     let query = sql`
       SELECT 
         ca."timestamp",
         ca."campaignId",
         ca."urlId",
         c.name as "campaignName",
-        u.name as "urlName"
+        COALESCE(u.name, 'Deleted URL') as "urlName"
       FROM ${clickAnalytics} ca
       JOIN campaigns c ON ca."campaignId" = c.id
-      JOIN urls u ON ca."urlId" = u.id
+      LEFT JOIN urls u ON ca."urlId" = u.id
       WHERE ca."timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
         AND ca."timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
     `;
