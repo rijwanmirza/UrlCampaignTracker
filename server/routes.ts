@@ -4755,5 +4755,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   }
   
+  // TEST ENDPOINT for campaign click tracking
+  app.post("/api/test/campaign-click/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const urlId = req.query.urlId ? parseInt(req.query.urlId as string) : null;
+      
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ error: "Invalid campaign ID" });
+      }
+      
+      // Verify the campaign exists
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      // Record a test click with campaign ID and optional URL ID
+      await storage.recordCampaignClick(campaignId, urlId);
+      
+      // Return success response with timestamp for verification
+      return res.status(200).json({ 
+        success: true, 
+        message: `Test click recorded for campaign #${campaignId} with${urlId ? ' URL #' + urlId : 'out URL'} at ${new Date().toISOString()}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error recording test click:", error);
+      return res.status(500).json({ error: "Failed to record test click" });
+    }
+  });
+  
   return server;
 }
