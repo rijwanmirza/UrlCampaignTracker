@@ -105,16 +105,16 @@ export function registerCampaignClickRoutes(app: any) {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
       
-      // Build filter from query parameters
-      const filterType = req.query.filterType as string || 'today';
+      // Build filter from query parameters - be very specific about filterType
+      const filterType = (req.query.filterType as string) || 'today';
       const showHourly = req.query.showHourly === 'true';
       const timestamp = req.query._timestamp; // Used for cache-busting on the client side
       
       console.log(`📊 Filtering campaign ${campaignId} clicks with filter type: ${filterType} (timestamp: ${timestamp})`);
       
-      // Create a properly typed filter object
+      // Create a properly typed filter object - ensure we create a new object and don't use references
       const filter: TimeRangeFilter = {
-        filterType: filterType as any,
+        filterType: filterType as any, // Explicitly set the filterType from request
         timezone: (req.query.timezone as string) || "UTC",
         showHourly
       };
@@ -131,6 +131,10 @@ export function registerCampaignClickRoutes(app: any) {
           });
         }
       }
+      
+      // Log the filter to help with debugging
+      console.log(`📊 Using filter with exact type "${filter.filterType}" for summary query`);
+      console.log(`📊 Complete filter object:`, JSON.stringify(filter));
       
       // Check if the campaign exists
       const campaign = await storage.getCampaign(campaignId);

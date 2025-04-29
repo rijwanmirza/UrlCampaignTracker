@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { format, parseISO, subDays } from "date-fns";
@@ -68,18 +68,21 @@ export default function CampaignClickDetailPage() {
   }, [location]);
   
   // Format query parameters
-  const queryParams: Record<string, string> = {
-    filterType,
-    showHourly: 'true',
-    _timestamp: Date.now().toString(), // Add timestamp to break cache
-  };
-  
-  if (filterType === 'custom_range' && startDate && endDate) {
-    queryParams.startDate = format(startDate, 'yyyy-MM-dd');
-    queryParams.endDate = format(endDate, 'yyyy-MM-dd');
-  }
-  
-  console.log(`📊 Client sending request with filter: ${filterType}`, queryParams);
+  const queryParams = useMemo(() => {
+    const params: Record<string, string> = {
+      filterType,
+      showHourly: 'true',
+      _timestamp: Date.now().toString(), // Add timestamp to break cache
+    };
+    
+    if (filterType === 'custom_range' && startDate && endDate) {
+      params.startDate = format(startDate, 'yyyy-MM-dd');
+      params.endDate = format(endDate, 'yyyy-MM-dd');
+    }
+    
+    console.log(`📊 Client sending request with filter: ${filterType}`, params);
+    return params;
+  }, [filterType, startDate, endDate]);
   
   // Fetch campaign details
   const { data: campaignData, isLoading: isLoadingCampaign } = useQuery({
@@ -87,9 +90,29 @@ export default function CampaignClickDetailPage() {
     enabled: !!campaignId,
   });
   
-  // Fetch summary data
+  // Fetch summary data with a fresh timestamp on each filter change
   const { data: summaryData, isLoading: isLoadingSummary } = useQuery({
-    queryKey: [`/api/campaign-click-records/summary/${campaignId}`, queryParams],
+    queryKey: [`/api/campaign-click-records/summary/${campaignId}`, filterType, startDate, endDate],
+    queryFn: async () => {
+      // Add a fresh timestamp to ensure we break the cache
+      const freshParams = {
+        ...queryParams,
+        _timestamp: Date.now().toString() 
+      };
+      
+      // Build the query string
+      const queryString = Object.entries(freshParams)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+      
+      const response = await fetch(`/api/campaign-click-records/summary/${campaignId}?${queryString}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch summary data');
+      }
+      
+      return await response.json();
+    },
     enabled: !!campaignId,
     onSuccess: (data) => {
       console.log(`📊 Received filtered data for ${filterType} with ${data?.totalClicks || 0} total clicks`);
@@ -102,6 +125,10 @@ export default function CampaignClickDetailPage() {
   
   // Handle filter type change
   const handleFilterTypeChange = (value: string) => {
+    // Log the filter change
+    console.log(`📊 Filter type changed from ${filterType} to ${value}`);
+    
+    // Update the filter type state
     setFilterType(value);
     
     // Reset custom date range when switching to a different filter
