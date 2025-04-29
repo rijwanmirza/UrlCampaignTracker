@@ -94,6 +94,7 @@ export default function OriginalUrlRecordsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [campaignFilter, setCampaignFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("active"); // Default to active URLs
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<number | null>(null);
@@ -106,7 +107,7 @@ export default function OriginalUrlRecordsPage() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, campaignFilter, pageSize]);
+  }, [searchQuery, campaignFilter, statusFilter, pageSize]);
   
   // Mutation for fixing click protection trigger
   const fixClickProtectionMutation = useMutation({
@@ -142,7 +143,7 @@ export default function OriginalUrlRecordsPage() {
     isError,
     error 
   } = useQuery({
-    queryKey: ["/api/original-url-records", currentPage, pageSize, searchQuery, campaignFilter],
+    queryKey: ["/api/original-url-records", currentPage, pageSize, searchQuery, campaignFilter, statusFilter],
     queryFn: async () => {
       const searchParams = new URLSearchParams({
         page: currentPage.toString(),
@@ -155,6 +156,11 @@ export default function OriginalUrlRecordsPage() {
       
       if (campaignFilter) {
         searchParams.append("campaignId", campaignFilter);
+      }
+      
+      // Add status filter if it's not "all"
+      if (statusFilter && statusFilter !== "all") {
+        searchParams.append("status", statusFilter);
       }
       
       const res = await fetch(`/api/original-url-records?${searchParams.toString()}`);
@@ -435,6 +441,12 @@ export default function OriginalUrlRecordsPage() {
     setSearchQuery("");
     queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
+  
+  // Status filter change handler
+  const handleStatusChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+  };
 
   // Fetch all campaigns for filtering
   const { data: campaignsData } = useQuery({
@@ -670,6 +682,21 @@ export default function OriginalUrlRecordsPage() {
                       {campaign.name}
                     </option>
                   ))}
+                </select>
+              </div>
+              
+              {/* Status filter dropdown */}
+              <div className="w-[150px]">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="active">Active URLs</option>
+                  <option value="paused">Paused URLs</option>
+                  <option value="deleted">Deleted URLs</option>
+                  <option value="completed">Completed URLs</option>
+                  <option value="all">All URLs</option>
                 </select>
               </div>
               
