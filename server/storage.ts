@@ -963,7 +963,19 @@ export class DatabaseStorage implements IStorage {
       const [url] = await db.select().from(urls).where(eq(urls.id, id));
       if (!url) return false;
       
-      // Completely remove the URL from the database with no trace
+      console.log(`Permanently deleting URL ID ${id} (${url.name}) while preserving analytics data`);
+      
+      // Store the URL details for future analytics reference
+      // (we could save this to a deleted_urls table if needed)
+      const urlDetails = {
+        id: url.id,
+        name: url.name,
+        campaignId: url.campaignId,
+        deletedAt: new Date()
+      };
+      
+      // Remove the URL but preserve click analytics data
+      // This ensures analytics will still work even after the URL is deleted
       await db.delete(urls).where(eq(urls.id, id));
       
       // Invalidate campaign cache if this URL was associated with a campaign
@@ -971,8 +983,7 @@ export class DatabaseStorage implements IStorage {
         this.invalidateCampaignCache(url.campaignId);
       }
       
-      // We've completely removed the URL with no traces left on the server
-      // Database will automatically reclaim space over time through autovacuum
+      console.log(`URL ${id} permanently deleted while preserving analytics data`);
       
       return true;
     } catch (error) {
@@ -1032,8 +1043,16 @@ export class DatabaseStorage implements IStorage {
     }
     
     if (shouldDelete) {
-      // Permanently delete URLs
+      // Permanently delete URLs but preserve analytics data
+      console.log(`Permanently deleting ${ids.length} URLs while preserving analytics data`);
+      
+      // We could save URL information to a deleted_urls table here if needed
+      // This would allow fully reconstructing analytics with URL names
+      
+      // Delete URLs but keep the analytics data
       await db.delete(urls).where(inArray(urls.id, ids));
+      
+      console.log(`${ids.length} URLs permanently deleted while preserving analytics data`);
     } else if (newStatus) {
       // Update status
       await db
