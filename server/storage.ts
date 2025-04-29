@@ -2231,7 +2231,8 @@ export class DatabaseStorage implements IStorage {
     filter: TimeRangeFilter
   ): Promise<{
     totalClicks: number,
-    hourlyBreakdown?: { hour: number, clicks: number }[]
+    hourlyBreakdown?: { hour: number, clicks: number }[],
+    dailyBreakdown?: Record<string, number>
   }> {
     try {
       // Calculate date ranges based on filter type
@@ -2299,29 +2300,72 @@ export class DatabaseStorage implements IStorage {
           break;
       }
       
-      // Get total clicks
-      const [totalResult] = await db.select({ count: sql`count(*)` })
+      console.log(`Getting clicks for campaign ${campaignId} with filter type ${filterType}`);
+      console.log(`Date range: ${startDateObj.toISOString()} to ${endDateObj.toISOString()}`);
+      
+      // Construct a proper query with conditional clauses
+      let query = db.select({ count: sql`count(*)` })
         .from(campaignClickRecords)
-        .where(
+        .where(eq(campaignClickRecords.campaignId, campaignId));
+      
+      // Add date filtering if not 'total'
+      if (filterType !== 'total') {
+        query = query.where(
           and(
-            eq(campaignClickRecords.campaignId, campaignId),
-            filterType !== 'total' ? 
-              and(
-                sql`${campaignClickRecords.timestamp} >= ${startDateObj}`,
-                sql`${campaignClickRecords.timestamp} <= ${endDateObj}`
-              ) : 
-              undefined
+            sql`${campaignClickRecords.timestamp} >= ${startDateObj}`,
+            sql`${campaignClickRecords.timestamp} <= ${endDateObj}`
           )
         );
+      }
+      
+      // Get total clicks with filtering
+      const [totalResult] = await query;
       
       const totalClicks = Number(totalResult?.count || 0);
+      
+      // Get the daily breakdown 
+      let dailyBreakdown: Record<string, number> = {};
+      
+      // Build daily query for date-based breakdown
+      let dailyQuery = `
+        SELECT 
+          TO_CHAR(timestamp, 'YYYY-MM-DD') as date,
+          COUNT(*) as clicks
+        FROM 
+          campaign_click_records
+        WHERE 
+          campaign_id = $1
+      `;
+      
+      // Add date filtering for non-total queries
+      const dailyParams = [campaignId];
+      if (filterType !== 'total') {
+        dailyQuery += ` AND timestamp >= $2 AND timestamp <= $3`;
+        dailyParams.push(startDateObj);
+        dailyParams.push(endDateObj);
+      }
+      
+      // Add the grouping and ordering
+      dailyQuery += `
+        GROUP BY 
+          TO_CHAR(timestamp, 'YYYY-MM-DD')
+        ORDER BY 
+          date
+      `;
+      
+      console.log(`Daily query with filterType ${filterType}:`, dailyQuery);
+      
+      const dailyResult = await pool.query(dailyQuery, dailyParams);
+      dailyResult.rows.forEach(row => {
+        dailyBreakdown[row.date] = parseInt(row.clicks);
+      });
       
       // If hourly breakdown is requested, get that too
       let hourlyBreakdown: { hour: number, clicks: number }[] | undefined;
       
       if (filter.showHourly) {
-        // PostgreSQL query to extract hour and count clicks per hour
-        const hourlyQuery = `
+        // Build the query conditionally
+        let hourlyQuery = `
           SELECT 
             EXTRACT(HOUR FROM timestamp) as hour,
             COUNT(*) as clicks
@@ -2329,16 +2373,26 @@ export class DatabaseStorage implements IStorage {
             campaign_click_records
           WHERE 
             campaign_id = $1
-            ${filterType !== 'total' ? 'AND timestamp >= $2 AND timestamp <= $3' : ''}
+        `;
+        
+        // Add date filtering for non-total queries
+        const params = [campaignId];
+        if (filterType !== 'total') {
+          hourlyQuery += ` AND timestamp >= $2 AND timestamp <= $3`;
+          params.push(startDateObj);
+          params.push(endDateObj);
+        }
+        
+        // Add the grouping and ordering
+        hourlyQuery += `
           GROUP BY 
             EXTRACT(HOUR FROM timestamp)
           ORDER BY 
             hour
         `;
         
-        const params = filterType !== 'total' ? 
-          [campaignId, startDateObj, endDateObj] : 
-          [campaignId];
+        console.log(`Hourly query with filterType ${filterType}:`, hourlyQuery);
+        console.log('Query params:', params);
         
         const result = await pool.query(hourlyQuery, params);
         
@@ -2357,7 +2411,8 @@ export class DatabaseStorage implements IStorage {
       
       return {
         totalClicks,
-        hourlyBreakdown
+        hourlyBreakdown,
+        dailyBreakdown
       };
     } catch (error) {
       console.error("Error getting campaign click summary:", error);
