@@ -1723,7 +1723,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Original URL Records methods
-  async getOriginalUrlRecords(page: number, limit: number, search?: string): Promise<{ records: OriginalUrlRecord[], total: number }> {
+  async getOriginalUrlRecords(page: number, limit: number, search?: string, status?: string): Promise<{ records: OriginalUrlRecord[], total: number }> {
     const offset = (page - 1) * limit;
     
     let query = db.select().from(originalUrlRecords);
@@ -1740,6 +1740,12 @@ export class DatabaseStorage implements IStorage {
         ilike(originalUrlRecords.name, likeSearch),
         ilike(originalUrlRecords.targetUrl, likeSearch)
       ));
+    }
+    
+    // Apply status filter if provided
+    if (status && status !== 'all') {
+      query = query.where(eq(originalUrlRecords.status, status));
+      countQuery = countQuery.where(eq(originalUrlRecords.status, status));
     }
     
     // Apply pagination

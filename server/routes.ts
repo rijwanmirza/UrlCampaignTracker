@@ -3719,15 +3719,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const search = req.query.search as string | undefined;
+      const status = req.query.status as string | undefined;
       
-      const { records, total } = await storage.getOriginalUrlRecords(page, limit, search);
+      // Default to 'active' status if no status is provided
+      const effectiveStatus = status || 'active';
+      
+      const { records, total } = await storage.getOriginalUrlRecords(page, limit, search, effectiveStatus);
       
       res.json({
         records,
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
+        status: effectiveStatus
       });
     } catch (error) {
       console.error("Error fetching original URL records:", error);
