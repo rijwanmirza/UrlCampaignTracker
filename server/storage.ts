@@ -2589,34 +2589,23 @@ export class DatabaseStorage implements IStorage {
    * Record a URL click in the database and click logs
    */
   async recordUrlClick(
-    urlId: number,
-    ipAddress?: string,
-    userAgent?: string,
-    referer?: string
+    urlId: number
   ): Promise<UrlClickRecord> {
     // First, log the click to the URL click logs for Indian timezone reporting
     await urlClickLogsManager.logClick(urlId);
     
     // Then, record it in the database for API access
-    const timestamp = new Date();
+    const clickTime = new Date();
     
-    // Get the URL name
-    const url = await this.getUrl(urlId);
-    const urlName = url ? url.name : 'unknown';
+    // Insert into URL click records using raw SQL since schema doesn't match table
+    const result = await db.execute(
+      `INSERT INTO url_click_records (url_id, click_time) VALUES ($1, $2) RETURNING *`,
+      [urlId, clickTime]
+    );
     
-    // Insert into URL click records
-    const [record] = await db.insert(urlClickRecords).values({
-      urlId,
-      urlName,
-      ipAddress: ipAddress || null,
-      userAgent: userAgent || null,
-      referer: referer || null,
-      clickTime: timestamp
-    }).returning();
+    console.log(`📊 Recorded URL click for URL ID ${urlId}`);
     
-    console.log(`📊 Recorded URL click for URL ID ${urlId} (${urlName})`);
-    
-    return record;
+    return result[0];
   }
   
   /**
@@ -2643,17 +2632,18 @@ export class DatabaseStorage implements IStorage {
       if (filter) {
         const { startDate, endDate } = this.getDateRangeForFilter(filter);
         
+        // Use SQL directly since the schema and database columns don't match
         query = query.where(
           and(
-            gte(urlClickRecords.clickTime, startDate),
-            lte(urlClickRecords.clickTime, endDate)
+            sql`click_time >= ${startDate}`,
+            sql`click_time <= ${endDate}`
           )
         );
         
         countQuery = countQuery.where(
           and(
-            gte(urlClickRecords.clickTime, startDate),
-            lte(urlClickRecords.clickTime, endDate)
+            sql`click_time >= ${startDate}`,
+            sql`click_time <= ${endDate}`
           )
         );
       }
