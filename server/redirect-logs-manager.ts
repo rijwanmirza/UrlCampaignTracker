@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { format, getHours } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+// We'll implement a simpler timezone conversion for now
+// The date-fns-tz library seems to be having some compatibility issues
 import { db } from './db';
 import { campaignRedirectLogs, campaigns, urls } from '../shared/schema';
 import { timeRangeFilterSchema } from '../shared/schema';
@@ -51,10 +52,18 @@ export class RedirectLogsManager {
   }
   
   /**
-   * Format a date in Indian timezone
+   * Format a date in Indian timezone (UTC+5:30)
    */
   private formatIndianTime(date: Date): { formatted: string, dateKey: string, hourKey: number } {
-    const indianTime = utcToZonedTime(date, INDIAN_TIMEZONE);
+    // Indian Standard Time is UTC+5:30
+    const offsetHours = 5;
+    const offsetMinutes = 30;
+    
+    // Create a new date object with the Indian time offset
+    const indianTime = new Date(date.getTime());
+    indianTime.setHours(indianTime.getHours() + offsetHours);
+    indianTime.setMinutes(indianTime.getMinutes() + offsetMinutes);
+    
     return {
       formatted: format(indianTime, 'yyyy-MM-dd HH:mm:ss'),
       dateKey: format(indianTime, 'yyyy-MM-dd'),

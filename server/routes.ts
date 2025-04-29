@@ -42,6 +42,7 @@ import { db } from "./db";
 import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
+import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -51,6 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register campaign click record routes
   registerCampaignClickRoutes(app);
+  
+  // Register redirect logs routes
+  registerRedirectLogsRoutes(app);
   
 
   
@@ -1441,6 +1445,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ).catch(err => {
           console.error("Error recording campaign click:", err);
         });
+        
+        // Log the redirect in our redirect logs system with Indian timezone
+        redirectLogsManager.logRedirect(campaignId, urlId).catch(err => {
+          console.error("Error logging redirect:", err);
+        });
       } catch (analyticsError) {
         // Log but don't block the redirect if click recording fails
         console.error("Failed to record campaign click:", analyticsError);
@@ -1554,6 +1563,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.recordCampaignClick(campaignId, urlId).catch(err => {
           console.error("Error recording campaign click for bridge page:", err);
         });
+        
+        // Log the redirect in our redirect logs system with Indian timezone
+        redirectLogsManager.logRedirect(campaignId, urlId).catch(err => {
+          console.error("Error logging redirect for bridge page:", err);
+        });
       } catch (analyticsError) {
         // Log but don't block the redirect if click recording fails
         console.error("Failed to record campaign click for bridge page:", analyticsError);
@@ -1624,6 +1638,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Using the storage method that ensures click data persists
         storage.recordCampaignClick(campaign.id, selectedUrl.id).catch(err => {
           console.error("Error recording campaign click for custom path:", err);
+        });
+        
+        // Log the redirect in our redirect logs system with Indian timezone
+        redirectLogsManager.logRedirect(campaign.id, selectedUrl.id).catch(err => {
+          console.error("Error logging redirect for custom path:", err);
         });
       } catch (analyticsError) {
         // Log but don't block the redirect if click recording fails
@@ -1805,6 +1824,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Using the storage method that ensures click data persists
         storage.recordCampaignClick(campaignId, selectedUrl.id).catch(err => {
           console.error("Error recording campaign click for /c endpoint:", err);
+        });
+        
+        // Log the redirect in our redirect logs system with Indian timezone
+        redirectLogsManager.logRedirect(campaignId, selectedUrl.id).catch(err => {
+          console.error("Error logging redirect for /c endpoint:", err);
         });
       } catch (analyticsError) {
         // Log but don't block the redirect if click recording fails
