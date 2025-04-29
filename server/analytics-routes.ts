@@ -72,28 +72,28 @@ analyticsRouter.get("/summary", async (req: Request, res: Response) => {
     const totalClicksResult = await db.execute(sql`
       SELECT COUNT(*) as count
       FROM ${clickAnalytics}
-      WHERE ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-      AND ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      WHERE "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+      AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
     `);
     
     const totalClicks = Number(totalClicksResult[0]?.count || 0);
     
     // Get total campaigns with clicks
     const campaignsResult = await db.execute(sql`
-      SELECT COUNT(DISTINCT ${clickAnalytics.campaignId}) as count
+      SELECT COUNT(DISTINCT "campaignId") as count
       FROM ${clickAnalytics}
-      WHERE ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-      AND ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      WHERE "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+      AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
     `);
     
     const totalCampaigns = Number(campaignsResult[0]?.count || 0);
     
     // Get total URLs with clicks
     const urlsResult = await db.execute(sql`
-      SELECT COUNT(DISTINCT ${clickAnalytics.urlId}) as count
+      SELECT COUNT(DISTINCT "urlId") as count
       FROM ${clickAnalytics}
-      WHERE ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-      AND ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      WHERE "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+      AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
     `);
     
     const totalUrls = Number(urlsResult[0]?.count || 0);
@@ -104,12 +104,12 @@ analyticsRouter.get("/summary", async (req: Request, res: Response) => {
     // Get clicks by date
     const clicksByDateQuery = await db.execute(sql`
       SELECT 
-        DATE_TRUNC('day', ${clickAnalytics.timestamp}) as click_date,
+        DATE_TRUNC('day', "timestamp") as click_date,
         COUNT(*) as click_count
       FROM ${clickAnalytics}
       WHERE 
-        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
-        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+        "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY click_date
       ORDER BY click_date
     `);
@@ -124,15 +124,15 @@ analyticsRouter.get("/summary", async (req: Request, res: Response) => {
     // Get top campaigns
     const topCampaignsQuery = await db.execute(sql`
       SELECT 
-        ${clickAnalytics.campaignId} as id,
+        "campaignId" as id,
         c.name,
         COUNT(*) as clicks
       FROM ${clickAnalytics}
-      JOIN campaigns c ON c.id = ${clickAnalytics.campaignId}
+      JOIN campaigns c ON c.id = "campaignId"
       WHERE 
-        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
-        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
-      GROUP BY ${clickAnalytics.campaignId}, c.name
+        "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY "campaignId", c.name
       ORDER BY clicks DESC
       LIMIT 5
     `);
@@ -146,15 +146,15 @@ analyticsRouter.get("/summary", async (req: Request, res: Response) => {
     // Get top URLs
     const topUrlsQuery = await db.execute(sql`
       SELECT 
-        ${clickAnalytics.urlId} as id,
+        "urlId" as id,
         u.name,
         COUNT(*) as clicks
       FROM ${clickAnalytics}
-      JOIN urls u ON u.id = ${clickAnalytics.urlId}
+      JOIN urls u ON u.id = "urlId"
       WHERE 
-        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
-        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
-      GROUP BY ${clickAnalytics.urlId}, u.name
+        "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      GROUP BY "urlId", u.name
       ORDER BY clicks DESC
       LIMIT 5
     `);
@@ -201,7 +201,7 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
         c.name,
         c.created_at as createdAt,
         c.updated_at as updatedAt,
-        COUNT(DISTINCT ${clickAnalytics.urlId}) as totalUrls,
+        COUNT(DISTINCT "urlId") as totalUrls,
         COUNT(*) as totalClicks,
         COALESCE(
           CASE 
@@ -212,9 +212,9 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
           'inactive'
         ) as status
       FROM campaigns c
-      LEFT JOIN ${clickAnalytics} ON ${clickAnalytics.campaignId} = c.id
-        AND ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-        AND ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+      LEFT JOIN ${clickAnalytics} ON "campaignId" = c.id
+        AND "timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND "timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       WHERE c.id = ${campaignId}
       GROUP BY c.id, c.name, c.created_at, c.updated_at
     `);
