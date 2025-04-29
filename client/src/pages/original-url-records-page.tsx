@@ -102,6 +102,7 @@ export default function OriginalUrlRecordsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+  const [campaignFilter, setCampaignFilter] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<number | null>(null);
@@ -110,7 +111,11 @@ export default function OriginalUrlRecordsPage() {
   const [selectedRecords, setSelectedRecords] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [campaignFilter, setCampaignFilter] = useState<string | null>(null);
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, campaignFilter, pageSize]);
   
   // Mutation for fixing click protection trigger
   const fixClickProtectionMutation = useMutation({
@@ -146,7 +151,7 @@ export default function OriginalUrlRecordsPage() {
     isError,
     error 
   } = useQuery({
-    queryKey: ["/api/original-url-records", currentPage, pageSize, searchQuery],
+    queryKey: ["/api/original-url-records", currentPage, pageSize, searchQuery, campaignFilter],
     queryFn: async () => {
       const searchParams = new URLSearchParams({
         page: currentPage.toString(),
@@ -155,6 +160,10 @@ export default function OriginalUrlRecordsPage() {
       
       if (searchQuery) {
         searchParams.append("search", searchQuery);
+      }
+      
+      if (campaignFilter) {
+        searchParams.append("campaignId", campaignFilter);
       }
       
       const res = await fetch(`/api/original-url-records?${searchParams.toString()}`);
@@ -405,6 +414,7 @@ export default function OriginalUrlRecordsPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -416,6 +426,18 @@ export default function OriginalUrlRecordsPage() {
     setSearchQuery("");
     queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
+
+  // Fetch all campaigns for filtering
+  const { data: campaignsData } = useQuery({
+    queryKey: ["/api/campaigns"],
+    queryFn: async () => {
+      const res = await fetch("/api/campaigns");
+      if (!res.ok) {
+        throw new Error("Failed to fetch campaigns");
+      }
+      return res.json();
+    }
+  });
 
   // Bulk selection handlers
   const handleSelectRecord = (id: number, checked: boolean) => {
@@ -511,6 +533,7 @@ export default function OriginalUrlRecordsPage() {
   const handlePageSizeChange = (value: string) => {
     setPageSize(parseInt(value));
     setCurrentPage(1); // Reset to first page when changing page size
+    queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
 
   // Calculate total pages
@@ -685,7 +708,13 @@ export default function OriginalUrlRecordsPage() {
               {/* Campaign filter dropdown */}
               <Select 
                 value={campaignFilter || ""}
-                onValueChange={(value) => setCampaignFilter(value === "" ? null : value)}
+                onValueChange={(value) => {
+                  setCampaignFilter(value === "" ? null : value);
+                  // Reset to page 1 when filter changes
+                  setCurrentPage(1);
+                  // Refresh data
+                  queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+                }}
               >
                 <SelectTrigger className="w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
@@ -693,9 +722,11 @@ export default function OriginalUrlRecordsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All campaigns</SelectItem>
-                  {/* Add campaign options here dynamically */}
-                  <SelectItem value="1">Campaign 1</SelectItem>
-                  <SelectItem value="2">Campaign 2</SelectItem>
+                  {campaignsData?.map((campaign: any) => (
+                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                      {campaign.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               
