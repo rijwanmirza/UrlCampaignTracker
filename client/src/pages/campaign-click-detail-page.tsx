@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { format, parseISO, subDays } from "date-fns";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -18,8 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft, BarChart2 } from "lucide-react";
+import { Loader2, ChevronLeft, BarChart2, Database } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   AreaChart,
   Area,
@@ -113,6 +115,38 @@ export default function CampaignClickDetailPage() {
     // Requery with new parameters
     // The query will automatically refresh due to queryKey changes
   };
+  
+  // Toast hook for notifications
+  const { toast } = useToast();
+  
+  // Create mutation for generating test data
+  const generateTestDataMutation = useMutation({
+    mutationFn: async () => {
+      if (!campaignId) return;
+      const res = await apiRequest("POST", "/api/campaign-click-records/generate-specific-test-data", {
+        campaignId,
+        clicksPerDay: 20
+      });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/campaign-click-records/summary/${campaignId}`]
+      });
+      toast({
+        title: "Test data generated",
+        description: `Created ${data.counts.total} test clicks across different time periods.`,
+        duration: 5000
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to generate test data",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive"
+      });
+    }
+  });
   
   // Format daily chart data
   const formatDailyChartData = () => {
@@ -245,6 +279,24 @@ export default function CampaignClickDetailPage() {
             </div>
             
             <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generateTestDataMutation.mutate()}
+                disabled={generateTestDataMutation.isPending}
+              >
+                {generateTestDataMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-4 w-4 mr-2" />
+                    Generate Test Data
+                  </>
+                )}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
