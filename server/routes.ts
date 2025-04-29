@@ -3720,11 +3720,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 10;
       const search = req.query.search as string | undefined;
       const status = req.query.status as string | undefined;
+      const campaignId = req.query.campaignId ? parseInt(req.query.campaignId as string) : undefined;
       
       // Default to 'active' status if no status is provided
       const effectiveStatus = status || 'active';
       
-      const { records, total } = await storage.getOriginalUrlRecords(page, limit, search, effectiveStatus);
+      // Pass the campaignId parameter to filter URLs by campaign
+      const { records, total } = await storage.getOriginalUrlRecords(
+        page, 
+        limit, 
+        search, 
+        effectiveStatus,
+        campaignId
+      );
       
       res.json({
         records,
@@ -3732,7 +3740,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
-        status: effectiveStatus
+        status: effectiveStatus,
+        campaignId // Include the campaignId in the response for client reference
       });
     } catch (error) {
       console.error("Error fetching original URL records:", error);

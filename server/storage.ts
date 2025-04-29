@@ -1723,7 +1723,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Original URL Records methods
-  async getOriginalUrlRecords(page: number, limit: number, search?: string, status?: string): Promise<{ records: OriginalUrlRecord[], total: number }> {
+  async getOriginalUrlRecords(page: number, limit: number, search?: string, status?: string, campaignId?: number): Promise<{ records: OriginalUrlRecord[], total: number }> {
     const offset = (page - 1) * limit;
     
     let query = db.select().from(originalUrlRecords);
@@ -1746,6 +1746,24 @@ export class DatabaseStorage implements IStorage {
     if (status && status !== 'all') {
       query = query.where(eq(originalUrlRecords.status, status));
       countQuery = countQuery.where(eq(originalUrlRecords.status, status));
+    }
+    
+    // Apply campaign filter if provided
+    if (campaignId) {
+      // Find all URL names that belong to this campaign
+      const campaignUrls = await db.select({ name: urls.name })
+        .from(urls)
+        .where(eq(urls.campaignId, campaignId));
+      
+      // If there are URLs, filter original records by these names
+      if (campaignUrls.length > 0) {
+        const urlNames = campaignUrls.map(url => url.name);
+        query = query.where(inArray(originalUrlRecords.name, urlNames));
+        countQuery = countQuery.where(inArray(originalUrlRecords.name, urlNames));
+      } else {
+        // If no URLs found for this campaign, return empty result
+        return { records: [], total: 0 };
+      }
     }
     
     // Apply pagination
