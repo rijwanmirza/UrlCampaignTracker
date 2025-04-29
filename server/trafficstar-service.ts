@@ -2077,10 +2077,13 @@ class TrafficStarService {
           const spentAmount = spentValue ? spentValue.totalSpent : 0;
           const formattedSpentAmount = spentAmount.toFixed(4);
           
+          // Create an actual Date object for dailySpentDate
+          const dailySpentDateObj = new Date(`${currentUtcDate}T00:00:00Z`);
+
           await db.update(campaigns)
             .set({ 
               dailySpent: formattedSpentAmount,
-              dailySpentDate: new Date(currentUtcDate), // Convert the YYYY-MM-DD string to a Date object
+              dailySpentDate: dailySpentDateObj, // Use the properly formatted Date object
               lastSpentCheck: new Date(),
               updatedAt: new Date()
             })
@@ -2172,10 +2175,13 @@ class TrafficStarService {
             const spentAmount = spentValue ? spentValue.totalSpent : 0;
             const formattedSpentAmount = spentAmount.toFixed(4);
             
+            // Create an actual Date object for dailySpentDate
+            const dailySpentDateObj = new Date(`${currentUtcDate}T00:00:00Z`);
+
             await db.update(campaigns)
               .set({ 
                 dailySpent: formattedSpentAmount,
-                dailySpentDate: currentUtcDate, // Text field in schema for YYYY-MM-DD date
+                dailySpentDate: dailySpentDateObj, // Use the properly formatted Date object
                 lastSpentCheck: new Date(),
                 updatedAt: new Date()
               })
