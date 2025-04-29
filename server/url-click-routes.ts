@@ -198,16 +198,10 @@ export function registerUrlClickRoutes(app: any) {
       }
       
       // Get all URLs first (we'll filter them by search term)
-      const urlsData = await storage.getAllUrls();
-      
-      // Filter URLs by search term if provided
-      const filteredUrls = search 
-        ? urlsData.filter((url: any) => 
-            url.id.toString().includes(search) ||
-            url.name.toLowerCase().includes(search.toLowerCase()) ||
-            url.targetUrl.toLowerCase().includes(search.toLowerCase())
-          )
-        : urlsData;
+      // Since getAllUrls already returns a paginated result with urls and total,
+      // we need to access the urls property from the result
+      const urlsResult = await storage.getAllUrls(1, 1000, search);
+      const filteredUrls = urlsResult.urls || [];
       
       // Get click summaries for all URLs in this period
       const urlBreakdown = [];
