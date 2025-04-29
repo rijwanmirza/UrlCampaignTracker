@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   useToast
@@ -10,6 +10,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -46,7 +63,10 @@ import {
   RefreshCw,
   Pause,
   Play,
-  AlertTriangle
+  AlertTriangle,
+  Filter,
+  ChevronDown,
+  ArrowDownUp
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,13 +82,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 
 const formSchema = insertOriginalUrlRecordSchema.extend({
   // No maximum limit on originalClickLimit, only require it to be a positive number
@@ -91,6 +105,10 @@ export default function OriginalUrlRecordsPage() {
   const [recordToDelete, setRecordToDelete] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedRecords, setSelectedRecords] = useState<number[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [campaignFilter, setCampaignFilter] = useState<string | null>(null);
   
   // Mutation for fixing click protection trigger
   const fixClickProtectionMutation = useMutation({
@@ -397,6 +415,102 @@ export default function OriginalUrlRecordsPage() {
     queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
 
+  // Bulk selection handlers
+  const handleSelectRecord = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedRecords(prev => [...prev, id]);
+    } else {
+      setSelectedRecords(prev => prev.filter(recordId => recordId !== id));
+    }
+  };
+
+  const handleSelectAllRecords = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked && recordsData?.records) {
+      setSelectedRecords(recordsData.records.map(record => record.id));
+    } else {
+      setSelectedRecords([]);
+    }
+  };
+
+  // Bulk actions
+  const handleBulkPause = async () => {
+    if (selectedRecords.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      for (const id of selectedRecords) {
+        await pauseMutation.mutateAsync(id);
+      }
+      toast({
+        title: "Success",
+        description: `${selectedRecords.length} records paused successfully.`,
+      });
+      setSelectedRecords([]);
+      setSelectAll(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to pause some records: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive",
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkResume = async () => {
+    if (selectedRecords.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      for (const id of selectedRecords) {
+        await resumeMutation.mutateAsync(id);
+      }
+      toast({
+        title: "Success",
+        description: `${selectedRecords.length} records resumed successfully.`,
+      });
+      setSelectedRecords([]);
+      setSelectAll(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to resume some records: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive",
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRecords.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      for (const id of selectedRecords) {
+        await deleteMutation.mutateAsync(id);
+      }
+      toast({
+        title: "Success",
+        description: `${selectedRecords.length} records deleted successfully.`,
+      });
+      setSelectedRecords([]);
+      setSelectAll(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to delete some records: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive",
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value));
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
   // Calculate total pages
   const totalPages = recordsData?.totalPages || 1;
 
@@ -540,39 +654,118 @@ export default function OriginalUrlRecordsPage() {
         </CardHeader>
         <CardContent>
           {/* Search bar */}
-          <div className="flex mb-4 gap-2">
-            <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-              <Input
-                placeholder="Search by name or URL..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" variant="outline">Search</Button>
-              {searchQuery && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={handleClearSearch}
-                >
-                  Clear
+          <div className="flex flex-col gap-4 mb-4">
+            {/* Search, filter, and pagination options */}
+            <div className="flex flex-wrap gap-2">
+              <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+                <Input
+                  placeholder="Search by name or URL..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline">
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
                 </Button>
-              )}
-            </form>
-            <Select 
-              value={pageSize.toString()} 
-              onValueChange={(value) => setPageSize(parseInt(value))}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="10 per page" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="20">20 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-              </SelectContent>
-            </Select>
+                {searchQuery && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={handleClearSearch}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                )}
+              </form>
+              
+              {/* Campaign filter dropdown */}
+              <Select 
+                value={campaignFilter || ""}
+                onValueChange={(value) => setCampaignFilter(value === "" ? null : value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by campaign" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All campaigns</SelectItem>
+                  {/* Add campaign options here dynamically */}
+                  <SelectItem value="1">Campaign 1</SelectItem>
+                  <SelectItem value="2">Campaign 2</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Records per page */}
+              <Select 
+                value={pageSize.toString()} 
+                onValueChange={handlePageSizeChange}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Records per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 per page</SelectItem>
+                  <SelectItem value="25">25 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                  <SelectItem value="100">100 per page</SelectItem>
+                  <SelectItem value="250">250 per page</SelectItem>
+                  <SelectItem value="500">500 per page</SelectItem>
+                  <SelectItem value="1000">1000 per page</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Bulk Actions */}
+            {selectedRecords.length > 0 && (
+              <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                <span className="text-sm font-medium mr-2">
+                  {selectedRecords.length} records selected
+                </span>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleBulkResume}
+                  disabled={bulkActionLoading}
+                  className="flex items-center gap-1"
+                >
+                  {bulkActionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+                  Activate
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleBulkPause}
+                  disabled={bulkActionLoading}
+                  className="flex items-center gap-1"
+                >
+                  {bulkActionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Pause className="h-3 w-3" />}
+                  Pause
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="destructive" 
+                  onClick={handleBulkDelete}
+                  disabled={bulkActionLoading}
+                  className="flex items-center gap-1"
+                >
+                  {bulkActionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  Delete
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => {
+                    setSelectedRecords([]);
+                    setSelectAll(false);
+                  }}
+                  className="ml-auto"
+                >
+                  Clear selection
+                </Button>
+              </div>
+            )}
           </div>
 
           {isLoading ? (
