@@ -13,7 +13,8 @@ import {
   OriginalUrlRecord,
   InsertOriginalUrlRecord,
   UpdateOriginalUrlRecord,
-  originalUrlRecords
+  originalUrlRecords,
+  clickAnalytics
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
@@ -1013,10 +1014,20 @@ export class DatabaseStorage implements IStorage {
       await db.insert(clickAnalytics).values({
         urlId,
         campaignId,
-        timestamp: now
+        timestamp: now,
+        // No user tracking data is stored - completely privacy-friendly
+        // Explicitly setting null values ensures no tracking data will be collected
+        userAgent: null,
+        ipAddress: null,
+        referer: null,
+        country: null,
+        city: null,
+        deviceType: null,
+        browser: null,
+        operatingSystem: null
       });
       
-      console.log(`Recorded permanent campaign click for campaign ${campaignId} at ${now.toISOString()}`);
+      console.log(`Recorded permanent campaign click for campaign ${campaignId} URL ${urlId} at ${now.toISOString()}`);
     } catch (error) {
       // Don't throw errors, just log them - analytics should never block redirects
       console.error(`Error recording campaign click for campaign ${campaignId}:`, error);
