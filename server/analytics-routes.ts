@@ -69,44 +69,32 @@ analyticsRouter.get("/summary", async (req: Request, res: Response) => {
     const { start, end } = getDateRange(filterType, startDate, endDate);
     
     // Get total clicks
-    const totalClicksResult = await db.select({
-      count: count()
-    })
-    .from(clickAnalytics)
-    .where(
-      and(
-        gte(clickAnalytics.timestamp, start),
-        lte(clickAnalytics.timestamp, end)
-      )
-    );
+    const totalClicksResult = await db.execute(sql`
+      SELECT COUNT(*) as count
+      FROM ${clickAnalytics}
+      WHERE ${clickAnalytics.timestamp} >= ${start.toISOString()}
+      AND ${clickAnalytics.timestamp} <= ${end.toISOString()}
+    `);
     
     const totalClicks = Number(totalClicksResult[0]?.count || 0);
     
     // Get total campaigns with clicks
-    const campaignsResult = await db.select({
-      count: sql`COUNT(DISTINCT ${clickAnalytics.campaignId})`
-    })
-    .from(clickAnalytics)
-    .where(
-      and(
-        gte(clickAnalytics.timestamp, start),
-        lte(clickAnalytics.timestamp, end)
-      )
-    );
+    const campaignsResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT ${clickAnalytics.campaignId}) as count
+      FROM ${clickAnalytics}
+      WHERE ${clickAnalytics.timestamp} >= ${start.toISOString()}
+      AND ${clickAnalytics.timestamp} <= ${end.toISOString()}
+    `);
     
     const totalCampaigns = Number(campaignsResult[0]?.count || 0);
     
     // Get total URLs with clicks
-    const urlsResult = await db.select({
-      count: sql`COUNT(DISTINCT ${clickAnalytics.urlId})`
-    })
-    .from(clickAnalytics)
-    .where(
-      and(
-        gte(clickAnalytics.timestamp, start),
-        lte(clickAnalytics.timestamp, end)
-      )
-    );
+    const urlsResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT ${clickAnalytics.urlId}) as count
+      FROM ${clickAnalytics}
+      WHERE ${clickAnalytics.timestamp} >= ${start.toISOString()}
+      AND ${clickAnalytics.timestamp} <= ${end.toISOString()}
+    `);
     
     const totalUrls = Number(urlsResult[0]?.count || 0);
     
