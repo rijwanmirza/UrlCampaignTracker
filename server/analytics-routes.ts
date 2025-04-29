@@ -428,8 +428,8 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       clicks: parseInt(row.clicks) || 0
     }));
     
-    // No referrer breakdown - we don't want to track this data
-    const referrerData = [{ referrer: 'Direct', clicks: totalClicks }];
+    // We don't track any information that could identify users
+    // No referrer, device, country, etc. data - only timestamps and URL/campaign IDs
     
     res.json({
       url: {
@@ -451,8 +451,7 @@ analyticsRouter.get("/url/:id", async (req: Request, res: Response) => {
       analytics: {
         totalClicks,
         hourlyData,
-        dailyData,
-        referrerData
+        dailyData
       },
       dateRange: {
         start: start.toISOString(),

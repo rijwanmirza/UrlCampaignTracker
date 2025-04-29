@@ -1601,25 +1601,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);
       
-      // Record click analytics data
+      // Record click analytics data (only essential data, no tracking)
       try {
-        // Extract user information
-        const userAgent = req.headers['user-agent'] || '';
-        const ipAddress = req.ip || req.socket.remoteAddress || '';
-        const referrer = req.headers['referer'] || '';
-        
         // Get the current date and time
         const now = new Date();
-        const clickHour = now.getUTCHours(); // 0-23 in UTC
         
         // Asynchronously record analytics without blocking the redirect
+        // ONLY storing timestamp, urlId, and campaignId per user requirements
         db.insert(clickAnalytics).values({
           urlId: selectedUrl.id,
           campaignId: campaign.id,
-          timestamp: now,
-          userAgent,
-          ipAddress,
-          referrer: referrer || null,
+          timestamp: now
         }).execute().catch(err => {
           console.error("Error recording click analytics for custom path:", err);
         });
@@ -1796,25 +1788,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
       
-      // Record click analytics data
+      // Record click analytics data (only essential data, no tracking)
       try {
-        // Extract user information
-        const userAgent = req.headers['user-agent'] || '';
-        const ipAddress = req.ip || req.socket.remoteAddress || '';
-        const referrer = req.headers['referer'] || '';
-        
         // Get the current date and time
         const now = new Date();
-        const clickHour = now.getUTCHours(); // 0-23 in UTC
         
         // Asynchronously record analytics without blocking the redirect
+        // ONLY storing timestamp, urlId, and campaignId per user requirements
         db.insert(clickAnalytics).values({
           urlId: selectedUrl.id,
           campaignId,
-          timestamp: now,
-          userAgent,
-          ipAddress,
-          referrer: referrer || null,
+          timestamp: now
         }).execute().catch(err => {
           console.error("Error recording click analytics for campaign:", err);
         });
