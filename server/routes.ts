@@ -1616,17 +1616,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);
       
-      // Record campaign click analytics data that will persist even if URL is deleted
-      // This makes analytics completely independent from URLs
+      // Record campaign click data that will persist even if URL is deleted
+      // This makes click tracking completely independent from URLs
       try {
         // Asynchronously record permanent campaign click without blocking the redirect
-        // Using the new storage method that ensures analytics data persists
+        // Using the storage method that ensures click data persists
         storage.recordCampaignClick(campaign.id, selectedUrl.id).catch(err => {
-          console.error("Error recording campaign click analytics for custom path:", err);
+          console.error("Error recording campaign click for custom path:", err);
         });
       } catch (analyticsError) {
-        // Log but don't block the redirect if analytics recording fails
-        console.error("Failed to record campaign click analytics for custom path:", analyticsError);
+        // Log but don't block the redirect if click recording fails
+        console.error("Failed to record campaign click for custom path:", analyticsError);
       }
       
       // Performance metrics
@@ -1797,17 +1797,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
       
-      // Record campaign click analytics data that will persist even if URL is deleted
-      // This makes analytics completely independent from URLs
+      // Record campaign click data that will persist even if URL is deleted
+      // This makes click tracking completely independent from URLs
       try {
         // Asynchronously record permanent campaign click without blocking the redirect
-        // Using the new storage method that ensures analytics data persists
+        // Using the storage method that ensures click data persists
         storage.recordCampaignClick(campaignId, selectedUrl.id).catch(err => {
-          console.error("Error recording campaign click analytics for /c endpoint:", err);
+          console.error("Error recording campaign click for /c endpoint:", err);
         });
       } catch (analyticsError) {
-        // Log but don't block the redirect if analytics recording fails
-        console.error("Failed to record campaign click analytics for /c endpoint:", analyticsError);
+        // Log but don't block the redirect if click recording fails
+        console.error("Failed to record campaign click for /c endpoint:", analyticsError);
       }
       
       // Performance metrics
