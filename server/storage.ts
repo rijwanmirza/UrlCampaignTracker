@@ -1834,18 +1834,22 @@ export class DatabaseStorage implements IStorage {
       updateData.targetUrl = updateRecord.targetUrl;
     }
     
-    // Check if we're updating the click limit
-    const isUpdatingClickLimit = updateRecord.originalClickLimit !== undefined && 
-      updateRecord.originalClickLimit !== existing.originalClickLimit;
-    
-    // IMPORTANT: If updating original click limit, ALWAYS set status to "paused"
-    if (isUpdatingClickLimit) {
+    // IMPORTANT: If original click limit is included in the update, ALWAYS set status to "paused"
+    // regardless of whether the value is changing or staying the same
+    if (updateRecord.originalClickLimit !== undefined) {
       updateData.originalClickLimit = updateRecord.originalClickLimit;
-      // Force status to paused when original click limit is changed
+      // Force status to paused when original click limit is updated, even to the same value
       updateData.status = "paused";
-      console.log(`🛑 ORIGINAL CLICK LIMIT CHANGED: Setting status to PAUSED automatically`);
+      
+      // If value is same, still note that we're pausing because the field was touched
+      if (updateRecord.originalClickLimit === existing.originalClickLimit) {
+        console.log(`🛑 ORIGINAL CLICK LIMIT UPDATED TO SAME VALUE (${updateRecord.originalClickLimit}): Still setting status to PAUSED automatically`);
+      } else {
+        console.log(`🛑 ORIGINAL CLICK LIMIT CHANGED FROM ${existing.originalClickLimit} TO ${updateRecord.originalClickLimit}: Setting status to PAUSED automatically`);
+      }
+      
       console.log(`🔄 Adding originalClickLimit = ${updateRecord.originalClickLimit} to update operation`);
-      console.log(`🔄 Setting status = "paused" due to original click limit change`);
+      console.log(`🔄 Setting status = "paused" due to original click value update`);
     } else {
       // If status is explicitly set in the update, use it
       if (updateRecord.status !== undefined) {
@@ -1860,10 +1864,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(originalUrlRecords.id, id))
       .returning();
     
-    // If the original click limit has changed, propagate that change
-    if (isUpdatingClickLimit) {
-      console.log(`🔄 Updating original click limit for record #${id} from ${existing.originalClickLimit} to ${updateRecord.originalClickLimit}`);
-      console.log(`🔴 URL PAUSED: Original click limit changed from ${existing.originalClickLimit} to ${updateRecord.originalClickLimit}`);
+    // If the original click limit was included in the update, propagate that change
+    if (updateRecord.originalClickLimit !== undefined) {
+      // Log appropriate message depending on if value changed or stayed the same
+      if (updateRecord.originalClickLimit === existing.originalClickLimit) {
+        console.log(`🔄 Original click limit for record #${id} updated to same value (${updateRecord.originalClickLimit}), but still pausing as requested`);
+      } else {
+        console.log(`🔄 Updating original click limit for record #${id} from ${existing.originalClickLimit} to ${updateRecord.originalClickLimit}`);
+      }
+      
+      console.log(`🔴 URL PAUSED: Original click value updated`);
       
       // We're updating the original click limit, so sync with all related URLs
       const updatedCount = await this.syncUrlsWithOriginalRecord(id);

@@ -3803,12 +3803,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🛠️ FORCE-FIXING URL CLICK LIMITS ${originalRecordId ? `for record #${originalRecordId}` : 'for ALL records'}`);
       
-      // CRITICAL FIX: This is the bug - can't use multiple statements in one sql call
-      // Disable triggers first
-      await db.execute(sql`
-        ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger;
-        ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger;
-      `);
+      // CRITICAL FIX: Execute each ALTER TABLE statement separately
+      // Disable triggers first - one by one
+      await db.execute(sql`ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger`);
+      await db.execute(sql`ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger`);
       
       // Get original record if ID provided
       if (originalRecordId) {
@@ -3840,14 +3838,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `);
       }
       
-      // Re-enable triggers
-      await db.execute(sql`
-        ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger;
-        ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger;
-      `);
+      // Re-enable triggers - one by one
+      await db.execute(sql`ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger`);
+      await db.execute(sql`ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger`);
       
       // CRITICAL FIX: Find all affected campaign IDs to invalidate their caches
-      let affectedCampaigns: {id: number}[] = [];
+      let affectedCampaignIds: number[] = [];
       
       if (originalRecordId) {
         // Get record name first
@@ -3855,32 +3851,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (record) {
           // Find all campaigns that have URLs with this name
-          affectedCampaigns = await db.execute(sql`
+          const result = await db.execute<{id: number}>(sql`
             SELECT DISTINCT c.id 
             FROM campaigns c
             JOIN urls u ON u.campaign_id = c.id
             WHERE u.name = ${record.name}
           `);
+          
+          // Extract campaign IDs from the result
+          affectedCampaignIds = (result.rows || []).map(row => Number(row.id)).filter(id => !isNaN(id));
         }
       } else {
         // If updating all records, get all campaign IDs
-        affectedCampaigns = await db.select({ id: campaigns.id }).from(campaigns);
+        const allCampaigns = await db.select({ id: campaigns.id }).from(campaigns);
+        affectedCampaignIds = allCampaigns.map(c => c.id);
       }
       
       // Invalidate all affected campaign caches
-      console.log(`🧹 Clearing campaign caches for ${affectedCampaigns.length} affected campaigns`);
+      console.log(`🧹 Clearing campaign caches for ${affectedCampaignIds.length} affected campaigns`);
       
-      for (const campaign of affectedCampaigns) {
-        if (campaign && campaign.id) {
-          // Force invalidate campaign caches
-          storage.invalidateCampaignCache(campaign.id);
-          
-          // Force refresh to get latest data
-          await storage.getCampaign(campaign.id, true);
-          await storage.getUrls(campaign.id, true);
-          
-          console.log(`✅ Forced refresh of campaign #${campaign.id} cache`);
-        }
+      // Loop through the array of IDs, not the full objects
+      for (const campaignId of affectedCampaignIds) {
+        // Force invalidate campaign caches
+        storage.invalidateCampaignCache(campaignId);
+        
+        // Force refresh to get latest data
+        await storage.getCampaign(campaignId, true);
+        await storage.getUrls(campaignId, true);
+        
+        console.log(`✅ Forced refresh of campaign #${campaignId} cache`);
       }
       
       return true;
