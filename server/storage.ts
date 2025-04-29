@@ -2630,7 +2630,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<{ records: UrlClickRecord[], total: number }> {
     try {
       const offset = (page - 1) * limit;
-      let query = db.select().from(urlClickRecords).orderBy(desc(urlClickRecords.clickTime));
+      let query = db.select().from(urlClickRecords);
       let countQuery = db.select({ count: sql`COUNT(*)` }).from(urlClickRecords);
       
       // Add URL filter if provided
