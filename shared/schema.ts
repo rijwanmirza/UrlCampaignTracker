@@ -268,9 +268,7 @@ export const campaignClickRecords = pgTable("campaign_click_records", {
   campaignId: integer("campaign_id").notNull(),
   urlId: integer("url_id"), // Optional, as some clicks might be directly from campaign
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  ipAddress: text("ip_address"), // Store IP address for analysis (optional)
-  userAgent: text("user_agent"), // Store user agent for analysis (optional)
-  referer: text("referer"), // Store referer for analysis (optional)
+  // Removed IP address, user agent, and referer fields as they're not needed
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

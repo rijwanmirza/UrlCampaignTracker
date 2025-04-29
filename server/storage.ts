@@ -2088,19 +2088,13 @@ export class DatabaseStorage implements IStorage {
   
   async recordCampaignClick(
     campaignId: number, 
-    urlId?: number, 
-    ipAddress?: string, 
-    userAgent?: string,
-    referer?: string
+    urlId?: number
   ): Promise<CampaignClickRecord> {
     try {
       const [record] = await db.insert(campaignClickRecords).values({
         campaignId,
         urlId: urlId || null,
-        timestamp: new Date(),
-        ipAddress: ipAddress || null,
-        userAgent: userAgent || null,
-        referer: referer || null
+        timestamp: new Date()
       }).returning();
       
       return record;

@@ -159,24 +159,6 @@ export function registerCampaignClickRoutes(app: any) {
       
       // Generate random test data
       const now = new Date();
-      const userAgents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
-        "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"
-      ];
-      
-      const referers = [
-        "https://www.google.com/",
-        "https://www.facebook.com/",
-        "https://www.instagram.com/",
-        "https://www.twitter.com/",
-        "https://www.reddit.com/",
-        "https://www.youtube.com/",
-        null
-      ];
-      
       const records = [];
       
       // Generate random click records over the past week
@@ -193,24 +175,15 @@ export function registerCampaignClickRoutes(app: any) {
         const hour = Math.floor(Math.random() * 24);
         timestamp.setHours(hour);
         
-        // Random user agent and referer
-        const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
-        const referer = referers[Math.floor(Math.random() * referers.length)];
-        
         // Record a campaign click
         await storage.recordCampaignClick(
           parseInt(campaignId),
-          url.id,
-          `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-          userAgent,
-          referer
+          url.id
         );
         
         records.push({
           timestamp,
-          urlId: url.id,
-          userAgent,
-          referer
+          urlId: url.id
         });
       }
       
