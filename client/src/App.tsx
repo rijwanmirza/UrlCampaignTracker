@@ -19,12 +19,6 @@ import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-// Analytics pages
-import AnalyticsPage from "@/pages/analytics";
-import CampaignAnalyticsPage from "@/pages/campaign-analytics";
-import UrlAnalyticsPage from "@/pages/url-analytics";
-import CampaignSelectorPage from "@/pages/campaign-selector";
-import UrlSelectorPage from "@/pages/url-selector";
 
 // TEMPORARY DEVELOPMENT MODE FLAG
 const BYPASS_LOGIN = true; // Completely bypass login and protected routes
@@ -90,21 +84,6 @@ function Router() {
           <Route path="/original-url-records">
             <OriginalUrlRecordsPage />
           </Route>
-          <Route path="/analytics">
-            <AnalyticsPage />
-          </Route>
-          <Route path="/analytics/campaigns">
-            <CampaignSelectorPage />
-          </Route>
-          <Route path="/analytics/urls">
-            <UrlSelectorPage />
-          </Route>
-          <Route path="/analytics/campaign/:campaignId">
-            <CampaignAnalyticsPage />
-          </Route>
-          <Route path="/analytics/url/:urlId">
-            <UrlAnalyticsPage />
-          </Route>
           <Route>
             <NotFound />
           </Route>
@@ -155,21 +134,6 @@ function Router() {
           </Route>
           <Route path="/original-url-records">
             <OriginalUrlRecordsPage />
-          </Route>
-          <Route path="/analytics">
-            <AnalyticsPage />
-          </Route>
-          <Route path="/analytics/campaigns">
-            <CampaignSelectorPage />
-          </Route>
-          <Route path="/analytics/urls">
-            <UrlSelectorPage />
-          </Route>
-          <Route path="/analytics/campaign/:campaignId">
-            <CampaignAnalyticsPage />
-          </Route>
-          <Route path="/analytics/url/:urlId">
-            <UrlAnalyticsPage />
           </Route>
           <Route>
             <NotFound />
