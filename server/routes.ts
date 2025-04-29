@@ -1429,28 +1429,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count for URL tracking (used for click limits)
       await storage.incrementUrlClicks(urlId);
 
-      // Record campaign click analytics data that will persist even if URL is deleted
-      // This makes analytics completely independent from URLs
+      // Record campaign click data that will persist even if URL is deleted
+      // This makes click tracking completely independent from URLs
       try {
-        // Get request details
-        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || null;
-        const userAgent = req.headers['user-agent'] || null;
-        const referer = req.headers['referer'] || null;
-        
         // Asynchronously record permanent campaign click without blocking the redirect
-        // Using the new storage method that ensures analytics data persists
+        // Using the storage method that ensures click data persists
         storage.recordCampaignClick(
           campaignId, 
-          urlId,
-          ipAddress,
-          userAgent,
-          referer
+          urlId
         ).catch(err => {
-          console.error("Error recording campaign click analytics:", err);
+          console.error("Error recording campaign click:", err);
         });
       } catch (analyticsError) {
-        // Log but don't block the redirect if analytics recording fails
-        console.error("Failed to record campaign click analytics:", analyticsError);
+        // Log but don't block the redirect if click recording fails
+        console.error("Failed to record campaign click:", analyticsError);
       }
 
       // ULTRA-OPTIMIZED REDIRECT HANDLERS - For maximum throughput (millions of redirects per second)
@@ -1553,17 +1545,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count for URL tracking (used for click limits)
       await storage.incrementUrlClicks(urlId);
       
-      // Record campaign click analytics data that will persist even if URL is deleted
-      // This makes analytics completely independent from URLs for the bridge page as well
+      // Record campaign click data that will persist even if URL is deleted
+      // This makes click tracking completely independent from URLs
       try {
         // Asynchronously record permanent campaign click without blocking the redirect
-        // Using the new storage method that ensures analytics data persists
+        // Using the storage method that ensures click data persists
         storage.recordCampaignClick(campaignId, urlId).catch(err => {
-          console.error("Error recording campaign click analytics for bridge page:", err);
+          console.error("Error recording campaign click for bridge page:", err);
         });
       } catch (analyticsError) {
-        // Log but don't block the redirect if analytics recording fails
-        console.error("Failed to record campaign click analytics for bridge page:", analyticsError);
+        // Log but don't block the redirect if click recording fails
+        console.error("Failed to record campaign click for bridge page:", analyticsError);
       }
 
       // ULTRA-FAST SECOND STAGE: Hyper-optimized for instant browser parsing and execution
