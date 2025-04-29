@@ -213,8 +213,8 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
         ) as status
       FROM campaigns c
       LEFT JOIN ${clickAnalytics} ON ${clickAnalytics.campaignId} = c.id
-        AND ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
-        AND ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+        AND ${clickAnalytics.clickTime} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
+        AND ${clickAnalytics.clickTime} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       WHERE c.id = ${campaignId}
       GROUP BY c.id, c.name, c.created_at, c.updated_at
     `);
@@ -235,13 +235,13 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
     // Get clicks by date
     const clicksByDateQuery = await db.execute(sql`
       SELECT 
-        DATE_TRUNC('day', ${clickAnalytics.timestamp}) as click_date,
+        DATE_TRUNC('day', ${clickAnalytics.clickTime}) as click_date,
         COUNT(*) as click_count
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.campaignId} = ${campaignId} AND
-        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
-        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
+        ${clickAnalytics.clickTime} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.clickTime} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY click_date
       ORDER BY click_date
     `);
