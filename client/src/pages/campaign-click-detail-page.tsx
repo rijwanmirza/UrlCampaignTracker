@@ -191,6 +191,7 @@ export default function CampaignClickDetailPage() {
                   <SelectValue placeholder="Filter by Period" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="total">All Time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="yesterday">Yesterday</SelectItem>
                   <SelectItem value="last_7_days">Last 7 Days</SelectItem>
