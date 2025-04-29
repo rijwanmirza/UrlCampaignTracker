@@ -2597,15 +2597,18 @@ export class DatabaseStorage implements IStorage {
     // Then, record it in the database for API access
     const clickTime = new Date();
     
-    // Insert into URL click records using raw SQL since schema doesn't match table
-    const result = await db.execute(
-      `INSERT INTO url_click_records (url_id, click_time) VALUES ($1, $2) RETURNING *`,
+    // Insert into URL click records with only the essential data (no tracking info)
+    const result = await pool.query(
+      `INSERT INTO url_click_records (url_id, click_time) 
+       VALUES ($1, $2) 
+       RETURNING id, url_id as "urlId", click_time as "timestamp", created_at as "createdAt"`,
       [urlId, clickTime]
     );
     
     console.log(`📊 Recorded URL click for URL ID ${urlId}`);
     
-    return result[0];
+    // Return a properly formatted record
+    return result.rows[0];
   }
   
   /**
@@ -2619,42 +2622,56 @@ export class DatabaseStorage implements IStorage {
   ): Promise<{ records: UrlClickRecord[], total: number }> {
     try {
       const offset = (page - 1) * limit;
-      let query = db.select().from(urlClickRecords);
-      let countQuery = db.select({ count: sql`COUNT(*)` }).from(urlClickRecords);
+      
+      // Use raw SQL queries since the schema and database columns don't match
+      let whereClause = '';
+      const queryParams: any[] = [];
+      let paramIndex = 1;
       
       // Add URL filter if provided
       if (urlId) {
-        query = query.where(eq(urlClickRecords.urlId, urlId));
-        countQuery = countQuery.where(eq(urlClickRecords.urlId, urlId));
+        whereClause = 'WHERE url_id = $1';
+        queryParams.push(urlId);
+        paramIndex++;
       }
       
       // Add date range filter if provided
       if (filter) {
         const { startDate, endDate } = this.getDateRangeForFilter(filter);
         
-        // Use SQL directly since the schema and database columns don't match
-        query = query.where(
-          and(
-            sql`click_time >= ${startDate}`,
-            sql`click_time <= ${endDate}`
-          )
-        );
+        if (whereClause === '') {
+          whereClause = `WHERE click_time >= $${paramIndex} AND click_time <= $${paramIndex + 1}`;
+        } else {
+          whereClause += ` AND click_time >= $${paramIndex} AND click_time <= $${paramIndex + 1}`;
+        }
         
-        countQuery = countQuery.where(
-          and(
-            sql`click_time >= ${startDate}`,
-            sql`click_time <= ${endDate}`
-          )
-        );
+        queryParams.push(startDate, endDate);
+        paramIndex += 2;
       }
       
-      // Add pagination
-      query = query.limit(limit).offset(offset);
+      // Execute count query first
+      const countQuery = `SELECT COUNT(*) FROM url_click_records ${whereClause}`;
+      const countResult = await pool.query(countQuery, queryParams);
+      const total = parseInt(countResult.rows[0].count);
       
-      // Execute queries
-      const records = await query;
-      const [totalResult] = await countQuery;
-      const total = Number(totalResult?.count || 0);
+      // Then fetch the records with pagination
+      const recordsQuery = `
+        SELECT id, url_id as "urlId", click_time as "timestamp", created_at as "createdAt"
+        FROM url_click_records
+        ${whereClause}
+        ORDER BY click_time DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      
+      const recordsResult = await pool.query(recordsQuery, queryParams);
+      
+      // Map results to the expected record format
+      const records = recordsResult.rows.map(row => ({
+        id: row.id,
+        urlId: row.url_id,
+        timestamp: row.timestamp,
+        createdAt: row.createdAt
+      }));
       
       return { records, total };
     } catch (error) {
