@@ -42,6 +42,7 @@ import { db } from "./db";
 import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
+import { redirectLogsManager } from "./redirect-logs-manager";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now

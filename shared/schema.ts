@@ -281,6 +281,27 @@ export const insertCampaignClickRecordSchema = createInsertSchema(campaignClickR
 export type CampaignClickRecord = typeof campaignClickRecords.$inferSelect;
 export type InsertCampaignClickRecord = z.infer<typeof insertCampaignClickRecordSchema>;
 
+// Campaign Redirect Logs Schema - For detailed tracking of each redirect with timestamps
+export const campaignRedirectLogs = pgTable("campaign_redirect_logs", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  urlId: integer("url_id"), // Optional, for direct campaign redirects
+  redirectTime: timestamp("redirect_time").defaultNow().notNull(),
+  indianTime: text("indian_time").notNull(), // Format: "YYYY-MM-DD HH:MM:SS"
+  dateKey: text("date_key").notNull(), // Format: "YYYY-MM-DD" for faster filtering
+  hourKey: integer("hour_key").notNull(), // 0-23 for hour-based filtering
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCampaignRedirectLogSchema = createInsertSchema(campaignRedirectLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for Campaign Redirect Logs
+export type CampaignRedirectLog = typeof campaignRedirectLogs.$inferSelect;
+export type InsertCampaignRedirectLog = z.infer<typeof insertCampaignRedirectLogSchema>;
+
 // Analytics filter schemas
 export const timeRangeFilterSchema = z.object({
   filterType: z.enum([

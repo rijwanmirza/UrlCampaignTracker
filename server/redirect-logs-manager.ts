@@ -1,0 +1,318 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { format, getHours } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
+import { db } from './db';
+import { campaignRedirectLogs, campaigns, urls } from '../shared/schema';
+import { timeRangeFilterSchema } from '../shared/schema';
+import { eq, and, between, sql, desc, gte, lte } from 'drizzle-orm';
+
+// Indian timezone
+const INDIAN_TIMEZONE = 'Asia/Kolkata';
+
+// Base directory for all redirect logs
+const LOGS_BASE_DIR = path.join(process.cwd(), 'redirect_logs');
+
+/**
+ * Redirect Logs Manager Class
+ * Manages campaign redirect logs both in the database and as log files
+ */
+export class RedirectLogsManager {
+  private initialized = false;
+  
+  constructor() {
+    this.initialize();
+  }
+  
+  /**
+   * Initialize the logs directory
+   */
+  public initialize() {
+    if (this.initialized) return;
+    
+    try {
+      // Create base logs directory if it doesn't exist
+      if (!fs.existsSync(LOGS_BASE_DIR)) {
+        fs.mkdirSync(LOGS_BASE_DIR, { recursive: true });
+        console.log(`Created redirect logs directory: ${LOGS_BASE_DIR}`);
+      }
+      
+      this.initialized = true;
+    } catch (error) {
+      console.error('Error initializing redirect logs directory:', error);
+    }
+  }
+  
+  /**
+   * Get the path to a campaign's log file
+   */
+  private getCampaignLogFilePath(campaignId: number): string {
+    return path.join(LOGS_BASE_DIR, `campaign_${campaignId}_redirects.log`);
+  }
+  
+  /**
+   * Format a date in Indian timezone
+   */
+  private formatIndianTime(date: Date): { formatted: string, dateKey: string, hourKey: number } {
+    const indianTime = utcToZonedTime(date, INDIAN_TIMEZONE);
+    return {
+      formatted: format(indianTime, 'yyyy-MM-dd HH:mm:ss'),
+      dateKey: format(indianTime, 'yyyy-MM-dd'),
+      hourKey: getHours(indianTime)
+    };
+  }
+  
+  /**
+   * Log a redirect for a campaign
+   */
+  public async logRedirect(campaignId: number, urlId?: number): Promise<void> {
+    try {
+      const now = new Date();
+      const { formatted, dateKey, hourKey } = this.formatIndianTime(now);
+      
+      // Create log entry in database
+      await db.insert(campaignRedirectLogs).values({
+        campaignId,
+        urlId: urlId || null,
+        redirectTime: now,
+        indianTime: formatted,
+        dateKey,
+        hourKey
+      });
+      
+      // Format log line for file
+      let logLine = '';
+      if (urlId) {
+        const url = await db.select().from(urls).where(eq(urls.id, urlId)).limit(1);
+        logLine = `Redirect happened: ${formatted} | Campaign ID: ${campaignId} | URL ID: ${urlId} | URL Name: ${url[0]?.name || 'Unknown'}`;
+      } else {
+        logLine = `Redirect happened: ${formatted} | Campaign ID: ${campaignId} | Direct campaign redirect`;
+      }
+      
+      // Append to log file
+      const logFilePath = this.getCampaignLogFilePath(campaignId);
+      fs.appendFileSync(logFilePath, logLine + '\\n');
+      
+      // Return success
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error logging redirect:', error);
+      return Promise.reject(error);
+    }
+  }
+  
+  /**
+   * Get campaign summary data from redirect logs for a specific time range
+   */
+  public async getCampaignSummary(campaignId: number, filter: z.infer<typeof timeRangeFilterSchema>) {
+    // Check if campaign exists
+    const campaignCheck = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
+    if (campaignCheck.length === 0) {
+      throw new Error(`Campaign with ID ${campaignId} not found`);
+    }
+    
+    // Set up time range filter conditions
+    const { startDate, endDate } = this.getDateRangeForFilter(filter);
+    
+    // Get total clicks for the campaign in the specified time range
+    const totalClicksQuery = await db.select({
+      count: sql<number>`count(*)`.as('count')
+    }).from(campaignRedirectLogs)
+      .where(
+        and(
+          eq(campaignRedirectLogs.campaignId, campaignId),
+          gte(campaignRedirectLogs.redirectTime, startDate),
+          lte(campaignRedirectLogs.redirectTime, endDate)
+        )
+      );
+    
+    const totalClicks = totalClicksQuery[0]?.count || 0;
+    
+    // Get daily breakdown if needed
+    let dailyBreakdown = {};
+    let hourlyBreakdown = [];
+    
+    // Get daily breakdown
+    const dailyBreakdownQuery = await db
+      .select({
+        dateKey: campaignRedirectLogs.dateKey,
+        count: sql<number>`count(*)`.as('count')
+      })
+      .from(campaignRedirectLogs)
+      .where(
+        and(
+          eq(campaignRedirectLogs.campaignId, campaignId),
+          gte(campaignRedirectLogs.redirectTime, startDate),
+          lte(campaignRedirectLogs.redirectTime, endDate)
+        )
+      )
+      .groupBy(campaignRedirectLogs.dateKey)
+      .orderBy(campaignRedirectLogs.dateKey);
+    
+    // Format daily breakdown as an object for easy access
+    dailyBreakdown = dailyBreakdownQuery.reduce((acc, { dateKey, count }) => {
+      acc[dateKey] = count;
+      return acc;
+    }, {});
+    
+    // Get hourly breakdown if requested
+    if (filter.showHourly) {
+      const hourlyBreakdownQuery = await db
+        .select({
+          hour: campaignRedirectLogs.hourKey,
+          count: sql<number>`count(*)`.as('count')
+        })
+        .from(campaignRedirectLogs)
+        .where(
+          and(
+            eq(campaignRedirectLogs.campaignId, campaignId),
+            gte(campaignRedirectLogs.redirectTime, startDate),
+            lte(campaignRedirectLogs.redirectTime, endDate)
+          )
+        )
+        .groupBy(campaignRedirectLogs.hourKey)
+        .orderBy(campaignRedirectLogs.hourKey);
+      
+      // Format hourly breakdown as an array of {hour, clicks} objects
+      hourlyBreakdown = hourlyBreakdownQuery.map(({ hour, count }) => ({
+        hour,
+        clicks: count
+      }));
+    }
+    
+    return {
+      totalClicks,
+      dailyBreakdown,
+      hourlyBreakdown: filter.showHourly ? hourlyBreakdown : []
+    };
+  }
+  
+  /**
+   * Calculate date range based on filter type
+   */
+  private getDateRangeForFilter(filter: z.infer<typeof timeRangeFilterSchema>): { startDate: Date, endDate: Date } {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = new Date(now);
+    
+    // Set the end of day for the end date (23:59:59.999)
+    endDate.setHours(23, 59, 59, 999);
+    
+    switch (filter.filterType) {
+      case 'today':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'yesterday':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(now);
+        endDate.setDate(endDate.getDate() - 1);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+        
+      case 'last_7_days':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'last_30_days':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+        
+      case 'this_year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+        
+      case 'last_year':
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+        
+      case 'custom_range':
+        if (!filter.startDate || !filter.endDate) {
+          throw new Error('Start date and end date are required for custom range filter');
+        }
+        startDate = new Date(filter.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(filter.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+        
+      case 'total':
+      default:
+        // For total, get all time data
+        startDate = new Date(0); // beginning of time
+        break;
+    }
+    
+    return { startDate, endDate };
+  }
+  
+  /**
+   * Get raw redirect logs for a campaign from file
+   */
+  public async getRawRedirectLogs(campaignId: number): Promise<string[]> {
+    const logFilePath = this.getCampaignLogFilePath(campaignId);
+    
+    try {
+      if (!fs.existsSync(logFilePath)) {
+        return [];
+      }
+      
+      const logContent = fs.readFileSync(logFilePath, 'utf8');
+      return logContent.split('\\n').filter(line => line.trim() !== '');
+    } catch (error) {
+      console.error(`Error reading redirect logs for campaign ${campaignId}:`, error);
+      return [];
+    }
+  }
+  
+  /**
+   * Delete redirect logs for a campaign
+   * Called when a campaign is deleted
+   */
+  public async deleteCampaignLogs(campaignId: number): Promise<void> {
+    try {
+      const logFilePath = this.getCampaignLogFilePath(campaignId);
+      
+      // Delete file if exists
+      if (fs.existsSync(logFilePath)) {
+        fs.unlinkSync(logFilePath);
+        console.log(`Deleted redirect logs file for campaign ${campaignId}`);
+      }
+      
+      // Delete database entries
+      await db.delete(campaignRedirectLogs)
+        .where(eq(campaignRedirectLogs.campaignId, campaignId));
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error(`Error deleting redirect logs for campaign ${campaignId}:`, error);
+      return Promise.reject(error);
+    }
+  }
+}
+
+// Create and export a singleton instance
+export const redirectLogsManager = new RedirectLogsManager();
