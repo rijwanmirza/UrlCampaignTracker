@@ -280,18 +280,20 @@ analyticsRouter.get("/campaign/:id", async (req: Request, res: Response) => {
       clicks: parseInt(row.clicks) || 0
     }));
     
-    // Get clicks by URL for this campaign
+    // Get clicks by URL for this campaign 
+    // Use analytics data as the source of truth, not URLs table
+    // This ensures we can see analytics for deleted URLs too
     const urlClicksResult = await db.execute(sql`
       SELECT 
-        u.id,
-        u.name,
+        ca."urlId" as id,
+        COALESCE(u.name, 'Deleted URL ' || ca."urlId") as name,
         COUNT(ca.id) as clicks
-      FROM urls u
-      LEFT JOIN ${clickAnalytics} ca ON ca."urlId" = u.id
+      FROM ${clickAnalytics} ca
+      LEFT JOIN urls u ON ca."urlId" = u.id
+      WHERE ca."campaignId" = ${campaignId}
         AND ca."timestamp" >= ${sql.raw(`'${start.toISOString()}'::timestamp`)}
         AND ca."timestamp" <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
-      WHERE u."campaignId" = ${campaignId}
-      GROUP BY u.id, u.name
+      GROUP BY ca."urlId", u.name
       ORDER BY clicks DESC
     `);
     
