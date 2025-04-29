@@ -1436,6 +1436,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment click count for URL tracking (used for click limits)
       await storage.incrementUrlClicks(urlId);
+      
+      // Also log the click to the URL click logs system for time-based filtering
+      try {
+        // Log to URL click logs (with Indian timezone)
+        urlClickLogsManager.logClick(urlId).catch(err => {
+          console.error("Error logging URL click:", err);
+        });
+      } catch (urlLogError) {
+        console.error("Error logging URL click:", urlLogError);
+      }
 
       // Record campaign click data that will persist even if URL is deleted
       // This makes click tracking completely independent from URLs
@@ -1558,6 +1568,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count for URL tracking (used for click limits)
       await storage.incrementUrlClicks(urlId);
       
+      // Also log the click to the URL click logs system for time-based filtering
+      try {
+        // Log to URL click logs (with Indian timezone)
+        urlClickLogsManager.logClick(urlId).catch(err => {
+          console.error("Error logging URL click for bridge page:", err);
+        });
+      } catch (urlLogError) {
+        console.error("Error logging URL click for bridge page:", urlLogError);
+      }
+      
       // Record campaign click data that will persist even if URL is deleted
       // This makes click tracking completely independent from URLs
       try {
@@ -1633,6 +1653,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);
+      
+      // Also log the click to the URL click logs system for time-based filtering
+      try {
+        // Log to URL click logs (with Indian timezone)
+        urlClickLogsManager.logClick(selectedUrl.id).catch(err => {
+          console.error("Error logging URL click for custom path:", err);
+        });
+      } catch (urlLogError) {
+        console.error("Error logging URL click for custom path:", urlLogError);
+      }
       
       // Record campaign click data that will persist even if URL is deleted
       // This makes click tracking completely independent from URLs
@@ -1819,6 +1849,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
+      
+      // Also log the click to the URL click logs system for time-based filtering
+      try {
+        // Log to URL click logs (with Indian timezone)
+        urlClickLogsManager.logClick(selectedUrl.id).catch(err => {
+          console.error("Error logging URL click for /c endpoint:", err);
+        });
+      } catch (urlLogError) {
+        console.error("Error logging URL click for /c endpoint:", urlLogError);
+      }
       
       // Record campaign click data that will persist even if URL is deleted
       // This makes click tracking completely independent from URLs
