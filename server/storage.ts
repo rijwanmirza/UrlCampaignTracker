@@ -21,6 +21,7 @@ import {
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
+import { redirectLogsManager } from "./redirect-logs-manager";
 
 export interface IStorage {
   // Campaign operations
@@ -88,7 +89,19 @@ export interface IStorage {
     filter: TimeRangeFilter
   ): Promise<{
     totalClicks: number,
-    hourlyBreakdown?: { hour: number, clicks: number }[]
+    hourlyBreakdown?: { hour: number, clicks: number }[],
+    dailyBreakdown?: Record<string, number>
+  }>;
+  
+  // Redirect logs summary (more accurate click tracking)
+  getRedirectLogsSummary(
+    campaignId: number,
+    filter: TimeRangeFilter
+  ): Promise<{
+    totalClicks: number | string,
+    hourlyBreakdown?: { hour: number, clicks: number | string }[],
+    dailyBreakdown?: Record<string, number | string>,
+    filterInfo?: { type: string, dateRange: string }
   }>;
   
   // System operations
@@ -2242,12 +2255,103 @@ export class DatabaseStorage implements IStorage {
     filterInfo?: { type: string, dateRange: string }
   }> {
     try {
-      const { redirectLogsManager } = require('./redirect-logs-manager');
+      // We now have redirectLogsManager imported at the top of the file
+      
+      // Check for new campaigns that won't have history
+      const campaign = await this.getCampaign(campaignId);
+      if (!campaign) {
+        throw new Error(`Campaign with ID ${campaignId} not found`);
+      }
+      
+      // Use the campaign creation date to check if logs exist
+      const createdAt = campaign.createdAt || new Date();
+      const now = new Date();
+      
+      // For date ranges that can't have data (future or before campaign created)
+      if (filter.filterType === 'yesterday' || 
+          filter.filterType === 'last_month' || 
+          filter.filterType === 'last_year') {
+        const { startDate, endDate } = this.getDateRangeForFilter(filter);
+        if (endDate < createdAt) {
+          // Return zero data if the campaign didn't exist in this time period
+          return {
+            totalClicks: 0,
+            dailyBreakdown: {},
+            filterInfo: {
+              type: filter.filterType,
+              dateRange: `No data available before campaign creation (${createdAt.toLocaleDateString()})`
+            }
+          };
+        }
+      }
+      
+      // Get actual summary data from redirect logs
       return await redirectLogsManager.getCampaignSummary(campaignId, filter);
     } catch (error) {
       console.error('Error getting redirect logs summary:', error);
-      return null;
+      // Return a proper zero-data response rather than null
+      return {
+        totalClicks: 0,
+        dailyBreakdown: {},
+        filterInfo: {
+          type: filter.filterType,
+          dateRange: "No data available for this time period"
+        }
+      };
     }
+  }
+  
+  // Helper function to get date range based on filter type
+  private getDateRangeForFilter(filter: TimeRangeFilter): { startDate: Date, endDate: Date } {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = now;
+    
+    const { filterType } = filter;
+    
+    switch (filterType) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'yesterday':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+        break;
+      case 'last_7_days':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+        break;
+      case 'last_30_days':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+        break;
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        break;
+      case 'this_year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      case 'last_year':
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+        break;
+      case 'custom_range':
+        if (!filter.startDate || !filter.endDate) {
+          throw new Error("Start date and end date are required for custom range filter");
+        }
+        startDate = new Date(filter.startDate);
+        endDate = new Date(filter.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'total':
+      default:
+        startDate = new Date(0); // Jan 1, 1970
+        break;
+    }
+    
+    return { startDate, endDate };
   }
   
   async getCampaignClickSummary(
