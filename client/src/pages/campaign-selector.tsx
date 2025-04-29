@@ -10,7 +10,7 @@ export default function CampaignSelectorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Fetch all campaigns
-  const { data: campaigns, isLoading, error } = useQuery({
+  const { data: campaignsResponse, isLoading, error } = useQuery({
     queryKey: ['/api/campaigns'],
     queryFn: async () => {
       const response = await fetch('/api/campaigns');
@@ -21,9 +21,12 @@ export default function CampaignSelectorPage() {
     },
   });
   
+  // Ensure campaigns is always an array
+  const campaigns = Array.isArray(campaignsResponse) ? campaignsResponse : [];
+  
   // Filter campaigns based on search term
-  const filteredCampaigns = campaigns?.filter((campaign) => 
-    campaign.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCampaigns = campaigns.filter((campaign) => 
+    (campaign.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

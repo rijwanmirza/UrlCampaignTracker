@@ -10,7 +10,7 @@ export default function UrlSelectorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Fetch all URLs
-  const { data: urls, isLoading, error } = useQuery({
+  const { data: urlsResponse, isLoading, error } = useQuery({
     queryKey: ['/api/urls'],
     queryFn: async () => {
       const response = await fetch('/api/urls');
@@ -21,10 +21,13 @@ export default function UrlSelectorPage() {
     },
   });
   
+  // Ensure urls is always an array
+  const urls = Array.isArray(urlsResponse) ? urlsResponse : [];
+  
   // Filter URLs based on search term
-  const filteredUrls = urls?.filter((url) => 
-    url.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    url.targetUrl?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUrls = urls.filter((url) => 
+    (url.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (url.targetUrl || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
