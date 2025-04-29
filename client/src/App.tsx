@@ -86,6 +86,12 @@ function Router() {
           <Route path="/original-url-records">
             <OriginalUrlRecordsPage />
           </Route>
+          <Route path="/campaign-click-records">
+            <CampaignClickRecordsPage />
+          </Route>
+          <Route path="/campaign-click-detail/:id">
+            <CampaignClickDetailPage />
+          </Route>
           <Route>
             <NotFound />
           </Route>
@@ -136,6 +142,12 @@ function Router() {
           </Route>
           <Route path="/original-url-records">
             <OriginalUrlRecordsPage />
+          </Route>
+          <Route path="/campaign-click-records">
+            <CampaignClickRecordsPage />
+          </Route>
+          <Route path="/campaign-click-detail/:id">
+            <CampaignClickDetailPage />
           </Route>
           <Route>
             <NotFound />
