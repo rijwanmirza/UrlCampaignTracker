@@ -4158,10 +4158,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  /**
+   * Automatically verify and fix any discrepancies in click limits
+   * Ensures that required click values (click_limit) are always correctly 
+   * calculated based on the campaign multiplier and original click limit
+   */
+  async function verifyAndFixClickMultipliers(): Promise<{
+    fixed: number; 
+    affectedCampaigns: Array<{id: number; name: string; count: number}>;
+    message: string;
+  }> {
+    try {
+      console.log(`🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values`);
+      
+      // First, get a count of mismatched URLs where the required click value is wrong
+      const mismatchCountResult = await db.execute<{count: number}>(sql`
+        SELECT COUNT(*) as count
+        FROM urls u
+        JOIN campaigns c ON u.campaign_id = c.id
+        WHERE ROUND(u.original_click_limit * c.multiplier) != u.click_limit
+      `);
+      
+      const mismatchCount = mismatchCountResult.rows?.[0]?.count || 0;
+      console.log(`🔍 Found ${mismatchCount} URLs with mismatched click values (incorrect multiplication)`);
+      
+      if (mismatchCount === 0) {
+        console.log(`✅ No mismatches found - all click values are correctly calculated`);
+        return {
+          fixed: 0,
+          affectedCampaigns: [],
+          message: "No mismatches found, all click limits are correct"
+        };
+      }
+      
+      // Get a list of affected campaigns to log for transparency
+      const affectedCampaignsResult = await db.execute<{id: number, name: string, count: number}>(sql`
+        SELECT c.id, c.name, COUNT(*) as count
+        FROM urls u
+        JOIN campaigns c ON u.campaign_id = c.id
+        WHERE ROUND(u.original_click_limit * c.multiplier) != u.click_limit
+        GROUP BY c.id, c.name
+      `);
+      
+      const affectedCampaigns = affectedCampaignsResult.rows || [];
+      
+      console.log(`⚠️ Found mismatches in ${affectedCampaigns.length} campaigns:`);
+      affectedCampaigns.forEach(campaign => {
+        console.log(`   - Campaign #${campaign.id} (${campaign.name}): ${campaign.count} URLs with incorrect multipliers`);
+      });
+      
+      // Disable triggers first
+      await db.execute(sql`ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger`);
+      await db.execute(sql`ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger`);
+      
+      // Fix the mismatches by updating the click_limit to the correct calculated value
+      const updateResult = await db.execute(sql`
+        UPDATE urls u
+        SET 
+          click_limit = ROUND(u.original_click_limit * c.multiplier),
+          updated_at = NOW()
+        FROM campaigns c
+        WHERE u.campaign_id = c.id
+        AND ROUND(u.original_click_limit * c.multiplier) != u.click_limit
+      `);
+      
+      // Re-enable triggers
+      await db.execute(sql`ALTER TABLE urls ENABLE TRIGGER protect_original_click_values_trigger`);
+      await db.execute(sql`ALTER TABLE urls ENABLE TRIGGER prevent_auto_click_update_trigger`);
+      
+      const fixedCount = updateResult.rowCount || 0;
+      console.log(`✅ Fixed ${fixedCount} URL click values with incorrect multipliers`);
+      
+      // Invalidate all affected campaign caches
+      const affectedCampaignIds = (affectedCampaignsResult.rows || []).map(c => c.id);
+      console.log(`🧹 Invalidating caches for ${affectedCampaignIds.length} affected campaigns`);
+      
+      for (const campaignId of affectedCampaignIds) {
+        if (campaignId) {
+          storage.invalidateCampaignCache(campaignId);
+          await storage.getCampaign(campaignId, true);
+          await storage.getUrls(campaignId, true);
+        }
+      }
+      
+      return {
+        fixed: fixedCount,
+        affectedCampaigns: affectedCampaigns,
+        message: `Fixed ${fixedCount} URL click values with incorrect multipliers`
+      };
+    } catch (error) {
+      console.error("Error in verifyAndFixClickMultipliers:", error);
+      throw error;
+    }
+  }
+  
+  // Add a periodic check for incorrect multiplier values (runs every 5 minutes)
+  setInterval(async () => {
+    try {
+      console.log("🔄 Running scheduled multiplier verification check...");
+      const result = await verifyAndFixClickMultipliers();
+      if (result.fixed > 0) {
+        console.log(`✅ Automatic multiplier check fixed ${result.fixed} URL click limits`);
+      } else {
+        console.log("✅ Automatic multiplier check: No issues found");
+      }
+    } catch (error) {
+      console.error("Error in automatic multiplier verification:", error);
+    }
+  }, 5 * 60 * 1000); // Run every 5 minutes
+  
+  // Route to manually fix only multiplier issues without touching original click values
+  app.post("/api/system/fix-click-multipliers", async (_req: Request, res: Response) => {
+    try {
+      console.log(`🔄 Running verification and fix for click multipliers`);
+      
+      const result = await verifyAndFixClickMultipliers();
+      
+      return res.json({
+        success: true,
+        message: `Click multiplier verification complete: ${result.fixed} URLs updated`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error fixing click multipliers:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fix click multipliers",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // New route to FORCE UPDATE all original URL records to campaigns immediately
   app.post("/api/system/force-update-all-clicks", async (_req: Request, res: Response) => {
     try {
       console.log('🚨 EMERGENCY FORCE UPDATE - Updating ALL URL click values...');
+      
+      // Before the full update, fix any multiplier inconsistencies
+      const multiplierFixResult = await verifyAndFixClickMultipliers();
       
       // Step 1: Set click protection bypass
       await db.execute(sql`
