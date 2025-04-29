@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -261,3 +261,46 @@ export type TrafficstarCampaignEndTime = z.infer<typeof trafficstarCampaignEndTi
 export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
 export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
 export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;
+
+// Click Analytics Schema
+export const clickAnalytics = pgTable("click_analytics", {
+  id: serial("id").primaryKey(),
+  urlId: integer("url_id").notNull(), // Reference to URL
+  campaignId: integer("campaign_id"), // Reference to Campaign (if available)
+  clickTime: timestamp("click_time").defaultNow().notNull(), // When the click happened
+  clickHour: integer("click_hour").notNull(), // Hour of the day (0-23)
+  clickDate: timestamp("click_date", { mode: 'date' }).defaultNow().notNull(), // Date of the click (date only)
+  timezone: text("timezone").default("UTC").notNull(), // Timezone the click was recorded in
+  userAgent: text("user_agent"), // User agent of the clicker
+  ipAddress: text("ip_address"), // IP address (can be hashed for privacy)
+  referrer: text("referrer"), // Referrer URL if available
+  country: text("country"), // Country based on IP
+  city: text("city"), // City based on IP
+  metadata: jsonb("metadata"), // Additional metadata as JSON
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertClickAnalyticsSchema = createInsertSchema(clickAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ClickAnalytics = typeof clickAnalytics.$inferSelect;
+export type InsertClickAnalytics = z.infer<typeof insertClickAnalyticsSchema>;
+
+// Analytics filter schemas
+export const timeRangeFilterSchema = z.object({
+  filterType: z.enum([
+    'total', 'today', 'yesterday', 
+    'last_2_days', 'last_3_days', 'last_4_days', 
+    'last_5_days', 'last_6_days', 'last_7_days',
+    'this_month', 'last_month', 'last_6_months',
+    'this_year', 'last_year', 'custom_range'
+  ]),
+  startDate: z.string().optional(), // Required for custom range
+  endDate: z.string().optional(),   // Required for custom range
+  timezone: z.string().default("UTC"),
+  showHourly: z.boolean().default(false),
+});
+
+export type TimeRangeFilter = z.infer<typeof timeRangeFilterSchema>;
