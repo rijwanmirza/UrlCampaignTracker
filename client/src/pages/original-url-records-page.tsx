@@ -66,7 +66,9 @@ import {
   AlertTriangle,
   Filter,
   ChevronDown,
-  ArrowDownUp
+  ArrowDownUp,
+  Search,
+  X
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -427,7 +429,7 @@ export default function OriginalUrlRecordsPage() {
   const handleSelectAllRecords = (checked: boolean) => {
     setSelectAll(checked);
     if (checked && recordsData?.records) {
-      setSelectedRecords(recordsData.records.map(record => record.id));
+      setSelectedRecords(recordsData.records.map((record: any) => record.id));
     } else {
       setSelectedRecords([]);
     }
@@ -782,6 +784,13 @@ export default function OriginalUrlRecordsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox 
+                          checked={selectAll}
+                          onCheckedChange={handleSelectAllRecords}
+                          aria-label="Select all records"
+                        />
+                      </TableHead>
                       <TableHead className="w-[50px]">ID</TableHead>
                       <TableHead className="w-[200px]">Name</TableHead>
                       <TableHead className="w-[250px]">Target URL</TableHead>
@@ -794,6 +803,13 @@ export default function OriginalUrlRecordsPage() {
                   <TableBody>
                     {recordsData?.records?.map((record: any) => (
                       <TableRow key={record.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedRecords.includes(record.id)}
+                            onCheckedChange={(checked) => handleSelectRecord(record.id, !!checked)}
+                            aria-label={`Select record ${record.id}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{record.id}</TableCell>
                         <TableCell>{record.name || 'Unnamed'}</TableCell>
                         <TableCell className="truncate max-w-xs">
