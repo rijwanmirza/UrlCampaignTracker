@@ -1990,10 +1990,22 @@ class TrafficStarService {
   
   async scheduleAutoManagement(): Promise<void> {
     try {
-      // Run initial auto-management
+      // Run initial auto-management and spent value updates
       await this.autoManageCampaigns();
+      await this.updateAllCampaignsSpentValues(); // Initial update for all campaigns
       
-      // Schedule spent value check to run every 2 minutes
+      // Schedule spent value update for ALL campaigns to run every 2 minutes
+      // This ensures all campaign data is up-to-date with current UTC date spent values
+      setInterval(async () => {
+        try {
+          console.log('Running scheduled spent value update for ALL TrafficStar campaigns');
+          await this.updateAllCampaignsSpentValues();
+        } catch (error) {
+          console.error('Error in scheduled spent value update:', error);
+        }
+      }, 2 * 60 * 1000); // Every 2 minutes
+      
+      // Schedule spent value check for auto-managed campaigns (for pause if over threshold)
       setInterval(async () => {
         try {
           console.log('Running scheduled spent value check for TrafficStar campaigns');
@@ -2001,7 +2013,7 @@ class TrafficStarService {
         } catch (error) {
           console.error('Error in scheduled spent value check:', error);
         }
-      }, 2 * 60 * 1000); // Every 2 minutes
+      }, 3 * 60 * 1000); // Every 3 minutes (staggered to avoid overlap)
       
       // Schedule to run regular auto-management every minute for immediate effect
       setInterval(async () => {
@@ -2026,6 +2038,61 @@ class TrafficStarService {
       console.log('TrafficStar auto-management scheduler initialized');
     } catch (error) {
       console.error('Error scheduling auto-management:', error);
+    }
+  }
+  
+  /**
+   * Update all TrafficStar campaigns with their latest spent values
+   * This function fetches and updates all campaigns with trafficstarCampaignId,
+   * not just those with auto-management enabled
+   */
+  public async updateAllCampaignsSpentValues(): Promise<void> {
+    try {
+      // Get all campaigns with trafficstarCampaignId
+      const allCampaigns = await db
+        .select()
+        .from(campaigns)
+        .where(isNotNull(campaigns.trafficstarCampaignId));
+      
+      // Get current date in UTC
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
+      console.log(`Updating spent values for all ${allCampaigns.length} campaigns with TrafficStar IDs for ${currentUtcDate}`);
+      
+      // Process each campaign
+      for (const campaign of allCampaigns) {
+        if (!campaign.trafficstarCampaignId) continue;
+        
+        // Get TrafficStar campaign ID
+        const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
+          parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
+          Number(campaign.trafficstarCampaignId);
+        
+        // Get current spent value for today only
+        console.log(`Fetching spent value for campaign ${trafficstarId} on ${currentUtcDate}`);
+        try {
+          const spentValue = await this.getCampaignSpentValue(trafficstarId, currentUtcDate, currentUtcDate);
+          
+          // Update the campaign with the latest spent value
+          const spentAmount = spentValue ? spentValue.totalSpent : 0;
+          const formattedSpentAmount = spentAmount.toFixed(4);
+          
+          await db.update(campaigns)
+            .set({ 
+              dailySpent: formattedSpentAmount,
+              dailySpentDate: new Date(currentUtcDate), // Convert the YYYY-MM-DD string to a Date object
+              lastSpentCheck: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+          
+          console.log(`Updated campaign ${campaign.id} with latest spent value: $${formattedSpentAmount} for date ${currentUtcDate}`);
+        } catch (error) {
+          console.error(`Error updating spent value for campaign ${trafficstarId}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating all campaigns spent values:', error);
     }
   }
   
@@ -2108,7 +2175,7 @@ class TrafficStarService {
             await db.update(campaigns)
               .set({ 
                 dailySpent: formattedSpentAmount,
-                dailySpentDate: currentUtcDate,
+                dailySpentDate: currentUtcDate, // Text field in schema for YYYY-MM-DD date
                 lastSpentCheck: new Date(),
                 updatedAt: new Date()
               })

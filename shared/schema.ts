@@ -37,7 +37,7 @@ export const campaigns = pgTable("campaigns", {
   lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
   // TrafficStar spent tracking fields
   dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent value from TrafficStar
-  dailySpentDate: timestamp("daily_spent_date").defaultNow(), // Date of the daily spent value
+  dailySpentDate: timestamp("daily_spent_date").defaultNow(), // Date of the daily spent value 
   lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time spent was checked
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
