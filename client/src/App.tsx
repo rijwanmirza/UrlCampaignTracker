@@ -93,10 +93,16 @@ function Router() {
           <Route path="/analytics">
             <AnalyticsPage />
           </Route>
-          <Route path="/analytics/campaign/:id">
+          <Route path="/analytics/campaigns">
+            <CampaignSelectorPage />
+          </Route>
+          <Route path="/analytics/urls">
+            <UrlSelectorPage />
+          </Route>
+          <Route path="/analytics/campaign/:campaignId">
             <CampaignAnalyticsPage />
           </Route>
-          <Route path="/analytics/url/:id">
+          <Route path="/analytics/url/:urlId">
             <UrlAnalyticsPage />
           </Route>
           <Route>
@@ -153,10 +159,16 @@ function Router() {
           <Route path="/analytics">
             <AnalyticsPage />
           </Route>
-          <Route path="/analytics/campaign/:id">
+          <Route path="/analytics/campaigns">
+            <CampaignSelectorPage />
+          </Route>
+          <Route path="/analytics/urls">
+            <UrlSelectorPage />
+          </Route>
+          <Route path="/analytics/campaign/:campaignId">
             <CampaignAnalyticsPage />
           </Route>
-          <Route path="/analytics/url/:id">
+          <Route path="/analytics/url/:urlId">
             <UrlAnalyticsPage />
           </Route>
           <Route>
