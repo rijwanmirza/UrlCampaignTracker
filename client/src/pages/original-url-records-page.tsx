@@ -38,7 +38,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  Pause,
+  Play,
+  AlertTriangle
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertOriginalUrlRecordSchema, updateOriginalUrlRecordSchema } from "@shared/schema";
@@ -256,6 +265,66 @@ export default function OriginalUrlRecordsPage() {
       });
     }
   });
+  
+  // Mutation for pausing an original URL record
+  const pauseMutation = useMutation({
+    mutationFn: async (id: number) => {
+      try {
+        const res = await apiRequest("POST", `/api/original-url-records/${id}/pause`);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error in pause mutation:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Original URL record paused. ${data.updatedUrlCount} URLs paused.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to pause record",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Mutation for resuming an original URL record
+  const resumeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      try {
+        const res = await apiRequest("POST", `/api/original-url-records/${id}/resume`);
+        const jsonData = await res.json();
+        return jsonData;
+      } catch (error) {
+        console.error("Error in resume mutation:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Original URL record resumed. ${data.updatedUrlCount} URLs resumed.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to resume record",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Form for creating a new record
   const form = useForm<FormData>({
@@ -304,6 +373,14 @@ export default function OriginalUrlRecordsPage() {
 
   const handleSyncClick = (id: number) => {
     syncMutation.mutate(id);
+  };
+  
+  const handlePauseClick = (id: number) => {
+    pauseMutation.mutate(id);
+  };
+  
+  const handleResumeClick = (id: number) => {
+    resumeMutation.mutate(id);
   };
 
   const handlePageChange = (page: number) => {
@@ -516,8 +593,9 @@ export default function OriginalUrlRecordsPage() {
                       <TableHead className="w-[200px]">Name</TableHead>
                       <TableHead className="w-[250px]">Target URL</TableHead>
                       <TableHead className="text-center">Click Limit</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
                       <TableHead className="w-[150px]">Last Updated</TableHead>
-                      <TableHead className="text-right w-[180px]">Actions</TableHead>
+                      <TableHead className="text-right w-[220px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

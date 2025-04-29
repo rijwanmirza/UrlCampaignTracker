@@ -3738,6 +3738,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to sync original URL record" });
     }
   });
+      
+  // Pause original URL record
+  app.post("/api/original-url-records/:id/pause", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      // Check if record exists
+      const record = await storage.getOriginalUrlRecord(id);
+      if (!record) {
+        return res.status(404).json({ message: "Original URL record not found" });
+      }
+      
+      // Update the status to paused
+      await db.update(originalUrlRecords)
+        .set({ status: 'paused', updatedAt: new Date() })
+        .where(eq(originalUrlRecords.id, id));
+      
+      // Update all URLs that link to this original record to be paused
+      const result = await db.execute(`
+        UPDATE urls 
+        SET status = 'paused', updated_at = NOW()
+        FROM original_url_records
+        WHERE urls.name = original_url_records.name
+        AND original_url_records.id = $1
+      `, [id]);
+      
+      console.log(`✅ Paused original URL record #${id} (${record.name}) and all connected URLs`);
+      
+      res.json({
+        record: { ...record, status: 'paused' },
+        updatedUrlCount: result.rowCount,
+        message: `Original URL record and ${result.rowCount} related URLs paused successfully`
+      });
+    } catch (error) {
+      console.error('Error pausing original URL record:', error);
+      res.status(500).json({ 
+        message: "Failed to pause original URL record", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Resume original URL record
+  app.post("/api/original-url-records/:id/resume", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      // Check if record exists
+      const record = await storage.getOriginalUrlRecord(id);
+      if (!record) {
+        return res.status(404).json({ message: "Original URL record not found" });
+      }
+      
+      // Update the status to active
+      await db.update(originalUrlRecords)
+        .set({ status: 'active', updatedAt: new Date() })
+        .where(eq(originalUrlRecords.id, id));
+      
+      // Update all URLs that link to this original record to be active
+      const result = await db.execute(`
+        UPDATE urls 
+        SET status = 'active', updated_at = NOW()
+        FROM original_url_records
+        WHERE urls.name = original_url_records.name
+        AND original_url_records.id = $1
+      `, [id]);
+      
+      console.log(`✅ Resumed original URL record #${id} (${record.name}) and all connected URLs`);
+      
+      res.json({
+        record: { ...record, status: 'active' },
+        updatedUrlCount: result.rowCount,
+        message: `Original URL record and ${result.rowCount} related URLs resumed successfully`
+      });
+    } catch (error) {
+      console.error('Error resuming original URL record:', error);
+      res.status(500).json({ 
+        message: "Failed to resume original URL record", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
   
   // API route to fix data inconsistency between original URL records and URLs
   app.post("/api/system/fix-click-limits", async (_req: Request, res: Response) => {
