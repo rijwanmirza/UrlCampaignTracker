@@ -4772,12 +4772,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const referrer = referrers[Math.floor(Math.random() * referrers.length)];
     
     return {
-      urlId: url.id,
-      campaignId: campaign.id,
+      url_id: url.id,
+      campaign_id: campaign.id,
       timestamp: timestamp,
-      userAgent: userAgent,
-      referrer: referrer,
-      ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+      user_agent: userAgent,
+      referer: referrer, // Note the field name 'referer' with one 'r'
+      ip_address: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
     };
   }
   
