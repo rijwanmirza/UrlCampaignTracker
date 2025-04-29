@@ -116,22 +116,55 @@ export default function CampaignClickDetailPage() {
   
   // Format daily chart data
   const formatDailyChartData = () => {
-    if (!summaryData || !summaryData.dailyBreakdown) return [];
+    if (!summaryData || !summaryData.dailyBreakdown) {
+      console.log("No daily breakdown data available");
+      return [];
+    }
     
-    return Object.entries(summaryData.dailyBreakdown).map(([date, count]) => ({
+    console.log("Raw daily breakdown data:", summaryData.dailyBreakdown);
+    
+    // If we have data, format it for the chart
+    const formattedData = Object.entries(summaryData.dailyBreakdown).map(([date, count]) => ({
       date,
       clicks: count,
     }));
+    
+    // If there's no data for the selected time period, create a single entry with 0 clicks
+    if (formattedData.length === 0) {
+      const today = new Date();
+      formattedData.push({
+        date: today.toISOString().split('T')[0],
+        clicks: 0
+      });
+    }
+    
+    console.log("Formatted daily data:", formattedData);
+    return formattedData;
   };
   
   // Format hourly chart data
   const formatHourlyChartData = () => {
-    if (!summaryData || !summaryData.hourlyBreakdown) return [];
+    if (!summaryData || !summaryData.hourlyBreakdown) {
+      console.log("No hourly breakdown data available");
+      
+      // Create a default hourly chart with 0 clicks for each hour
+      const defaultData = Array.from({ length: 24 }, (_, i) => ({
+        hour: `${i}:00`,
+        clicks: 0
+      }));
+      
+      return defaultData;
+    }
     
-    return summaryData.hourlyBreakdown.map(item => ({
+    console.log("Raw hourly breakdown data:", summaryData.hourlyBreakdown);
+    
+    const formattedData = summaryData.hourlyBreakdown.map(item => ({
       hour: `${item.hour}:00`,
       clicks: item.clicks,
     }));
+    
+    console.log("Formatted hourly data:", formattedData);
+    return formattedData;
   };
   
   const isLoading = isLoadingCampaign || isLoadingSummary;
