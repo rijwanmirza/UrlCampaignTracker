@@ -910,6 +910,16 @@ export class DatabaseStorage implements IStorage {
     const [url] = await db.select().from(urls).where(eq(urls.id, id));
     if (!url) return false;
     
+    console.log(`🗑️ Soft deleting URL ID #${id} "${url.name}"`);
+    
+    // CRITICAL FIX: When deleting a URL, sync status with Original URL Record
+    if (url.name) {
+      // Start bidirectional sync process in the background
+      this.syncStatusFromUrlToOriginalRecord(url.name, 'deleted').catch(err => {
+        console.error(`❌ Error syncing deleted status to original record for "${url.name}":`, err);
+      });
+    }
+    
     // Soft delete - just update status to 'deleted'
     await db
       .update(urls)
@@ -923,6 +933,8 @@ export class DatabaseStorage implements IStorage {
     if (url.campaignId) {
       this.invalidateCampaignCache(url.campaignId);
     }
+    
+    console.log(`✅ URL ID #${id} "${url.name}" successfully soft-deleted (status=deleted)`);
     
     return true;
   }
@@ -972,6 +984,33 @@ export class DatabaseStorage implements IStorage {
       case 'permanent_delete':
         shouldDelete = true;
         break;
+    }
+    
+    // CRITICAL FIX: Sync status changes with original URL records
+    // Collect the URL names to use for syncing with original records
+    const urlNames = urlsToUpdate.map(url => url.name);
+    console.log(`🔄 Bulk updating ${urlsToUpdate.length} URLs with action: ${action}`);
+    
+    // For each URL name, find and update the corresponding original URL record
+    if (newStatus && urlNames.length > 0) {
+      console.log(`🔄 Starting bidirectional sync for ${urlNames.length} original URL records with status: ${newStatus}`);
+      
+      // Find all original URL records matching the URL names
+      const originalRecords = await db.select().from(originalUrlRecords).where(inArray(originalUrlRecords.name, urlNames));
+      console.log(`✅ Found ${originalRecords.length} matching original URL records to update`);
+      
+      // Update all matching original URL records with the new status
+      if (originalRecords.length > 0) {
+        await db
+          .update(originalUrlRecords)
+          .set({ 
+            status: newStatus,
+            updatedAt: new Date() 
+          })
+          .where(inArray(originalUrlRecords.name, urlNames));
+        
+        console.log(`✅ Successfully synced ${originalRecords.length} original URL records with status: ${newStatus}`);
+      }
     }
     
     if (shouldDelete) {
@@ -1375,12 +1414,61 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Helper to update URL status (used for async marking URLs as completed)
+  /**
+   * Syncs status from a URL to its original URL record
+   * This function ensures bidirectional status synchronization
+   * @param urlName The name of the URL to sync from
+   * @param status The status to apply to the original URL record
+   */
+  private async syncStatusFromUrlToOriginalRecord(urlName: string, status: string): Promise<void> {
+    try {
+      console.log(`🔄 Bidirectional sync: Updating Original URL Record for "${urlName}" with status "${status}"`);
+      
+      // Find the original URL record with the matching name
+      const [originalRecord] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.name, urlName));
+      
+      if (!originalRecord) {
+        console.log(`⚠️ Could not find Original URL Record for "${urlName}" - skipping status sync`);
+        return;
+      }
+      
+      console.log(`✅ Found Original URL Record #${originalRecord.id} for "${urlName}", current status: "${originalRecord.status}"`);
+      
+      // Update the original URL record with the new status
+      await db
+        .update(originalUrlRecords)
+        .set({
+          status,
+          updatedAt: new Date()
+        })
+        .where(eq(originalUrlRecords.id, originalRecord.id));
+      
+      console.log(`✅ Successfully updated Original URL Record #${originalRecord.id} status to "${status}"`);
+    } catch (error) {
+      console.error(`❌ Error syncing status from URL "${urlName}" to Original URL Record:`, error);
+    }
+  }
+  
   async updateUrlStatus(id: number, status: string): Promise<void> {
+    // First, get the URL to find its campaign ID and name
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    if (!url) {
+      console.log(`⚠️ URL with ID ${id} not found, cannot update status`);
+      return;
+    }
+    
+    console.log(`🔄 Updating URL #${id} "${url.name}" status to "${status}"`);
+    
+    // CRITICAL FIX: When a URL status is changed, sync it with the Original URL Record
+    if (url.name) {
+      // Start the bidirectional sync process in the background
+      this.syncStatusFromUrlToOriginalRecord(url.name, status).catch(err => {
+        console.error(`❌ Error in bidirectional sync:`, err);
+      });
+    }
+    
     // When a URL is completed, we need to remove it from the campaign
     if (status === 'completed') {
-      // First, get the URL to find its campaign ID
-      const [url] = await db.select().from(urls).where(eq(urls.id, id));
-      
       if (url?.campaignId) {
         // Store the campaign ID before removing it
         const campaignId = url.campaignId;
@@ -1420,7 +1508,6 @@ export class DatabaseStorage implements IStorage {
         .where(eq(urls.id, id));
         
       // Get the URL to find its campaign ID
-      const [url] = await db.select().from(urls).where(eq(urls.id, id));
       if (url?.campaignId) {
         this.invalidateCampaignCache(url.campaignId);
       }
