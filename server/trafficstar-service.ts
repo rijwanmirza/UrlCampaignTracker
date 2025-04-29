@@ -2031,6 +2031,7 @@ class TrafficStarService {
   
   /**
    * Check all campaigns for their spent value and pause if over threshold
+   * Also updates the campaign with the spent value for display in the UI
    */
   public async checkCampaignsSpentValue(): Promise<void> {
     try {
@@ -2047,6 +2048,9 @@ class TrafficStarService {
       
       console.log(`Found ${campaignsToCheck.length} campaigns with auto-management enabled for spent value check`);
       
+      // Get current date in UTC
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      
       // Check each campaign
       for (const campaign of campaignsToCheck) {
         if (!campaign.trafficstarCampaignId) continue;
@@ -2056,9 +2060,6 @@ class TrafficStarService {
           parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
           Number(campaign.trafficstarCampaignId);
           
-        // Get current date in UTC
-        const currentUtcDate = new Date().toISOString().split('T')[0];
-        
         // Skip if campaign should remain paused due to spent value
         if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
           continue;
@@ -2093,10 +2094,30 @@ class TrafficStarService {
           continue;
         }
         
-        // Get current spent value for today only
+        // Get current spent value for today only - filter for the current UTC date
         console.log(`Checking spent value for campaign ${trafficstarId} on ${currentUtcDate}`);
         try {
           const spentValue = await this.getCampaignSpentValue(trafficstarId, currentUtcDate, currentUtcDate);
+          
+          // ALWAYS UPDATE THE CAMPAIGN RECORD WITH THE LATEST SPENT VALUE
+          // This ensures the UI always shows the most up-to-date information
+          try {
+            const spentAmount = spentValue ? spentValue.totalSpent : 0;
+            const formattedSpentAmount = spentAmount.toFixed(4);
+            
+            await db.update(campaigns)
+              .set({ 
+                dailySpent: formattedSpentAmount,
+                dailySpentDate: currentUtcDate,
+                lastSpentCheck: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaign.id));
+            
+            console.log(`Updated campaign ${campaign.id} with latest spent value: $${formattedSpentAmount} for date ${currentUtcDate}`);
+          } catch (updateError) {
+            console.error(`Error updating spent values for campaign ${campaign.id}:`, updateError);
+          }
           
           // Check if spent value exceeds $10
           if (spentValue && spentValue.totalSpent > 10) {
