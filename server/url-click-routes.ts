@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { storage } from "./storage";
 import { TimeRangeFilter, urlClickLogs } from "@shared/schema";
-import { format } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { urlClickLogsManager } from "./url-click-logs-manager";
@@ -163,6 +163,218 @@ export function registerUrlClickRoutes(app: any) {
       });
     } catch (error) {
       console.error("Error fetching URL click summary:", error);
+      res.status(500).json({
+        message: "Failed to fetch URL click summary",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Get summary stats for all URLs with filtering (for the dashboard)
+  app.get("/api/url-click-records/summary", async (req: Request, res: Response) => {
+    try {
+      // Build filter from query parameters - be very specific about filterType
+      const filterType = (req.query.filterType as string) || 'today';
+      const showHourly = req.query.showHourly === 'true';
+      const search = req.query.search as string || undefined;
+      
+      // Create a properly typed filter object - ensure we create a new object and don't use references
+      const filter: TimeRangeFilter = {
+        filterType: filterType as any, // Explicitly set the filterType from request
+        timezone: (req.query.timezone as string) || "Asia/Kolkata", // Default to Indian timezone
+        showHourly
+      };
+      
+      // Add date range for custom filters
+      if (filterType === 'custom_range') {
+        if (req.query.startDate && req.query.endDate) {
+          filter.startDate = req.query.startDate as string;
+          filter.endDate = req.query.endDate as string;
+        } else {
+          return res.status(400).json({ 
+            message: "startDate and endDate are required for custom_range filter type"
+          });
+        }
+      }
+      
+      // Get all URLs first (we'll filter them by search term)
+      const urlsData = await storage.getAllUrls();
+      
+      // Filter URLs by search term if provided
+      const filteredUrls = search 
+        ? urlsData.filter((url: any) => 
+            url.id.toString().includes(search) ||
+            url.name.toLowerCase().includes(search.toLowerCase()) ||
+            url.targetUrl.toLowerCase().includes(search.toLowerCase())
+          )
+        : urlsData;
+      
+      // Get click summaries for all URLs in this period
+      const urlBreakdown = [];
+      let totalClicks = 0;
+      const dailyBreakdown: Record<string, number> = {};
+      
+      for (const url of filteredUrls) {
+        try {
+          // Get click summary for this URL in the filtered time period
+          const urlSummary = await urlClickLogsManager.getUrlClickSummary(url.id, filter);
+          
+          // Add to URL breakdown
+          urlBreakdown.push({
+            urlId: url.id,
+            name: url.name,
+            clicks: urlSummary.totalClicks
+          });
+          
+          // Add to total clicks
+          totalClicks += urlSummary.totalClicks;
+          
+          // Merge with daily breakdown
+          Object.entries(urlSummary.dailyBreakdown).forEach(([date, clicks]) => {
+            if (dailyBreakdown[date]) {
+              dailyBreakdown[date] += clicks as number;
+            } else {
+              dailyBreakdown[date] = clicks as number;
+            }
+          });
+        } catch (error) {
+          console.error(`Error getting URL ${url.id} click summary:`, error);
+        }
+      }
+      
+      // Calculate date range for the response
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = new Date(now);
+      
+      // Calculate dates for different filter types (similar to getDateRangeForFilter in urlClickLogsManager)
+      switch (filter.filterType) {
+        case 'today':
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'yesterday':
+          startDate = new Date(now);
+          startDate.setDate(startDate.getDate() - 1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(startDate);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case 'last_2_days':
+          startDate = subDays(now, 1);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'last_3_days':
+          startDate = subDays(now, 2);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'last_4_days':
+          startDate = subDays(now, 3);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'last_5_days':
+          startDate = subDays(now, 4);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'last_6_days':
+          startDate = subDays(now, 5);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'last_7_days':
+          startDate = subDays(now, 6);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'this_month':
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+        case 'last_month':
+          const lastMonth = subMonths(now, 1);
+          startDate = startOfMonth(lastMonth);
+          endDate = endOfMonth(lastMonth);
+          break;
+        case 'all_time':
+        case 'all':
+          startDate = new Date(0); // January 1, 1970
+          break;
+        case 'custom_range':
+          if (filter.startDate && filter.endDate) {
+            startDate = new Date(filter.startDate);
+            startDate.setHours(0, 0, 0, 0);
+            
+            endDate = new Date(filter.endDate);
+            endDate.setHours(23, 59, 59, 999);
+          } else {
+            // Default to last 7 days if no dates provided
+            startDate = subDays(now, 6);
+            startDate.setHours(0, 0, 0, 0);
+          }
+          break;
+        default:
+          // Default to today
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
+      }
+      
+      // Format date range for the response
+      const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
+      let dateRangeText;
+      
+      switch (filter.filterType) {
+        case 'today':
+          dateRangeText = `Today (${formatDate(startDate)})`;
+          break;
+        case 'yesterday':
+          dateRangeText = `Yesterday (${formatDate(startDate)})`;
+          break;
+        case 'last_2_days':
+          dateRangeText = `Last 2 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+          break;
+        case 'last_3_days':
+          dateRangeText = `Last 3 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+          break;
+        case 'last_4_days':
+          dateRangeText = `Last 4 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+          break;
+        case 'last_5_days':
+          dateRangeText = `Last 5 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+          break;
+        case 'last_6_days':
+          dateRangeText = `Last 6 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+          break;
+        case 'last_7_days':
+          dateRangeText = `Last 7 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
+          break;
+        case 'this_month':
+          dateRangeText = `This month (${format(startDate, 'MMMM yyyy')})`;
+          break;
+        case 'last_month':
+          dateRangeText = `Last month (${format(startDate, 'MMMM yyyy')})`;
+          break;
+        case 'all_time':
+        case 'all':
+          dateRangeText = 'All time';
+          break;
+        case 'custom_range':
+          dateRangeText = `${formatDate(startDate)} to ${formatDate(endDate)}`;
+          break;
+        default:
+          dateRangeText = 'Custom period';
+      }
+      
+      // Response with combined data
+      res.json({
+        totalClicks,
+        dailyBreakdown,
+        urlBreakdown,
+        filterInfo: {
+          type: filterType,
+          dateRange: dateRangeText
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error fetching URL click summary for all URLs:", error);
       res.status(500).json({
         message: "Failed to fetch URL click summary",
         error: error instanceof Error ? error.message : String(error)

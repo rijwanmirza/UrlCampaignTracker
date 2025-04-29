@@ -1,67 +1,65 @@
-import fs from "fs";
-import path from "path";
-import { format, formatISO, parseISO, subDays, subMonths, startOfMonth, endOfMonth, subYears, startOfYear, endOfYear } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
-import { db } from "./db";
-import { urlClickLogs, insertUrlClickLogSchema, TimeRangeFilter } from "@shared/schema";
-import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
-import { timeRangeFilterSchema } from "@shared/schema";
-import { z } from "zod";
+import fs from 'fs';
+import path from 'path';
+import { format, subDays, startOfMonth, endOfMonth, subMonths, addHours, addMinutes } from 'date-fns';
+import { z } from 'zod';
+import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { db } from './db';
+import { urlClickLogs, timeRangeFilterSchema } from '@shared/schema';
 
 /**
- * URL Clicks Logs Manager Class
+ * URL Click Logs Manager Class
  * Manages URL click logs both in the database and as log files
+ * Uses Indian timezone (UTC+5:30) for all timestamps
  */
 export class UrlClickLogsManager {
   private initialized = false;
-  private logDir: string;
-
+  private logsDirectory: string;
+  
   constructor() {
-    this.logDir = path.join(process.cwd(), "url_click_logs");
+    this.logsDirectory = path.join(process.cwd(), 'url_click_logs');
   }
-
+  
   /**
    * Initialize the logs directory
    */
   public initialize() {
     if (this.initialized) return;
     
-    try {
-      if (!fs.existsSync(this.logDir)) {
-        fs.mkdirSync(this.logDir, { recursive: true });
-      }
-      this.initialized = true;
-    } catch (error) {
-      console.error("Failed to initialize URL click logs directory:", error);
+    // Create logs directory if it doesn't exist
+    if (!fs.existsSync(this.logsDirectory)) {
+      fs.mkdirSync(this.logsDirectory, { recursive: true });
     }
+    
+    this.initialized = true;
   }
-
+  
   /**
    * Get the path to a URL's log file
    */
   private getUrlLogFilePath(urlId: number): string {
-    return path.join(this.logDir, `url_${urlId}_clicks.log`);
+    return path.join(this.logsDirectory, `url_${urlId}.log`);
   }
-
+  
   /**
    * Format a date in Indian timezone (UTC+5:30)
    */
   private formatIndianTime(date: Date): { formatted: string, dateKey: string, hourKey: number } {
-    const indianTimeZone = "Asia/Kolkata";
+    // Convert UTC to Indian timezone (UTC+5:30)
+    // Add 5 hours and 30 minutes to the UTC time
+    const indianTime = addMinutes(addHours(new Date(date), 5), 30);
     
-    // Format the date directly using formatInTimeZone
-    const formatted = formatInTimeZone(date, indianTimeZone, "yyyy-MM-dd HH:mm:ss");
-    const dateKey = formatInTimeZone(date, indianTimeZone, "yyyy-MM-dd");
+    // Format for display
+    const formatted = format(indianTime, 'yyyy-MM-dd HH:mm:ss');
     
-    // Get hour in Indian timezone
-    const timeWithOffset = new Date(date);
-    // Add 5 hours and 30 minutes for Indian timezone offset
-    timeWithOffset.setUTCHours(timeWithOffset.getUTCHours() + 5, timeWithOffset.getUTCMinutes() + 30);
-    const hourKey = timeWithOffset.getUTCHours();
+    // Format date key for database indexing (YYYY-MM-DD)
+    const dateKey = format(indianTime, 'yyyy-MM-dd');
+    
+    // Extract hour (0-23) for hourly analysis
+    const hourKey = parseInt(format(indianTime, 'H'));
     
     return { formatted, dateKey, hourKey };
   }
-
+  
   /**
    * Log a click for a URL
    */
@@ -69,40 +67,50 @@ export class UrlClickLogsManager {
     this.initialize();
     
     try {
-      const timestamp = new Date();
-      const { formatted: indianTime, dateKey, hourKey } = this.formatIndianTime(timestamp);
+      const now = new Date();
+      const { formatted: indianTime, dateKey, hourKey } = this.formatIndianTime(now);
       
-      // Write to log file
+      // Log to file with the format: "click generated, date{time}"
+      const logMessage = `click generated, ${indianTime}`;
       const logFile = this.getUrlLogFilePath(urlId);
-      fs.appendFileSync(logFile, `${formatISO(timestamp)} | ${indianTime}\n`);
       
-      // Add to database for analytics
+      fs.appendFileSync(logFile, logMessage + '\n');
+      
+      // Also log to database for analytics
       await db.insert(urlClickLogs).values({
         urlId,
-        clickTime: timestamp,
+        clickTime: now,
         indianTime,
         dateKey,
         hourKey
       });
+      
+      // Update the URL's click count in the database
+      await db.execute(sql`
+        UPDATE urls 
+        SET clicks = clicks + 1,
+            updated_at = NOW()
+        WHERE id = ${urlId}
+      `);
+      
     } catch (error) {
       console.error(`Error logging URL click for URL ${urlId}:`, error);
     }
   }
-
+  
   /**
-   * Get URL summary data from click logs for a specific time range
+   * Get click summary data for a URL for a specific time range
    */
-  public async getUrlClickSummary(urlId: number, filter: TimeRangeFilter) {
-    console.log(`📊 UrlClickLogsManager: Getting summary for URL ${urlId} with filter type: ${filter.filterType}`);
+  public async getUrlClickSummary(urlId: number, filter: z.infer<typeof timeRangeFilterSchema>) {
+    this.initialize();
     
     try {
+      // Calculate date range based on filter
       const { startDate, endDate } = this.getDateRangeForFilter(filter);
       
-      console.log(`📊 UrlClickLogsManager: Date range calculated for ${filter.filterType}: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-      
-      // Get total clicks within the date range
-      const totalClicksResult = await db
-        .select({ count: sql`COUNT(*)` })
+      // Query the database for filtered click logs
+      const clickLogs = await db
+        .select()
         .from(urlClickLogs)
         .where(
           and(
@@ -112,66 +120,39 @@ export class UrlClickLogsManager {
           )
         );
       
-      const totalClicks = totalClicksResult[0]?.count?.toString() || "0";
-      console.log(`📊 UrlClickLogsManager: Found ${totalClicks} clicks for date range`);
+      // Count total clicks in this period
+      const totalClicks = clickLogs.length;
       
-      // Get daily breakdown
-      const dailyBreakdownResult = await db
-        .select({
-          date: urlClickLogs.dateKey,
-          count: sql`COUNT(*)`
-        })
-        .from(urlClickLogs)
-        .where(
-          and(
-            eq(urlClickLogs.urlId, urlId),
-            gte(urlClickLogs.clickTime, startDate),
-            lte(urlClickLogs.clickTime, endDate)
-          )
-        )
-        .groupBy(urlClickLogs.dateKey)
-        .orderBy(urlClickLogs.dateKey);
-      
+      // Group by dateKey for daily breakdown
       const dailyBreakdown: Record<string, number> = {};
-      dailyBreakdownResult.forEach(row => {
-        dailyBreakdown[row.date] = Number(row.count);
-      });
       
-      // Get hourly breakdown if requested
-      let hourlyBreakdown: any[] = [];
-      if (filter.showHourly) {
-        const hourlyBreakdownResult = await db
-          .select({
-            hour: urlClickLogs.hourKey,
-            count: sql`COUNT(*)`
-          })
-          .from(urlClickLogs)
-          .where(
-            and(
-              eq(urlClickLogs.urlId, urlId),
-              gte(urlClickLogs.clickTime, startDate),
-              lte(urlClickLogs.clickTime, endDate)
-            )
-          )
-          .groupBy(urlClickLogs.hourKey)
-          .orderBy(urlClickLogs.hourKey);
+      // Group by hourKey for hourly breakdown
+      const hourlyBreakdown: { hour: number, clicks: number }[] = Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        clicks: 0
+      }));
+      
+      // Process the logs
+      clickLogs.forEach(log => {
+        // Update daily breakdown
+        if (dailyBreakdown[log.dateKey]) {
+          dailyBreakdown[log.dateKey]++;
+        } else {
+          dailyBreakdown[log.dateKey] = 1;
+        }
         
-        hourlyBreakdown = hourlyBreakdownResult.map(row => ({
-          hour: row.hour,
-          clicks: String(row.count)
-        }));
-      }
-      
-      // Create a friendly date range text for display
-      const dateRangeText = this.getDateRangeText(filter, startDate, endDate);
+        // Update hourly breakdown
+        hourlyBreakdown[log.hourKey].clicks++;
+      });
       
       return {
         totalClicks,
         dailyBreakdown,
         hourlyBreakdown,
+        urlBreakdown: [{ urlId, clicks: totalClicks }],
         filterInfo: {
           type: filter.filterType,
-          dateRange: dateRangeText
+          dateRange: this.getDateRangeText(filter, startDate, endDate)
         }
       };
     } catch (error) {
@@ -179,16 +160,17 @@ export class UrlClickLogsManager {
       throw error;
     }
   }
-
+  
   /**
    * Calculate date range based on filter type
    */
-  private getDateRangeForFilter(filter: TimeRangeFilter): { startDate: Date, endDate: Date } {
+  private getDateRangeForFilter(filter: z.infer<typeof timeRangeFilterSchema>): { startDate: Date, endDate: Date } {
     const now = new Date();
     
     let startDate: Date;
     let endDate: Date = new Date(now);
     
+    // For all filter types except custom range
     switch (filter.filterType) {
       case 'today':
         startDate = new Date(now);
@@ -235,59 +217,42 @@ export class UrlClickLogsManager {
         
       case 'this_month':
         startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
         break;
         
       case 'last_month':
-        startDate = startOfMonth(subMonths(now, 1));
-        endDate = endOfMonth(subMonths(now, 1));
+        const lastMonth = subMonths(now, 1);
+        startDate = startOfMonth(lastMonth);
+        endDate = endOfMonth(lastMonth);
         break;
         
-      case 'last_30_days':
-        startDate = subDays(now, 29);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-        
-      case 'last_6_months':
-        startDate = subMonths(now, 6);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-        
-      case 'this_year':
-        startDate = startOfYear(now);
-        break;
-        
-      case 'last_year':
-        startDate = startOfYear(subYears(now, 1));
-        endDate = endOfYear(subYears(now, 1));
+      case 'all':
+        startDate = new Date(0); // January 1, 1970
         break;
         
       case 'custom_range':
         if (filter.startDate && filter.endDate) {
-          startDate = parseISO(filter.startDate);
+          startDate = new Date(filter.startDate);
           startDate.setHours(0, 0, 0, 0);
-          endDate = parseISO(filter.endDate);
+          
+          endDate = new Date(filter.endDate);
           endDate.setHours(23, 59, 59, 999);
         } else {
-          throw new Error("Start date and end date are required for custom range filter");
+          // Default to last 7 days if no dates provided
+          startDate = subDays(now, 6);
+          startDate.setHours(0, 0, 0, 0);
         }
         break;
         
-      case 'total':
       default:
-        // A date far in the past (2020-01-01)
-        startDate = new Date(2020, 0, 1);
-        break;
-    }
-    
-    // Always set endDate to end of day
-    if (filter.filterType !== 'custom_range' && filter.filterType !== 'yesterday' && 
-        filter.filterType !== 'last_month' && filter.filterType !== 'last_year') {
-      endDate.setHours(23, 59, 59, 999);
+        // Default to today
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
     }
     
     return { startDate, endDate };
   }
-
+  
   /**
    * Get raw click logs for a URL from file
    */
@@ -307,7 +272,7 @@ export class UrlClickLogsManager {
       return [];
     }
   }
-
+  
   /**
    * Delete click logs for a URL (called when a URL is deleted)
    */
@@ -327,49 +292,43 @@ export class UrlClickLogsManager {
       console.error(`Error deleting URL click logs for URL ${urlId}:`, error);
     }
   }
-
+  
   /**
    * Get a formatted date range text based on the filter type
    */
-  private getDateRangeText(filter: TimeRangeFilter, startDate: Date, endDate: Date): string {
+  private getDateRangeText(filter: z.infer<typeof timeRangeFilterSchema>, startDate: Date, endDate: Date): string {
     const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
     
     switch (filter.filterType) {
       case 'today':
-        return 'Today';
+        return `Today (${formatDate(startDate)})`;
       case 'yesterday':
-        return 'Yesterday';
+        return `Yesterday (${formatDate(startDate)})`;
       case 'last_2_days':
-        return 'Last 2 days';
+        return `Last 2 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
       case 'last_3_days':
-        return 'Last 3 days';
+        return `Last 3 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
       case 'last_4_days':
-        return 'Last 4 days';
+        return `Last 4 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
       case 'last_5_days':
-        return 'Last 5 days';
+        return `Last 5 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
       case 'last_6_days':
-        return 'Last 6 days';
+        return `Last 6 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
       case 'last_7_days':
-        return 'Last 7 days';
-      case 'last_30_days':
-        return 'Last 30 days';
+        return `Last 7 days (${formatDate(startDate)} to ${formatDate(endDate)})`;
       case 'this_month':
         return `This month (${format(startDate, 'MMMM yyyy')})`;
       case 'last_month':
         return `Last month (${format(startDate, 'MMMM yyyy')})`;
-      case 'last_6_months':
-        return `Last 6 months (${formatDate(startDate)} to ${formatDate(endDate)})`;
-      case 'this_year':
-        return `This year (${format(startDate, 'yyyy')})`;
-      case 'last_year':
-        return `Last year (${format(startDate, 'yyyy')})`;
+      case 'all':
+        return 'All time';
       case 'custom_range':
         return `${formatDate(startDate)} to ${formatDate(endDate)}`;
-      case 'total':
       default:
-        return 'All time';
+        return 'Custom period';
     }
   }
 }
 
+// Create a singleton instance
 export const urlClickLogsManager = new UrlClickLogsManager();
