@@ -1,106 +1,174 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, ArrowLeft, BarChart3, Activity, Clock } from "lucide-react";
-import { Campaign, Url, ClickAnalytics } from "@shared/schema";
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Loader2, ArrowLeft, Clock, Activity, Users, Globe } from 'lucide-react';
+
+interface CampaignAnalytics {
+  campaign: {
+    id: number;
+    name: string;
+    totalClicks: number;
+    totalUrls: number;
+    createdAt: string;
+    status: string;
+  };
+  clicksByDate: Record<string, number>;
+  clicksByHour: Record<string, number>;
+  clicksByDevice: Record<string, number>;
+  clicksByBrowser: Record<string, number>;
+  clicksByCountry: Record<string, number>;
+  topUrls: {
+    id: number;
+    name: string;
+    clicks: number;
+    targetUrl: string;
+  }[];
+}
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
 
 export default function CampaignAnalyticsPage() {
-  // Get the campaign ID from the URL
-  const [, params] = useRoute<{ id: string }>("/analytics/campaign/:id");
-  const campaignId = params?.id ? parseInt(params.id, 10) : 0;
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [filterType, setFilterType] = useState<string>('total');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
-  const [timeFilter, setTimeFilter] = useState<string>("total");
-  const [timeZone, setTimeZone] = useState<string>("UTC");
-  const [activeTab, setActiveTab] = useState<string>("overview");
-  const [showHourly, setShowHourly] = useState<boolean>(false);
-
-  // Fetch campaign details
-  const {
-    data: campaign,
-    isLoading: campaignLoading,
-    error: campaignError,
-  } = useQuery<Campaign>({
-    queryKey: [`/api/campaigns/${campaignId}`],
-    enabled: !!campaignId,
+  // Analytics data query
+  const { data, isLoading, error, refetch } = useQuery<CampaignAnalytics>({
+    queryKey: [`/api/analytics/campaign/${id}`, filterType, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({ filterType });
+      
+      if (startDate && endDate && filterType === 'custom_range') {
+        params.append('startDate', startDate.toISOString().split('T')[0]);
+        params.append('endDate', endDate.toISOString().split('T')[0]);
+      }
+      
+      const response = await fetch(`/api/analytics/campaign/${id}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign analytics data');
+      }
+      return response.json();
+    },
   });
 
-  // Fetch URLs for this campaign
-  const {
-    data: campaignUrls,
-    isLoading: urlsLoading,
-    error: urlsError,
-  } = useQuery<Url[]>({
-    queryKey: [`/api/campaigns/${campaignId}/urls`],
-    enabled: !!campaignId,
-  });
+  // Transform data for charts
+  const dateChartData = data?.clicksByDate 
+    ? Object.entries(data.clicksByDate)
+      .map(([date, clicks]) => ({ 
+        date: formatDate(date), 
+        clicks 
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    : [];
 
-  // We'll fetch click analytics data once the backend API is implemented
-  const {
-    data: clickAnalytics,
-    isLoading: analyticsLoading,
-    error: analyticsError,
-  } = useQuery<ClickAnalytics[]>({
-    queryKey: [`/api/analytics/campaign/${campaignId}`, { timeFilter, timeZone, showHourly }],
-    enabled: false, // Disable for now until backend API is available
-  });
+  const hourlyChartData = data?.clicksByHour 
+    ? Object.entries(data.clicksByHour)
+      .map(([hour, clicks]) => ({ 
+        hour: `${hour}:00`, 
+        clicks 
+      }))
+      .sort((a, b) => parseInt(a.hour) - parseInt(b.hour))
+    : [];
 
-  const isLoading = campaignLoading || urlsLoading || analyticsLoading;
-  const hasError = campaignError || urlsError || analyticsError;
+  const deviceChartData = data?.clicksByDevice 
+    ? Object.entries(data.clicksByDevice)
+      .map(([device, clicks]) => ({ 
+        device: device || 'Unknown', 
+        clicks 
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+    : [];
 
-  const timeFilterOptions = [
-    { label: "All Time", value: "total" },
-    { label: "Today", value: "today" },
-    { label: "Yesterday", value: "yesterday" },
-    { label: "Last 7 Days", value: "last_7_days" },
-    { label: "This Month", value: "this_month" },
-    { label: "Last Month", value: "last_month" },
-    { label: "This Year", value: "this_year" },
-  ];
+  const browserChartData = data?.clicksByBrowser 
+    ? Object.entries(data.clicksByBrowser)
+      .map(([browser, clicks]) => ({ 
+        browser: browser || 'Unknown', 
+        clicks 
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+    : [];
 
-  const timezoneOptions = [
-    { label: "UTC", value: "UTC" },
-    { label: "US Eastern", value: "America/New_York" },
-    { label: "US Pacific", value: "America/Los_Angeles" },
-    { label: "London", value: "Europe/London" },
-    { label: "Paris", value: "Europe/Paris" },
-    { label: "Tokyo", value: "Asia/Tokyo" },
-  ];
+  const countryChartData = data?.clicksByCountry 
+    ? Object.entries(data.clicksByCountry)
+      .map(([country, clicks]) => ({ 
+        country: country || 'Unknown', 
+        clicks 
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+    : [];
 
-  // Calculate campaign stats
-  const totalClicks = campaignUrls?.reduce((sum, url) => sum + url.clicks, 0) || 0;
-  const totalUrls = campaignUrls?.length || 0;
-  const avgClicksPerUrl = totalUrls > 0 ? Math.round(totalClicks / totalUrls) : 0;
-  const activeUrls = campaignUrls?.filter(url => url.status === 'active').length || 0;
-  const pausedUrls = campaignUrls?.filter(url => url.status === 'paused').length || 0;
-  const completedUrls = campaignUrls?.filter(url => url.status === 'completed').length || 0;
+  // Handle filter change
+  const handleFilterChange = (value: string) => {
+    setFilterType(value);
+  };
+
+  // Apply custom date range filter
+  const applyCustomDateRange = () => {
+    if (startDate && endDate) {
+      if (endDate < startDate) {
+        toast({
+          title: 'Invalid Date Range',
+          description: 'End date must be after start date',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setFilterType('custom_range');
+      refetch();
+    } else {
+      toast({
+        title: 'Date Range Required',
+        description: 'Please select both start and end dates',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Reset custom date range
+  const resetDateRange = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setFilterType('total');
+    refetch();
+  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="container mx-auto py-6 flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (hasError || !campaign) {
+  if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <h1 className="text-2xl font-bold text-destructive">Error loading campaign data</h1>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Retry
-        </Button>
+      <div className="container mx-auto py-6">
+        <div className="bg-destructive/15 p-4 rounded-md mb-6">
+          <h2 className="text-xl font-bold text-destructive">Error Loading Campaign Analytics</h2>
+          <p className="text-muted-foreground">{error instanceof Error ? error.message : 'Failed to load campaign data'}</p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
         <Link href="/analytics">
-          <Button variant="link">
+          <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Analytics
           </Button>
         </Link>
@@ -109,299 +177,392 @@ export default function CampaignAnalyticsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Link href="/analytics">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold">Campaign Analytics: {campaign.name}</h1>
-      </div>
-      
-      <div className="flex flex-wrap gap-3 items-center justify-end">
-        <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Time period" />
-          </SelectTrigger>
-          <SelectContent>
-            {timeFilterOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={timeZone} onValueChange={setTimeZone}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Timezone" />
-          </SelectTrigger>
-          <SelectContent>
-            {timezoneOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <div className="flex items-center space-x-2">
-          <label className="text-sm">Show Hourly</label>
-          <input 
-            type="checkbox" 
-            checked={showHourly}
-            onChange={() => setShowHourly(!showHourly)}
-            className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded"
-          />
+    <div className="container mx-auto py-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Link href="/analytics">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold">{data.campaign.name}</h1>
+          </div>
+          <p className="text-muted-foreground">Campaign ID: {data.campaign.id}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            data.campaign.status === 'active' 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+          }`}>
+            {data.campaign.status.toUpperCase()}
+          </span>
+          <span className="text-muted-foreground text-sm">
+            Created {new Date(data.campaign.createdAt).toLocaleDateString()}
+          </span>
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Card className="w-full md:w-1/3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Clicks</CardTitle>
+            <CardTitle>Time Range</CardTitle>
+            <CardDescription>Select a predefined range or custom dates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-center">
-              <span className="text-3xl font-bold">{totalClicks}</span>
-              <BarChart3 className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total URLs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <span className="text-3xl font-bold">{totalUrls}</span>
-              <Activity className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Avg. Clicks per URL</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <span className="text-3xl font-bold">{avgClicksPerUrl}</span>
-              <Clock className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs for different views */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="urls">URLs</TabsTrigger>
-          <TabsTrigger value="time">Time Analysis</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Active URLs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{activeUrls}</div>
-                <div className="text-sm text-muted-foreground">
-                  {Math.round((activeUrls / totalUrls) * 100) || 0}% of total
-                </div>
-              </CardContent>
-            </Card>
+            <Select value={filterType} onValueChange={handleFilterChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="total">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="last_7_days">Last 7 Days</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="last_month">Last Month</SelectItem>
+                <SelectItem value="this_year">This Year</SelectItem>
+                <SelectItem value="custom_range">Custom Range</SelectItem>
+              </SelectContent>
+            </Select>
             
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Paused URLs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{pausedUrls}</div>
-                <div className="text-sm text-muted-foreground">
-                  {Math.round((pausedUrls / totalUrls) * 100) || 0}% of total
+            {filterType === 'custom_range' && (
+              <div className="mt-4 space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium">Start Date</label>
+                  <DatePicker 
+                    date={startDate} 
+                    setDate={setStartDate} 
+                    className="w-full"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Completed URLs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{completedUrls}</div>
-                <div className="text-sm text-muted-foreground">
-                  {Math.round((completedUrls / totalUrls) * 100) || 0}% of total
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium">End Date</label>
+                  <DatePicker 
+                    date={endDate} 
+                    setDate={setEndDate} 
+                    className="w-full"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
+                <div className="flex space-x-2">
+                  <Button onClick={applyCustomDateRange} className="flex-1">
+                    Apply
+                  </Button>
+                  <Button variant="outline" onClick={resetDateRange} className="flex-1">
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full md:w-2/3">
           <Card>
-            <CardHeader>
-              <CardTitle>Campaign Details</CardTitle>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Redirect Method</p>
-                  <p className="text-base">{campaign.redirectMethod}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Multiplier</p>
-                  <p className="text-base">{campaign.multiplier}x</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Price Per Thousand</p>
-                  <p className="text-base">${campaign.pricePerThousand}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Created At</p>
-                  <p className="text-base">
-                    {new Date(campaign.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                {campaign.trafficstarCampaignId && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">TrafficStar Campaign ID</p>
-                    <p className="text-base">{campaign.trafficstarCampaignId}</p>
-                  </div>
-                )}
-                {campaign.customPath && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Custom Path</p>
-                    <p className="text-base">{campaign.customPath}</p>
-                  </div>
-                )}
+              <div className="text-2xl font-bold">
+                {data.campaign.totalClicks.toLocaleString()}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="urls" className="space-y-6">
-          <div className="bg-card rounded-lg border shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs uppercase bg-muted">
-                  <tr>
-                    <th className="px-6 py-3">Name</th>
-                    <th className="px-6 py-3">Target URL</th>
-                    <th className="px-6 py-3">Clicks</th>
-                    <th className="px-6 py-3">Click Limit</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Completion %</th>
-                    <th className="px-6 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {campaignUrls?.map((url) => {
-                    const completionPercent = Math.round((url.clicks / url.clickLimit) * 100);
-                    let statusClass = "px-2 py-1 text-xs rounded ";
-                    
-                    switch(url.status) {
-                      case 'active':
-                        statusClass += "bg-green-100 text-green-800";
-                        break;
-                      case 'paused':
-                        statusClass += "bg-yellow-100 text-yellow-800";
-                        break;
-                      case 'completed':
-                        statusClass += "bg-blue-100 text-blue-800";
-                        break;
-                      case 'deleted':
-                        statusClass += "bg-red-100 text-red-800";
-                        break;
-                      default:
-                        statusClass += "bg-gray-100 text-gray-800";
-                    }
-                    
-                    return (
-                      <tr key={url.id} className="border-b hover:bg-muted/50">
-                        <td className="px-6 py-4 font-medium">{url.name}</td>
-                        <td className="px-6 py-4 truncate max-w-[200px]">
-                          <a 
-                            href={url.targetUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {url.targetUrl}
-                          </a>
-                        </td>
-                        <td className="px-6 py-4">{url.clicks}</td>
-                        <td className="px-6 py-4">{url.clickLimit}</td>
-                        <td className="px-6 py-4">
-                          <span className={statusClass}>
-                            {url.status.charAt(0).toUpperCase() + url.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className="bg-primary h-2.5 rounded-full" 
-                              style={{ width: `${Math.min(completionPercent, 100)}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs mt-1 inline-block">{completionPercent}%</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Link href={`/analytics/url/${url.id}`}>
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  
-                  {campaignUrls?.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-muted-foreground">
-                        No URLs found for this campaign
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="time" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Click Timeline</CardTitle>
-            </CardHeader>
-            <CardContent className="h-80 flex items-center justify-center">
-              {/* Timeline placeholder - we'll implement this when the backend is ready */}
-              <div className="text-center text-muted-foreground">
-                <p>Click timeline data will be available soon</p>
-                <p className="text-sm">The analytics tracking system is being implemented</p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                For all URLs in this campaign
+              </p>
             </CardContent>
           </Card>
           
-          {showHourly && (
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium">URLs</CardTitle>
+              <Globe className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data.campaign.totalUrls.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total active URLs
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium">Per URL</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data.campaign.totalUrls > 0 
+                  ? Math.round(data.campaign.totalClicks / data.campaign.totalUrls).toLocaleString() 
+                  : '0'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Average clicks per URL
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <Tabs defaultValue="clicks_by_date" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="clicks_by_date">Clicks by Date</TabsTrigger>
+          <TabsTrigger value="clicks_by_hour">Hourly Distribution</TabsTrigger>
+          <TabsTrigger value="top_urls">Top URLs</TabsTrigger>
+          <TabsTrigger value="geo_device">Device & Location</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="clicks_by_date">
+          <Card>
+            <CardHeader>
+              <CardTitle>Click Traffic Over Time</CardTitle>
+              <CardDescription>
+                Click volume trends for the selected time period
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {dateChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={dateChartData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 60,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      angle={-45} 
+                      textAnchor="end"
+                      height={60}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                    <Bar dataKey="clicks" fill="#8884d8" name="Clicks" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Activity className="h-12 w-12 mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">No Data Available</h3>
+                  <p className="text-muted-foreground mt-1">
+                    There are no clicks recorded for the selected time period
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="clicks_by_hour">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hourly Click Distribution</CardTitle>
+              <CardDescription>
+                Click patterns by hour of day (UTC)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {hourlyChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={hourlyChartData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 20,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="hour" 
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                    <Bar dataKey="clicks" fill="#82ca9d" name="Clicks" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Clock className="h-12 w-12 mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">No Data Available</h3>
+                  <p className="text-muted-foreground mt-1">
+                    There are no hourly statistics available
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="top_urls">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Performing URLs</CardTitle>
+              <CardDescription>
+                URLs with the highest click volumes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.topUrls.length > 0 ? (
+                <div className="space-y-4">
+                  {data.topUrls.map((url) => (
+                    <div key={url.id} className="flex items-center justify-between border-b pb-3">
+                      <div className="flex flex-col max-w-[60%]">
+                        <span className="font-medium">{url.name}</span>
+                        <span className="text-sm text-muted-foreground truncate">{url.targetUrl}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">{url.clicks.toLocaleString()} clicks</span>
+                        <Link href={`/url-analytics/${url.id}`}>
+                          <Button variant="outline" size="sm">
+                            Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-40 text-center">
+                  <h3 className="text-lg font-medium">No URL Data</h3>
+                  <p className="text-muted-foreground mt-1">
+                    There are no URLs with clicks in the selected time period
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="geo_device">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Hourly Distribution</CardTitle>
+                <CardTitle>Device Types</CardTitle>
+                <CardDescription>
+                  Click distribution by device type
+                </CardDescription>
               </CardHeader>
-              <CardContent className="h-80 flex items-center justify-center">
-                {/* Hourly distribution placeholder */}
-                <div className="text-center text-muted-foreground">
-                  <p>Hourly distribution data will be available soon</p>
-                  <p className="text-sm">The analytics tracking system is being implemented</p>
-                </div>
+              <CardContent className="h-[300px]">
+                {deviceChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={deviceChartData}
+                      layout="vertical"
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 50,
+                        bottom: 20,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="device" type="category" width={100} />
+                      <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                      <Bar dataKey="clicks" fill="#8884d8" name="Clicks" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <h3 className="text-lg font-medium">No Device Data</h3>
+                    <p className="text-muted-foreground mt-1">
+                      Device information not available
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          )}
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Browsers</CardTitle>
+                <CardDescription>
+                  Click distribution by browser type
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {browserChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={browserChartData}
+                      layout="vertical"
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 50,
+                        bottom: 20,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="browser" type="category" width={100} />
+                      <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                      <Bar dataKey="clicks" fill="#82ca9d" name="Clicks" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <h3 className="text-lg font-medium">No Browser Data</h3>
+                    <p className="text-muted-foreground mt-1">
+                      Browser information not available
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Geographic Distribution</CardTitle>
+                <CardDescription>
+                  Click distribution by country
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {countryChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={countryChartData.slice(0, 10)} // Show top 10 countries
+                      layout="vertical"
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 100,
+                        bottom: 20,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="country" type="category" width={100} />
+                      <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                      <Bar dataKey="clicks" fill="#8884d8" name="Clicks" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <Globe className="h-12 w-12 mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">No Geographic Data</h3>
+                    <p className="text-muted-foreground mt-1">
+                      Location information not available
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

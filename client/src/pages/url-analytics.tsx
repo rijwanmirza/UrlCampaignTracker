@@ -1,101 +1,185 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, ArrowLeft, MousePointer2, Globe2, Clock } from "lucide-react";
-import { Campaign, Url, ClickAnalytics } from "@shared/schema";
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { Loader2, ArrowLeft, ExternalLink, Globe, Clock, Users } from 'lucide-react';
+
+interface UrlAnalytics {
+  url: {
+    id: number;
+    name: string;
+    targetUrl: string;
+    campaignId: number;
+    campaignName: string;
+    totalClicks: number;
+    clickLimit: number; 
+    originalClickLimit: number;
+    createdAt: string;
+    status: string;
+  };
+  clicksByDate: Record<string, number>;
+  clicksByHour: Record<string, number>;
+  clicksByReferrer: Record<string, number>;
+  clicksByDevice: Record<string, number>;
+  clicksByBrowser: Record<string, number>;
+  clicksByCountry: Record<string, number>;
+}
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
+// Colors for pie charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function UrlAnalyticsPage() {
-  // Get the URL ID from the URL
-  const [, params] = useRoute<{ id: string }>("/analytics/url/:id");
-  const urlId = params?.id ? parseInt(params.id, 10) : 0;
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [filterType, setFilterType] = useState<string>('total');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
-  const [timeFilter, setTimeFilter] = useState<string>("total");
-  const [timeZone, setTimeZone] = useState<string>("UTC");
-  const [activeTab, setActiveTab] = useState<string>("overview");
-  const [showHourly, setShowHourly] = useState<boolean>(false);
-
-  // Fetch URL details
-  const {
-    data: url,
-    isLoading: urlLoading,
-    error: urlError,
-  } = useQuery<Url>({
-    queryKey: [`/api/urls/${urlId}`],
-    enabled: !!urlId,
+  // Analytics data query
+  const { data, isLoading, error, refetch } = useQuery<UrlAnalytics>({
+    queryKey: [`/api/analytics/url/${id}`, filterType, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({ filterType });
+      
+      if (startDate && endDate && filterType === 'custom_range') {
+        params.append('startDate', startDate.toISOString().split('T')[0]);
+        params.append('endDate', endDate.toISOString().split('T')[0]);
+      }
+      
+      const response = await fetch(`/api/analytics/url/${id}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch URL analytics data');
+      }
+      return response.json();
+    },
   });
 
-  // Fetch campaign if the URL is associated with one
-  const {
-    data: campaign,
-    isLoading: campaignLoading,
-    error: campaignError,
-  } = useQuery<Campaign>({
-    queryKey: [`/api/campaigns/${url?.campaignId}`],
-    enabled: !!url?.campaignId,
-  });
+  // Transform data for charts
+  const dateChartData = data?.clicksByDate 
+    ? Object.entries(data.clicksByDate)
+      .map(([date, clicks]) => ({ 
+        date: formatDate(date), 
+        clicks 
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    : [];
 
-  // We'll fetch click analytics data once the backend API is implemented
-  const {
-    data: clickAnalytics,
-    isLoading: analyticsLoading,
-    error: analyticsError,
-  } = useQuery<ClickAnalytics[]>({
-    queryKey: [`/api/analytics/url/${urlId}`, { timeFilter, timeZone, showHourly }],
-    enabled: false, // Disable for now until backend API is available
-  });
+  const hourlyChartData = data?.clicksByHour 
+    ? Object.entries(data.clicksByHour)
+      .map(([hour, clicks]) => ({ 
+        hour: `${hour}:00`, 
+        clicks 
+      }))
+      .sort((a, b) => parseInt(a.hour) - parseInt(b.hour))
+    : [];
 
-  const isLoading = urlLoading || (url?.campaignId ? campaignLoading : false) || analyticsLoading;
-  const hasError = urlError || (url?.campaignId ? campaignError : false) || analyticsError;
+  const deviceChartData = data?.clicksByDevice 
+    ? Object.entries(data.clicksByDevice)
+      .map(([device, clicks]) => ({ 
+        name: device || 'Unknown', 
+        value: clicks 
+      }))
+      .sort((a, b) => b.value - a.value)
+    : [];
 
-  const timeFilterOptions = [
-    { label: "All Time", value: "total" },
-    { label: "Today", value: "today" },
-    { label: "Yesterday", value: "yesterday" },
-    { label: "Last 7 Days", value: "last_7_days" },
-    { label: "This Month", value: "this_month" },
-    { label: "Last Month", value: "last_month" },
-    { label: "This Year", value: "this_year" },
-  ];
+  const browserChartData = data?.clicksByBrowser 
+    ? Object.entries(data.clicksByBrowser)
+      .map(([browser, clicks]) => ({ 
+        name: browser || 'Unknown', 
+        value: clicks 
+      }))
+      .sort((a, b) => b.value - a.value)
+    : [];
 
-  const timezoneOptions = [
-    { label: "UTC", value: "UTC" },
-    { label: "US Eastern", value: "America/New_York" },
-    { label: "US Pacific", value: "America/Los_Angeles" },
-    { label: "London", value: "Europe/London" },
-    { label: "Paris", value: "Europe/Paris" },
-    { label: "Tokyo", value: "Asia/Tokyo" },
-  ];
+  const referrerChartData = data?.clicksByReferrer 
+    ? Object.entries(data.clicksByReferrer)
+      .map(([referrer, clicks]) => ({
+        name: referrer ? (referrer.length > 30 ? referrer.substring(0, 30) + '...' : referrer) : 'Direct',
+        fullName: referrer || 'Direct',
+        value: clicks
+      }))
+      .sort((a, b) => b.value - a.value)
+    : [];
 
-  // Calculate completion percentage
-  const completionPercent = url ? Math.round((url.clicks / url.clickLimit) * 100) : 0;
+  // Handle filter change
+  const handleFilterChange = (value: string) => {
+    setFilterType(value);
+  };
+
+  // Apply custom date range filter
+  const applyCustomDateRange = () => {
+    if (startDate && endDate) {
+      if (endDate < startDate) {
+        toast({
+          title: 'Invalid Date Range',
+          description: 'End date must be after start date',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setFilterType('custom_range');
+      refetch();
+    } else {
+      toast({
+        title: 'Date Range Required',
+        description: 'Please select both start and end dates',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Reset custom date range
+  const resetDateRange = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setFilterType('total');
+    refetch();
+  };
+
+  // Calculate progress percentage
+  const calculateClickProgress = () => {
+    if (!data) return 0;
+    const { totalClicks, clickLimit } = data.url;
+    if (clickLimit <= 0) return 100;
+    return Math.min(Math.round((totalClicks / clickLimit) * 100), 100);
+  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="container mx-auto py-6 flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (hasError || !url) {
+  if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <h1 className="text-2xl font-bold text-destructive">Error loading URL data</h1>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Retry
-        </Button>
+      <div className="container mx-auto py-6">
+        <div className="bg-destructive/15 p-4 rounded-md mb-6">
+          <h2 className="text-xl font-bold text-destructive">Error Loading URL Analytics</h2>
+          <p className="text-muted-foreground">{error instanceof Error ? error.message : 'Failed to load URL data'}</p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
         <Link href="/analytics">
-          <Button variant="link">
+          <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Analytics
           </Button>
         </Link>
@@ -103,260 +187,400 @@ export default function UrlAnalyticsPage() {
     );
   }
 
+  const progress = calculateClickProgress();
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Link href="/analytics">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold">URL Analytics: {url.name}</h1>
-      </div>
-      
-      <div className="flex flex-wrap gap-3 items-center justify-end">
-        <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Time period" />
-          </SelectTrigger>
-          <SelectContent>
-            {timeFilterOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={timeZone} onValueChange={setTimeZone}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Timezone" />
-          </SelectTrigger>
-          <SelectContent>
-            {timezoneOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <div className="flex items-center space-x-2">
-          <label className="text-sm">Show Hourly</label>
-          <input 
-            type="checkbox" 
-            checked={showHourly}
-            onChange={() => setShowHourly(!showHourly)}
-            className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded"
-          />
+    <div className="container mx-auto py-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Link href="/analytics">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold">{data.url.name}</h1>
+          </div>
+          <Link href={`/campaign-analytics/${data.url.campaignId}`}>
+            <p className="text-muted-foreground hover:underline cursor-pointer">
+              Campaign: {data.url.campaignName}
+            </p>
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            data.url.status === 'active' 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+          }`}>
+            {data.url.status.toUpperCase()}
+          </span>
+          <span className="text-muted-foreground text-sm">
+            Created {new Date(data.url.createdAt).toLocaleDateString()}
+          </span>
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Card className="w-full md:w-1/3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Clicks</CardTitle>
+            <CardTitle>Time Range</CardTitle>
+            <CardDescription>Select a predefined range or custom dates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-center">
-              <span className="text-3xl font-bold">{url.clicks}</span>
-              <MousePointer2 className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Click Limit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <span className="text-3xl font-bold">{url.clickLimit}</span>
-              <Globe2 className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Completion</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="text-3xl font-bold">{completionPercent}%</span>
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                  <div 
-                    className="bg-primary h-2.5 rounded-full" 
-                    style={{ width: `${Math.min(completionPercent, 100)}%` }}
-                  ></div>
+            <Select value={filterType} onValueChange={handleFilterChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="total">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="last_7_days">Last 7 Days</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="last_month">Last Month</SelectItem>
+                <SelectItem value="this_year">This Year</SelectItem>
+                <SelectItem value="custom_range">Custom Range</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {filterType === 'custom_range' && (
+              <div className="mt-4 space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium">Start Date</label>
+                  <DatePicker 
+                    date={startDate} 
+                    setDate={setStartDate} 
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium">End Date</label>
+                  <DatePicker 
+                    date={endDate} 
+                    setDate={setEndDate} 
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={applyCustomDateRange} className="flex-1">
+                    Apply
+                  </Button>
+                  <Button variant="outline" onClick={resetDateRange} className="flex-1">
+                    Reset
+                  </Button>
                 </div>
               </div>
-              <Clock className="h-8 w-8 text-primary" />
-            </div>
+            )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Tabs for different views */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="time">Time Analysis</TabsTrigger>
-          <TabsTrigger value="geography">Geography</TabsTrigger>
-        </TabsList>
         
-        <TabsContent value="overview" className="space-y-6">
+        <div className="w-full md:w-2/3">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle>URL Details</CardTitle>
+              <CardDescription>
+                <a 
+                  href={data.url.targetUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center text-blue-500 hover:underline"
+                >
+                  {data.url.targetUrl.length > 50 
+                    ? data.url.targetUrl.substring(0, 50) + '...' 
+                    : data.url.targetUrl
+                  }
+                  <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p className="text-base">{url.name}</p>
+                  <h3 className="text-sm font-medium">Total Clicks</h3>
+                  <p className="text-2xl font-bold">{data.url.totalClicks.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <p className="text-base capitalize">{url.status}</p>
+                  <h3 className="text-sm font-medium">Original Limit</h3>
+                  <p className="text-2xl font-bold">{data.url.originalClickLimit.toLocaleString()}</p>
                 </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-muted-foreground">Target URL</p>
-                  <a 
-                    href={url.targetUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
+                <div>
+                  <h3 className="text-sm font-medium">Current Limit</h3>
+                  <p className="text-2xl font-bold">{data.url.clickLimit.toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex justify-between mb-1 text-sm">
+                  <span>Progress</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                  <div 
+                    className={`h-2.5 rounded-full ${
+                      progress < 70 
+                        ? 'bg-blue-600' 
+                        : progress < 90 
+                        ? 'bg-yellow-400' 
+                        : 'bg-red-600'
+                    }`} 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {data.url.totalClicks.toLocaleString()} of {data.url.clickLimit.toLocaleString()} clicks used
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <Tabs defaultValue="traffic_over_time" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="traffic_over_time">Traffic Over Time</TabsTrigger>
+          <TabsTrigger value="hourly_pattern">Hourly Pattern</TabsTrigger>
+          <TabsTrigger value="referrers">Referrers</TabsTrigger>
+          <TabsTrigger value="devices">Devices & Browsers</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="traffic_over_time">
+          <Card>
+            <CardHeader>
+              <CardTitle>Click Traffic Over Time</CardTitle>
+              <CardDescription>
+                Click volume trends for the selected time period
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {dateChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={dateChartData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 60,
+                    }}
                   >
-                    {url.targetUrl}
-                  </a>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Campaign</p>
-                  <p className="text-base">
-                    {campaign ? (
-                      <Link href={`/analytics/campaign/${campaign.id}`}>
-                        <span className="text-blue-600 hover:underline cursor-pointer">
-                          {campaign.name}
-                        </span>
-                      </Link>
-                    ) : (
-                      'None'
-                    )}
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      angle={-45} 
+                      textAnchor="end"
+                      height={60}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="clicks" 
+                      stroke="#8884d8" 
+                      activeDot={{ r: 8 }} 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Clock className="h-12 w-12 mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">No Data Available</h3>
+                  <p className="text-muted-foreground mt-1">
+                    There are no clicks recorded for the selected time period
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Created At</p>
-                  <p className="text-base">
-                    {new Date(url.createdAt).toLocaleDateString()}
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="hourly_pattern">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hourly Click Distribution (UTC)</CardTitle>
+              <CardDescription>
+                When users are most active throughout the day
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {hourlyChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={hourlyChartData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 20,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="hour" 
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                    <Bar dataKey="clicks" fill="#82ca9d" name="Clicks" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Clock className="h-12 w-12 mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">No Hourly Data</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Hourly distribution data not available
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Original Click Limit</p>
-                  <p className="text-base">{url.originalClickLimit}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Current Click Limit</p>
-                  <p className="text-base">{url.clickLimit}</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
-          
-          {campaign && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Campaign Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Campaign Name</p>
-                    <p className="text-base">{campaign.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Redirect Method</p>
-                    <p className="text-base">{campaign.redirectMethod}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Multiplier</p>
-                    <p className="text-base">{campaign.multiplier}x</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Price Per Thousand</p>
-                    <p className="text-base">${campaign.pricePerThousand}</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link href={`/analytics/campaign/${campaign.id}`}>
-                    <Button variant="outline">
-                      View Campaign Analytics
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
         
-        <TabsContent value="time" className="space-y-6">
+        <TabsContent value="referrers">
           <Card>
             <CardHeader>
-              <CardTitle>Click Timeline</CardTitle>
+              <CardTitle>Traffic Sources</CardTitle>
+              <CardDescription>
+                Where clicks are coming from
+              </CardDescription>
             </CardHeader>
-            <CardContent className="h-80 flex items-center justify-center">
-              {/* Timeline placeholder - we'll implement this when the backend is ready */}
-              <div className="text-center text-muted-foreground">
-                <p>Click timeline data will be available soon</p>
-                <p className="text-sm">The analytics tracking system is being implemented</p>
-              </div>
+            <CardContent className="h-[400px]">
+              {referrerChartData.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                  <div className="flex flex-col justify-center">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={referrerChartData.slice(0, 5)}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                          {referrerChartData.slice(0, 5).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value, name, props) => [`${value} clicks`, props.payload.fullName]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="overflow-y-auto max-h-[300px]">
+                    <div className="space-y-3">
+                      {referrerChartData.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center border-b pb-2">
+                          <div className="truncate max-w-[70%]" title={item.fullName}>
+                            {item.name}
+                          </div>
+                          <div className="font-medium">
+                            {item.value.toLocaleString()} clicks
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Globe className="h-12 w-12 mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">No Referrer Data</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Referrer information not available
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
-          
-          {showHourly && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Hourly Distribution</CardTitle>
-              </CardHeader>
-              <CardContent className="h-80 flex items-center justify-center">
-                {/* Hourly distribution placeholder */}
-                <div className="text-center text-muted-foreground">
-                  <p>Hourly distribution data will be available soon</p>
-                  <p className="text-sm">The analytics tracking system is being implemented</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
         
-        <TabsContent value="geography" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Geographic Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="h-80 flex items-center justify-center">
-              {/* Geographic distribution placeholder */}
-              <div className="text-center text-muted-foreground">
-                <p>Geographic data will be available soon</p>
-                <p className="text-sm">The analytics tracking system is being implemented</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Countries</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              {/* Top countries placeholder */}
-              <div className="text-center text-muted-foreground">
-                <p>Country data will be available soon</p>
-                <p className="text-sm">The analytics tracking system is being implemented</p>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="devices">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Device Types</CardTitle>
+                <CardDescription>
+                  Click distribution by device
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {deviceChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={deviceChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
+                        {deviceChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <Users className="h-12 w-12 mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">No Device Data</h3>
+                    <p className="text-muted-foreground mt-1">
+                      Device information not available
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Browsers</CardTitle>
+                <CardDescription>
+                  Click distribution by browser
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {browserChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={browserChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
+                        {browserChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value} clicks`, 'Clicks']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <Globe className="h-12 w-12 mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">No Browser Data</h3>
+                    <p className="text-muted-foreground mt-1">
+                      Browser information not available
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

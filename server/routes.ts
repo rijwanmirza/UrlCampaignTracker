@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
 import { requireAuth } from "./auth/middleware";
+import { registerAnalyticsRoutes } from "./analytics-routes";
 import { 
   optimizeResponseHeaders,
   ultraFastMetaRefresh,
@@ -45,6 +46,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
   // We'll handle HTTP/2 headers in the route handlers
   const server = createServer(app);
+  
+  // Register analytics routes
+  registerAnalyticsRoutes(app);
   
   // API route to apply click protection
   app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {
@@ -1422,6 +1426,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment click count 
       await storage.incrementUrlClicks(urlId);
 
+      // Record click analytics data
+      try {
+        // Extract user information
+        const userAgent = req.headers['user-agent'] || '';
+        const ipAddress = req.ip || req.socket.remoteAddress || '';
+        const referrer = req.headers['referer'] || '';
+        
+        // Get the current date and time
+        const now = new Date();
+        const clickHour = now.getUTCHours(); // 0-23 in UTC
+        
+        // Asynchronously record analytics without blocking the redirect
+        db.insert(clickAnalytics).values({
+          urlId,
+          campaignId,
+          clickTime: now,
+          clickHour,
+          clickDate: now,
+          timezone: "UTC",
+          userAgent,
+          ipAddress,
+          referrer,
+        }).execute().catch(err => {
+          console.error("Error recording click analytics:", err);
+        });
+      } catch (analyticsError) {
+        // Log but don't block the redirect if analytics recording fails
+        console.error("Failed to record click analytics:", analyticsError);
+      }
+
       // ULTRA-OPTIMIZED REDIRECT HANDLERS - For maximum throughput (millions of redirects per second)
       // Pre-calculate the target URL and remove all unnecessary processing
       const targetUrl = url.targetUrl;
@@ -1576,6 +1610,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment click count
       await storage.incrementUrlClicks(selectedUrl.id);
+      
+      // Record click analytics data
+      try {
+        // Extract user information
+        const userAgent = req.headers['user-agent'] || '';
+        const ipAddress = req.ip || req.socket.remoteAddress || '';
+        const referrer = req.headers['referer'] || '';
+        
+        // Get the current date and time
+        const now = new Date();
+        const clickHour = now.getUTCHours(); // 0-23 in UTC
+        
+        // Asynchronously record analytics without blocking the redirect
+        db.insert(clickAnalytics).values({
+          urlId: selectedUrl.id,
+          campaignId: campaign.id,
+          clickTime: now,
+          clickHour,
+          clickDate: now,
+          timezone: "UTC",
+          userAgent,
+          ipAddress,
+          referrer,
+        }).execute().catch(err => {
+          console.error("Error recording click analytics for custom path:", err);
+        });
+      } catch (analyticsError) {
+        // Log but don't block the redirect if analytics recording fails
+        console.error("Failed to record click analytics for custom path:", analyticsError);
+      }
       
       // Performance metrics
       const endTime = process.hrtime(startTime);
@@ -1744,6 +1808,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment click count first
       await storage.incrementUrlClicks(selectedUrl.id);
+      
+      // Record click analytics data
+      try {
+        // Extract user information
+        const userAgent = req.headers['user-agent'] || '';
+        const ipAddress = req.ip || req.socket.remoteAddress || '';
+        const referrer = req.headers['referer'] || '';
+        
+        // Get the current date and time
+        const now = new Date();
+        const clickHour = now.getUTCHours(); // 0-23 in UTC
+        
+        // Asynchronously record analytics without blocking the redirect
+        db.insert(clickAnalytics).values({
+          urlId: selectedUrl.id,
+          campaignId,
+          clickTime: now,
+          clickHour,
+          clickDate: now,
+          timezone: "UTC",
+          userAgent,
+          ipAddress,
+          referrer,
+        }).execute().catch(err => {
+          console.error("Error recording click analytics for campaign:", err);
+        });
+      } catch (analyticsError) {
+        // Log but don't block the redirect if analytics recording fails
+        console.error("Failed to record click analytics for campaign:", analyticsError);
+      }
       
       // Performance metrics
       const endTime = process.hrtime(startTime);
