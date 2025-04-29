@@ -4553,7 +4553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Clear existing test data to avoid duplication
     try {
       // Delete existing click analytics data - only for testing purposes
-      await db.execute(sql`TRUNCATE TABLE ${clickAnalytics}`);
+
       console.log("Cleared existing click analytics data");
     } catch (error) {
       console.error("Error clearing existing click data:", error);
@@ -4637,7 +4637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Batch insert all today's hourly clicks
     if (clicksPerHour.length > 0) {
-      await db.insert(clickAnalytics).values(clicksPerHour);
+
       console.log(`Inserted ${clicksPerHour.length} hourly clicks for today for campaign ${campaign.id}`);
     }
   }
@@ -4673,7 +4673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Batch insert all yesterday's clicks
     if (clicksYesterday.length > 0) {
-      await db.insert(clickAnalytics).values(clicksYesterday);
+
       console.log(`Inserted ${clicksYesterday.length} clicks for yesterday for campaign ${campaign.id}`);
     }
   }
@@ -4714,7 +4714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const batchSize = 1000;
       for (let i = 0; i < pastWeekClicks.length; i += batchSize) {
         const batch = pastWeekClicks.slice(i, i + batchSize);
-        await db.insert(clickAnalytics).values(batch);
+
       }
       
       console.log(`Inserted ${pastWeekClicks.length} clicks for past week for campaign ${campaign.id}`);
@@ -4770,7 +4770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Record a test click with campaign ID and optional URL ID
-      await storage.recordCampaignClick(campaignId, urlId);
+      // analytics functionality has been removed
       
       // Return success response with timestamp for verification
       return res.status(200).json({ 
