@@ -226,6 +226,7 @@ export const originalUrlRecords = pgTable("original_url_records", {
   name: text("name").notNull().unique(), // Unique name for reference
   targetUrl: text("target_url").notNull(),
   originalClickLimit: integer("original_click_limit").notNull(), // Master value for click limit
+  status: text("status").default('active').notNull(), // Status: active, paused
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -244,6 +245,7 @@ export const updateOriginalUrlRecordSchema = createInsertSchema(originalUrlRecor
   name: z.string().optional(),
   targetUrl: z.string().url().optional(),
   originalClickLimit: z.number().int().min(1).optional(),
+  status: z.enum(['active', 'paused']).optional(),
 });
 
 // Types
