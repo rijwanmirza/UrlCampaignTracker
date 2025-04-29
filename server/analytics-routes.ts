@@ -313,8 +313,8 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.campaignId} = ${campaignId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY browser
       ORDER BY click_count DESC
     `);
@@ -340,8 +340,8 @@ analyticsRouter.get("/campaign/:campaignId", async (req: Request, res: Response)
       JOIN urls u ON u.id = ${clickAnalytics.urlId}
       WHERE 
         ${clickAnalytics.campaignId} = ${campaignId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY ${clickAnalytics.urlId}, u.name, u.target_url
       ORDER BY clicks DESC
       LIMIT 10
@@ -427,8 +427,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY click_date
       ORDER BY click_date
     `);
@@ -447,8 +447,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY hour
       ORDER BY hour
     `);
@@ -466,8 +466,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY referrer
       ORDER BY click_count DESC
     `);
@@ -493,8 +493,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY device
       ORDER BY click_count DESC
     `);
@@ -520,8 +520,8 @@ analyticsRouter.get("/url/:urlId", async (req: Request, res: Response) => {
       FROM ${clickAnalytics}
       WHERE 
         ${clickAnalytics.urlId} = ${urlId} AND
-        ${clickAnalytics.timestamp} >= ${start.toISOString()} AND 
-        ${clickAnalytics.timestamp} <= ${end.toISOString()}
+        ${clickAnalytics.timestamp} >= ${sql.raw(`'${start.toISOString()}'::timestamp`)} AND 
+        ${clickAnalytics.timestamp} <= ${sql.raw(`'${end.toISOString()}'::timestamp`)}
       GROUP BY browser
       ORDER BY click_count DESC
     `);
