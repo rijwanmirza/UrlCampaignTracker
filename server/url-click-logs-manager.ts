@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { format, formatISO, parseISO, subDays, subMonths, startOfMonth, endOfMonth, subYears, startOfYear, endOfYear } from "date-fns";
-import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { formatInTimeZone } from "date-fns-tz";
 import { db } from "./db";
-import { urlClickLogs, insertUrlClickLogSchema } from "@shared/schema";
+import { urlClickLogs, insertUrlClickLogSchema, TimeRangeFilter } from "@shared/schema";
 import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import { timeRangeFilterSchema } from "@shared/schema";
+import { z } from "zod";
 
 /**
  * URL Clicks Logs Manager Class
@@ -47,11 +48,16 @@ export class UrlClickLogsManager {
    */
   private formatIndianTime(date: Date): { formatted: string, dateKey: string, hourKey: number } {
     const indianTimeZone = "Asia/Kolkata";
-    const indianTime = utcToZonedTime(date, indianTimeZone);
     
-    const formatted = format(indianTime, "yyyy-MM-dd HH:mm:ss");
-    const dateKey = format(indianTime, "yyyy-MM-dd");
-    const hourKey = indianTime.getHours();
+    // Format the date directly using formatInTimeZone
+    const formatted = formatInTimeZone(date, indianTimeZone, "yyyy-MM-dd HH:mm:ss");
+    const dateKey = formatInTimeZone(date, indianTimeZone, "yyyy-MM-dd");
+    
+    // Get hour in Indian timezone
+    const timeWithOffset = new Date(date);
+    // Add 5 hours and 30 minutes for Indian timezone offset
+    timeWithOffset.setUTCHours(timeWithOffset.getUTCHours() + 5, timeWithOffset.getUTCMinutes() + 30);
+    const hourKey = timeWithOffset.getUTCHours();
     
     return { formatted, dateKey, hourKey };
   }
@@ -86,7 +92,7 @@ export class UrlClickLogsManager {
   /**
    * Get URL summary data from click logs for a specific time range
    */
-  public async getUrlClickSummary(urlId: number, filter: z.infer<typeof timeRangeFilterSchema>) {
+  public async getUrlClickSummary(urlId: number, filter: TimeRangeFilter) {
     console.log(`📊 UrlClickLogsManager: Getting summary for URL ${urlId} with filter type: ${filter.filterType}`);
     
     try {
@@ -177,7 +183,7 @@ export class UrlClickLogsManager {
   /**
    * Calculate date range based on filter type
    */
-  private getDateRangeForFilter(filter: z.infer<typeof timeRangeFilterSchema>): { startDate: Date, endDate: Date } {
+  private getDateRangeForFilter(filter: TimeRangeFilter): { startDate: Date, endDate: Date } {
     const now = new Date();
     
     let startDate: Date;

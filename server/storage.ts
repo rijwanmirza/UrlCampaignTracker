@@ -17,6 +17,9 @@ import {
   CampaignClickRecord,
   InsertCampaignClickRecord,
   campaignClickRecords,
+  UrlClickRecord,
+  InsertUrlClickRecord,
+  urlClickRecords,
   TimeRangeFilter
 } from "@shared/schema";
 import { db, pool } from "./db";
