@@ -105,6 +105,8 @@ export function registerCampaignClickRoutes(app: any) {
       const filterType = req.query.filterType as string || 'today';
       const showHourly = req.query.showHourly === 'true';
       
+      console.log(`📊 Filtering campaign ${campaignId} clicks with filter type: ${filterType}`);
+      
       const filter: TimeRangeFilter = {
         filterType: filterType as any,
         timezone: (req.query.timezone as string) || "UTC",
@@ -116,6 +118,7 @@ export function registerCampaignClickRoutes(app: any) {
         if (req.query.startDate && req.query.endDate) {
           filter.startDate = req.query.startDate as string;
           filter.endDate = req.query.endDate as string;
+          console.log(`📊 Custom date range: ${filter.startDate} to ${filter.endDate}`);
         } else {
           return res.status(400).json({ 
             message: "startDate and endDate are required for custom_range filter type"
@@ -131,15 +134,16 @@ export function registerCampaignClickRoutes(app: any) {
         return res.status(404).json({ message: "Campaign not found" });
       }
       
-      // Use the redirect logs system first to get correct click data (this is the system we just fixed)
+      // Use the redirect logs system first to get correct click data
       try {
-        // Try to get the data from the redirect logs system
-        const redirectLogsFilter = { ...filter };
-        // Get summary from redirect logs which has accurate data
-        const redirectLogsSummary = await storage.getRedirectLogsSummary(campaignId, redirectLogsFilter);
+        // Pass the exact filter to the redirect logs system
+        const redirectLogsSummary = await storage.getRedirectLogsSummary(campaignId, filter);
         
         if (redirectLogsSummary) {
-          // Use the redirect logs data if available
+          console.log(`📊 Redirect logs summary for filter ${filterType}:`, {
+            totalClicks: redirectLogsSummary.totalClicks,
+            filterInfo: redirectLogsSummary.filterInfo
+          });
           return res.json(redirectLogsSummary);
         }
       } catch (redirectLogsError) {

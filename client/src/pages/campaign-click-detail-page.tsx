@@ -88,6 +88,13 @@ export default function CampaignClickDetailPage() {
   const { data: summaryData, isLoading: isLoadingSummary } = useQuery({
     queryKey: [`/api/campaign-click-records/summary/${campaignId}`, queryParams],
     enabled: !!campaignId,
+    onSuccess: (data) => {
+      console.log(`📊 Received filtered data for ${filterType} with ${data?.totalClicks || 0} total clicks`);
+      console.log(`📊 Filter info:`, data?.filterInfo);
+    },
+    onError: (error) => {
+      console.error(`❌ Error fetching filtered data:`, error);
+    }
   });
   
   // Handle filter type change

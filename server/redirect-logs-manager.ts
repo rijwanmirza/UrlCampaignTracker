@@ -120,8 +120,13 @@ export class RedirectLogsManager {
       throw new Error(`Campaign with ID ${campaignId} not found`);
     }
     
+    // Debug logging
+    console.log(`📊 RedirectLogsManager: Getting summary for campaign ${campaignId} with filter type: ${filter.filterType}`);
+    
     // Set up time range filter conditions
     const { startDate, endDate } = this.getDateRangeForFilter(filter);
+    
+    console.log(`📊 RedirectLogsManager: Date range calculated: ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
     // Check if campaign exists but has no logs for the selected date range
     // This will happen in two scenarios:
@@ -133,6 +138,7 @@ export class RedirectLogsManager {
     // For past date ranges where no data could exist (before campaign creation)
     // or future date ranges where no data can exist yet
     if (endDate < campaignCreated || startDate > now) {
+      console.log(`📊 RedirectLogsManager: No logs for this date range (before campaign creation or in future)`);
       // Return empty data if no logs can exist for this time range
       return {
         totalClicks: 0,
@@ -158,6 +164,7 @@ export class RedirectLogsManager {
       );
     
     const totalClicks = totalClicksQuery[0]?.count || 0;
+    console.log(`📊 RedirectLogsManager: Found ${totalClicks} clicks for date range`);
     
     // Get daily breakdown if needed
     let dailyBreakdown = {};
