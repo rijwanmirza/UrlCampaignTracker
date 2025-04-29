@@ -4,9 +4,18 @@ import { log } from '../vite';
 // Simple API key authentication
 const API_SECRET_KEY = 'TraffiCS10928'; // Simple secret keyword for access
 
+// Check if we're in development mode
+const isDevMode = process.env.NODE_ENV === 'development';
+
 // Middleware to require authentication
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
+    // TEMPORARY: Skip authentication in development mode
+    if (isDevMode) {
+      console.log('🔓 DEVELOPMENT MODE: Authentication bypassed');
+      return next();
+    }
+    
     // Get API key from cookie, header, or query param
     const apiKey = req.cookies?.apiKey || 
                   req.headers['x-api-key'] || 
@@ -32,6 +41,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 // Validate an API key
 export function validateApiKey(apiKey: string): boolean {
+  // TEMPORARY: Always return true in development mode
+  if (isDevMode) {
+    return true;
+  }
   return apiKey === API_SECRET_KEY;
 }
 
