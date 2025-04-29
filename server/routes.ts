@@ -4171,12 +4171,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values`);
       
-      // First, get a count of mismatched URLs where the required click value is wrong
+      // First, get a count of mismatched ACTIVE URLs where the required click value is wrong
       const mismatchCountResult = await db.execute<{count: number}>(sql`
         SELECT COUNT(*) as count
         FROM urls u
         JOIN campaigns c ON u.campaign_id = c.id
         WHERE ROUND(u.original_click_limit * c.multiplier) != u.click_limit
+        AND u.status = 'active'
       `);
       
       const mismatchCount = mismatchCountResult.rows?.[0]?.count || 0;
@@ -4191,12 +4192,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      // Get a list of affected campaigns to log for transparency
+      // Get a list of affected campaigns to log for transparency (only for active URLs)
       const affectedCampaignsResult = await db.execute<{id: number, name: string, count: number}>(sql`
         SELECT c.id, c.name, COUNT(*) as count
         FROM urls u
         JOIN campaigns c ON u.campaign_id = c.id
         WHERE ROUND(u.original_click_limit * c.multiplier) != u.click_limit
+        AND u.status = 'active'
         GROUP BY c.id, c.name
       `);
       
@@ -4211,7 +4213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute(sql`ALTER TABLE urls DISABLE TRIGGER protect_original_click_values_trigger`);
       await db.execute(sql`ALTER TABLE urls DISABLE TRIGGER prevent_auto_click_update_trigger`);
       
-      // Fix the mismatches by updating the click_limit to the correct calculated value
+      // Fix the mismatches by updating the click_limit to the correct calculated value (only for active URLs)
       const updateResult = await db.execute(sql`
         UPDATE urls u
         SET 
@@ -4220,6 +4222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM campaigns c
         WHERE u.campaign_id = c.id
         AND ROUND(u.original_click_limit * c.multiplier) != u.click_limit
+        AND u.status = 'active'
       `);
       
       // Re-enable triggers
@@ -4252,7 +4255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
   
-  // Add a periodic check for incorrect multiplier values (runs every 5 minutes)
+  // Add a periodic check for incorrect multiplier values (runs every 2 minutes)
   setInterval(async () => {
     try {
       console.log("🔄 Running scheduled multiplier verification check...");
@@ -4265,7 +4268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in automatic multiplier verification:", error);
     }
-  }, 5 * 60 * 1000); // Run every 5 minutes
+  }, 2 * 60 * 1000); // Run every 2 minutes
   
   // Route to manually fix only multiplier issues without touching original click values
   app.post("/api/system/fix-click-multipliers", async (_req: Request, res: Response) => {
