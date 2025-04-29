@@ -123,6 +123,28 @@ export class RedirectLogsManager {
     // Set up time range filter conditions
     const { startDate, endDate } = this.getDateRangeForFilter(filter);
     
+    // Check if campaign exists but has no logs for the selected date range
+    // This will happen in two scenarios:
+    // 1. The date range is in the future
+    // 2. The campaign was created after the selected date range
+    const now = new Date();
+    const campaignCreated = campaignCheck[0]?.createdAt || now;
+    
+    // For past date ranges where no data could exist (before campaign creation)
+    // or future date ranges where no data can exist yet
+    if (endDate < campaignCreated || startDate > now) {
+      // Return empty data if no logs can exist for this time range
+      return {
+        totalClicks: 0,
+        dailyBreakdown: {},
+        hourlyBreakdown: [],
+        filterInfo: {
+          type: filter.filterType,
+          dateRange: this.getDateRangeText(filter, startDate, endDate)
+        }
+      };
+    }
+    
     // Get total clicks for the campaign in the specified time range
     const totalClicksQuery = await db.select({
       count: sql<number>`count(*)`.as('count')
@@ -213,6 +235,9 @@ export class RedirectLogsManager {
     
     // Set the end of day for the end date (23:59:59.999)
     endDate.setHours(23, 59, 59, 999);
+    
+    // Store the campaign creation date if needed
+    const campaignCreationDate = new Date('2025-01-01T00:00:00.000Z');
     
     switch (filter.filterType) {
       case 'today':
