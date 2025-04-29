@@ -370,8 +370,8 @@ export default function CampaignClickDetailPage() {
                       {summaryData?.filterInfo?.dateRange ?
                        `Clicks (${summaryData.filterInfo.dateRange})` :
                        filterType === 'total' ? 'Total Clicks' : 
-                       filterType === 'today' ? 'Today\'s Clicks' : 
-                       filterType === 'yesterday' ? 'Yesterday\'s Clicks' : 
+                       filterType === 'today' ? 'Clicks (Today)' : 
+                       filterType === 'yesterday' ? 'Clicks (Yesterday)' : 
                        filterType === 'last_7_days' ? 'Clicks (Last 7 Days)' : 
                        filterType === 'last_30_days' ? 'Clicks (Last 30 Days)' : 
                        filterType === 'this_month' ? 'Clicks (This Month)' : 
