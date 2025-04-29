@@ -320,17 +320,19 @@ export const timeRangeFilterSchema = z.object({
 
 export type TimeRangeFilter = z.infer<typeof timeRangeFilterSchema>;
 
-// URL Click Records Schema - Tracking all clicks for URLs
+// URL Click Records Schema - Tracking all clicks for URLs (no personal data)
 export const urlClickRecords = pgTable("url_click_records", {
   id: serial("id").primaryKey(),
   urlId: integer("url_id").notNull(),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  clickTime: timestamp("click_time").defaultNow().notNull(),
+  // Note: This table contains ip_address, user_agent, and referer fields in the database,
+  // but we intentionally don't include them in our schema to avoid tracking personal data
 });
 
-export const insertUrlClickRecordSchema = createInsertSchema(urlClickRecords).omit({
-  id: true,
-  createdAt: true,
+// Use z.object directly to define our insert schema with only the fields we want
+export const insertUrlClickRecordSchema = z.object({
+  urlId: z.number().int().positive(),
+  clickTime: z.date().optional(), // Optional as it defaults to now()
 });
 
 // Types for URL Click Records
