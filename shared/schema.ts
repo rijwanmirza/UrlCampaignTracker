@@ -262,8 +262,26 @@ export type OriginalUrlRecord = typeof originalUrlRecords.$inferSelect;
 export type InsertOriginalUrlRecord = z.infer<typeof insertOriginalUrlRecordSchema>;
 export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSchema>;
 
-// Click Analytics Schema - Only tracking essential data for campaign clicks
+// Campaign Click Records Schema - Tracking all redirects for campaigns
+export const campaignClickRecords = pgTable("campaign_click_records", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  urlId: integer("url_id"), // Optional, as some clicks might be directly from campaign
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  ipAddress: text("ip_address"), // Store IP address for analysis (optional)
+  userAgent: text("user_agent"), // Store user agent for analysis (optional)
+  referer: text("referer"), // Store referer for analysis (optional)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
+export const insertCampaignClickRecordSchema = createInsertSchema(campaignClickRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for Campaign Click Records
+export type CampaignClickRecord = typeof campaignClickRecords.$inferSelect;
+export type InsertCampaignClickRecord = z.infer<typeof insertCampaignClickRecordSchema>;
 
 // Analytics filter schemas
 export const timeRangeFilterSchema = z.object({

@@ -13,7 +13,11 @@ import {
   OriginalUrlRecord,
   InsertOriginalUrlRecord,
   UpdateOriginalUrlRecord,
-  originalUrlRecords
+  originalUrlRecords,
+  CampaignClickRecord,
+  InsertCampaignClickRecord,
+  campaignClickRecords,
+  TimeRangeFilter
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or } from "drizzle-orm";
@@ -61,6 +65,30 @@ export interface IStorage {
       startRange: number,
       endRange: number
     }[]
+  }>;
+  
+  // Campaign Click Records operations
+  recordCampaignClick(
+    campaignId: number, 
+    urlId?: number, 
+    ipAddress?: string, 
+    userAgent?: string,
+    referer?: string
+  ): Promise<CampaignClickRecord>;
+  
+  getCampaignClickRecords(
+    page: number, 
+    limit: number,
+    campaignId?: number,
+    filter?: TimeRangeFilter
+  ): Promise<{ records: CampaignClickRecord[], total: number }>;
+  
+  getCampaignClickSummary(
+    campaignId: number,
+    filter: TimeRangeFilter
+  ): Promise<{
+    totalClicks: number,
+    hourlyBreakdown?: { hour: number, clicks: number }[]
   }>;
   
   // System operations
@@ -2053,6 +2081,293 @@ export class DatabaseStorage implements IStorage {
       
       // Don't throw - just log the error
       console.error('Protection settings operation failed, continuing anyway');
+    }
+  }
+
+  // Campaign Click Records Implementation
+  
+  async recordCampaignClick(
+    campaignId: number, 
+    urlId?: number, 
+    ipAddress?: string, 
+    userAgent?: string,
+    referer?: string
+  ): Promise<CampaignClickRecord> {
+    try {
+      const [record] = await db.insert(campaignClickRecords).values({
+        campaignId,
+        urlId: urlId || null,
+        timestamp: new Date(),
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        referer: referer || null
+      }).returning();
+      
+      return record;
+    } catch (error) {
+      console.error("Error recording campaign click:", error);
+      throw error;
+    }
+  }
+  
+  async getCampaignClickRecords(
+    page: number, 
+    limit: number,
+    campaignId?: number,
+    filter?: TimeRangeFilter
+  ): Promise<{ records: CampaignClickRecord[], total: number }> {
+    try {
+      // Start with a base query
+      let query = db.select().from(campaignClickRecords);
+      let countQuery = db.select({ count: sql`count(*)` }).from(campaignClickRecords);
+      
+      // Add campaign filtering if specified
+      if (campaignId) {
+        query = query.where(eq(campaignClickRecords.campaignId, campaignId));
+        countQuery = countQuery.where(eq(campaignClickRecords.campaignId, campaignId));
+      }
+      
+      // Add date filtering if provided
+      if (filter) {
+        const { filterType, startDate, endDate, timezone } = filter;
+        
+        // Calculate date ranges based on filter type
+        const now = new Date();
+        let startDateObj: Date;
+        let endDateObj: Date = now;
+        
+        switch (filterType) {
+          case 'today':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case 'yesterday':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            endDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case 'last_2_days':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
+            break;
+          case 'last_3_days':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+            break;
+          case 'last_4_days':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 4);
+            break;
+          case 'last_5_days':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5);
+            break;
+          case 'last_6_days':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+            break;
+          case 'last_7_days':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+            break;
+          case 'this_month':
+            startDateObj = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'last_month':
+            startDateObj = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            endDateObj = new Date(now.getFullYear(), now.getMonth(), 0);
+            break;
+          case 'last_6_months':
+            startDateObj = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+            break;
+          case 'this_year':
+            startDateObj = new Date(now.getFullYear(), 0, 1);
+            break;
+          case 'last_year':
+            startDateObj = new Date(now.getFullYear() - 1, 0, 1);
+            endDateObj = new Date(now.getFullYear(), 0, 0);
+            break;
+          case 'custom_range':
+            // For custom range, use the provided dates
+            if (!startDate || !endDate) {
+              throw new Error("Start date and end date are required for custom range filter");
+            }
+            startDateObj = new Date(startDate);
+            endDateObj = new Date(endDate);
+            break;
+          case 'total':
+          default:
+            // If 'total', don't apply any date filter
+            startDateObj = new Date(0); // Jan 1, 1970
+            break;
+        }
+        
+        // Apply date range filter
+        if (filterType !== 'total') {
+          query = query.where(
+            and(
+              sql`${campaignClickRecords.timestamp} >= ${startDateObj}`,
+              sql`${campaignClickRecords.timestamp} <= ${endDateObj}`
+            )
+          );
+          
+          countQuery = countQuery.where(
+            and(
+              sql`${campaignClickRecords.timestamp} >= ${startDateObj}`,
+              sql`${campaignClickRecords.timestamp} <= ${endDateObj}`
+            )
+          );
+        }
+      }
+      
+      // Get total count
+      const [countResult] = await countQuery;
+      const total = Number(countResult?.count || 0);
+      
+      // Apply pagination
+      query = query
+        .orderBy(desc(campaignClickRecords.timestamp))
+        .offset((page - 1) * limit)
+        .limit(limit);
+      
+      // Execute the query
+      const records = await query;
+      
+      return { records, total };
+    } catch (error) {
+      console.error("Error getting campaign click records:", error);
+      throw error;
+    }
+  }
+  
+  async getCampaignClickSummary(
+    campaignId: number,
+    filter: TimeRangeFilter
+  ): Promise<{
+    totalClicks: number,
+    hourlyBreakdown?: { hour: number, clicks: number }[]
+  }> {
+    try {
+      // Calculate date ranges based on filter type
+      const now = new Date();
+      let startDateObj: Date;
+      let endDateObj: Date = now;
+      
+      const { filterType, startDate, endDate } = filter;
+      
+      switch (filterType) {
+        case 'today':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'yesterday':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+          endDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'last_2_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
+          break;
+        case 'last_3_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+          break;
+        case 'last_4_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 4);
+          break;
+        case 'last_5_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5);
+          break;
+        case 'last_6_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+          break;
+        case 'last_7_days':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+          break;
+        case 'this_month':
+          startDateObj = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'last_month':
+          startDateObj = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          endDateObj = new Date(now.getFullYear(), now.getMonth(), 0);
+          break;
+        case 'last_6_months':
+          startDateObj = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+          break;
+        case 'this_year':
+          startDateObj = new Date(now.getFullYear(), 0, 1);
+          break;
+        case 'last_year':
+          startDateObj = new Date(now.getFullYear() - 1, 0, 1);
+          endDateObj = new Date(now.getFullYear(), 0, 0);
+          break;
+        case 'custom_range':
+          // For custom range, use the provided dates
+          if (!startDate || !endDate) {
+            throw new Error("Start date and end date are required for custom range filter");
+          }
+          startDateObj = new Date(startDate);
+          endDateObj = new Date(endDate);
+          break;
+        case 'total':
+        default:
+          // If 'total', don't apply any date filter
+          startDateObj = new Date(0); // Jan 1, 1970
+          break;
+      }
+      
+      // Get total clicks
+      const [totalResult] = await db.select({ count: sql`count(*)` })
+        .from(campaignClickRecords)
+        .where(
+          and(
+            eq(campaignClickRecords.campaignId, campaignId),
+            filterType !== 'total' ? 
+              and(
+                sql`${campaignClickRecords.timestamp} >= ${startDateObj}`,
+                sql`${campaignClickRecords.timestamp} <= ${endDateObj}`
+              ) : 
+              undefined
+          )
+        );
+      
+      const totalClicks = Number(totalResult?.count || 0);
+      
+      // If hourly breakdown is requested, get that too
+      let hourlyBreakdown: { hour: number, clicks: number }[] | undefined;
+      
+      if (filter.showHourly) {
+        // PostgreSQL query to extract hour and count clicks per hour
+        const hourlyQuery = `
+          SELECT 
+            EXTRACT(HOUR FROM timestamp) as hour,
+            COUNT(*) as clicks
+          FROM 
+            campaign_click_records
+          WHERE 
+            campaign_id = $1
+            ${filterType !== 'total' ? 'AND timestamp >= $2 AND timestamp <= $3' : ''}
+          GROUP BY 
+            EXTRACT(HOUR FROM timestamp)
+          ORDER BY 
+            hour
+        `;
+        
+        const params = filterType !== 'total' ? 
+          [campaignId, startDateObj, endDateObj] : 
+          [campaignId];
+        
+        const result = await pool.query(hourlyQuery, params);
+        
+        // Create an array with all 24 hours, filling in zeros for hours with no clicks
+        hourlyBreakdown = Array.from({ length: 24 }, (_, i) => ({
+          hour: i,
+          clicks: 0
+        }));
+        
+        // Fill in actual data
+        result.rows.forEach(row => {
+          const hour = parseInt(row.hour);
+          hourlyBreakdown![hour].clicks = parseInt(row.clicks);
+        });
+      }
+      
+      return {
+        totalClicks,
+        hourlyBreakdown
+      };
+    } catch (error) {
+      console.error("Error getting campaign click summary:", error);
+      throw error;
     }
   }
 }
