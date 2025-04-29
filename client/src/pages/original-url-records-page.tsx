@@ -664,11 +664,15 @@ export default function OriginalUrlRecordsPage() {
               
               {/* Campaign filter dropdown */}
               <div className="w-[180px]">
+                <div className="text-xs font-medium mb-1 text-muted-foreground">Campaign Filter:</div>
                 <select
                   value={campaignFilter || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setCampaignFilter(value === "" ? null : value);
+                    // Convert to number or null
+                    const numericValue = value === "" ? null : parseInt(value, 10);
+                    setCampaignFilter(numericValue ? numericValue.toString() : null);
+                    console.log(`Setting campaign filter to: ${numericValue} (${typeof numericValue})`);
                     // Reset to page 1 when filter changes
                     setCurrentPage(1);
                     // Refresh data
@@ -687,6 +691,7 @@ export default function OriginalUrlRecordsPage() {
               
               {/* Status filter dropdown */}
               <div className="w-[150px]">
+                <div className="text-xs font-medium mb-1 text-muted-foreground">Status Filter:</div>
                 <select
                   value={statusFilter}
                   onChange={(e) => handleStatusChange(e.target.value)}
@@ -702,6 +707,7 @@ export default function OriginalUrlRecordsPage() {
               
               {/* Records per page */}
               <div className="w-[150px]">
+                <div className="text-xs font-medium mb-1 text-muted-foreground">Records Per Page:</div>
                 <select
                   value={pageSize.toString()}
                   onChange={(e) => handlePageSizeChange(e.target.value)}
