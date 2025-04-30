@@ -48,6 +48,8 @@ const campaignEditSchema = z.object({
   trafficstarCampaignId: z.string().optional(),
   // Auto-management has been removed
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
+  // Traffic Sender fields
+  trafficSenderEnabled: z.boolean().optional(),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -81,6 +83,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       trafficstarCampaignId: campaign.trafficstarCampaignId || "",
       // autoManageTrafficstar has been removed
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
+      // Traffic Sender settings
+      trafficSenderEnabled: campaign.trafficSenderEnabled || false,
     },
   });
   
@@ -567,6 +571,34 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   }}
                 />
               )}
+              
+              {/* Traffic Sender Toggle */}
+              <div className="border-t pt-4 mt-6">
+                <h3 className="text-md font-medium mb-4">Traffic Sender</h3>
+                <FormField
+                  control={form.control}
+                  name="trafficSenderEnabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Enable Traffic Sender
+                        </FormLabel>
+                        <FormDescription>
+                          Automatically send traffic to this campaign
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          aria-readonly={updateCampaignMutation.isPending}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
             
             <DialogFooter className="pt-4">

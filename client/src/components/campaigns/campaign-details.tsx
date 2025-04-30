@@ -215,6 +215,27 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                   </div>
                 </div>
               )}
+              
+              {/* Traffic Sender Status */}
+              <div className="mt-3">
+                <span className="text-sm font-medium text-gray-500">Traffic Sender:</span>
+                <div className="flex items-center gap-2">
+                  {campaign.trafficSenderEnabled ? (
+                    <Badge className="bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                      Enabled
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-gray-500">
+                      Disabled
+                    </Badge>
+                  )}
+                  {campaign.lastTrafficSenderAction && (
+                    <span className="text-xs text-gray-500">
+                      (last action: {new Date(campaign.lastTrafficSenderAction).toLocaleString()})
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
             
             <div className="mt-6">
