@@ -46,7 +46,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
-import { registerTestTrafficstarRoutes } from "./test-trafficstar-routes-new";
+// Test routes import removed
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now
@@ -62,8 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register URL click routes
   registerUrlClickRoutes(app);
   
-  // Register test TrafficStar routes (only for development and testing)
-  registerTestTrafficstarRoutes(app);
+  // Test TrafficStar routes have been removed as per user request
   
   // API route to fix missing URL click logs
   app.post("/api/system/fix-missing-url-click-logs", async (_req: Request, res: Response) => {
