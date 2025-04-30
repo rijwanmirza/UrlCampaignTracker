@@ -5,7 +5,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * Test controls component for manually triggering various auto-management scenarios
+ * Test controls component for manually triggering various TrafficStar spent tracking scenarios
  * This component allows us to easily test:
  * 1. Date change behavior
  * 2. Click threshold (15,000/5,000) behavior
@@ -87,7 +87,7 @@ export function TrafficStarTestControls() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Test 1: Date Change</CardTitle>
                 <CardDescription className="text-xs">
-                  Simulates a UTC date change to verify campaigns are paused and budget is updated
+                  Simulates a UTC date change to verify campaign budgets are updated daily
                 </CardDescription>
               </CardHeader>
               <CardContent className="py-2">
@@ -111,7 +111,7 @@ export function TrafficStarTestControls() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Test 2: Click Threshold</CardTitle>
                 <CardDescription className="text-xs">
-                  Tests the 15,000/5,000 click threshold logic for auto-activation/pausing
+                  Tests the 15,000/5,000 click threshold logic for campaign pausing/activation
                 </CardDescription>
               </CardHeader>
               <CardContent className="py-2">
