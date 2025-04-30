@@ -48,8 +48,8 @@ export class UrlClickLogsManager {
     // Add 5 hours and 30 minutes to the UTC time
     const indianTime = addMinutes(addHours(new Date(date), 5), 30);
     
-    // Format for display
-    const formatted = format(indianTime, 'yyyy-MM-dd HH:mm:ss');
+    // Format for log display (DD-Month-YYYY:HH:MM:SS)
+    const formatted = format(indianTime, 'dd-MMMM-yyyy:HH:mm:ss');
     
     // Format date key for database indexing (YYYY-MM-DD)
     const dateKey = format(indianTime, 'yyyy-MM-dd');
@@ -70,11 +70,13 @@ export class UrlClickLogsManager {
       const now = new Date();
       const { formatted: indianTime, dateKey, hourKey } = this.formatIndianTime(now);
       
-      // Log to file with the format: "click generated, date{time}"
-      const logMessage = `click generated, ${indianTime}`;
+      // Log to file with the format: "New click received{date:time}" in Indian timezone
+      const logMessage = `New click received{${indianTime}}`;
       const logFile = this.getUrlLogFilePath(urlId);
       
+      // Immediate synchronous write to ensure log is saved right away
       fs.appendFileSync(logFile, logMessage + '\n');
+      console.log(`📝 Logged click for URL ${urlId}: ${logMessage}`);
       
       // Also log to database for analytics
       await db.insert(urlClickLogs).values({
