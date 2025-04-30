@@ -3007,12 +3007,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  /**
-   * Test route for verifying the budget adjustment feature after 10-minute spent value pause
-   * This simulates the process of recalculating the budget after a campaign has been paused
-   * due to exceeding the $10 daily spent value threshold.
-   */
-  app.post("/api/system/test-budget-adjustment", async (_req: Request, res: Response) => {
+  // Test routes have been removed as per user requirements
+  /* app.post("/api/system/test-budget-adjustment", async (_req: Request, res: Response) => {
     // Reset test variables first to ensure clean state
     process.env.TEST_MODE = 'false';
     process.env.TEST_MODE_SPENT_VALUE_PAUSE = 'false';
