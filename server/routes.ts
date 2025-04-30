@@ -61,6 +61,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register URL click routes
   registerUrlClickRoutes(app);
   
+  // API route to fix missing URL click logs
+  app.post("/api/system/fix-missing-url-click-logs", async (_req: Request, res: Response) => {
+    try {
+      const { fixMissingUrlClickLogs } = await import('./fix-url-click-logs');
+      const result = await fixMissingUrlClickLogs();
+      return res.status(result.success ? 200 : 500).json(result);
+    } catch (error) {
+      console.error('Error fixing missing URL click logs:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to fix missing URL click logs", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   
   // API route to apply click protection
   app.post("/api/system/click-protection/apply", async (_req: Request, res: Response) => {

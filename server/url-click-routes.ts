@@ -11,6 +11,17 @@ export function registerUrlClickRoutes(app: any) {
   // Initialize the click logs manager
   urlClickLogsManager.initialize();
   
+  // Run a log file check on startup
+  import('./fix-url-click-logs').then(({ fixMissingUrlClickLogs }) => {
+    fixMissingUrlClickLogs().then(result => {
+      console.log('🔄 Auto-fix for missing URL click logs completed:', result.message);
+    }).catch(error => {
+      console.error('❌ Error during auto-fix for URL click logs:', error);
+    });
+  }).catch(error => {
+    console.error('❌ Error importing URL click log fix:', error);
+  });
+  
   /**
    * API endpoint to get a summary of all URL clicks with optional filtering
    */
