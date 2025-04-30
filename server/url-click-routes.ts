@@ -647,6 +647,48 @@ export function registerUrlClickRoutes(app: any) {
       });
     }
   });
+  
+  // Test endpoint to generate a single click log in the proper format
+  app.post("/api/url-click-records/test-single-log/:urlId", async (req: Request, res: Response) => {
+    try {
+      const urlId = parseInt(req.params.urlId);
+      
+      if (isNaN(urlId)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      // Verify URL exists
+      const url = await storage.getUrl(urlId);
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Log a single click to test the format
+      await urlClickLogsManager.logClick(urlId);
+      
+      // Get the raw logs to check the format
+      const rawLogs = await urlClickLogsManager.getRawClickLogs(urlId);
+      const latestLog = rawLogs.length > 0 ? rawLogs[rawLogs.length - 1] : null;
+      
+      // Verify format matches required pattern
+      const formatRegex = /^New click received\{\d{2}-[A-Za-z]+-\d{4}:\d{2}:\d{2}:\d{2}\}$/;
+      const isValidFormat = latestLog ? formatRegex.test(latestLog) : false;
+      
+      res.json({
+        success: true,
+        message: "Generated test click log and validated format",
+        formatValid: isValidFormat,
+        latestLog,
+        allLogs: rawLogs
+      });
+    } catch (error) {
+      console.error("Error generating test click log:", error);
+      res.status(500).json({
+        message: "Failed to generate test click log",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 }
 
 // Helper function to format in Indian time
