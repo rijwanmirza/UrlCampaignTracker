@@ -146,7 +146,7 @@ class TrafficStarService {
   /**
    * Ensure we have a valid access token
    */
-  private async ensureToken(): Promise<string> {
+  async ensureToken(): Promise<string> {
     // Check if we have a valid token
     if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
       return this.accessToken;

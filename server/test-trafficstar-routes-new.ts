@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { trafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service-new';
 import { db } from './db';
 import { campaigns } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import axios from 'axios';
 
 /**
  * Test routes for TrafficStar API integration
@@ -38,8 +39,10 @@ export function registerTestTrafficstarRoutes(app: any) {
       // Force budget update using updateCampaignBudget
       // Set budget to fixed value ($10.15)
       const trafficstarId = parseInt(campaign.trafficstarCampaignId);
-      // Using the standard function for updating budgets
-      await trafficStarService.updateCampaignBudget(trafficstarId, 10.15);
+      console.log(`Forcing budget update for campaign ${trafficstarId} to $10.15`);
+      
+      // Force budget update using forceBudgetUpdate method which handles everything for us
+      await trafficStarService.forceBudgetUpdate(trafficstarId);
       
       // Get current UTC date
       const currentUtcDate = new Date().toISOString().split('T')[0];
