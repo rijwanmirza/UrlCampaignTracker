@@ -415,7 +415,9 @@ class TrafficSenderService {
   
   /**
    * Check if new URLs have been added to an active campaign and update budget if needed
-   * This implements Step 7: If new URLs are added after activation, update the budget
+   * Implements the new requirement: 
+   * @Now last step we have to implement when our 6th step has been run by adding pending click value in daily spent value 
+   * of traffic star campaign if we got new url click value in our site campaign then we will plus their budget in daily budget
    */
   private async checkForNewUrlsAndUpdateBudget(campaign: any) {
     const campaignId = campaign.id;
@@ -433,8 +435,10 @@ class TrafficSenderService {
         return;
       }
       
-      // Step 7: Check if any new URLs have been added since last action
+      // Check if any new URLs have been added since last budget update
       const lastAction = new Date(campaign.lastTrafficSenderAction);
+      // Use the dedicated field for budget updates if available, otherwise fall back to the last action time
+      const lastBudgetUpdate = campaign.lastBudgetUpdateTime ? new Date(campaign.lastBudgetUpdateTime) : lastAction;
       
       const newUrls = await db
         .select()
@@ -443,18 +447,18 @@ class TrafficSenderService {
           and(
             eq(urls.campaignId, campaignId),
             eq(urls.status, 'active'),
-            sql`${urls.createdAt} > ${lastAction}`
+            sql`${urls.createdAt} > ${lastBudgetUpdate}`
           )
         );
         
       if (newUrls.length === 0) {
-        console.log(`ℹ️ No new URLs added to campaign ${campaignId} since last action`);
+        console.log(`ℹ️ No new URLs added to campaign ${campaignId} since last budget update`);
         return;
       }
       
-      console.log(`🆕 Found ${newUrls.length} new URLs added to campaign ${campaignId} since last action`);
+      console.log(`🆕 Found ${newUrls.length} new URLs added to campaign ${campaignId} since last budget update`);
       
-      // Step 7: Calculate the price for the new URLs
+      // Calculate the price for the new URLs
       let newClicksTotal = 0;
       newUrls.forEach(url => {
         newClicksTotal += url.clickLimit || 0;
@@ -465,23 +469,73 @@ class TrafficSenderService {
       
       console.log(`💰 New URLs price for campaign ${campaignId}: $${newUrlsPrice.toFixed(4)} (${newClicksTotal} clicks)`);
       
+      // Check the time since the last budget update
+      const now = new Date();
+      // lastBudgetUpdate is already a Date object from our earlier conversion
+      const minutesSinceLastBudgetUpdate = Math.floor((now.getTime() - lastBudgetUpdate.getTime()) / (60 * 1000));
+      
+      // New requirement: Wait for 12 minutes before updating the budget with new URLs
+      if (minutesSinceLastBudgetUpdate < 12) {
+        console.log(`⏳ Only ${minutesSinceLastBudgetUpdate} minutes since last budget update, waiting until 12 minutes before updating budget`);
+        
+        // Mark these URLs as pending for budget update
+        await db.update(campaigns)
+          .set({
+            lastTrafficSenderAction: now,
+            lastTrafficSenderStatus: `Waiting to update budget for ${newClicksTotal} new clicks ($${newUrlsPrice.toFixed(4)}), will update after ${12 - minutesSinceLastBudgetUpdate} more minutes`,
+            updatedAt: now
+          })
+          .where(eq(campaigns.id, campaignId));
+          
+        return;
+      }
+      
+      // If we've waited 12+ minutes, update the budget with all pending URLs
+      console.log(`⏱️ 12+ minutes have passed (${minutesSinceLastBudgetUpdate} minutes), now updating budget for all pending URLs`);
+      
+      // Get all pending URLs (those added since the last action but not included in budget)
+      const allPendingUrls = await db
+        .select()
+        .from(urls)
+        .where(
+          and(
+            eq(urls.campaignId, campaignId),
+            eq(urls.status, 'active'),
+            sql`${urls.createdAt} > ${lastBudgetUpdate}`
+          )
+        );
+        
+      // Calculate the price for all pending URLs
+      let totalPendingClicksCount = 0;
+      allPendingUrls.forEach(url => {
+        totalPendingClicksCount += url.clickLimit || 0;
+      });
+      
+      const totalPendingPrice = (totalPendingClicksCount / 1000) * pricePerThousand;
+      
+      console.log(`💰 Total pending URLs price for campaign ${campaignId}: $${totalPendingPrice.toFixed(4)} for ${totalPendingClicksCount} clicks from ${allPendingUrls.length} URLs`);
+      
       // Get the current budget for the campaign
       const currentBudget = tsCampaign.max_daily || 0;
       
-      // Step 7: Calculate the new budget by adding the price of the new URLs
-      const newBudget = currentBudget + newUrlsPrice;
+      // Calculate the new budget by adding the price of all pending URLs
+      const newBudget = currentBudget + totalPendingPrice;
       
-      console.log(`💲 Updating budget for campaign ${campaignId} from $${currentBudget.toFixed(4)} to $${newBudget.toFixed(4)} (+$${newUrlsPrice.toFixed(4)})`);
+      console.log(`💲 Updating budget for campaign ${campaignId} from $${currentBudget.toFixed(4)} to $${newBudget.toFixed(4)} (+$${totalPendingPrice.toFixed(4)})`);
       
-      // Step 7: Update the budget in TrafficStar with the new value
+      // Update the budget in TrafficStar
       await trafficStarService.updateCampaignDailyBudget(trafficstarId, newBudget);
       
-      // Update our database to record this action
+      // Update our database to record this action and mark these URLs as included in budget
+      const updateTime = new Date(); // Current timestamp for budget update
+      
       await db.update(campaigns)
         .set({
-          lastTrafficSenderAction: new Date(),
-          lastTrafficSenderStatus: `Updated budget to $${newBudget.toFixed(4)} (+$${newUrlsPrice.toFixed(4)} for ${newClicksTotal} new clicks)`,
-          updatedAt: new Date()
+          lastTrafficSenderAction: now,
+          // Convert the lastBudgetUpdateTime to a database field name format
+          lastBudgetUpdateTime: updateTime,
+          lastTrafficSenderStatus: `Updated budget to $${newBudget.toFixed(4)} (+$${totalPendingPrice.toFixed(4)} for ${totalPendingClicksCount} clicks from ${allPendingUrls.length} URLs)`,
+          updatedAt: now
         })
         .where(eq(campaigns.id, campaignId));
         

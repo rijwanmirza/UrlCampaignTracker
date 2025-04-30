@@ -43,6 +43,7 @@ export const campaigns = pgTable("campaigns", {
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // Flag to enable/disable Traffic Sender
   lastTrafficSenderAction: timestamp("last_traffic_sender_action"), // Last time Traffic Sender was activated
   lastTrafficSenderStatus: text("last_traffic_sender_status"), // Last status of Traffic Sender action
+  lastBudgetUpdateTime: timestamp("last_budget_update_time"), // Last time the budget was updated for new URLs
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -93,6 +94,7 @@ export const updateCampaignSchema = z.object({
   trafficSenderEnabled: z.boolean().optional(),
   lastTrafficSenderAction: z.date().optional().nullable(),
   lastTrafficSenderStatus: z.string().optional(),
+  lastBudgetUpdateTime: z.date().optional().nullable(),
 });
 
 // URL schema
