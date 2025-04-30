@@ -147,6 +147,24 @@ export default function DetailedUrlRecordPage() {
         value: Number(clicks)
       })).sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
     } else {
+      // Check if we have the new hourlyByDate format
+      if (clickData.hourlyByDate) {
+        // Select the first date's hourly data (or all dates for multi-day view)
+        // We'll handle the full display in the render part
+        const firstDateKey = Object.keys(clickData.hourlyByDate)[0];
+        if (firstDateKey && clickData.hourlyByDate[firstDateKey]) {
+          return Object.entries(clickData.hourlyByDate[firstDateKey]).map(([hour, clicks]) => ({
+            name: hour,
+            value: Number(clicks)
+          })).sort((a, b) => {
+            const hourA = parseInt(a.name.split(':')[0]);
+            const hourB = parseInt(b.name.split(':')[0]);
+            return hourA - hourB;
+          });
+        }
+      }
+      
+      // Fallback to the original hourlyBreakdown for backward compatibility
       if (!clickData.hourlyBreakdown) return [];
       
       // Convert the hourlyBreakdown object to chart-friendly format

@@ -221,11 +221,43 @@ export class UrlClickLogsManager {
     // Get the human-readable date range description
     const dateRangeText = this.getDateRangeText(filter, startDate, endDate);
     
+    // Process hourlyBreakdownByDate to create hourly data by date
+    // Format each date as DD-MM-YYYY for display
+    const hourlyByDate: Record<string, Record<string, number>> = {};
+    
+    // Sort dates in descending order (most recent first)
+    const sortedDates = Object.keys(hourlyBreakdownByDate).sort().reverse();
+    
+    for (const dateKey of sortedDates) {
+      // Convert YYYY-MM-DD to DD-MM-YYYY for display
+      const dateParts = dateKey.split('-');
+      const displayDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      
+      hourlyByDate[displayDate] = {};
+      
+      // Add all hours (0-23) to ensure complete 24-hour coverage
+      for (let hour = 0; hour < 24; hour++) {
+        const hourStr = `${hour.toString().padStart(2, '0')}:00`;
+        hourlyByDate[displayDate][hourStr] = hourlyBreakdownByDate[dateKey][hour] || 0;
+      }
+    }
+    
+    // For backward compatibility, still include the flat hourlyBreakdown
+    // Create a flattened hourly breakdown (sum across all dates for each hour)
+    const hourlyBreakdownFlat: Record<number, number> = {};
+    for (const dateBreakdown of Object.values(hourlyBreakdownByDate)) {
+      for (const [hour, count] of Object.entries(dateBreakdown)) {
+        const hourNum = parseInt(hour);
+        hourlyBreakdownFlat[hourNum] = (hourlyBreakdownFlat[hourNum] || 0) + count;
+      }
+    }
+    
     return {
       urlId,
       totalClicks,
       dailyBreakdown,
-      hourlyBreakdown,
+      hourlyBreakdown: hourlyBreakdownFlat,
+      hourlyByDate,
       filterInfo: {
         type: filter.filterType,
         dateRange: dateRangeText
