@@ -2867,6 +2867,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Process pending budget updates for Traffic Sender - needed for testing
+  app.post("/api/trafficstar/process-pending-budget-updates", async (_req: Request, res: Response) => {
+    try {
+      const { trafficSenderService } = await import('./traffic-sender-service');
+      await trafficSenderService.processPendingBudgetUpdates();
+      res.json({ success: true, message: 'Processing triggered successfully' });
+    } catch (error) {
+      console.error('Error processing pending budget updates:', error);
+      res.status(500).json({ 
+        message: "Failed to process pending budget updates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Get list of pending budget updates for Traffic Sender
+  app.get("/api/trafficstar/pending-budget-updates", async (_req: Request, res: Response) => {
+    try {
+      const { trafficSenderService } = await import('./traffic-sender-service');
+      const pendingUpdates = await trafficSenderService.getPendingBudgetUpdates();
+      res.json(pendingUpdates);
+    } catch (error) {
+      console.error('Error getting pending budget updates:', error);
+      res.status(500).json({ 
+        message: "Failed to get pending budget updates",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Database migration - add TrafficStar fields to campaigns table
   app.post("/api/system/migrate-trafficstar-fields", async (_req: Request, res: Response) => {
     try {
