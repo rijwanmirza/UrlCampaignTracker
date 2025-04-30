@@ -3025,16 +3025,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🧪 TEST: Budget Adjustment After Spent Value Pause');
       
-      // Get a campaign with auto-management enabled
+      // Get a campaign with TrafficStar integration
       const [campaign] = await db
         .select()
         .from(campaigns)
-        .where(eq(campaigns.autoManageTrafficstar, true));
+        .where(isNotNull(campaigns.trafficstarCampaignId));
       
       if (!campaign) {
         return res.json({
           success: false,
-          message: 'No auto-managed campaign found for testing'
+          message: 'No campaign with TrafficStar integration found for testing'
         });
       }
       
@@ -3355,16 +3355,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🧪 TEST 1: Date Change Testing');
       
-      // Get a campaign with auto-management enabled
+      // Get a campaign with TrafficStar integration
       const [campaign] = await db
         .select()
         .from(campaigns)
-        .where(eq(campaigns.autoManageTrafficstar, true));
+        .where(isNotNull(campaigns.trafficstarCampaignId));
       
       if (!campaign) {
         return res.status(400).json({
           success: false,
-          message: 'No auto-managed campaign found for testing'
+          message: 'No campaign with TrafficStar integration found for testing'
         });
       }
       
@@ -3406,16 +3406,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🧪 TEST 2: Click Threshold Testing');
       
-      // Get a campaign with auto-management enabled
+      // Get a campaign with TrafficStar integration
       const [campaign] = await db
         .select()
         .from(campaigns)
-        .where(eq(campaigns.autoManageTrafficstar, true));
+        .where(isNotNull(campaigns.trafficstarCampaignId));
       
       if (!campaign) {
         return res.status(400).json({
           success: false,
-          message: 'No auto-managed campaign found for testing'
+          message: 'No campaign with TrafficStar integration found for testing'
         });
       }
       
@@ -3621,16 +3621,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Enable test mode to get simulated spent value
       process.env.TEST_MODE = 'true';
       
-      // Get a campaign with auto-management enabled
+      // Get a campaign with TrafficStar integration
       const [campaign] = await db
         .select()
         .from(campaigns)
-        .where(eq(campaigns.autoManageTrafficstar, true));
+        .where(isNotNull(campaigns.trafficstarCampaignId));
       
       if (!campaign) {
         return res.status(400).json({
           success: false,
-          message: 'No auto-managed campaign found for testing'
+          message: 'No campaign with TrafficStar integration found for testing'
         });
       }
       
