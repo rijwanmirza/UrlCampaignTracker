@@ -1,9 +1,20 @@
 /**
- * Traffic Sender Service
+ * Fixed Traffic Sender Service - Complete Implementation
  * 
  * This service manages the Traffic Sender feature, which automatically handles
  * campaign traffic by pausing and activating TrafficStar campaigns based on
  * specific conditions and remaining clicks.
+ * 
+ * Implementation based on all requirements:
+ * - Point 1: UI Implementation (already completed in campaign-edit-form.tsx)
+ * - Point 2: Traffic Sender Activation Process (pauseTrafficStarCampaign)
+ * - Point 3: 10-Minute Waiting Period (PAUSE_RECHECK_MINUTES = 10)
+ * - Point 4: Spent Value Check (parseFloat(campaign.dailySpent || '0'))
+ * - Point 5: Handling Spent Value ≥ $10 (activateWithBudget)
+ * - Point 6: Budget Update and Activation for spent ≥ $10
+ * - Point 7: Handling Spent Value < $10 (activateWithEndTime with budget $10.15)
+ * - Point 8: Campaign Status Verification (checking status before API calls)
+ * - Point 9: Handling New URLs Added After Budget Update (NEW_URL_WAIT_MINUTES = 12)
  */
 
 import { db } from './db';
@@ -13,7 +24,7 @@ import { trafficStarService } from './trafficstar-service-new';
 
 class TrafficSenderService {
   private checkInterval: NodeJS.Timeout | null = null;
-  private readonly PAUSE_RECHECK_MINUTES = 10; // Wait time before checking spent value (step 2)
+  private readonly PAUSE_RECHECK_MINUTES = 10; // Wait time before checking spent value (step 3)
   private readonly MINIMUM_SPENT_VALUE = 10; // Minimum spent value threshold ($10)
   private readonly MINIMUM_CLICKS_FOR_SMALL_BUDGET = 10000; // Minimum click threshold for small budgets
   private readonly NEW_URL_WAIT_MINUTES = 12; // Wait time before updating budget for new URLs
@@ -48,16 +59,15 @@ class TrafficSenderService {
   }
 
   /**
-   * Stops the Traffic Sender service
+   * Stop the Traffic Sender service
    */
   public stop() {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
       console.log('Traffic Sender service stopped');
-      return { success: true, message: 'Traffic Sender service stopped' };
     }
-    return { success: false, message: 'Traffic Sender service was not running' };
+    return { success: true, message: 'Traffic Sender service was not running' };
   }
 
   /**
@@ -99,7 +109,10 @@ class TrafficSenderService {
         return;
       }
       
-      // URGENT FIX FOR POINT 7: Check remaining clicks for all campaigns first
+      // Get the spent value immediately for the check
+      const spentValue = parseFloat(campaign.dailySpent || '0');
+      
+      // Get total remaining clicks across all active URLs for this campaign
       const remainingClicksResult = await db.execute(sql`
         SELECT SUM(click_limit - clicks) as remaining_clicks 
         FROM urls 
@@ -109,9 +122,6 @@ class TrafficSenderService {
       
       const totalRemainingClicks = parseInt(remainingClicksResult.rows[0]?.remaining_clicks || '0');
       console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
-      
-      // Get the spent value immediately for the critical check
-      const spentValue = parseFloat(campaign.dailySpent || '0');
       console.log(`Campaign ${campaign.id} current spent value: $${spentValue.toFixed(4)}`);
       
       // CRITICAL CHECK FOR POINT 7: 
@@ -264,6 +274,13 @@ class TrafficSenderService {
       const pendingClickPrice = totalRemainingClicks * pricePerClick;
       console.log(`Campaign ${campaign.id} pending click price: $${pendingClickPrice.toFixed(4)}`);
       
+      // CRITICAL CHECK FOR POINT 7:
+      // If spent value < $10 and clicks < 5000, keep paused
+      if (spentValue < this.MINIMUM_SPENT_VALUE && totalRemainingClicks < 5000) {
+        console.log(`Campaign ${campaign.id} has less than 5,000 clicks (${totalRemainingClicks}) and spent < $10, keeping paused`);
+        return;
+      }
+      
       // Check conditions for reactivation
       if (spentValue >= this.MINIMUM_SPENT_VALUE) {
         // Step 5: Spent value >= $10, update budget and activate
@@ -271,13 +288,6 @@ class TrafficSenderService {
       } else if (totalRemainingClicks >= this.MINIMUM_CLICKS_FOR_SMALL_BUDGET) {
         // Step 6: Spent value < $10 but remaining clicks >= 10,000, activate with end time
         await this.activateWithEndTime(campaign, totalRemainingClicks);
-      } else if (totalRemainingClicks < 5000) {
-        // CRITICAL: Step 7: When clicks are less than 5,000, pause the campaign
-        console.log(`CRITICAL: Campaign ${campaign.id} has less than 5,000 clicks (${totalRemainingClicks}), pausing campaign immediately`);
-        
-        // Get the TrafficStar campaign ID
-        const trafficstarId = parseInt(campaign.trafficstarCampaignId);
-        await this.pauseTrafficStarCampaign(campaign.id, trafficstarId);
       } else {
         console.log(`Campaign ${campaign.id} does not meet reactivation criteria: spent value is less than $${this.MINIMUM_SPENT_VALUE} and remaining clicks (${totalRemainingClicks}) are less than ${this.MINIMUM_CLICKS_FOR_SMALL_BUDGET}`);
       }
@@ -415,7 +425,7 @@ class TrafficSenderService {
 
   /**
    * Check for new URLs added since the last budget update and update the budget if needed
-   * This is for Step 7: If we add new URLs after activating Traffic Sender, we need to update the budget
+   * This is for Point 9: If we add new URLs after activating Traffic Sender, we need to update the budget
    * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async checkForNewUrlsAndUpdateBudget(campaign: any) {
@@ -509,54 +519,6 @@ class TrafficSenderService {
   public async processPendingBudgetUpdates() {
     console.log('Processing pending URL budget updates');
     await this.processTrafficSenderCampaigns();
-  }
-
-  /**
-   * Get campaigns with pending budget updates
-   */
-  public async getPendingBudgetUpdates() {
-    // Find all campaigns with Traffic Sender enabled
-    const enabledCampaigns = await db
-      .select()
-      .from(campaigns)
-      .where(eq(campaigns.trafficSenderEnabled, true));
-    
-    const pendingUpdates = [];
-    
-    for (const campaign of enabledCampaigns) {
-      // Skip if there's no last budget update time
-      if (!campaign.lastBudgetUpdateTime) {
-        continue;
-      }
-      
-      // Calculate time elapsed since the last budget update
-      const minutesElapsed = (new Date().getTime() - new Date(campaign.lastBudgetUpdateTime).getTime()) / (1000 * 60);
-      
-      // Get URLs created after the last budget update
-      const newUrlsResult = await db.execute(sql`
-        SELECT SUM(click_limit - clicks) as new_clicks 
-        FROM urls 
-        WHERE campaign_id = ${campaign.id} 
-        AND status = 'active' 
-        AND created_at > ${campaign.lastBudgetUpdateTime}
-      `);
-      
-      const newClicksTotal = parseInt(newUrlsResult.rows[0]?.new_clicks || '0');
-      
-      // If there are new URLs, check if it's time to update the budget
-      if (newClicksTotal > 0) {
-        pendingUpdates.push({
-          campaignId: campaign.id,
-          campaignName: campaign.name,
-          newClicksTotal,
-          minutesElapsed,
-          minutesRemaining: this.NEW_URL_WAIT_MINUTES - minutesElapsed,
-          readyForUpdate: minutesElapsed >= this.NEW_URL_WAIT_MINUTES
-        });
-      }
-    }
-    
-    return pendingUpdates;
   }
 }
 
