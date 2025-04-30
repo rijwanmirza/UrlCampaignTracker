@@ -46,7 +46,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
-import { registerTestTrafficstarRoutes } from "./test-trafficstar-routes";
+import { registerTestTrafficstarRoutes } from "./test-trafficstar-routes-new";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Just create a regular HTTP server for now

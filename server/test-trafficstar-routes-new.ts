@@ -35,8 +35,15 @@ export function registerTestTrafficstarRoutes(app: any) {
       
       console.log(`🧪 TEST: Forcing budget update for campaign ${campaignId} (TS: ${campaign.trafficstarCampaignId})`);
       
-      // Force budget update
-      await trafficStarService.forceBudgetUpdate(parseInt(campaignId));
+      // Force budget update using updateCampaignBudget
+      // Set budget to fixed value ($10.15)
+      const trafficstarId = parseInt(campaign.trafficstarCampaignId);
+      // Using the standard function for updating budgets
+      await trafficStarService.updateCampaignBudget(trafficstarId, 10.15);
+      
+      // Get current UTC date
+      const currentUtcDate = new Date().toISOString().split('T')[0];
+      console.log(`Successfully updated budget for campaign ${trafficstarId} to $10.15 on ${currentUtcDate}`);
       
       return res.status(200).json({
         message: `Budget update forced for campaign ${campaignId}`,

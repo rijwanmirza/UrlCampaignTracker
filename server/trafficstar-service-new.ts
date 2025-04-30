@@ -385,7 +385,17 @@ class TrafficStarService {
     try {
       const token = await this.ensureToken();
       
-      let campaign: Campaign | null = null;
+      let campaign: Campaign = {
+        id: id,
+        name: '',
+        status: '',
+        approved: '',
+        active: false,
+        is_archived: false,
+        max_daily: 0,
+        pricing_model: '',
+        schedule_end_time: ''
+      };
       let success = false;
       let lastError = null;
       
@@ -1047,8 +1057,8 @@ class TrafficStarService {
             // Update campaign with spent value data
             await db.update(campaigns)
               .set({
-                dailySpent: spentValue.totalSpent.toString(),
-                dailySpentDate: currentUtcDate,
+                dailySpent: spentValue.totalSpent,
+                dailySpentDate: new Date(currentUtcDate),
                 lastSpentCheck: new Date(),
                 updatedAt: new Date()
               })
