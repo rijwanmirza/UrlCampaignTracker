@@ -2009,8 +2009,8 @@ class TrafficStarService {
               
               console.log(`✅ Campaign ${trafficstarId} paused due to high spent value. Will recheck at ${recheckAt.toISOString()}`);
               
-              // Disable click threshold checks for this campaign until next UTC date
-              console.log(`Click threshold checks for campaign ${trafficstarId} disabled until next UTC date change`);
+              // This campaign will remain paused until the next UTC date
+              console.log(`Campaign ${trafficstarId} will remain paused until next UTC date change`);
             } catch (error) {
               console.error(`Error pausing campaign ${trafficstarId} due to high spent value:`, error);
             }
