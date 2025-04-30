@@ -455,13 +455,13 @@ export default function DetailedUrlRecordPage() {
           ) : viewType === 'hourly' && clickData?.hourlyByDate && Object.keys(clickData.hourlyByDate).length > 0 ? (
             // Hourly view organized by date
             <div className="space-y-8">
-              {Object.entries(clickData.hourlyByDate).map(([date, hourlyData]) => (
+              {Object.entries(clickData.hourlyByDate || {}).map(([date, hourlyData]) => (
                 <div key={date} className="border rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-4">Date: {date}</h3>
                   <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart 
-                        data={Object.entries(hourlyData).map(([hour, clicks]) => ({
+                        data={Object.entries(hourlyData as Record<string, number>).map(([hour, clicks]) => ({
                           name: hour,
                           value: Number(clicks)
                         })).sort((a, b) => {

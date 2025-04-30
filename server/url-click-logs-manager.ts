@@ -77,7 +77,8 @@ export class UrlClickLogsManager {
   }
 
   /**
-   * Log a click for a URL
+   * Log a click for a URL - ONLY LOGS, DOES NOT INCREMENT COUNTER
+   * (The counter is incremented by storage.incrementUrlClicks)
    */
   public async logClick(urlId: number): Promise<void> {
     this.initialize();
@@ -93,21 +94,9 @@ export class UrlClickLogsManager {
       const logFilePath = this.getUrlLogFilePath(urlId);
       fs.appendFileSync(logFilePath, logEntry + '\n');
       
-      // Also store in the database for analytics (if integrated with a database)
-      // This would be used for faster querying of analytics data
-      
-      // Update the clicks count in the URL record
-      // First get the current count
-      const urlRecord = await db.query.urls.findFirst({
-        where: eq(urls.id, urlId)
-      });
-      
-      if (urlRecord) {
-        // Then update with incremented value
-        await db.update(urls)
-          .set({ clicks: urlRecord.clicks + 1 })
-          .where(eq(urls.id, urlId));
-      }
+      // BUGFIX: Removed database increment to prevent double counting
+      // The click counter is already incremented by storage.incrementUrlClicks
+      // When a click happens, the counter should only be incremented once
       
       console.log(`Logged click for URL ID ${urlId}: ${logEntry}`);
       
