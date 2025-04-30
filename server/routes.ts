@@ -2885,13 +2885,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetUpdateTimeMigrationNeeded = await isBudgetUpdateTimeMigrationNeeded();
       const trafficStarFieldsMigrationNeeded = await isTrafficStarFieldsMigrationNeeded();
       
-      // Check for Traffic Sender fields
-      const trafficSenderFieldsResult = await db.execute(`
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'campaigns' AND column_name = 'traffic_sender_enabled'
-      `);
-      const trafficSenderFieldsMigrationNeeded = trafficSenderFieldsResult.rows.length === 0;
-      
       // Check if the original_url_records table exists
       const originalUrlRecordsTableResult = await db.execute(`
         SELECT EXISTS (
@@ -2903,21 +2896,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Print debug info to help troubleshoot
       console.log("Budget update time migration check result:", budgetUpdateTimeMigrationNeeded);
       console.log("TrafficStar fields migration check result:", trafficStarFieldsMigrationNeeded);
-      console.log("Traffic Sender fields migration check result:", trafficSenderFieldsMigrationNeeded);
       console.log("Original URL records table result:", originalUrlRecordsTableResult);
       
-      // Determine if any migration is needed
-      const migrationNeeded = trafficSenderFieldsMigrationNeeded;
+      // No migrations are needed since Traffic Sender has been removed
+      const migrationNeeded = false;
       
       res.status(200).json({
         budgetUpdateTimeMigrationNeeded: false, // These are already done
         trafficStarFieldsMigrationNeeded: false, // These are already done
-        trafficSenderFieldsMigrationNeeded,
+        trafficSenderFieldsMigrationNeeded: false, // Traffic Sender has been removed
         originalUrlRecordsTableExists: true,
-        migrationNeeded,
-        message: migrationNeeded 
-          ? "Migration needed for Traffic Sender functionality" 
-          : "All migrations are already applied - no action needed"
+        migrationNeeded: false,
+        message: "All migrations are already applied - no action needed"
       });
     } catch (error) {
       console.error("Failed to check migration status:", error);
