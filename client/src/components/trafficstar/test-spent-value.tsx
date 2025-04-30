@@ -143,10 +143,10 @@ export function TestSpentValue() {
             <div className="mb-4">
               <h3 className="text-lg font-medium mb-2">About this test</h3>
               <p className="text-sm text-gray-600 mb-4">
-                This test verifies both auto-management mechanisms:
+                This test verifies TrafficStar integration features:
                 <ol className="list-decimal pl-5 mt-2 space-y-1">
-                  <li>Click threshold (activate at 15,000 clicks, pause at 5,000 clicks)</li>
-                  <li>Daily spent value (pause when exceeds $10, overriding click thresholds)</li>
+                  <li>Spent value retrieval from TrafficStar API</li>
+                  <li>Budget update functionality at specified UTC time</li>
                 </ol>
                 The test runs in simulation mode and won't affect real data or make actual API calls.
               </p>
@@ -309,7 +309,7 @@ export function TestSpentValue() {
               </div>
             ) : results && results.length === 0 ? (
               <div className="text-center p-4 text-gray-500">
-                No auto-managed campaigns found to test
+                No campaigns with TrafficStar integration found to test
               </div>
             ) : null}
           </TabsContent>
