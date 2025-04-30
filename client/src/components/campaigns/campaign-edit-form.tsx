@@ -48,8 +48,7 @@ const campaignEditSchema = z.object({
   trafficstarCampaignId: z.string().optional(),
   // Auto-management has been removed
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
-  // Traffic Sender fields
-  trafficSenderEnabled: z.boolean().optional(),
+  // Traffic Sender fields removed
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -83,8 +82,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       trafficstarCampaignId: campaign.trafficstarCampaignId || "",
       // autoManageTrafficstar has been removed
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
-      // Traffic Sender settings - explicitly use boolean comparison to avoid type issues
-      trafficSenderEnabled: campaign.trafficSenderEnabled === true,
+      // Traffic Sender settings removed
     },
   });
   
@@ -97,7 +95,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     trafficstarCampaignId: campaign.trafficstarCampaignId || "",
-    trafficSenderEnabled: campaign.trafficSenderEnabled === true, // Add traffic sender status to logging
+    // Traffic Sender references removed
     // Auto-management has been removed
   });
   
@@ -110,10 +108,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         : (campaign.pricePerThousand || 0)
     );
     
-    // Set Traffic Sender enabled state to a proper boolean value
-    const trafficSenderStatus = campaign.trafficSenderEnabled === true;
-    form.setValue('trafficSenderEnabled', trafficSenderStatus);
-    console.log('Setting initial trafficSenderEnabled value to:', trafficSenderStatus, '(original value:', campaign.trafficSenderEnabled, ')');
+    // Traffic Sender code removed
   }, 100);
   
   // Force budget update mutation - will be used when budgetUpdateTime changes
@@ -579,45 +574,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 />
               )}
               
-              {/* Traffic Sender Toggle */}
-              <div className="border-t pt-4 mt-6">
-                <h3 className="text-md font-medium mb-4">Traffic Sender</h3>
-                <FormField
-                  control={form.control}
-                  name="trafficSenderEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Enable Traffic Sender
-                        </FormLabel>
-                        <FormDescription>
-                          Automatically send traffic to this campaign
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={(value) => {
-                            console.log('Traffic Sender toggle clicked - changing to:', value);
-                            // Use React's state to track the toggle value independently
-                            const newValue = value === true;
-                            // Set the form value after a slight delay to prevent React's state batching
-                            // from causing issues with the Switch component
-                            setTimeout(() => {
-                              field.onChange(newValue);
-                              console.log('Traffic Sender toggle value set in form to:', newValue);
-                              // Force form to update properly
-                              form.setValue('trafficSenderEnabled', newValue);
-                            }, 10);
-                          }}
-                          aria-readonly={updateCampaignMutation.isPending}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Traffic Sender section removed */}
             </div>
             
             <DialogFooter className="pt-4">
