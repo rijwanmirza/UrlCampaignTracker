@@ -858,7 +858,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('🔍 DEBUG: Campaign update request received:', JSON.stringify(req.body, null, 2));
-      console.log('🔍 DEBUG: Traffic Sender enabled value:', req.body.trafficSenderEnabled, 'type:', typeof req.body.trafficSenderEnabled);
+      
+      // CRITICAL FIX: Make sure trafficSenderEnabled is always a proper boolean
+      // This ensures consistent behavior regardless of what the client sends
+      if (req.body.trafficSenderEnabled !== undefined) {
+        // Explicitly convert to boolean using strict comparison
+        req.body.trafficSenderEnabled = req.body.trafficSenderEnabled === true;
+      }
+      
+      console.log('🔍 DEBUG: Traffic Sender enabled value (after normalization):', req.body.trafficSenderEnabled, 'type:', typeof req.body.trafficSenderEnabled);
       
       // ENHANCED PROTECTION: Block any direct modifications to click limits
       if (req.body.clickLimit || req.body.originalClickLimit) {

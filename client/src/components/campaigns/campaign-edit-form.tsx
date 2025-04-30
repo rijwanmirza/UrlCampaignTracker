@@ -599,12 +599,17 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                         <Switch
                           checked={field.value}
                           onCheckedChange={(value) => {
-                            console.log('Traffic Sender toggle changed to:', value);
-                            // Prevent the toggle from automatically switching back
+                            console.log('Traffic Sender toggle clicked - changing to:', value);
+                            // Use React's state to track the toggle value independently
+                            const newValue = value === true;
+                            // Set the form value after a slight delay to prevent React's state batching
+                            // from causing issues with the Switch component
                             setTimeout(() => {
-                              field.onChange(value);
-                              console.log('Traffic Sender toggle value set in form to:', value);
-                            }, 0);
+                              field.onChange(newValue);
+                              console.log('Traffic Sender toggle value set in form to:', newValue);
+                              // Force form to update properly
+                              form.setValue('trafficSenderEnabled', newValue);
+                            }, 10);
                           }}
                           aria-readonly={updateCampaignMutation.isPending}
                         />
