@@ -530,9 +530,9 @@ class TrafficStarService {
         
         console.log(`API status check completed - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
         
-        // If already paused, we'll still make the API call but log that we know it's already in desired state
+        // If already paused, skip the API call since it's not needed
         if (apiCampaign.active === false || apiCampaign.status === 'paused') {
-          console.log(`Note: Campaign ${id} is already paused according to TrafficStar API - making API call anyway per requirements`);
+          console.log(`Note: Campaign ${id} is already paused according to TrafficStar API - skipping redundant API call`);
           needsExplicitPauseCall = false;
           
           // Save this status to database for future reference
@@ -560,67 +560,76 @@ class TrafficStarService {
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
       
-      // ALWAYS make direct API call regardless of current status
-      try {
-        // Get token
-        const token = await this.ensureToken();
-        
-        if (needsExplicitPauseCall) {
+      // Only make API call if the campaign needs to be paused
+      if (needsExplicitPauseCall) {
+        try {
+          // Get token
+          const token = await this.ensureToken();
+          
           console.log(`Making V2 API call to pause campaign ${id} (requires explicit pause)`);
-        } else {
-          console.log(`Making V2 API call to pause campaign ${id} (already in paused state)`);
-        }
-        
-        // Using the documented V2 endpoint for pausing multiple campaigns
-        const response = await axios.put(
-          `https://api.trafficstars.com/v2/campaigns/pause`, 
-          { 
-            campaign_ids: [id]
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+          
+          // Using the documented V2 endpoint for pausing multiple campaigns
+          const response = await axios.put(
+            `https://api.trafficstars.com/v2/campaigns/pause`, 
+            { 
+              campaign_ids: [id]
             },
-            timeout: 10000
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            }
+          );
+          
+          console.log(`✅ V2 Campaign pause API call made. Response:`, response.data);
+            
+          // Check if pause was successful
+          if (response.data && response.data.success && response.data.success.includes(id)) {
+            console.log(`Campaign ${id} paused successfully via V2 API`);
+            
+            // Update database with success status
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                lastRequestedActionSuccess: true,
+                lastVerifiedStatus: 'paused',
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          } else {
+            // Campaign pause failed according to API response
+            console.error(`⚠️ Campaign ${id} pause failed according to API response`);
+            
+            // Record error in database
+            await db.update(trafficstarCampaigns)
+              .set({ 
+                lastRequestedActionSuccess: false,
+                lastVerifiedStatus: 'error',
+                updatedAt: new Date() 
+              })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
           }
-        );
-        
-        console.log(`✅ V2 Campaign pause API call made. Response:`, response.data);
-          
-        // Check if pause was successful
-        if (response.data && response.data.success && response.data.success.includes(id)) {
-          console.log(`Campaign ${id} paused successfully via V2 API`);
-          
-          // Update database with success status
-          await db.update(trafficstarCampaigns)
-            .set({ 
-              lastRequestedActionSuccess: true,
-              lastVerifiedStatus: 'paused',
-              updatedAt: new Date() 
-            })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-        } else {
-          // Campaign pause failed according to API response
-          console.error(`⚠️ Campaign ${id} pause failed according to API response`);
+        } catch (error: any) {
+          console.error(`⚠️ Error pausing campaign ${id}:`, error);
           
           // Record error in database
           await db.update(trafficstarCampaigns)
             .set({ 
               lastRequestedActionSuccess: false,
-              lastVerifiedStatus: 'error',
               updatedAt: new Date() 
             })
             .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
         }
-      } catch (error: any) {
-        console.error(`⚠️ Error pausing campaign ${id}:`, error);
+      } else {
+        console.log(`Skipping API call - campaign ${id} is already paused`);
         
-        // Record error in database
+        // Update database to show success since it's already in the desired state
         await db.update(trafficstarCampaigns)
-          .set({ 
-            lastRequestedActionSuccess: false,
-            updatedAt: new Date() 
+          .set({
+            lastRequestedActionSuccess: true,
+            lastVerifiedStatus: 'paused',
+            updatedAt: new Date()
           })
           .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
       }
@@ -671,9 +680,9 @@ class TrafficStarService {
         
         console.log(`API status check completed - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
         
-        // If already active, we'll still make the API call but log that we know it's already in desired state
+        // If already active, skip the API call since it's not needed
         if (apiCampaign.active === true || apiCampaign.status === 'enabled') {
-          console.log(`Note: Campaign ${id} is already active according to TrafficStar API - making API call anyway per requirements`);
+          console.log(`Note: Campaign ${id} is already active according to TrafficStar API - skipping redundant API call`);
           needsExplicitActivationCall = false;
           
           // Save this status to database for future reference
@@ -709,79 +718,98 @@ class TrafficStarService {
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
       
-      // ALWAYS make direct API call regardless of current status
-      try {
-        // Get token
-        const token = await this.ensureToken();
-        
-        if (needsExplicitActivationCall) {
+      // Only make API call if the campaign needs to be activated
+      if (needsExplicitActivationCall) {
+        try {
+          // Get token
+          const token = await this.ensureToken();
+          
           console.log(`Making V2 API call to activate campaign ${id} (requires explicit activation)`);
-        } else {
-          console.log(`Making V2 API call to activate campaign ${id} (already in active state)`);
-        }
-        
-        // Using the documented V2 endpoint for activating multiple campaigns
-        const response = await axios.put(
-          `https://api.trafficstars.com/v2/campaigns/run`, 
-          { 
-            campaign_ids: [id]
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+          
+          // Using the documented V2 endpoint for activating multiple campaigns
+          const response = await axios.put(
+            `https://api.trafficstars.com/v2/campaigns/run`, 
+            { 
+              campaign_ids: [id]
             },
-            timeout: 10000
-          }
-        );
-        
-        console.log(`✅ V2 Campaign activation API call made. Response:`, response.data);
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            }
+          );
           
-        // Check if activation was successful
-        if (response.data && response.data.success && response.data.success.includes(id)) {
-          console.log(`Campaign ${id} activated successfully via V2 API`);
-          
-          // Now set the end time
-          try {
-            // Set end time to end of current day in TrafficStar
-            await this.updateCampaignEndTime(id, endTimeFormatted);
-            console.log(`✅ Set end time to ${endTimeFormatted} for activated campaign ${id}`);
+          console.log(`✅ V2 Campaign activation API call made. Response:`, response.data);
             
-            // Update database with success status
+          // Check if activation was successful
+          if (response.data && response.data.success && response.data.success.includes(id)) {
+            console.log(`Campaign ${id} activated successfully via V2 API`);
+            
+            // Now set the end time
+            try {
+              // Set end time to end of current day in TrafficStar
+              await this.updateCampaignEndTime(id, endTimeFormatted);
+              console.log(`✅ Set end time to ${endTimeFormatted} for activated campaign ${id}`);
+              
+              // Update database with success status
+              await db.update(trafficstarCampaigns)
+                .set({ 
+                  scheduleEndTime: endTimeFormatted,
+                  lastRequestedActionSuccess: true,
+                  lastVerifiedStatus: 'enabled',
+                  updatedAt: new Date() 
+                })
+                .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            } catch (endTimeError) {
+              console.error(`⚠️ Error setting end time for campaign ${id}:`, endTimeError);
+            }
+          } else {
+            // Campaign activation failed according to API response
+            console.error(`⚠️ Campaign ${id} activation failed according to API response`);
+            
+            // Record error in database
             await db.update(trafficstarCampaigns)
               .set({ 
-                scheduleEndTime: endTimeFormatted,
-                lastRequestedActionSuccess: true,
-                lastVerifiedStatus: 'enabled',
+                lastRequestedActionSuccess: false,
+                lastVerifiedStatus: 'error',
                 updatedAt: new Date() 
               })
               .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-          } catch (endTimeError) {
-            console.error(`⚠️ Error setting end time for campaign ${id}:`, endTimeError);
           }
-        } else {
-          // Campaign activation failed according to API response
-          console.error(`⚠️ Campaign ${id} activation failed according to API response`);
+        } catch (error: any) {
+          console.error(`⚠️ Error activating campaign ${id}:`, error);
           
           // Record error in database
           await db.update(trafficstarCampaigns)
             .set({ 
               lastRequestedActionSuccess: false,
-              lastVerifiedStatus: 'error',
               updatedAt: new Date() 
             })
             .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
         }
-      } catch (error: any) {
-        console.error(`⚠️ Error activating campaign ${id}:`, error);
+      } else {
+        console.log(`Skipping API call - campaign ${id} is already active`);
         
-        // Record error in database
-        await db.update(trafficstarCampaigns)
-          .set({ 
-            lastRequestedActionSuccess: false,
-            updatedAt: new Date() 
-          })
-          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        // Set end time if campaign is already active
+        try {
+          // Always try to update the end time to ensure it's set properly
+          await this.updateCampaignEndTime(id, endTimeFormatted);
+          console.log(`✅ Set end time to ${endTimeFormatted} for already active campaign ${id}`);
+          
+          // Update database to show success since it's already in the desired state
+          await db.update(trafficstarCampaigns)
+            .set({
+              scheduleEndTime: endTimeFormatted,
+              lastRequestedActionSuccess: true,
+              lastVerifiedStatus: 'enabled',
+              updatedAt: new Date()
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        } catch (endTimeError) {
+          console.error(`⚠️ Error setting end time for already active campaign ${id}:`, endTimeError);
+        }
       }
       
       // Verify status - simple check only, without affecting user experience
