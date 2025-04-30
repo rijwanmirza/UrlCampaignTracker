@@ -30,7 +30,7 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, Search, Calendar as CalendarIcon, ExternalLink, FileText } from "lucide-react";
+import { Loader2, Search, Calendar as CalendarIcon, ExternalLink, FileText, Link, Hash, FileText as NameIcon } from "lucide-react";
 import { UrlWithActiveStatus } from "@shared/schema";
 import { formatIndianTime } from "@/lib/utils";
 
@@ -347,9 +347,15 @@ export default function UrlClickRecordsPage() {
       
       {/* Filter and search controls */}
       <Card className="mb-6">
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle>Search & Filter</CardTitle>
+          <CardDescription>
+            Find URLs by ID, Name or URL address
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
-            {/* Search box */}
+            {/* Search box with visual indicators for searchable fields */}
             <div className="flex-1 w-full md:w-auto">
               <div className="flex w-full items-center space-x-2">
                 <div className="relative flex-1">
@@ -361,6 +367,20 @@ export default function UrlClickRecordsPage() {
                     value={searchTerm}
                     onChange={handleSearch}
                   />
+                </div>
+              </div>
+              <div className="text-xs flex items-center gap-6 text-muted-foreground mt-2">
+                <div className="flex items-center gap-1">
+                  <Hash className="h-3 w-3" />
+                  <span>ID</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FileSparkles className="h-3 w-3" />
+                  <span>Name</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Link className="h-3 w-3" />
+                  <span>URL Address</span>
                 </div>
               </div>
             </div>
@@ -472,7 +492,7 @@ export default function UrlClickRecordsPage() {
         <CardHeader>
           <CardTitle>URL Records</CardTitle>
           <CardDescription>
-            All URLs with click counts for {getFilterDescription()}
+            All URLs with click counts for {getFilterDescription()} | Searchable by ID, Name, and URL
           </CardDescription>
         </CardHeader>
         <CardContent>
