@@ -119,7 +119,7 @@ class TrafficSenderService {
         AND status = 'active'
       `);
       
-      const totalRemainingClicks = parseInt(remainingClicksResult.rows[0]?.remaining_clicks || '0');
+      const totalRemainingClicks = parseInt(remainingClicksResult.rows[0]?.remaining_clicks?.toString() || '0');
       console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
       
       // Get the spent value immediately for the critical check
