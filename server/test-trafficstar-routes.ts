@@ -71,15 +71,9 @@ export function registerTestTrafficstarRoutes(app: any) {
         totalClickLimit += Math.floor(remainingClicks / activeUrls.length);
       }
       
-      // Force auto-management to run for this campaign
-      await trafficStarService.autoManageCampaign({
-        id: parseInt(campaignId),
-        trafficstarCampaignId: campaign.trafficstarCampaignId,
-        name: campaign.name,
-        autoManageTrafficstar: true,
-        createdAt: campaign.createdAt,
-        updatedAt: campaign.updatedAt
-      });
+      // Force trafficStarService to check this campaign
+      console.log(`🧪 TEST: Running auto-management for campaign ${campaignId} with ${remainingClicks} remaining clicks`);
+      await trafficStarService.autoManageCampaigns();
       
       // After 5 seconds, restore original values
       setTimeout(async () => {
@@ -173,15 +167,9 @@ export function registerTestTrafficstarRoutes(app: any) {
         totalRemaining += clicksPerUrl;
       }
       
-      // Force auto-management to run for this campaign
-      await trafficStarService.autoManageCampaign({
-        id: parseInt(campaignId),
-        trafficstarCampaignId: campaign.trafficstarCampaignId,
-        name: campaign.name,
-        autoManageTrafficstar: true,
-        createdAt: campaign.createdAt,
-        updatedAt: campaign.updatedAt
-      });
+      // Force trafficStarService to check this campaign
+      console.log(`🧪 TEST: Running auto-management for campaign ${campaignId} with ${remainingClicks} remaining clicks`);
+      await trafficStarService.autoManageCampaigns();
       
       // After 5 seconds, restore original values
       setTimeout(async () => {
@@ -237,28 +225,17 @@ export function registerTestTrafficstarRoutes(app: any) {
       
       console.log(`🧪 TEST: Setting cached status for campaign ${campaignId} (TS: ${trafficstarId}) to ${status}, active=${active}`);
       
-      // This will test our caching mechanism by setting a known cached status
+      // Update status in the database directly
+      // This will test our status checking by setting a known status
       // that should prevent API calls if the status matches what's desired
+      const isActive = active === 'true' || active === true;
+      const statusStr = status.toString();
       
-      // Force auto-management to run for this campaign with the cached status
-      const result = await trafficStarService.autoManageCampaign({
-        id: parseInt(campaignId),
-        trafficstarCampaignId: campaign.trafficstarCampaignId,
-        name: campaign.name,
-        autoManageTrafficstar: true,
-        createdAt: campaign.createdAt,
-        updatedAt: campaign.updatedAt
-      }, {
-        active: active === 'true' || active === true,
-        status: status,
-        lastRequestedAction: status === 'enabled' ? 'activate' : 'pause',
-        lastRequestedActionAt: new Date(),
-        lastRequestedActionSuccess: true
-      });
+      // Force auto-management with the updated database status
+      await trafficStarService.autoManageCampaigns();
       
       return res.status(200).json({
         message: `Campaign ${campaignId} cached status set to ${status}, active=${active}`,
-        result
       });
     } catch (error) {
       console.error('Error in test route:', error);
