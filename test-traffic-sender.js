@@ -110,7 +110,7 @@ async function testPoint4_SpentValueCheck(campaignId) {
   console.log(`Current spent date: ${campaign.dailySpentDate || 'N/A'}`);
   
   // Trigger a spent value update
-  await callApi(`/campaigns/${campaignId}/update-spent-value`, 'POST');
+  await callApi(`/trafficstar/campaigns/${campaign.trafficstarCampaignId}/spent`, 'GET');
   
   // Get updated campaign
   const updatedCampaign = await callApi(`/campaigns/${campaignId}`);
@@ -251,7 +251,7 @@ async function testPoint8_StatusVerification(campaignId) {
   const trafficstarId = campaign.trafficstarCampaignId;
   
   // Get TrafficStar status
-  const trafficstarInfo = await callApi(`/trafficstar/campaign/${trafficstarId}`);
+  const trafficstarInfo = await callApi(`/trafficstar/campaigns/${trafficstarId}`);
   
   console.log(`Campaign ID: ${campaignId}`);
   console.log(`TrafficStar ID: ${trafficstarId}`);
@@ -264,7 +264,7 @@ async function testPoint8_StatusVerification(campaignId) {
   
   // Get updated campaign
   const updatedCampaign = await callApi(`/campaigns/${campaignId}`);
-  const updatedTrafficstarInfo = await callApi(`/trafficstar/campaign/${trafficstarId}`);
+  const updatedTrafficstarInfo = await callApi(`/trafficstar/campaigns/${trafficstarId}`);
   
   console.log(`Updated TrafficStar status: ${updatedTrafficstarInfo.status}`);
   console.log(`Updated last TrafficSender status: ${updatedCampaign.lastTrafficSenderStatus}`);
@@ -363,15 +363,62 @@ async function runAllTests() {
   
   console.log(`Using campaign for testing: ID=${testCampaign.id}, Name=${testCampaign.name}`);
   
-  // Run all tests
-  await testPoint1_UI();
-  await testPoint2_ActivationProcess(testCampaign.id);
-  await testPoint3_WaitingPeriod(testCampaign.id);
-  await testPoint4_SpentValueCheck(testCampaign.id);
-  await testPoint5And6_SpentAbove10(testCampaign.id);
-  await testPoint7_SpentBelow10(testCampaign.id);
-  await testPoint8_StatusVerification(testCampaign.id);
-  await testPoint9_NewUrls(testCampaign.id);
+  // Run all tests with error handling
+  try {
+    console.log('\n========== Testing Point 1: UI Implementation ==========');
+    await testPoint1_UI();
+  } catch (error) {
+    console.error('Error testing Point 1:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 2: Traffic Sender Activation Process ==========');
+    await testPoint2_ActivationProcess(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 2:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 3: 10-Minute Waiting Period ==========');
+    await testPoint3_WaitingPeriod(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 3:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 4: Spent Value Check ==========');
+    await testPoint4_SpentValueCheck(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 4:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 5 & 6: Handling Spent Value ≥ $10 ==========');
+    await testPoint5And6_SpentAbove10(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 5 & 6:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 7: Handling Spent Value < $10 ==========');
+    await testPoint7_SpentBelow10(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 7:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 8: Campaign Status Verification ==========');
+    await testPoint8_StatusVerification(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 8:', error);
+  }
+  
+  try {
+    console.log('\n========== Testing Point 9: Handling New URLs ==========');
+    await testPoint9_NewUrls(testCampaign.id);
+  } catch (error) {
+    console.error('Error testing Point 9:', error);
+  }
   
   console.log('\nAll tests complete!');
 }

@@ -819,6 +819,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch campaign" });
     }
   });
+  
+  // Get campaign with URLs (for testing Traffic Sender)
+  app.get("/api/campaigns/:id/with-urls", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      // Get the campaign
+      const campaign = await storage.getCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Get all URLs for this campaign
+      const campaignUrls = await storage.getUrlsByCampaign(id);
+      
+      // Return campaign with URLs
+      res.json({
+        ...campaign,
+        urls: campaignUrls
+      });
+    } catch (error) {
+      console.error('Error fetching campaign with URLs:', error);
+      res.status(500).json({ message: "Failed to fetch campaign with URLs" });
+    }
+  });
 
   app.post("/api/campaigns", async (req: Request, res: Response) => {
     try {
