@@ -1799,7 +1799,7 @@ class TrafficStarService {
   
   /**
    * Schedule TrafficStar spent value updates
-   * This method replaces the previous auto-management scheduler
+   * This method schedules regular spent value tracking updates
    */
   async scheduleSpentValueUpdates(): Promise<void> {
     try {
