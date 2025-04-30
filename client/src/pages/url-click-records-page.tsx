@@ -244,9 +244,13 @@ export default function UrlClickRecordsPage() {
   
   // Combined data for display - merge URLs with their click counts for the filtered period
   const combinedData = useMemo(() => {
-    if (!urlsData?.length) return [];
+    // To debug what data we're getting
+    console.log("URLs data:", urlsData);
+    console.log("Click data:", clickData);
     
-    return urlsData.map((url: UrlWithActiveStatus) => {
+    if (!urlsData?.urls?.length) return [];
+    
+    return urlsData.urls.map((url: UrlWithActiveStatus) => {
       // Find this URL's click count in the filtered data
       const urlClickData = clickData?.urlBreakdown?.find((item: any) => item.urlId === url.id);
       
