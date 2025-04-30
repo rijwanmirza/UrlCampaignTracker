@@ -154,6 +154,9 @@ export class UrlClickLogsManager {
     const hourlyBreakdown: Record<number, number> = {};
     let totalClicks = 0;
     
+    // Get the timezone from the filter
+    const timezone = filter.timezone || 'Asia/Kolkata';
+    
     // Regular expression to match the timestamp in log format: New click received{30-April-2024:08:04:02}
     const timestampRegex = /New click received\{(\d{2}-[A-Za-z]+-\d{4}):(\d{2}):(\d{2}):(\d{2})\}/;
     
@@ -162,21 +165,45 @@ export class UrlClickLogsManager {
       
       if (match) {
         const datePart = match[1]; // e.g., "30-April-2024"
-        const hourPart = parseInt(match[2]); // e.g., "08"
+        const hourString = match[2]; // e.g., "08"
+        const minuteString = match[3]; // e.g., "04"
+        const secondString = match[4]; // e.g., "02"
         
-        // Parse the date from the log entry
-        const dateObj = new Date(datePart.replace(/-/g, ' '));
+        // Parse the full date from the log entry (in Indian time - IST/GMT+5:30)
+        // This is the original timestamp stored in logs
+        const originalDate = new Date(datePart.replace(/-/g, ' '));
+        originalDate.setHours(
+          parseInt(hourString),
+          parseInt(minuteString),
+          parseInt(secondString)
+        );
         
-        // Check if this log falls within our date range
-        if (dateObj >= startDate && dateObj <= endDate) {
-          // Format the date as YYYY-MM-DD for consistent keys
-          const dateKey = format(dateObj, 'yyyy-MM-dd');
+        // Convert the date to the requested timezone
+        let dateInRequestedTimezone: Date;
+        let hourInRequestedTimezone: number;
+        
+        if (timezone === 'UTC') {
+          // Convert from IST to UTC (subtract 5:30 hours)
+          dateInRequestedTimezone = new Date(originalDate.getTime() - (5 * 60 + 30) * 60 * 1000);
+          hourInRequestedTimezone = dateInRequestedTimezone.getUTCHours();
+        } else {
+          // Keep as IST
+          dateInRequestedTimezone = originalDate;
+          hourInRequestedTimezone = parseInt(hourString);
+        }
+        
+        // Check if this log falls within our date range in the requested timezone
+        if (dateInRequestedTimezone >= startDate && dateInRequestedTimezone <= endDate) {
+          // Format the date as YYYY-MM-DD for consistent keys based on the requested timezone
+          const dateKey = timezone === 'UTC' 
+            ? format(dateInRequestedTimezone, 'yyyy-MM-dd')
+            : format(originalDate, 'yyyy-MM-dd');
           
           // Increment daily count
           dailyBreakdown[dateKey] = (dailyBreakdown[dateKey] || 0) + 1;
           
-          // Increment hourly count
-          hourlyBreakdown[hourPart] = (hourlyBreakdown[hourPart] || 0) + 1;
+          // Increment hourly count using the hour in the requested timezone
+          hourlyBreakdown[hourInRequestedTimezone] = (hourlyBreakdown[hourInRequestedTimezone] || 0) + 1;
           
           totalClicks++;
         }
@@ -199,10 +226,22 @@ export class UrlClickLogsManager {
   }
 
   /**
-   * Calculate date range based on filter type
+   * Calculate date range based on filter type with timezone consideration
    */
   private getDateRangeForFilter(filter: TimeRangeFilter): { startDate: Date, endDate: Date } {
-    const now = new Date();
+    // Get timezone-adjusted now date
+    const timezone = filter.timezone || 'Asia/Kolkata';
+    let now: Date;
+    
+    if (timezone === 'UTC') {
+      // Use UTC date directly
+      now = new Date();
+    } else {
+      // For Indian timezone, no adjustment needed as the dates are already in IST
+      now = new Date();
+    }
+    
+    // Create today at 00:00:00 in the requested timezone
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     let startDate: Date;
