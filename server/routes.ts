@@ -1403,6 +1403,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch URLs" });
     }
   });
+  
+  // Get a single URL by ID
+  app.get("/api/urls/:id", async (req: Request, res: Response) => {
+    try {
+      const urlId = parseInt(req.params.id);
+      if (isNaN(urlId)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      const url = await storage.getUrl(urlId);
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Send JSON response
+      res.json(url);
+    } catch (error) {
+      console.error('Error fetching URL:', error);
+      res.status(500).json({ message: "Failed to fetch URL" });
+    }
+  });
 
   // Redirect endpoint
   app.get("/r/:campaignId/:urlId", async (req: Request, res: Response) => {
