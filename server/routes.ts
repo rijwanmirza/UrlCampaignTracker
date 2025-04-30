@@ -3056,7 +3056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // We need to simulate a pause due to spent value
       // Since spentValuePausedCampaigns is private in the service,
-      // let's directly adjust the date and run the auto-management to test
+      // let's directly adjust the date and run the test
       
       // First, pause the campaign to simulate spent value pause
       await trafficStarService.pauseCampaign(trafficstarId);
