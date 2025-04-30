@@ -151,7 +151,9 @@ export class UrlClickLogsManager {
     
     // Parse logs to extract timestamps and organize by date and hour
     const dailyBreakdown: Record<string, number> = {};
-    const hourlyBreakdown: Record<number, number> = {};
+    
+    // Changed to organize hourly data by date
+    const hourlyBreakdownByDate: Record<string, Record<number, number>> = {};
     let totalClicks = 0;
     
     // Get the timezone from the filter
@@ -202,8 +204,14 @@ export class UrlClickLogsManager {
           // Increment daily count
           dailyBreakdown[dateKey] = (dailyBreakdown[dateKey] || 0) + 1;
           
-          // Increment hourly count using the hour in the requested timezone
-          hourlyBreakdown[hourInRequestedTimezone] = (hourlyBreakdown[hourInRequestedTimezone] || 0) + 1;
+          // Initialize hourly breakdown for this date if it doesn't exist
+          if (!hourlyBreakdownByDate[dateKey]) {
+            hourlyBreakdownByDate[dateKey] = {};
+          }
+          
+          // Increment hourly count for this specific date
+          hourlyBreakdownByDate[dateKey][hourInRequestedTimezone] = 
+            (hourlyBreakdownByDate[dateKey][hourInRequestedTimezone] || 0) + 1;
           
           totalClicks++;
         }
