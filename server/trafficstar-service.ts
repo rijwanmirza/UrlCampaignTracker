@@ -1594,9 +1594,21 @@ class TrafficStarService {
         console.log(`TrafficStar campaign ${trafficstarId} has ${totalRemainingClicks} remaining clicks > 15,000 - checking status`);
         
         try {
-          // Check if we already know the campaign status
-          if (currentTrafficstarStatus && 
-             (currentTrafficstarStatus.active === true || currentTrafficstarStatus.status === 'enabled')) {
+          // First check if campaign is already active in API (this is the most accurate source)
+          let isAlreadyActive = false;
+          try {
+            const apiCampaign = await this.getCampaign(trafficstarId);
+            if (apiCampaign.active === true || apiCampaign.status === 'enabled') {
+              isAlreadyActive = true;
+              console.log(`API confirms campaign ${trafficstarId} is already active - no API call needed`);
+            }
+          } catch (apiCheckError) {
+            console.log(`Could not check status via API, falling back to local status: ${apiCheckError.message}`);
+          }
+          
+          // If API check confirmed it's active OR we have local data showing it's active
+          if (isAlreadyActive || (currentTrafficstarStatus && 
+             (currentTrafficstarStatus.active === true || currentTrafficstarStatus.status === 'enabled'))) {
             console.log(`Campaign ${trafficstarId} is already active with high clicks - skipping activateCampaign API call`);
             
             // Still update database to record this check
@@ -1610,7 +1622,7 @@ class TrafficStarService {
               })
               .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
           } else {
-            // Only activate if not known to be active already
+            // Only activate if not known to be active already (by API or local cache)
             await this.activateCampaign(trafficstarId);
           }
           console.log(`✅ API calls completed for TrafficStar campaign ${trafficstarId}`);
@@ -1623,9 +1635,21 @@ class TrafficStarService {
         console.log(`TrafficStar campaign ${trafficstarId} has low remaining clicks (${totalRemainingClicks} <= 5,000) - checking status`);
         
         try {
-          // Check if we already know the campaign status
-          if (currentTrafficstarStatus && 
-             (currentTrafficstarStatus.active === false || currentTrafficstarStatus.status === 'paused')) {
+          // First check if campaign is already paused in API (this is the most accurate source)
+          let isAlreadyPaused = false;
+          try {
+            const apiCampaign = await this.getCampaign(trafficstarId);
+            if (apiCampaign.active === false || apiCampaign.status === 'paused') {
+              isAlreadyPaused = true;
+              console.log(`API confirms campaign ${trafficstarId} is already paused - no API call needed`);
+            }
+          } catch (apiCheckError) {
+            console.log(`Could not check status via API, falling back to local status: ${apiCheckError.message}`);
+          }
+          
+          // If API check confirmed it's paused OR we have local data showing it's paused
+          if (isAlreadyPaused || (currentTrafficstarStatus && 
+             (currentTrafficstarStatus.active === false || currentTrafficstarStatus.status === 'paused'))) {
             console.log(`Campaign ${trafficstarId} is already paused with low clicks - skipping pauseCampaign API call`);
             
             // Still update database to record this check
@@ -1639,7 +1663,7 @@ class TrafficStarService {
               })
               .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
           } else {
-            // Only pause if not known to be paused already
+            // Only pause if not known to be paused already (by API or local cache)
             await this.pauseCampaign(trafficstarId);
           }
           
