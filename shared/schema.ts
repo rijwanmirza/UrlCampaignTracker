@@ -39,10 +39,11 @@ export const campaigns = pgTable("campaigns", {
   dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent value from TrafficStar
   dailySpentDate: timestamp("daily_spent_date", { mode: 'date' }).defaultNow(), // Date of the daily spent value (date only)
   lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time spent was checked
-  // Traffic Sender feature
-  trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // Flag to enable/disable Traffic Sender
-  lastTrafficSenderAction: timestamp("last_traffic_sender_action"), // Last time Traffic Sender was activated
-  lastTrafficSenderStatus: text("last_traffic_sender_status"), // Last status of Traffic Sender action
+  // DEPRECATED: Traffic Sender feature has been removed
+  // Keeping these fields in the schema for backward compatibility but they are no longer used
+  trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
+  lastTrafficSenderAction: timestamp("last_traffic_sender_action"), // DEPRECATED: Traffic Sender removed
+  lastTrafficSenderStatus: text("last_traffic_sender_status"), // DEPRECATED: Traffic Sender removed
   lastBudgetUpdateTime: timestamp("last_budget_update_time"), // Last time the budget was updated for new URLs
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -90,10 +91,10 @@ export const updateCampaignSchema = z.object({
   autoManageTrafficstar: z.boolean().optional(), // DEPRECATED
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
-  // Traffic Sender fields
-  trafficSenderEnabled: z.boolean().optional(),
-  lastTrafficSenderAction: z.date().optional().nullable(),
-  lastTrafficSenderStatus: z.string().optional(),
+  // DEPRECATED: Traffic Sender fields - no longer in use
+  trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
+  lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED
+  lastTrafficSenderStatus: z.string().optional(), // DEPRECATED
   lastBudgetUpdateTime: z.date().optional().nullable(),
 });
 
@@ -232,7 +233,8 @@ export const trafficstarCampaignEndTimeSchema = z.object({
   scheduleEndTime: z.string(),
 });
 
-// Traffic Sender feature schema
+// DEPRECATED: Traffic Sender feature schema
+// This schema is no longer used as the Traffic Sender feature has been removed
 export const trafficSenderActionSchema = z.object({
   campaignId: z.number(),
   enabled: z.boolean(),
