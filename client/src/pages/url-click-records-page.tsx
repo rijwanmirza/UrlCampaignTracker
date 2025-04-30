@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
+import { useLocation } from "wouter";
 import { 
   Select, 
   SelectContent, 
@@ -30,7 +31,7 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, Search, Calendar as CalendarIcon, ExternalLink, FileText, Link, Hash, FileText as NameIcon } from "lucide-react";
+import { Loader2, Search, Calendar as CalendarIcon, ExternalLink, FileText, Link, Hash, FileText as NameIcon, BarChart } from "lucide-react";
 import { UrlWithActiveStatus } from "@shared/schema";
 import { formatIndianTime } from "@/lib/utils";
 
@@ -141,6 +142,27 @@ const columns = [
             </div>
           </DialogContent>
         </Dialog>
+      );
+    },
+  },
+  {
+    accessorKey: "analytics",
+    header: "Action",
+    cell: ({ row }: any) => {
+      // Extract the navigation function from wouter
+      const [, navigate] = useLocation();
+      
+      // Button to view detailed analytics for this URL
+      return (
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="flex items-center gap-1"
+          onClick={() => navigate(`/detailed-url-record/${row.getValue("id")}`)}
+        >
+          <BarChart className="h-3.5 w-3.5" />
+          <span>Analytics</span>
+        </Button>
       );
     },
   },

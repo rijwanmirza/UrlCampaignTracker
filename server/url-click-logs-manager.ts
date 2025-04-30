@@ -1,65 +1,81 @@
 import fs from 'fs';
 import path from 'path';
-import { format, subDays, startOfMonth, endOfMonth, subMonths, addHours, addMinutes } from 'date-fns';
-import { z } from 'zod';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
+import z from 'zod';
 import { db } from './db';
-import { urlClickLogs, timeRangeFilterSchema } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import { urls } from '@shared/schema';
+
+// Time range filter schema for analytics
+export const timeRangeFilterSchema = z.object({
+  filterType: z.enum([
+    'today', 
+    'yesterday',
+    'last_2_days',
+    'last_3_days',
+    'last_4_days',
+    'last_5_days',
+    'last_6_days',
+    'last_7_days',
+    'this_month',
+    'last_month',
+    'this_year',
+    'last_year',
+    'all_time',
+    'custom_range'
+  ]),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  timezone: z.string().default('Asia/Kolkata') // Default to Indian timezone
+});
+
+export type TimeRangeFilter = z.infer<typeof timeRangeFilterSchema>;
 
 /**
  * URL Click Logs Manager Class
- * Manages URL click logs both in the database and as log files
- * Uses Indian timezone (UTC+5:30) for all timestamps
+ * Handles logging and retrieval of URL click data with detailed analytics
  */
 export class UrlClickLogsManager {
+  private logsDir: string;
   private initialized = false;
-  private logsDirectory: string;
-  
+
   constructor() {
-    this.logsDirectory = path.join(process.cwd(), 'url_click_logs');
+    this.logsDir = path.join(process.cwd(), 'url_click_logs');
   }
-  
+
   /**
    * Initialize the logs directory
    */
   public initialize() {
     if (this.initialized) return;
     
-    // Create logs directory if it doesn't exist
-    if (!fs.existsSync(this.logsDirectory)) {
-      fs.mkdirSync(this.logsDirectory, { recursive: true });
+    if (!fs.existsSync(this.logsDir)) {
+      fs.mkdirSync(this.logsDir, { recursive: true });
     }
     
     this.initialized = true;
   }
-  
+
   /**
    * Get the path to a URL's log file
    */
   private getUrlLogFilePath(urlId: number): string {
-    return path.join(this.logsDirectory, `url_${urlId}.log`);
+    this.initialize();
+    return path.join(this.logsDir, `url_${urlId}.log`);
   }
-  
+
   /**
    * Format a date in Indian timezone (UTC+5:30)
    */
-  private formatIndianTime(date: Date): { formatted: string, dateKey: string, hourKey: number } {
-    // Convert UTC to Indian timezone (UTC+5:30)
-    // Add 5 hours and 30 minutes to the UTC time
-    const indianTime = addMinutes(addHours(new Date(date), 5), 30);
-    
-    // Format for log display (DD-Month-YYYY:HH:MM:SS)
-    const formatted = format(indianTime, 'dd-MMMM-yyyy:HH:mm:ss');
-    
-    // Format date key for database indexing (YYYY-MM-DD)
-    const dateKey = format(indianTime, 'yyyy-MM-dd');
-    
-    // Extract hour (0-23) for hourly analysis
-    const hourKey = parseInt(format(indianTime, 'H'));
+  private formatIndianTime(date: Date = new Date()): { formatted: string, dateKey: string, hourKey: number } {
+    const formatted = formatInTimeZone(date, 'Asia/Kolkata', 'dd-MMMM-yyyy:HH:mm:ss');
+    const dateKey = formatInTimeZone(date, 'Asia/Kolkata', 'yyyy-MM-dd');
+    const hourKey = parseInt(formatInTimeZone(date, 'Asia/Kolkata', 'HH'));
     
     return { formatted, dateKey, hourKey };
   }
-  
+
   /**
    * Log a click for a URL
    */
@@ -67,239 +83,209 @@ export class UrlClickLogsManager {
     this.initialize();
     
     try {
-      const now = new Date();
-      const { formatted: indianTime, dateKey, hourKey } = this.formatIndianTime(now);
+      // Format the current time in Indian timezone
+      const { formatted, dateKey, hourKey } = this.formatIndianTime();
       
-      // Log to file with the format: "New click received{date:time}" in Indian timezone
-      const logMessage = `New click received{${indianTime}}`;
-      const logFile = this.getUrlLogFilePath(urlId);
+      // Create the log entry
+      const logEntry = `New click received{${formatted}}`;
       
-      // Immediate synchronous write to ensure log is saved right away
-      fs.appendFileSync(logFile, logMessage + '\n');
-      console.log(`📝 Logged click for URL ${urlId}: ${logMessage}`);
+      // Append to the log file
+      const logFilePath = this.getUrlLogFilePath(urlId);
+      fs.appendFileSync(logFilePath, logEntry + '\n');
       
-      // Also log to database for analytics
-      await db.insert(urlClickLogs).values({
-        urlId,
-        logEntry: logMessage, // Store the exact log message as it appears in the file
-        clickTime: now,
-        indianTime,
-        dateKey,
-        hourKey
+      // Also store in the database for analytics (if integrated with a database)
+      // This would be used for faster querying of analytics data
+      
+      // Update the clicks count in the URL record
+      // First get the current count
+      const urlRecord = await db.query.urls.findFirst({
+        where: eq(urls.id, urlId)
       });
       
-      // Update the URL's click count in the database
-      await db.execute(sql`
-        UPDATE urls 
-        SET clicks = clicks + 1,
-            updated_at = NOW()
-        WHERE id = ${urlId}
-      `);
+      if (urlRecord) {
+        // Then update with incremented value
+        await db.update(urls)
+          .set({ clicks: urlRecord.clicks + 1 })
+          .where(eq(urls.id, urlId));
+      }
+      
+      console.log(`Logged click for URL ID ${urlId}: ${logEntry}`);
       
     } catch (error) {
-      console.error(`Error logging URL click for URL ${urlId}:`, error);
+      console.error(`Error logging click for URL ID ${urlId}:`, error);
     }
   }
-  
+
   /**
-   * Get click summary data for a URL for a specific time range
+   * Get raw click logs for a URL
    */
-  public async getUrlClickSummary(urlId: number, filter: z.infer<typeof timeRangeFilterSchema>) {
+  public async getRawLogs(urlId: number): Promise<string[]> {
     this.initialize();
     
+    const logFilePath = this.getUrlLogFilePath(urlId);
+    
+    if (!fs.existsSync(logFilePath)) {
+      return [];
+    }
+    
     try {
-      // Calculate date range based on filter
-      const { startDate, endDate } = this.getDateRangeForFilter(filter);
-      
-      // Query the database for filtered click logs
-      const clickLogs = await db
-        .select()
-        .from(urlClickLogs)
-        .where(
-          and(
-            eq(urlClickLogs.urlId, urlId),
-            gte(urlClickLogs.clickTime, startDate),
-            lte(urlClickLogs.clickTime, endDate)
-          )
-        );
-      
-      // Count total clicks in this period
-      const totalClicks = clickLogs.length;
-      
-      // Group by dateKey for daily breakdown
-      const dailyBreakdown: Record<string, number> = {};
-      
-      // Group by hourKey for hourly breakdown
-      const hourlyBreakdown: { hour: number, clicks: number }[] = Array.from({ length: 24 }, (_, i) => ({
-        hour: i,
-        clicks: 0
-      }));
-      
-      // Process the logs
-      clickLogs.forEach(log => {
-        // Update daily breakdown
-        if (dailyBreakdown[log.dateKey]) {
-          dailyBreakdown[log.dateKey]++;
-        } else {
-          dailyBreakdown[log.dateKey] = 1;
-        }
-        
-        // Update hourly breakdown
-        hourlyBreakdown[log.hourKey].clicks++;
-      });
-      
-      return {
-        totalClicks,
-        dailyBreakdown,
-        hourlyBreakdown,
-        urlBreakdown: [{ urlId, clicks: totalClicks }],
-        filterInfo: {
-          type: filter.filterType,
-          dateRange: this.getDateRangeText(filter, startDate, endDate)
-        }
-      };
+      const logContent = fs.readFileSync(logFilePath, 'utf-8');
+      return logContent.split('\n').filter(line => line.trim() !== '');
     } catch (error) {
-      console.error(`Error getting URL click summary for URL ${urlId}:`, error);
-      throw error;
+      console.error(`Error reading logs for URL ID ${urlId}:`, error);
+      return [];
     }
   }
-  
+
+  /**
+   * Get click analytics for a specific URL with time filtering
+   */
+  public async getUrlClickAnalytics(urlId: number, filter: TimeRangeFilter) {
+    this.initialize();
+    
+    // Calculate date range based on filter
+    const { startDate, endDate } = this.getDateRangeForFilter(filter);
+    
+    // Get the logs for this URL
+    const rawLogs = await this.getRawLogs(urlId);
+    
+    // Parse logs to extract timestamps and organize by date and hour
+    const dailyBreakdown: Record<string, number> = {};
+    const hourlyBreakdown: Record<number, number> = {};
+    let totalClicks = 0;
+    
+    // Regular expression to match the timestamp in log format: New click received{30-April-2024:08:04:02}
+    const timestampRegex = /New click received\{(\d{2}-[A-Za-z]+-\d{4}):(\d{2}):(\d{2}):(\d{2})\}/;
+    
+    for (const log of rawLogs) {
+      const match = log.match(timestampRegex);
+      
+      if (match) {
+        const datePart = match[1]; // e.g., "30-April-2024"
+        const hourPart = parseInt(match[2]); // e.g., "08"
+        
+        // Parse the date from the log entry
+        const dateObj = new Date(datePart.replace(/-/g, ' '));
+        
+        // Check if this log falls within our date range
+        if (dateObj >= startDate && dateObj <= endDate) {
+          // Format the date as YYYY-MM-DD for consistent keys
+          const dateKey = format(dateObj, 'yyyy-MM-dd');
+          
+          // Increment daily count
+          dailyBreakdown[dateKey] = (dailyBreakdown[dateKey] || 0) + 1;
+          
+          // Increment hourly count
+          hourlyBreakdown[hourPart] = (hourlyBreakdown[hourPart] || 0) + 1;
+          
+          totalClicks++;
+        }
+      }
+    }
+    
+    // Get the human-readable date range description
+    const dateRangeText = this.getDateRangeText(filter, startDate, endDate);
+    
+    return {
+      urlId,
+      totalClicks,
+      dailyBreakdown,
+      hourlyBreakdown,
+      filterInfo: {
+        type: filter.filterType,
+        dateRange: dateRangeText
+      }
+    };
+  }
+
   /**
    * Calculate date range based on filter type
    */
-  private getDateRangeForFilter(filter: z.infer<typeof timeRangeFilterSchema>): { startDate: Date, endDate: Date } {
+  private getDateRangeForFilter(filter: TimeRangeFilter): { startDate: Date, endDate: Date } {
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     let startDate: Date;
     let endDate: Date = new Date(now);
     
-    // For all filter types except custom range
+    // Set the time to the end of the day for the end date
+    endDate.setHours(23, 59, 59, 999);
+    
     switch (filter.filterType) {
       case 'today':
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = today;
         break;
-        
       case 'yesterday':
-        startDate = new Date(now);
+        startDate = new Date(today);
         startDate.setDate(startDate.getDate() - 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(startDate);
+        endDate = new Date(today);
+        endDate.setDate(endDate.getDate() - 1);
         endDate.setHours(23, 59, 59, 999);
         break;
-        
       case 'last_2_days':
-        startDate = subDays(now, 1);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 1);
         break;
-        
       case 'last_3_days':
-        startDate = subDays(now, 2);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 2);
         break;
-        
       case 'last_4_days':
-        startDate = subDays(now, 3);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 3);
         break;
-        
       case 'last_5_days':
-        startDate = subDays(now, 4);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 4);
         break;
-        
       case 'last_6_days':
-        startDate = subDays(now, 5);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 5);
         break;
-        
       case 'last_7_days':
-        startDate = subDays(now, 6);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 6);
         break;
-        
       case 'this_month':
-        startDate = startOfMonth(now);
-        endDate = endOfMonth(now);
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
         break;
-        
       case 'last_month':
-        const lastMonth = subMonths(now, 1);
-        startDate = startOfMonth(lastMonth);
-        endDate = endOfMonth(lastMonth);
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
-        
-      case 'all':
-        startDate = new Date(0); // January 1, 1970
+      case 'this_year':
+        startDate = new Date(today.getFullYear(), 0, 1);
         break;
-        
+      case 'last_year':
+        startDate = new Date(today.getFullYear() - 1, 0, 1);
+        endDate = new Date(today.getFullYear() - 1, 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'all_time':
+        startDate = new Date(0); // Beginning of time
+        break;
       case 'custom_range':
         if (filter.startDate && filter.endDate) {
           startDate = new Date(filter.startDate);
-          startDate.setHours(0, 0, 0, 0);
-          
           endDate = new Date(filter.endDate);
           endDate.setHours(23, 59, 59, 999);
         } else {
-          // Default to last 7 days if no dates provided
-          startDate = subDays(now, 6);
-          startDate.setHours(0, 0, 0, 0);
+          startDate = new Date(today);
+          startDate.setDate(startDate.getDate() - 7);
         }
         break;
-        
       default:
-        // Default to today
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = today;
     }
     
     return { startDate, endDate };
   }
-  
-  /**
-   * Get raw click logs for a URL from file
-   */
-  public async getRawClickLogs(urlId: number): Promise<string[]> {
-    this.initialize();
-    
-    try {
-      const logFile = this.getUrlLogFilePath(urlId);
-      if (!fs.existsSync(logFile)) {
-        return [];
-      }
-      
-      const content = fs.readFileSync(logFile, 'utf8');
-      return content.split('\n').filter(line => line.trim() !== '');
-    } catch (error) {
-      console.error(`Error reading URL click logs for URL ${urlId}:`, error);
-      return [];
-    }
-  }
-  
-  /**
-   * Delete click logs for a URL (called when a URL is deleted)
-   */
-  public async deleteUrlClickLogs(urlId: number): Promise<void> {
-    this.initialize();
-    
-    try {
-      // Delete from database
-      await db.delete(urlClickLogs).where(eq(urlClickLogs.urlId, urlId));
-      
-      // Delete log file
-      const logFile = this.getUrlLogFilePath(urlId);
-      if (fs.existsSync(logFile)) {
-        fs.unlinkSync(logFile);
-      }
-    } catch (error) {
-      console.error(`Error deleting URL click logs for URL ${urlId}:`, error);
-    }
-  }
-  
+
   /**
    * Get a formatted date range text based on the filter type
    */
-  private getDateRangeText(filter: z.infer<typeof timeRangeFilterSchema>, startDate: Date, endDate: Date): string {
+  private getDateRangeText(filter: TimeRangeFilter, startDate: Date, endDate: Date): string {
     const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
     
     switch (filter.filterType) {
@@ -323,15 +309,86 @@ export class UrlClickLogsManager {
         return `This month (${format(startDate, 'MMMM yyyy')})`;
       case 'last_month':
         return `Last month (${format(startDate, 'MMMM yyyy')})`;
-      case 'all':
+      case 'this_year':
+        return `This year (${format(startDate, 'yyyy')})`;
+      case 'last_year':
+        return `Last year (${format(startDate, 'yyyy')})`;
+      case 'all_time':
         return 'All time';
       case 'custom_range':
         return `${formatDate(startDate)} to ${formatDate(endDate)}`;
       default:
-        return 'Custom period';
+        return `${formatDate(startDate)} to ${formatDate(endDate)}`;
     }
+  }
+
+  /**
+   * Delete logs for a specific URL
+   */
+  public async deleteUrlLogs(urlId: number): Promise<void> {
+    this.initialize();
+    
+    const logFilePath = this.getUrlLogFilePath(urlId);
+    
+    if (fs.existsSync(logFilePath)) {
+      try {
+        fs.unlinkSync(logFilePath);
+        console.log(`Deleted logs for URL ID ${urlId}`);
+      } catch (error) {
+        console.error(`Error deleting logs for URL ID ${urlId}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Generate test click data for a URL with specified parameters
+   */
+  public async generateTestData(urlId: number, options: {
+    count: number;
+    dateRange?: { start: Date; end: Date };
+    hourRange?: { min: number; max: number };
+  }): Promise<void> {
+    this.initialize();
+    
+    const { count, dateRange, hourRange } = options;
+    
+    const now = new Date();
+    const startDate = dateRange?.start || new Date(now.setDate(now.getDate() - 7));
+    const endDate = dateRange?.end || new Date();
+    
+    const minHour = hourRange?.min || 0;
+    const maxHour = hourRange?.max || 23;
+    
+    const logs: string[] = [];
+    
+    for (let i = 0; i < count; i++) {
+      // Generate a random date within the range
+      const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
+      const randomDate = new Date(randomTimestamp);
+      
+      // Set a random hour within the specified range
+      const randomHour = Math.floor(Math.random() * (maxHour - minHour + 1)) + minHour;
+      randomDate.setHours(randomHour, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60));
+      
+      // Format in Indian timezone
+      const { formatted } = this.formatIndianTime(randomDate);
+      
+      // Create log entry
+      const logEntry = `New click received{${formatted}}`;
+      logs.push(logEntry);
+    }
+    
+    // Write logs to file
+    const logFilePath = this.getUrlLogFilePath(urlId);
+    fs.writeFileSync(logFilePath, logs.join('\n') + '\n');
+    
+    // Update the URL clicks count
+    await db.update(urls)
+      .set({ clicks: count })
+      .where(eq(urls.id, urlId));
+    
+    console.log(`Generated ${count} test click logs for URL ID ${urlId}`);
   }
 }
 
-// Create a singleton instance
 export const urlClickLogsManager = new UrlClickLogsManager();
