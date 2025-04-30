@@ -4,6 +4,17 @@
  * This service manages the Traffic Sender feature, which automatically handles
  * campaign traffic by pausing and activating TrafficStar campaigns based on
  * specific conditions and remaining clicks.
+ * 
+ * Implements all 9 points from the requirements:
+ * - Point 1: UI Implementation (already in campaign-edit-form.tsx)
+ * - Point 2: Traffic Sender Activation Process
+ * - Point 3: 10-Minute Waiting Period
+ * - Point 4: Spent Value Check
+ * - Point 5: Handling Spent Value ≥ $10
+ * - Point 6: Budget Update and Activation
+ * - Point 7: Handling Spent Value < $10 (including 5,000 click threshold monitoring)
+ * - Point 8: Campaign Status Verification
+ * - Point 9: Handling New URLs Added After Budget Update
  */
 
 import { db } from './db';
@@ -13,10 +24,11 @@ import { trafficStarService } from './trafficstar-service-new';
 
 class TrafficSenderService {
   private checkInterval: NodeJS.Timeout | null = null;
-  private readonly PAUSE_RECHECK_MINUTES = 10; // Wait time before checking spent value (step 2)
-  private readonly MINIMUM_SPENT_VALUE = 10; // Minimum spent value threshold ($10)
-  private readonly MINIMUM_CLICKS_FOR_SMALL_BUDGET = 10000; // Minimum click threshold for small budgets
-  private readonly NEW_URL_WAIT_MINUTES = 12; // Wait time before updating budget for new URLs
+  private readonly PAUSE_RECHECK_MINUTES = 10; // Point 3: Wait exactly 10 minutes after pausing
+  private readonly MINIMUM_SPENT_VALUE = 10; // Point 5/7: Minimum spent value threshold ($10)
+  private readonly MINIMUM_CLICKS_FOR_SMALL_BUDGET = 10000; // Point 7: Minimum click threshold for small budgets
+  private readonly MINIMUM_CLICKS_PAUSE_THRESHOLD = 5000; // Point 7: Threshold to pause campaign when spent < $10
+  private readonly NEW_URL_WAIT_MINUTES = 12; // Point 9: Wait time before updating budget for new URLs
 
   /**
    * Start the Traffic Sender service
@@ -229,18 +241,18 @@ class TrafficSenderService {
   }
 
   /**
-   * Check spent value and reactivate a campaign if conditions are met
+   * Check spent value and reactivate a campaign if conditions are met (Point 4, 5, 6, 7)
    * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async checkSpentValueAndReactivate(campaign: any) {
     try {
       console.log(`Checking spent value for campaign ${campaign.id}`);
       
-      // Get the spent value (already cached in the campaign)
+      // Point 4: Get the spent value (already cached in the campaign)
       const spentValue = parseFloat(campaign.dailySpent || '0');
       console.log(`Campaign ${campaign.id} current spent value: $${spentValue.toFixed(4)}`);
       
-      // Get total remaining clicks across all active URLs for this campaign
+      // Point 5: Get total remaining clicks across all active URLs for this campaign
       const remainingClicksResult = await db.execute(sql`
         SELECT SUM(click_limit - clicks) as remaining_clicks 
         FROM urls 
@@ -248,7 +260,7 @@ class TrafficSenderService {
         AND status = 'active'
       `);
       
-      const totalRemainingClicks = parseInt(remainingClicksResult.rows[0]?.remaining_clicks || '0');
+      const totalRemainingClicks = parseInt(String(remainingClicksResult.rows[0]?.remaining_clicks) || '0');
       console.log(`Campaign ${campaign.id} has ${totalRemainingClicks} total remaining clicks`);
       
       // If no clicks remaining, keep campaign paused
@@ -257,27 +269,26 @@ class TrafficSenderService {
         return;
       }
       
-      // Calculate the price per click (price per thousand divided by 1000)
+      // Point 5: Calculate the price per click (price per thousand divided by 1000)
       const pricePerClick = parseFloat(campaign.pricePerThousand) / 1000;
       
-      // Calculate the pending click price (remaining clicks * price per click)
+      // Point 5: Calculate the pending click price (remaining clicks * price per click)
       const pendingClickPrice = totalRemainingClicks * pricePerClick;
       console.log(`Campaign ${campaign.id} pending click price: $${pendingClickPrice.toFixed(4)}`);
       
+      // Point 7: Critical check for spent < $10 and clicks < 5,000
+      if (spentValue < this.MINIMUM_SPENT_VALUE && totalRemainingClicks < this.MINIMUM_CLICKS_PAUSE_THRESHOLD) {
+        console.log(`CRITICAL: Campaign ${campaign.id} has less than 5,000 clicks (${totalRemainingClicks}) with spent < $10, keeping paused`);
+        return;
+      }
+      
       // Check conditions for reactivation
       if (spentValue >= this.MINIMUM_SPENT_VALUE) {
-        // Step 5: Spent value >= $10, update budget and activate
+        // Point 5 & 6: Spent value >= $10, update budget and activate
         await this.activateWithBudget(campaign, spentValue, pendingClickPrice, totalRemainingClicks);
       } else if (totalRemainingClicks >= this.MINIMUM_CLICKS_FOR_SMALL_BUDGET) {
-        // Step 6: Spent value < $10 but remaining clicks >= 10,000, activate with end time
+        // Point 7: Spent value < $10 but remaining clicks >= 10,000, activate with end time
         await this.activateWithEndTime(campaign, totalRemainingClicks);
-      } else if (totalRemainingClicks < 5000) {
-        // CRITICAL: Step 7: When clicks are less than 5,000, pause the campaign
-        console.log(`CRITICAL: Campaign ${campaign.id} has less than 5,000 clicks (${totalRemainingClicks}), pausing campaign immediately`);
-        
-        // Get the TrafficStar campaign ID
-        const trafficstarId = parseInt(campaign.trafficstarCampaignId);
-        await this.pauseTrafficStarCampaign(campaign.id, trafficstarId);
       } else {
         console.log(`Campaign ${campaign.id} does not meet reactivation criteria: spent value is less than $${this.MINIMUM_SPENT_VALUE} and remaining clicks (${totalRemainingClicks}) are less than ${this.MINIMUM_CLICKS_FOR_SMALL_BUDGET}`);
       }
@@ -415,7 +426,8 @@ class TrafficSenderService {
 
   /**
    * Check for new URLs added since the last budget update and update the budget if needed
-   * This is for Step 7: If we add new URLs after activating Traffic Sender, we need to update the budget
+   * This is for Point 9: If we add new URLs after activating Traffic Sender, we need to update the budget
+   * Waits 12 minutes before updating budget for all URLs added during that period
    * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async checkForNewUrlsAndUpdateBudget(campaign: any) {
