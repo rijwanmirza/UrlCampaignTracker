@@ -25,13 +25,20 @@ export async function initializeTrafficStar() {
     if (existingCredentials) {
       if (existingCredentials.apiKey === apiKey) {
         console.log('🔍 DEBUG: TrafficStar API key already saved in database');
-        return;
       }
+    } else {
+      // Save the API key - this will validate the key with TrafficStar API and store it
+      await trafficStarService.saveApiKey(apiKey);
+      console.log('🔍 DEBUG: Successfully saved TrafficStar API key to database');
     }
     
-    // Save the API key - this will validate the key with TrafficStar API and store it
-    await trafficStarService.saveApiKey(apiKey);
-    console.log('🔍 DEBUG: Successfully saved TrafficStar API key to database');
+    // Schedule spent value updates (this replaces the previous auto-management functionality)
+    try {
+      await trafficStarService.scheduleSpentValueUpdates();
+      console.log('🔍 DEBUG: Successfully scheduled TrafficStar spent value updates');
+    } catch (scheduleError) {
+      console.error('Error scheduling TrafficStar spent value updates:', scheduleError);
+    }
   } catch (error) {
     console.error('Error initializing TrafficStar API credentials:', error);
   }
