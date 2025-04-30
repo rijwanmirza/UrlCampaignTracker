@@ -5,6 +5,8 @@ import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { urlClickLogsManager } from "./url-click-logs-manager";
+import * as fs from "fs";
+import * as path from "path";
 
 // API Routes for URL Click Records
 export function registerUrlClickRoutes(app: any) {
@@ -485,10 +487,11 @@ export function registerUrlClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
-        // Insert directly into the URL click logs table with yesterday's timestamp
-        const { formatted: indianTime, dateKey, hourKey } = formatIndianTime(timestamp);
-        
         try {
+          // We'll insert directly to the database but use the properly formatted values
+          const { formatted: indianTime, dateKey, hourKey } = formatIndianTime(timestamp);
+          
+          // Insert into the database
           await db.insert(urlClickLogs).values({
             urlId: parseInt(urlId),
             clickTime: timestamp,
@@ -496,12 +499,22 @@ export function registerUrlClickRoutes(app: any) {
             dateKey,
             hourKey
           });
+          
+          // Also write to the log file for consistency
+          const logFile = path.join(urlClickLogsManager['logsDirectory'], `url_${urlId}.log`);
+          const logMessage = `New click received{${indianTime}}`;
+          
+          // Make sure the directory exists
+          fs.mkdirSync(path.dirname(logFile), { recursive: true });
+          
+          // Append to log file
+          fs.appendFileSync(logFile, logMessage + '\n');
+          
+          allRecords.push({ timestamp, urlId: parseInt(urlId) });
+          totalRecords++;
         } catch (err) {
           console.error("Error inserting test log for yesterday:", err);
         }
-        
-        allRecords.push({ timestamp, urlId: parseInt(urlId) });
-        totalRecords++;
       }
       
       // 3. Generate clicks for last month
@@ -517,10 +530,11 @@ export function registerUrlClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
-        // Insert directly into the URL click logs table with last month's timestamp
-        const { formatted: indianTime, dateKey, hourKey } = formatIndianTime(timestamp);
-        
         try {
+          // We'll insert directly to the database but use the properly formatted values
+          const { formatted: indianTime, dateKey, hourKey } = formatIndianTime(timestamp);
+          
+          // Insert into the database
           await db.insert(urlClickLogs).values({
             urlId: parseInt(urlId),
             clickTime: timestamp,
@@ -528,12 +542,19 @@ export function registerUrlClickRoutes(app: any) {
             dateKey,
             hourKey
           });
+          
+          // Also write to the log file for consistency
+          const logFile = path.join(urlClickLogsManager['logsDirectory'], `url_${urlId}.log`);
+          const logMessage = `New click received{${indianTime}}`;
+          
+          // Append to log file
+          fs.appendFileSync(logFile, logMessage + '\n');
+          
+          allRecords.push({ timestamp, urlId: parseInt(urlId) });
+          totalRecords++;
         } catch (err) {
           console.error("Error inserting test log for last month:", err);
         }
-        
-        allRecords.push({ timestamp, urlId: parseInt(urlId) });
-        totalRecords++;
       }
       
       // 4. Generate clicks for last year
@@ -550,10 +571,11 @@ export function registerUrlClickRoutes(app: any) {
         timestamp.setMinutes(Math.floor(Math.random() * 60));
         timestamp.setSeconds(Math.floor(Math.random() * 60));
         
-        // Insert directly into the URL click logs table with last year's timestamp
-        const { formatted: indianTime, dateKey, hourKey } = formatIndianTime(timestamp);
-        
         try {
+          // We'll insert directly to the database but use the properly formatted values
+          const { formatted: indianTime, dateKey, hourKey } = formatIndianTime(timestamp);
+          
+          // Insert into the database
           await db.insert(urlClickLogs).values({
             urlId: parseInt(urlId),
             clickTime: timestamp,
@@ -561,12 +583,22 @@ export function registerUrlClickRoutes(app: any) {
             dateKey,
             hourKey
           });
+          
+          // Also write to the log file for consistency
+          const logFile = path.join(urlClickLogsManager['logsDirectory'], `url_${urlId}.log`);
+          const logMessage = `New click received{${indianTime}}`;
+          
+          // Make sure the directory exists
+          fs.mkdirSync(path.dirname(logFile), { recursive: true });
+          
+          // Append to log file
+          fs.appendFileSync(logFile, logMessage + '\n');
+          
+          allRecords.push({ timestamp, urlId: parseInt(urlId) });
+          totalRecords++;
         } catch (err) {
           console.error("Error inserting test log for last year:", err);
         }
-        
-        allRecords.push({ timestamp, urlId: parseInt(urlId) });
-        totalRecords++;
       }
       
       // Update the URL's clicks count to match the total records
@@ -631,7 +663,15 @@ function formatIndianTime(date: Date) {
   
   const indianTime = utcToZonedTime(date, indianTimeZone);
   
-  const formatted = `${indianTime.getFullYear()}-${String(indianTime.getMonth() + 1).padStart(2, '0')}-${String(indianTime.getDate()).padStart(2, '0')} ${String(indianTime.getHours()).padStart(2, '0')}:${String(indianTime.getMinutes()).padStart(2, '0')}:${String(indianTime.getSeconds()).padStart(2, '0')}`;
+  // Get the month name (like "April")
+  const monthNames = ["January", "February", "March", "April", "May", "June", 
+                      "July", "August", "September", "October", "November", "December"];
+  const monthName = monthNames[indianTime.getMonth()];
+  
+  // Format: DD-Month-YYYY:HH:MM:SS (30-April-2024:08:04:02)
+  const formatted = `${String(indianTime.getDate()).padStart(2, '0')}-${monthName}-${indianTime.getFullYear()}:${String(indianTime.getHours()).padStart(2, '0')}:${String(indianTime.getMinutes()).padStart(2, '0')}:${String(indianTime.getSeconds()).padStart(2, '0')}`;
+  
+  // Format date key for database indexing (YYYY-MM-DD)
   const dateKey = `${indianTime.getFullYear()}-${String(indianTime.getMonth() + 1).padStart(2, '0')}-${String(indianTime.getDate()).padStart(2, '0')}`;
   const hourKey = indianTime.getHours();
   
