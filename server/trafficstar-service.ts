@@ -1827,7 +1827,7 @@ class TrafficStarService {
         }
       }, 60 * 1000); // Every minute
       
-      console.log('TrafficStar spent value scheduler initialized (no auto-management)');
+      console.log('TrafficStar spent value scheduler initialized (spent value tracking only)');
     } catch (error) {
       console.error('Error scheduling spent value updates:', error);
     }
