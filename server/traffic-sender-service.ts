@@ -9,7 +9,7 @@
 import { db } from './db';
 import { eq, and, isNotNull, sql } from 'drizzle-orm';
 import { campaigns, urls } from '@shared/schema';
-import { trafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service-new';
 import { storage } from './storage';
 
 class TrafficSenderService {
@@ -17,6 +17,7 @@ class TrafficSenderService {
   private readonly PAUSE_RECHECK_MINUTES = 10; // Wait time before checking spent value (step 2)
   private readonly MINIMUM_SPENT_VALUE = 10; // Minimum spent value threshold ($10)
   private readonly MINIMUM_CLICKS_FOR_SMALL_BUDGET = 10000; // Minimum click threshold for small budgets
+  private readonly NEW_URL_WAIT_MINUTES = 12; // Wait time before updating budget for new URLs
 
   /**
    * Starts the Traffic Sender service
@@ -36,6 +37,7 @@ class TrafficSenderService {
     await this.processTrafficSenderCampaigns();
     
     console.log('✅ Traffic Sender service started successfully');
+    return { success: true, message: "Traffic Sender service started successfully" };
   }
   
   /**
@@ -47,6 +49,7 @@ class TrafficSenderService {
       this.checkInterval = null;
       console.log('⏹️ Traffic Sender service stopped');
     }
+    return { success: true, message: "Traffic Sender service stopped" };
   }
   
   /**
@@ -161,7 +164,7 @@ class TrafficSenderService {
     console.log(`⏸️ Checking status before pausing TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
     
     try {
-      // @Missing requirement: First check the campaign's current status
+      // First check the campaign's current status
       const currentCampaign = await trafficStarService.getCampaign(trafficstarId);
       
       // Only pause if the campaign is active
@@ -239,7 +242,7 @@ class TrafficSenderService {
         throw new Error(`Failed to get spent value for campaign ${trafficstarId}`);
       }
       
-      console.log(`💵 Current spent value for campaign ${campaignId}: $${spentValue.toFixed(2)}`);
+      console.log(`💵 Current spent value for campaign ${campaignId}: $${spentValue.toFixed(4)}`);
       
       // Get active URLs for this campaign to calculate pending click value
       const activeUrls = await db
@@ -265,7 +268,7 @@ class TrafficSenderService {
       const pricePerThousand = parseFloat(campaign.pricePerThousand?.toString() || '0');
       const pendingClickPrice = (totalRemainingClicks / 1000) * pricePerThousand;
       
-      console.log(`💰 Pending click price for campaign ${campaignId}: $${pendingClickPrice.toFixed(2)}`);
+      console.log(`💰 Pending click price for campaign ${campaignId}: $${pendingClickPrice.toFixed(4)}`);
       
       // Different logic based on spent value
       if (spentValue >= this.MINIMUM_SPENT_VALUE) {
@@ -276,13 +279,13 @@ class TrafficSenderService {
         if (totalRemainingClicks >= this.MINIMUM_CLICKS_FOR_SMALL_BUDGET) {
           await this.activateWithEndTime(campaign, totalRemainingClicks);
         } else {
-          console.log(`⚠️ Campaign ${campaignId} has less than ${this.MINIMUM_CLICKS_FOR_SMALL_BUDGET} clicks (${totalRemainingClicks}) and spent value is below $${this.MINIMUM_SPENT_VALUE} ($${spentValue.toFixed(2)}), not activating`);
+          console.log(`⚠️ Campaign ${campaignId} has less than ${this.MINIMUM_CLICKS_FOR_SMALL_BUDGET} clicks (${totalRemainingClicks}) and spent value is below $${this.MINIMUM_SPENT_VALUE} ($${spentValue.toFixed(4)}), not activating`);
           
           // Update last action status
           await db.update(campaigns)
             .set({
               lastTrafficSenderAction: new Date(),
-              lastTrafficSenderStatus: `Not activated: Spent value $${spentValue.toFixed(2)} below minimum and only ${totalRemainingClicks} clicks remaining`,
+              lastTrafficSenderStatus: `Not activated: Spent value $${spentValue.toFixed(4)} below minimum and only ${totalRemainingClicks} clicks remaining`,
               updatedAt: new Date()
             })
             .where(eq(campaigns.id, campaignId));
@@ -315,7 +318,7 @@ class TrafficSenderService {
     const trafficstarId = Number(campaign.trafficstarCampaignId);
     
     try {
-      // @Missing requirement: First check the campaign's current status
+      // First check the campaign's current status
       const currentCampaign = await trafficStarService.getCampaign(trafficstarId);
       
       console.log(`🔍 Checking status before activating TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
@@ -349,6 +352,7 @@ class TrafficSenderService {
         .set({
           lastTrafficSenderAction: new Date(),
           lastTrafficSenderStatus: `Activated with budget $${newBudget.toFixed(4)} for ${totalRemainingClicks} clicks, end time ${endTime}`,
+          lastBudgetUpdateTime: new Date(), // Update the budget update time
           updatedAt: new Date()
         })
         .where(eq(campaigns.id, campaignId));
@@ -381,15 +385,12 @@ class TrafficSenderService {
     const trafficstarId = Number(campaign.trafficstarCampaignId);
     
     try {
-      console.log(`🕒 Activating campaign ${campaignId} with end time only (for ${totalRemainingClicks} clicks, low spent value)`);
+      console.log(`🕒 Activating campaign ${campaignId} with end time only (low spent value but high click count)`);
       
-      // @Missing requirement: First check the campaign's current status
+      // First check the campaign's current status
       const currentCampaign = await trafficStarService.getCampaign(trafficstarId);
       
-      console.log(`🔍 Checking status before activating TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
-      
-      // Step 6: If spent value < $10 AND remaining clicks >= 10000,
-      // activate TrafficStar campaign with current UTC date and end time 23:59
+      // Step 6: If spent value < $10 but clicks >= 10000, only set end time
       const today = new Date().toISOString().split('T')[0];
       const endTime = `${today} 23:59:00`;
       
@@ -400,7 +401,7 @@ class TrafficSenderService {
         console.log(`ℹ️ TrafficStar campaign ${trafficstarId} is already active, skipping activation API call`);
       } else {
         // Step 6: Activate the campaign
-        console.log(`🚀 Activating TrafficStar campaign ${trafficstarId}`);
+        console.log(`🚀 Activating TrafficStar campaign ${trafficstarId} with end time only`);
         await trafficStarService.activateCampaign(trafficstarId);
       }
       
@@ -409,11 +410,12 @@ class TrafficSenderService {
         .set({
           lastTrafficSenderAction: new Date(),
           lastTrafficSenderStatus: `Activated with end time ${endTime} for ${totalRemainingClicks} clicks (low spent value)`,
+          lastBudgetUpdateTime: new Date(), // Update the budget update time
           updatedAt: new Date()
         })
         .where(eq(campaigns.id, campaignId));
         
-      console.log(`✅ Successfully activated TrafficStar campaign ${trafficstarId} with end time ${endTime} (no budget change, low spent value)`);
+      console.log(`✅ Successfully activated TrafficStar campaign ${trafficstarId} with end time ${endTime}`);
     } catch (error) {
       console.error(`❌ Error activating campaign ${campaignId} with end time:`, error);
       
@@ -431,10 +433,8 @@ class TrafficSenderService {
   }
   
   /**
-   * Check if new URLs have been added to an active campaign and update budget if needed
-   * Implements the new requirement: 
-   * @Now last step we have to implement when our 6th step has been run by adding pending click value in daily spent value 
-   * of traffic star campaign if we got new url click value in our site campaign then we will plus their budget in daily budget
+   * Check for new URLs added since the last budget update and update the budget if needed
+   * This is for Step 7: If we add new URLs after activating Traffic Sender, we need to update the budget
    * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async checkForNewUrlsAndUpdateBudget(campaign: any) {
@@ -493,14 +493,14 @@ class TrafficSenderService {
       const minutesSinceLastBudgetUpdate = Math.floor((now.getTime() - lastBudgetUpdate.getTime()) / (60 * 1000));
       
       // New requirement: Wait for 12 minutes before updating the budget with new URLs
-      if (minutesSinceLastBudgetUpdate < 12) {
-        console.log(`⏳ Only ${minutesSinceLastBudgetUpdate} minutes since last budget update, waiting until 12 minutes before updating budget`);
+      if (minutesSinceLastBudgetUpdate < this.NEW_URL_WAIT_MINUTES) {
+        console.log(`⏳ Only ${minutesSinceLastBudgetUpdate} minutes since last budget update, waiting until ${this.NEW_URL_WAIT_MINUTES} minutes before updating budget`);
         
         // Mark these URLs as pending for budget update
         await db.update(campaigns)
           .set({
             lastTrafficSenderAction: now,
-            lastTrafficSenderStatus: `Waiting to update budget for ${newClicksTotal} new clicks ($${newUrlsPrice.toFixed(4)}), will update after ${12 - minutesSinceLastBudgetUpdate} more minutes`,
+            lastTrafficSenderStatus: `Waiting to update budget for ${newClicksTotal} new clicks ($${newUrlsPrice.toFixed(4)}), will update after ${this.NEW_URL_WAIT_MINUTES - minutesSinceLastBudgetUpdate} more minutes`,
             updatedAt: now
           })
           .where(eq(campaigns.id, campaignId));
@@ -509,7 +509,7 @@ class TrafficSenderService {
       }
       
       // If we've waited 12+ minutes, update the budget with all pending URLs
-      console.log(`⏱️ 12+ minutes have passed (${minutesSinceLastBudgetUpdate} minutes), now updating budget for all pending URLs`);
+      console.log(`⏱️ ${this.NEW_URL_WAIT_MINUTES}+ minutes have passed (${minutesSinceLastBudgetUpdate} minutes), now updating budget for all pending URLs`);
       
       // Get all pending URLs (those added since the last action but not included in budget)
       const allPendingUrls = await db
@@ -550,7 +550,6 @@ class TrafficSenderService {
       await db.update(campaigns)
         .set({
           lastTrafficSenderAction: now,
-          // Convert the lastBudgetUpdateTime to a database field name format
           lastBudgetUpdateTime: updateTime,
           lastTrafficSenderStatus: `Updated budget to $${newBudget.toFixed(4)} (+$${totalPendingPrice.toFixed(4)} for ${totalPendingClicksCount} clicks from ${allPendingUrls.length} URLs)`,
           updatedAt: now
@@ -559,7 +558,7 @@ class TrafficSenderService {
         
       console.log(`✅ Successfully updated budget for TrafficStar campaign ${trafficstarId} to $${newBudget.toFixed(4)}`);
     } catch (error) {
-      console.error(`❌ Error checking for new URLs in campaign ${campaignId}:`, error);
+      console.error(`❌ Error updating budget for campaign ${campaignId}:`, error);
       
       // Update the campaign with the error
       await db.update(campaigns)
@@ -573,6 +572,108 @@ class TrafficSenderService {
       throw error;
     }
   }
+
+  /**
+   * Process pending budget updates for testing purposes
+   */
+  public async processPendingBudgetUpdates() {
+    try {
+      console.log('Running scheduled processing of pending URL budget updates');
+      console.log('Processing pending URL budget updates');
+      await this.processTrafficSenderCampaigns();
+      return { success: true, message: "Successfully processed pending budget updates" };
+    } catch (error) {
+      console.error('Error processing pending budget updates:', error);
+      return { 
+        success: false, 
+        message: "Failed to process pending budget updates",
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Get campaigns with pending budget updates
+   */
+  public async getPendingBudgetUpdates() {
+    try {
+      // Find campaigns with new URLs added since the last budget update
+      const campaignsWithTrafficSender = await db
+        .select()
+        .from(campaigns)
+        .where(
+          and(
+            eq(campaigns.trafficSenderEnabled, true),
+            isNotNull(campaigns.trafficstarCampaignId)
+          )
+        );
+      
+      const pendingUpdates = [];
+      
+      for (const campaign of campaignsWithTrafficSender) {
+        // Skip campaigns that have never been processed
+        if (!campaign.lastTrafficSenderAction) {
+          continue;
+        }
+        
+        const lastAction = new Date(campaign.lastTrafficSenderAction);
+        const lastBudgetUpdate = campaign.lastBudgetUpdateTime 
+          ? new Date(campaign.lastBudgetUpdateTime) 
+          : lastAction;
+        
+        // Get URLs added since last budget update
+        const newUrls = await db
+          .select()
+          .from(urls)
+          .where(
+            and(
+              eq(urls.campaignId, campaign.id),
+              eq(urls.status, 'active'),
+              sql`${urls.createdAt} > ${lastBudgetUpdate}`
+            )
+          );
+          
+        if (newUrls.length > 0) {
+          // Calculate the total clicks and price
+          let newClicksTotal = 0;
+          newUrls.forEach(url => {
+            newClicksTotal += url.clickLimit || 0;
+          });
+          
+          const pricePerThousand = parseFloat(campaign.pricePerThousand?.toString() || '0');
+          const newUrlsPrice = (newClicksTotal / 1000) * pricePerThousand;
+          
+          // Calculate minutes remaining before update
+          const now = new Date();
+          const minutesSinceLastBudgetUpdate = Math.floor((now.getTime() - lastBudgetUpdate.getTime()) / (60 * 1000));
+          const minutesRemaining = Math.max(0, this.NEW_URL_WAIT_MINUTES - minutesSinceLastBudgetUpdate);
+          
+          pendingUpdates.push({
+            campaignId: campaign.id,
+            campaignName: campaign.name,
+            lastBudgetUpdate: lastBudgetUpdate.toISOString(),
+            minutesSinceLastUpdate: minutesSinceLastBudgetUpdate,
+            minutesRemaining: minutesRemaining,
+            newUrlsCount: newUrls.length,
+            newClicksTotal: newClicksTotal,
+            pendingBudgetIncrease: newUrlsPrice,
+            urls: newUrls.map(url => ({
+              id: url.id,
+              name: url.name,
+              clickLimit: url.clickLimit,
+              createdAt: url.createdAt
+            }))
+          });
+        }
+      }
+      
+      return pendingUpdates;
+    } catch (error) {
+      console.error('Error getting pending budget updates:', error);
+      throw error;
+    }
+  }
 }
 
+// Export the singleton instance
 export const trafficSenderService = new TrafficSenderService();
