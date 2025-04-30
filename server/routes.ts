@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
 import { requireAuth } from "./auth/middleware";
+import { registerUrlClickRoutes } from "./url-click-routes";
 
 import { 
   optimizeResponseHeaders,
@@ -43,7 +44,6 @@ import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
-import { registerUrlClickRoutes } from "./url-click-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
 
 export async function registerRoutes(app: Express): Promise<Server> {

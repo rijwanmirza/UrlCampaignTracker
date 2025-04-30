@@ -17,6 +17,7 @@ import OriginalUrlRecordsPage from "@/pages/original-url-records-page";
 import CampaignClickRecordsPage from "@/pages/campaign-click-records-page";
 import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
 import UrlClickRecordsPage from "@/pages/url-click-records-page";
+import DetailedUrlRecordPage from "@/pages/detailed-url-record-page";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -96,6 +97,9 @@ function Router() {
           <Route path="/url-click-records">
             <UrlClickRecordsPage />
           </Route>
+          <Route path="/detailed-url-record/:urlId">
+            <DetailedUrlRecordPage />
+          </Route>
           <Route>
             <NotFound />
           </Route>
@@ -155,6 +159,9 @@ function Router() {
           </Route>
           <Route path="/url-click-records">
             <UrlClickRecordsPage />
+          </Route>
+          <Route path="/detailed-url-record/:urlId">
+            <DetailedUrlRecordPage />
           </Route>
           <Route>
             <NotFound />
