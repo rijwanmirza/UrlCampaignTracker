@@ -75,9 +75,9 @@ export function TrafficStarTestControls() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>🧪 TrafficStar Auto-Management Tests</CardTitle>
+          <CardTitle>🧪 TrafficStar Integration Tests</CardTitle>
           <CardDescription>
-            Manually trigger tests to verify TrafficStar auto-management functionality
+            Manually trigger tests to verify TrafficStar integration functionality
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -157,7 +157,7 @@ export function TrafficStarTestControls() {
         </CardContent>
         <CardFooter>
           <p className="text-xs text-muted-foreground">
-            These tests simulate conditions to verify all auto-management scenarios.
+            These tests simulate conditions to verify TrafficStar integration functionality.
             Check the server logs for detailed test results and API responses.
           </p>
         </CardFooter>

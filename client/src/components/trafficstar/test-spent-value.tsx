@@ -99,9 +99,9 @@ export function TestSpentValue() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>TrafficStar Auto-Management Test Suite</CardTitle>
+        <CardTitle>TrafficStar Integration Test Suite</CardTitle>
         <CardDescription>
-          Test various auto-management features including click thresholds, daily spent value limits, 
+          Test TrafficStar integration features including spent value updates
           and budget adjustment functionality.
         </CardDescription>
       </CardHeader>

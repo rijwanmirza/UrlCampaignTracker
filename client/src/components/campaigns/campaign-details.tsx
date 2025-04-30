@@ -178,12 +178,12 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                 </div>
               )}
               
-              {campaign.trafficstarCampaignId && campaign.autoManageTrafficstar && (
+              {campaign.trafficstarCampaignId && (
                 <div>
                   <span className="text-sm font-medium text-gray-500">TrafficStar Integration:</span>
                   <div className="flex items-center gap-2">
                     <Badge className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
-                      Auto-Managed
+                      Connected
                     </Badge>
                     <span className="text-xs text-gray-500">
                       Campaign #{campaign.trafficstarCampaignId}

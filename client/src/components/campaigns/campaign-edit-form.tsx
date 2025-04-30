@@ -458,26 +458,25 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                     </div>
                     
                     <FormDescription>
-                      Link this campaign to a TrafficStar campaign for automatic management
+                      Link this campaign to a TrafficStar campaign for spent value tracking
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              {/* Auto-Manage TrafficStar */}
+              {/* TrafficStar Spent Tracking */}
               <FormField
                 control={form.control}
                 name="autoManageTrafficstar"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
                     <div className="space-y-0.5">
-                      <FormLabel>Auto-Manage TrafficStar</FormLabel>
+                      <FormLabel>TrafficStar Spent Tracking</FormLabel>
                       <FormDescription>
-                        Pause campaign when UTC date changes or when remaining clicks ≤ 5,000<br />
-                        Pause campaign when daily spent exceeds $10 (checked every 2 minutes)<br />
-                        Activate campaign when remaining clicks exceed 15,000<br />
-                        Automatically set daily budget to $10.15 at specified UTC time
+                        Enable spent value tracking from TrafficStar<br />
+                        Updates daily spent value every 2 minutes<br />
+                        Sets daily budget to $10.15 at specified UTC time
                       </FormDescription>
                     </div>
                     <FormControl>
