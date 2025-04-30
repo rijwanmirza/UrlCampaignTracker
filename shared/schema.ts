@@ -32,7 +32,7 @@ export const campaigns = pgTable("campaigns", {
   multiplier: numeric("multiplier", { precision: 10, scale: 2 }).default("1").notNull(), // Multiplier for URL click limits (supports decimals)
   pricePerThousand: numeric("price_per_thousand", { precision: 10, scale: 4 }).default("0").notNull(), // Price per 1000 clicks in dollars (supports 4 decimal places)
   trafficstarCampaignId: text("trafficstar_campaign_id"), // Link to TrafficStar campaign ID
-  autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // Auto-manage TrafficStar campaign
+  autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // DEPRECATED: Auto-manage functionality has been removed
   budgetUpdateTime: text("budget_update_time").default("00:00:00"), // Daily budget update time in UTC (HH:MM:SS format)
   lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
   // TrafficStar spent tracking fields
@@ -61,6 +61,7 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   pricePerThousand: z.number().min(0).max(10000).default(0),
   // TrafficStar fields
   trafficstarCampaignId: z.string().optional(),
+  // DEPRECATED: Auto-manage functionality has been removed
   autoManageTrafficstar: z.boolean().default(false).optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
 });
@@ -80,6 +81,7 @@ export const updateCampaignSchema = z.object({
   pricePerThousand: z.number().min(0).max(10000).optional(),
   // TrafficStar fields
   trafficstarCampaignId: z.string().optional(),
+  // DEPRECATED: Auto-manage functionality has been removed
   autoManageTrafficstar: z.boolean().optional(),
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
