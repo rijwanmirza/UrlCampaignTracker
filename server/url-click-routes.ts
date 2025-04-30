@@ -12,111 +12,6 @@ export function registerUrlClickRoutes(app: any) {
   urlClickLogsManager.initialize();
   
   /**
-   * API endpoint to log a click for a URL
-   */
-  app.post("/api/url-click-records/:urlId", async (req: Request, res: Response) => {
-    try {
-      const urlId = parseInt(req.params.urlId);
-      
-      if (isNaN(urlId)) {
-        return res.status(400).json({ message: "Invalid URL ID" });
-      }
-      
-      // Check if the URL exists
-      const url = await db.query.urls.findFirst({
-        where: eq(urls.id, urlId)
-      });
-      
-      if (!url) {
-        return res.status(404).json({ message: "URL not found" });
-      }
-      
-      // Log the click
-      await urlClickLogsManager.logClick(urlId);
-      
-      return res.status(200).json({ success: true });
-    } catch (error) {
-      console.error("Error logging URL click:", error);
-      return res.status(500).json({ message: "Failed to log URL click" });
-    }
-  });
-  
-  /**
-   * API endpoint to get raw click logs for a URL
-   */
-  app.get("/api/url-click-records/raw/:urlId", async (req: Request, res: Response) => {
-    try {
-      const urlId = parseInt(req.params.urlId);
-      
-      if (isNaN(urlId)) {
-        return res.status(400).json({ message: "Invalid URL ID" });
-      }
-      
-      // Check if the URL exists
-      const url = await db.query.urls.findFirst({
-        where: eq(urls.id, urlId)
-      });
-      
-      if (!url) {
-        return res.status(404).json({ message: "URL not found" });
-      }
-      
-      // Get the raw logs
-      const rawLogs = await urlClickLogsManager.getRawLogs(urlId);
-      
-      return res.status(200).json({ rawLogs });
-    } catch (error) {
-      console.error("Error getting URL click logs:", error);
-      return res.status(500).json({ message: "Failed to get URL click logs" });
-    }
-  });
-  
-  /**
-   * API endpoint to get detailed analytics for a specific URL with filtering options
-   */
-  app.get("/api/url-click-records/:urlId", async (req: Request, res: Response) => {
-    try {
-      const urlId = parseInt(req.params.urlId);
-      
-      if (isNaN(urlId)) {
-        return res.status(400).json({ message: "Invalid URL ID" });
-      }
-      
-      // Check if the URL exists
-      const url = await db.query.urls.findFirst({
-        where: eq(urls.id, urlId)
-      });
-      
-      if (!url) {
-        return res.status(404).json({ message: "URL not found" });
-      }
-      
-      // Parse and validate filter parameters
-      const filterResult = timeRangeFilterSchema.safeParse({
-        filterType: req.query.filterType || 'today',
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
-        timezone: req.query.timezone || 'Asia/Kolkata'
-      });
-      
-      if (!filterResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid filter parameters", 
-          errors: filterResult.error.errors 
-        });
-      }
-      
-      // Get the click analytics
-      const analytics = await urlClickLogsManager.getUrlClickAnalytics(urlId, filterResult.data);
-      
-      return res.status(200).json(analytics);
-    } catch (error) {
-      console.error("Error getting URL click analytics:", error);
-      return res.status(500).json({ message: "Failed to get URL click analytics" });
-    }
-  });
-  
-  /**
    * API endpoint to get a summary of all URL clicks with optional filtering
    */
   app.get("/api/url-click-records/summary", async (req: Request, res: Response) => {
@@ -283,6 +178,112 @@ export function registerUrlClickRoutes(app: any) {
     } catch (error) {
       console.error("Error deleting URL click logs:", error);
       return res.status(500).json({ message: "Failed to delete URL click logs" });
+    }
+  });
+  
+  /**
+   * API endpoint to get raw click logs for a URL
+   */
+  app.get("/api/url-click-records/raw/:urlId", async (req: Request, res: Response) => {
+    try {
+      const urlId = parseInt(req.params.urlId);
+      
+      if (isNaN(urlId)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      // Check if the URL exists
+      const url = await db.query.urls.findFirst({
+        where: eq(urls.id, urlId)
+      });
+      
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Get the raw logs
+      const rawLogs = await urlClickLogsManager.getRawLogs(urlId);
+      
+      return res.status(200).json({ rawLogs });
+    } catch (error) {
+      console.error("Error getting URL click logs:", error);
+      return res.status(500).json({ message: "Failed to get URL click logs" });
+    }
+  });
+  
+  /**
+   * API endpoint to log a click for a URL
+   */
+  app.post("/api/url-click-records/:urlId", async (req: Request, res: Response) => {
+    try {
+      const urlId = parseInt(req.params.urlId);
+      
+      if (isNaN(urlId)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      // Check if the URL exists
+      const url = await db.query.urls.findFirst({
+        where: eq(urls.id, urlId)
+      });
+      
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Log the click
+      await urlClickLogsManager.logClick(urlId);
+      
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error logging URL click:", error);
+      return res.status(500).json({ message: "Failed to log URL click" });
+    }
+  });
+  
+  /**
+   * API endpoint to get detailed analytics for a specific URL with filtering options
+   * This must be the last route in the group to avoid conflicts with other routes
+   */
+  app.get("/api/url-click-records/:urlId", async (req: Request, res: Response) => {
+    try {
+      const urlId = parseInt(req.params.urlId);
+      
+      if (isNaN(urlId)) {
+        return res.status(400).json({ message: "Invalid URL ID" });
+      }
+      
+      // Check if the URL exists
+      const url = await db.query.urls.findFirst({
+        where: eq(urls.id, urlId)
+      });
+      
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Parse and validate filter parameters
+      const filterResult = timeRangeFilterSchema.safeParse({
+        filterType: req.query.filterType || 'today',
+        startDate: req.query.startDate,
+        endDate: req.query.endDate,
+        timezone: req.query.timezone || 'Asia/Kolkata'
+      });
+      
+      if (!filterResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid filter parameters", 
+          errors: filterResult.error.errors 
+        });
+      }
+      
+      // Get the click analytics
+      const analytics = await urlClickLogsManager.getUrlClickAnalytics(urlId, filterResult.data);
+      
+      return res.status(200).json(analytics);
+    } catch (error) {
+      console.error("Error getting URL click analytics:", error);
+      return res.status(500).json({ message: "Failed to get URL click analytics" });
     }
   });
 }
