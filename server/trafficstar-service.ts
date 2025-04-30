@@ -513,22 +513,23 @@ class TrafficStarService {
     try {
       console.log(`USING V2 API: Checking campaign ${id} status before pausing...`);
       
-      // We'll always make API calls, but track if it needs to be paused to decide on updating
-      let needsToBePaused = true;
+      // Always check current status from API first
       let currentStatus = {
         active: true,
         status: 'unknown'
       };
       
       try {
-        // Always check current status from API first
+        // ALWAYS make API call to get current status
         const apiCampaign = await this.getCampaign(id);
         currentStatus.active = apiCampaign.active;
         currentStatus.status = apiCampaign.status;
         
+        console.log(`API call made - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
+        
+        // Only update our database to match API's current state
         if (apiCampaign.active === false || apiCampaign.status === 'paused') {
-          console.log(`Campaign ${id} is already paused according to TrafficStar API - no update needed`);
-          needsToBePaused = false;
+          console.log(`Campaign ${id} is already paused according to TrafficStar API`);
           
           // Save this status to database for future reference
           await db.update(trafficstarCampaigns)
@@ -539,34 +540,12 @@ class TrafficStarService {
               updatedAt: new Date()
             })
             .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-        } else {
-          console.log(`Campaign ${id} is active (status: ${apiCampaign.status}), will proceed with pause action`);
         }
       } catch (statusCheckError) {
-        console.log(`Error checking campaign ${id} status from API, falling back to database:`, statusCheckError);
-        
-        // Fall back to database if API check fails
-        try {
-          const [dbCampaign] = await db
-            .select()
-            .from(trafficstarCampaigns)
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-          
-          if (dbCampaign) {
-            currentStatus.active = dbCampaign.active;
-            currentStatus.status = dbCampaign.status;
-            
-            if (dbCampaign.active === false && dbCampaign.status === 'paused') {
-              console.log(`Campaign ${id} is already paused according to our database - no update needed`);
-              needsToBePaused = false;
-            }
-          }
-        } catch (dbError) {
-          console.log(`Error checking campaign ${id} status from database, will proceed with pause:`, dbError);
-        }
+        console.log(`Error checking campaign ${id} status from API:`, statusCheckError);
       }
       
-      // Update our local record FIRST for instant UI feedback
+      // ALWAYS update our local record for instant UI feedback
       await db.update(trafficstarCampaigns)
         .set({ 
           active: false, 
@@ -577,7 +556,7 @@ class TrafficStarService {
         })
         .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
       
-      // Make a direct API call using the CORRECT v2 endpoint from documentation
+      // ALWAYS make direct API call - but we'll check the response to see if any action was needed
       try {
         // Get token
         const token = await this.ensureToken();
@@ -667,22 +646,22 @@ class TrafficStarService {
     try {
       console.log(`USING V2 API: Checking campaign ${id} status before activating...`);
       
-      // We'll always make API calls, but track if it needs to be activated to decide on updating
-      let needsToBeActivated = true;
       let currentStatus = {
         active: false,
         status: 'unknown'
       };
       
       try {
-        // Always check current status from API first
+        // ALWAYS make API call to get current status
         const apiCampaign = await this.getCampaign(id);
         currentStatus.active = apiCampaign.active;
         currentStatus.status = apiCampaign.status;
         
+        console.log(`API call made - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
+        
+        // Only update our database to match API's current state
         if (apiCampaign.active === true || apiCampaign.status === 'enabled') {
-          console.log(`Campaign ${id} is already active according to TrafficStar API - no update needed`);
-          needsToBeActivated = false;
+          console.log(`Campaign ${id} is already active according to TrafficStar API`);
           
           // Save this status to database for future reference
           await db.update(trafficstarCampaigns)
@@ -693,31 +672,9 @@ class TrafficStarService {
               updatedAt: new Date()
             })
             .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-        } else {
-          console.log(`Campaign ${id} is inactive (status: ${apiCampaign.status}), will proceed with activation`);
         }
       } catch (statusCheckError) {
-        console.log(`Error checking campaign ${id} status from API, falling back to database:`, statusCheckError);
-        
-        // Fall back to database if API check fails
-        try {
-          const [dbCampaign] = await db
-            .select()
-            .from(trafficstarCampaigns)
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-          
-          if (dbCampaign) {
-            currentStatus.active = dbCampaign.active;
-            currentStatus.status = dbCampaign.status;
-            
-            if (dbCampaign.active === true && dbCampaign.status === 'enabled') {
-              console.log(`Campaign ${id} is already active according to our database - no update needed`);
-              needsToBeActivated = false;
-            }
-          }
-        } catch (dbError) {
-          console.log(`Error checking campaign ${id} status from database, will proceed with activation:`, dbError);
-        }
+        console.log(`Error checking campaign ${id} status from API:`, statusCheckError);
       }
       
       // Set end date to current UTC date at 23:59:00 (with seconds for API)
@@ -1444,35 +1401,28 @@ class TrafficStarService {
       if (urls.length === 0) {
         console.log(`⚠️ Campaign ${campaign.id} has NO active URLs - checking if TrafficStar campaign needs to be paused`);
         
-        // Only call pauseCampaign if campaign is currently active
-        // Skip if campaign is already paused or a pause request was recently successful
-        if (!currentTrafficstarStatus || 
-            currentTrafficstarStatus.active === true || 
-            currentTrafficstarStatus.status === 'enabled') {
+        // Always make API calls but check the status first
+        console.log(`Campaign ${trafficstarId} has no active URLs - checking current status and pausing if needed`);
+        
+        try {
+          // ALWAYS pause the campaign - let the pauseCampaign function handle status checking internally
+          await this.pauseCampaign(trafficstarId);
           
-          console.log(`Campaign ${trafficstarId} is active or status unknown - pausing now`);
+          // ALWAYS set end time to current UTC time
+          await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
           
-          try {
-            // Pause the campaign
-            await this.pauseCampaign(trafficstarId);
+          // Update campaign's last sync timestamp
+          await db.update(campaigns)
+            .set({
+              lastTrafficstarSync: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
             
-            // Set end time to current UTC time
-            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
-            
-            // Update campaign's last sync timestamp
-            await db.update(campaigns)
-              .set({
-                lastTrafficstarSync: new Date(),
-                updatedAt: new Date()
-              })
-              .where(eq(campaigns.id, campaign.id));
-              
-            console.log(`✅ TrafficStar campaign ${trafficstarId} paused and end date set to ${formattedCurrentDateTime}`);
-          } catch (error) {
-            console.error(`Error pausing campaign with no active URLs:`, error);
-          }
-        } else {
-          console.log(`TrafficStar campaign ${trafficstarId} is already paused (${currentTrafficstarStatus.status}) - no API call needed`);
+          console.log(`✅ TrafficStar campaign ${trafficstarId} API calls complete for pause and end time setting`);
+        } catch (error) {
+          console.error(`Error in API calls for campaign with no active URLs:`, error);
+        }
         }
         
         return; // No need to continue with regular auto-management when there are no active URLs
@@ -1567,48 +1517,32 @@ class TrafficStarService {
       
       // If total remaining clicks > 15000, activate the campaign
       if (totalRemainingClicks > 15000) {
-        // Only call activateCampaign if campaign is not already active
-        if (!currentTrafficstarStatus || 
-            currentTrafficstarStatus.active === false || 
-            currentTrafficstarStatus.status === 'paused' || 
-            (currentTrafficstarStatus.lastRequestedAction === 'activate' && 
-             currentTrafficstarStatus.lastRequestedActionSuccess === false)) {
-          
-          console.log(`Activating TrafficStar campaign ${trafficstarId} (${totalRemainingClicks} remaining clicks > 15,000)`);
-          
-          try {
-            // Activate the campaign
-            await this.activateCampaign(trafficstarId);
-            console.log(`✅ Successfully activated TrafficStar campaign ${trafficstarId}`);
-          } catch (error) {
-            console.error(`Error activating TrafficStar campaign ${trafficstarId}:`, error);
-          }
-        } else {
-          console.log(`TrafficStar campaign ${trafficstarId} is already active (${currentTrafficstarStatus.status}) - no API call needed`);
+        // ALWAYS call activateCampaign
+        console.log(`TrafficStar campaign ${trafficstarId} has ${totalRemainingClicks} remaining clicks > 15,000 - making API calls`);
+        
+        try {
+          // ALWAYS activate the campaign - let the function handle status checking internally
+          await this.activateCampaign(trafficstarId);
+          console.log(`✅ API calls completed for TrafficStar campaign ${trafficstarId}`);
+        } catch (error) {
+          console.error(`Error in API calls for TrafficStar campaign ${trafficstarId}:`, error);
         }
       } 
       // Only pause if remaining clicks <= 5000 (lower threshold)
       else if (totalRemainingClicks <= 5000) {
-        // If remaining clicks <= 5000, ensure the campaign is paused
-        if (currentTrafficstarStatus && 
-            (currentTrafficstarStatus.active === true || 
-             currentTrafficstarStatus.status === 'enabled')) {
+        // ALWAYS make API calls for campaigns with low remaining clicks
+        console.log(`TrafficStar campaign ${trafficstarId} has low remaining clicks (${totalRemainingClicks} <= 5,000) - making API calls`);
+        
+        try {
+          // ALWAYS pause the campaign - the function will check status internally
+          await this.pauseCampaign(trafficstarId);
           
-          console.log(`Pausing TrafficStar campaign ${trafficstarId} due to low remaining clicks (${totalRemainingClicks} <= 5,000)`);
+          // ALWAYS set end time to current UTC time
+          await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
           
-          try {
-            // Pause the campaign
-            await this.pauseCampaign(trafficstarId);
-            
-            // Set end time to current UTC time
-            await this.updateCampaignEndTime(trafficstarId, formattedCurrentDateTime);
-            
-            console.log(`✅ Successfully paused TrafficStar campaign ${trafficstarId} due to low remaining clicks`);
-          } catch (error) {
-            console.error(`Error pausing TrafficStar campaign ${trafficstarId}:`, error);
-          }
-        } else {
-          console.log(`TrafficStar campaign ${trafficstarId} is already paused (${currentTrafficstarStatus?.status}) - no API call needed`);
+          console.log(`✅ API calls completed for TrafficStar campaign ${trafficstarId} due to low remaining clicks`);
+        } catch (error) {
+          console.error(`Error making API calls for TrafficStar campaign ${trafficstarId}:`, error);
         }
       } 
       // For clicks between 5000 and 15000, maintain current status (hysteresis)
