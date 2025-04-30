@@ -845,7 +845,9 @@ class TrafficStarService {
       // Always check with the API first
       try {
         const apiCampaign = await this.getCampaign(id);
-        currentMaxDaily = parseFloat(apiCampaign.max_daily);
+        currentMaxDaily = typeof apiCampaign.max_daily === 'number' 
+          ? apiCampaign.max_daily
+          : parseFloat(String(apiCampaign.max_daily) || '0');
         
         if (currentMaxDaily === maxDaily) {
           console.log(`Campaign ${id} already has budget of $${maxDaily} according to TrafficStar API - no update needed`);
@@ -1323,11 +1325,26 @@ class TrafficStarService {
       
       console.log(`Found ${campaignsToManage.length} campaigns with auto-management enabled`);
       
+      // Handle each campaign
       for (const campaign of campaignsToManage) {
         try {
-          await this.autoManageCampaign(campaign);
+          // Convert trafficstarCampaignId to a number or use it as a string for API calls
+          let tsId: number;
+          
+          if (campaign.trafficstarCampaignId) {
+            // Try to parse as a number first
+            tsId = parseInt(campaign.trafficstarCampaignId, 10);
+            if (isNaN(tsId)) {
+              console.error(`Invalid TrafficStar campaign ID for campaign ${campaign.id}: ${campaign.trafficstarCampaignId}`);
+              continue; // Skip this campaign
+            }
+            
+            console.log(`Processing auto-managed campaign ${campaign.id} with TrafficStar ID ${tsId}`);
+            await this.autoManageCampaign(campaign);
+          }
         } catch (error) {
           console.error(`Error auto-managing campaign ${campaign.id}:`, error);
+          // Continue to next campaign instead of failing completely
         }
       }
     } catch (error) {
