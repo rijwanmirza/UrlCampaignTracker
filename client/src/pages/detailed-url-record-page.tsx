@@ -61,10 +61,13 @@ export default function DetailedUrlRecordPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 7));
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   
+  // Add timezone selection
+  const [timezone, setTimezone] = useState<"Asia/Kolkata" | "UTC">("Asia/Kolkata");
+  
   // Construct query parameters based on filter settings
   const queryParams: Record<string, string> = {
     filterType: filter,
-    timezone: "Asia/Kolkata", // Indian timezone for all filters
+    timezone: timezone, // Allow switching between Indian and UTC timezone
   };
   
   if (filter === 'custom_range' && startDate && endDate) {
@@ -210,7 +213,7 @@ export default function DetailedUrlRecordPage() {
     <DashboardShell>
       <DashboardHeader
         heading={`URL Analytics: ${urlData.name}`}
-        description={`Detailed click analysis with Indian timezone (UTC+5:30)`}
+        description={`Detailed click analysis with ${timezone === "Asia/Kolkata" ? "Indian" : "UTC"} timezone (${timezone === "Asia/Kolkata" ? "UTC+5:30" : "UTC+0:00"})`}
       >
         <div className="flex items-center gap-2">
           <WouterLink href="/url-click-records">
@@ -317,6 +320,22 @@ export default function DetailedUrlRecordPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Timezone Selector */}
+            <div className="w-full md:w-auto">
+              <Select
+                value={timezone}
+                onValueChange={(value: "Asia/Kolkata" | "UTC") => setTimezone(value)}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Asia/Kolkata">Indian Time (UTC+5:30)</SelectItem>
+                  <SelectItem value="UTC">UTC (UTC+0:00)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             {/* Custom date range picker, only shown when custom range is selected */}
             {filter === 'custom_range' && (
@@ -416,7 +435,7 @@ export default function DetailedUrlRecordPage() {
           )}
         </CardContent>
         <CardFooter className="text-sm text-muted-foreground">
-          <p>All times displayed in Indian timezone (UTC+5:30)</p>
+          <p>All times displayed in {timezone === "Asia/Kolkata" ? "Indian" : "UTC"} timezone ({timezone === "Asia/Kolkata" ? "UTC+5:30" : "UTC+0:00"})</p>
         </CardFooter>
       </Card>
     </DashboardShell>
