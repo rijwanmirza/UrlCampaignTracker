@@ -141,11 +141,35 @@ class TrafficSenderService {
   
   /**
    * Pause a TrafficStar campaign as part of the Traffic Sender process
+   * Implementation of missing requirement: Check campaign status before pausing
    */
   private async pauseTrafficStarCampaign(campaignId: number, trafficstarId: number) {
-    console.log(`⏸️ Pausing TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
+    console.log(`⏸️ Checking status before pausing TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
     
     try {
+      // @Missing requirement: First check the campaign's current status
+      const currentCampaign = await trafficStarService.getCampaign(trafficstarId);
+      
+      // Only pause if the campaign is active
+      if (!currentCampaign?.active) {
+        console.log(`ℹ️ TrafficStar campaign ${trafficstarId} is already paused, skipping pause action`);
+        
+        // Still update our database to record this action
+        const now = new Date();
+        await db.update(campaigns)
+          .set({
+            lastTrafficSenderAction: now,
+            lastTrafficSenderStatus: 'paused (was already paused)',
+            updatedAt: now
+          })
+          .where(eq(campaigns.id, campaignId));
+          
+        return;
+      }
+      
+      // Campaign is active, proceed with pausing
+      console.log(`🔍 TrafficStar campaign ${trafficstarId} is currently active, proceeding with pause`);
+      
       // Pause the campaign in TrafficStar
       await trafficStarService.pauseCampaign(trafficstarId);
       
@@ -268,12 +292,18 @@ class TrafficSenderService {
   /**
    * Activate a campaign with an updated budget based on spent value + pending clicks
    * This is used for Step 5: When spent value is more than $10
+   * Implementation of missing requirement: Check campaign status before activating
    */
   private async activateWithBudget(campaign: any, spentValue: number, pendingClickPrice: number, totalRemainingClicks: number) {
     const campaignId = campaign.id;
     const trafficstarId = Number(campaign.trafficstarCampaignId);
     
     try {
+      // @Missing requirement: First check the campaign's current status
+      const currentCampaign = await trafficStarService.getCampaign(trafficstarId);
+      
+      console.log(`🔍 Checking status before activating TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
+      
       // Step 5: If spent value > $10, then calculate price for remaining clicks
       // and update TrafficStar daily budget to (spent value + remaining clicks price)
       const newBudget = spentValue + pendingClickPrice;
@@ -289,8 +319,14 @@ class TrafficSenderService {
       
       await trafficStarService.updateCampaignEndTime(trafficstarId, endTime);
       
-      // Step 5: Activate the campaign
-      await trafficStarService.activateCampaign(trafficstarId);
+      // Check if the campaign is already active
+      if (currentCampaign?.active) {
+        console.log(`ℹ️ TrafficStar campaign ${trafficstarId} is already active, skipping activation API call`);
+      } else {
+        // Step 5: Activate the campaign
+        console.log(`🚀 Activating TrafficStar campaign ${trafficstarId}`);
+        await trafficStarService.activateCampaign(trafficstarId);
+      }
       
       // Update our database to record this action
       await db.update(campaigns)
@@ -321,6 +357,7 @@ class TrafficSenderService {
   /**
    * Activate a campaign with just an end time (for cases with low spent value)
    * This is used for Step 6: When spent value is less than $10 AND remaining clicks >= 10000
+   * Implementation of missing requirement: Check campaign status before activating
    */
   private async activateWithEndTime(campaign: any, totalRemainingClicks: number) {
     const campaignId = campaign.id;
@@ -329,6 +366,11 @@ class TrafficSenderService {
     try {
       console.log(`🕒 Activating campaign ${campaignId} with end time only (for ${totalRemainingClicks} clicks, low spent value)`);
       
+      // @Missing requirement: First check the campaign's current status
+      const currentCampaign = await trafficStarService.getCampaign(trafficstarId);
+      
+      console.log(`🔍 Checking status before activating TrafficStar campaign ${trafficstarId} for campaign ${campaignId}`);
+      
       // Step 6: If spent value < $10 AND remaining clicks >= 10000,
       // activate TrafficStar campaign with current UTC date and end time 23:59
       const today = new Date().toISOString().split('T')[0];
@@ -336,8 +378,14 @@ class TrafficSenderService {
       
       await trafficStarService.updateCampaignEndTime(trafficstarId, endTime);
       
-      // Activate the campaign without changing budget
-      await trafficStarService.activateCampaign(trafficstarId);
+      // Check if the campaign is already active
+      if (currentCampaign?.active) {
+        console.log(`ℹ️ TrafficStar campaign ${trafficstarId} is already active, skipping activation API call`);
+      } else {
+        // Step 6: Activate the campaign
+        console.log(`🚀 Activating TrafficStar campaign ${trafficstarId}`);
+        await trafficStarService.activateCampaign(trafficstarId);
+      }
       
       // Update our database to record this action
       await db.update(campaigns)
