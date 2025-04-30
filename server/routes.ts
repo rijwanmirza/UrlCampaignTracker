@@ -2705,7 +2705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Manually trigger auto-management for this campaign
+      // Manually trigger budget update for this campaign
       console.log(`🔄 Forcing immediate TrafficStar budget update for campaign ${campaignId}`);
       
       try {

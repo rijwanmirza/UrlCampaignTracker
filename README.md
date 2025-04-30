@@ -7,10 +7,10 @@ A high-performance URL management platform that enables advanced custom redirect
 - **High-Performance Redirects**: HTTP/2.0 URL routing with zero latency
 - **Campaign Management**: Create and manage redirect campaigns with custom paths
 - **Link Processing**: Automatic Gmail integration for processing emails with links
-- **TrafficStar Integration**: Direct control of campaign status and budget adjustments
+- **TrafficStar Integration**: Spent value tracking and daily budget updates
 - **Intelligent Routing**: Weighted distribution based on campaign settings
 - **Click Tracking**: Monitor performance of all URLs in real-time
-- **Budget Management**: Automated daily budget updates at specified UTC times
+- **Budget Management**: Daily budget updates at specified UTC times
 
 ## Technology Stack
 
@@ -27,7 +27,7 @@ A high-performance URL management platform that enables advanced custom redirect
 - Create campaigns with custom paths and redirect methods (direct/bridge)
 - Configure price per thousand clicks with 4 decimal precision
 - Apply multipliers to adjust click limits across campaign URLs
-- Set up automatic TrafficStar integration for budget management
+- Set up TrafficStar integration for spent value tracking
 
 ### URL Management
 
@@ -45,10 +45,10 @@ A high-performance URL management platform that enables advanced custom redirect
 
 ### TrafficStar API Integration
 
-- Connect campaigns to TrafficStar
-- Automatically manage campaign status based on remaining clicks
+- Connect campaigns to TrafficStar for spent value tracking
+- Monitor daily spent values automatically
 - Schedule daily budget updates at specific UTC times
-- Force immediate budget updates when configuration changes
+- Set budget amount to $10.15 at scheduled times
 
 ## Installation
 
@@ -83,7 +83,7 @@ Configure the following through application interface:
 - API key (or use environment variable)
 - Connect campaigns to TrafficStar campaigns
 - Set budget update time (UTC)
-- Enable/disable auto-management
+- Track spent values automatically
 
 ## API Endpoints
 

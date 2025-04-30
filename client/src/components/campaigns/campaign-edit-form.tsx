@@ -465,14 +465,14 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 )}
               />
               
-              {/* TrafficStar spent tracking is now automatically enabled when a TrafficStar campaign is selected */}
+              {/* TrafficStar spent tracking configuration */}
               <div className="rounded-lg border p-3 mt-4">
                 <div className="space-y-0.5">
                   <h4 className="font-medium">TrafficStar Spent Tracking</h4>
                   <p className="text-sm text-muted-foreground">
-                    Spent value tracking is automatically enabled when a TrafficStar campaign is selected.<br />
-                    • Updates daily spent value every 2 minutes<br />
-                    • Sets daily budget to $10.15 at specified UTC time
+                    When a TrafficStar campaign is selected:<br />
+                    • Daily spent value is tracked every 2 minutes<br />
+                    • Daily budget is set to $10.15 at specified UTC time
                   </p>
                 </div>
               </div>
