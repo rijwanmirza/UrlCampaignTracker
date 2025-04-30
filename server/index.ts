@@ -154,14 +154,7 @@ app.use((req, res, next) => {
       try {
         await initializeTrafficStar();
         log('TrafficStar API initialized successfully');
-        
-        // Start auto-management of TrafficStar campaigns
-        try {
-          await trafficStarService.scheduleAutoManagement();
-          log('TrafficStar campaign auto-management initialized successfully');
-        } catch (autoManageError) {
-          log(`Error initializing TrafficStar auto-management: ${autoManageError}`);
-        }
+        // Auto-management code removed as requested
       } catch (trafficstarError) {
         log(`Error initializing TrafficStar API: ${trafficstarError}`);
       }
