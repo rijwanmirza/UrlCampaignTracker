@@ -7,6 +7,7 @@ import { applyClickProtection } from "./click-protection";
 import { getServerStats, getStatsHistory, initServerMonitor } from './server-monitor';
 import { requireAuth } from "./auth/middleware";
 import { registerUrlClickRoutes } from "./url-click-routes";
+import { urlClickLogsManager } from "./url-click-logs-manager";
 
 import { 
   optimizeResponseHeaders,
