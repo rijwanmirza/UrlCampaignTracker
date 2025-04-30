@@ -1359,9 +1359,6 @@ class TrafficStarService {
   /**
    * Auto-manage a single campaign based on its settings
    */
-  // Store the last auto-management check time for each campaign to avoid redundant checks
-  private lastAutoManagementChecks: Map<number, Date> = new Map();
-  
   private async autoManageCampaign(campaign: any): Promise<void> {
     try {
       // Skip if no TrafficStar campaign ID
@@ -1374,14 +1371,6 @@ class TrafficStarService {
       const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
         parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
         Number(campaign.trafficstarCampaignId);
-        
-      // Check if we recently checked this campaign (within the last 5 minutes)
-      const lastCheck = this.lastAutoManagementChecks.get(trafficstarId);
-      const currentTime = new Date();
-      if (lastCheck && (currentTime.getTime() - lastCheck.getTime() < 5 * 60 * 1000)) {
-        console.log(`Campaign ${campaign.id} was checked recently (${Math.floor((currentTime.getTime() - lastCheck.getTime()) / 1000)} seconds ago) - skipping redundant check`);
-        return;
-      }
       
       // Get current date in UTC
       const currentUtcDate = new Date().toISOString().split('T')[0];
@@ -1390,8 +1379,6 @@ class TrafficStarService {
       // If it is, skip the click threshold management for today
       if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
         console.log(`Campaign ${campaign.id} is paused due to high spent value - skipping click threshold management`);
-        // Still record that we checked this campaign
-        this.lastAutoManagementChecks.set(trafficstarId, currentTime);
         return;
       }
       
@@ -1405,20 +1392,6 @@ class TrafficStarService {
           .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
         
         if (dbCampaign) {
-          // If we have a very recent status update, use it without API verification
-          const lastStatusUpdateTime = dbCampaign.updatedAt || new Date(0);
-          const statusAge = currentTime.getTime() - lastStatusUpdateTime.getTime();
-          
-          if (statusAge < 5 * 60 * 1000) { // Less than 5 minutes old
-            console.log(`Using cached status for campaign ${trafficstarId}: ${JSON.stringify({
-              active: dbCampaign.active,
-              status: dbCampaign.status,
-              lastRequestedAction: dbCampaign.lastRequestedAction,
-              lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
-              lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
-            })}`);
-          }
-          
           currentTrafficstarStatus = {
             active: dbCampaign.active,
             status: dbCampaign.status,
@@ -1453,9 +1426,10 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).toISOString().split('T')[0] : null;
       
       // Get current time in UTC to check if it's time for budget update
-      const currentUtcTime = currentTime.getUTCHours().toString().padStart(2, '0') + ':' + 
-                           currentTime.getUTCMinutes().toString().padStart(2, '0') + ':' + 
-                           currentTime.getUTCSeconds().toString().padStart(2, '0');
+      const now = new Date();
+      const currentUtcTime = now.getUTCHours().toString().padStart(2, '0') + ':' + 
+                           now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
+                           now.getUTCSeconds().toString().padStart(2, '0');
       
       // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
       // TrafficStar API requires YYYY-MM-DD HH:MM:SS format with seconds
@@ -1725,32 +1699,16 @@ class TrafficStarService {
             })
             .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
             
-          // Only if campaign should be paused but isn't currently paused, make API call to pause it
+          // If campaign should be paused but isn't, make API call to pause it
           if (apiCampaign.active && totalRemainingClicks <= 7500) {
-            console.log(`Mid-range clicks but trending lower (${totalRemainingClicks} <= 7,500) - checking if pause needed`);
-            
-            // Get latest status to avoid redundant API calls
-            const latestStatus = await this.getCampaign(trafficstarId);
-            if (latestStatus.active === true) {
-              console.log(`Confirmed campaign ${trafficstarId} is still active - making pause API call`);
-              await this.pauseCampaign(trafficstarId);
-            } else {
-              console.log(`Campaign ${trafficstarId} is already paused - no API call needed`);
-            }
+            console.log(`Mid-range clicks but trending lower (${totalRemainingClicks} <= 7,500) - making pause API call`);
+            await this.pauseCampaign(trafficstarId);
           }
           
-          // Only if campaign should be active but isn't currently active, make API call to activate it
+          // If campaign should be active but isn't, make API call to activate it
           if (!apiCampaign.active && totalRemainingClicks >= 12500) {
-            console.log(`Mid-range clicks but trending higher (${totalRemainingClicks} >= 12,500) - checking if activation needed`);
-            
-            // Get latest status to avoid redundant API calls
-            const latestStatus = await this.getCampaign(trafficstarId);
-            if (latestStatus.active === false) {
-              console.log(`Confirmed campaign ${trafficstarId} is still paused - making activation API call`);
-              await this.activateCampaign(trafficstarId);
-            } else {
-              console.log(`Campaign ${trafficstarId} is already active - no API call needed`);
-            }
+            console.log(`Mid-range clicks but trending higher (${totalRemainingClicks} >= 12,500) - making activate API call`);
+            await this.activateCampaign(trafficstarId);
           }
           
         } catch (statusCheckError) {
@@ -2278,8 +2236,7 @@ class TrafficStarService {
         }
       }, 3 * 60 * 1000); // Every 3 minutes (staggered to avoid overlap)
       
-      // Schedule to run regular auto-management every 5 minutes for less API strain
-      // Changed from 1 minute to 5 minutes to reduce redundant checks
+      // Schedule to run regular auto-management every minute for immediate effect
       setInterval(async () => {
         try {
           console.log('Running scheduled auto-management for TrafficStar campaigns');
@@ -2287,7 +2244,7 @@ class TrafficStarService {
         } catch (error) {
           console.error('Error in scheduled auto-management:', error);
         }
-      }, 5 * 60 * 1000); // Every 5 minutes (changed from every minute)
+      }, 60 * 1000); // Every minute
       
       // Schedule processing of pending URL budget updates every minute
       setInterval(async () => {
