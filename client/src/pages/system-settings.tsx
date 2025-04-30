@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, AlertTriangle } from "lucide-react";
 import DecimalMultiplierMigration from "@/components/system/decimal-multiplier-migration";
+import TrafficSenderMigration from "@/components/system/traffic-sender-migration";
 import { ServerMonitor } from "@/components/server-monitor/server-stats";
 
 export default function SystemSettings() {
@@ -100,6 +101,7 @@ export default function SystemSettings() {
       <div className="mb-10">
         <h2 className="text-xl font-bold mb-4">Database Migrations</h2>
         <DecimalMultiplierMigration />
+        <TrafficSenderMigration />
       </div>
       
       {/* System cleanup section */}
