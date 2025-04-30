@@ -368,10 +368,10 @@ class TrafficSenderService {
       console.log(`🔍 Checking for new URLs in campaign ${campaignId}`);
       
       // Get the TrafficStar campaign status
-      const tsStatus = await trafficStarService.getCampaignStatus(trafficstarId);
+      const tsCampaign = await trafficStarService.getCampaign(trafficstarId);
       
       // If the campaign isn't active, nothing to do
-      if (!tsStatus?.active) {
+      if (!tsCampaign?.active) {
         console.log(`ℹ️ TrafficStar campaign ${trafficstarId} is not active, skipping budget update check`);
         return;
       }
@@ -409,11 +409,7 @@ class TrafficSenderService {
       console.log(`💰 New URLs price for campaign ${campaignId}: $${newUrlsPrice.toFixed(2)} (${newClicksTotal} clicks)`);
       
       // Get the current budget for the campaign
-      const currentBudget = await trafficStarService.getCampaignDailyBudget(trafficstarId);
-      
-      if (typeof currentBudget !== 'number') {
-        throw new Error(`Failed to get current budget for campaign ${trafficstarId}`);
-      }
+      const currentBudget = tsCampaign.max_daily || 0;
       
       // Calculate the new budget
       const newBudget = currentBudget + newUrlsPrice;
