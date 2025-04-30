@@ -100,13 +100,18 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     // Auto-management has been removed
   });
   
-  // CRITICAL FIX: Force the pricePerThousand to be set properly in the form
+  // CRITICAL FIX: Force the form values to be set properly
   setTimeout(() => {
+    // Set price per thousand
     form.setValue('pricePerThousand', 
       typeof campaign.pricePerThousand === 'string' 
         ? parseFloat(campaign.pricePerThousand) 
         : (campaign.pricePerThousand || 0)
     );
+    
+    // Set Traffic Sender enabled state
+    form.setValue('trafficSenderEnabled', campaign.trafficSenderEnabled === true);
+    console.log('Setting initial trafficSenderEnabled value to:', campaign.trafficSenderEnabled);
   }, 100);
   
   // Force budget update mutation - will be used when budgetUpdateTime changes
@@ -591,7 +596,10 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            console.log('Traffic Sender toggle changed to:', value);
+                            field.onChange(value);
+                          }}
                           aria-readonly={updateCampaignMutation.isPending}
                         />
                       </FormControl>

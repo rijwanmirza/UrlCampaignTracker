@@ -504,6 +504,27 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting budgetUpdateTime to:', updateData.budgetUpdateTime);
     }
     
+    // Handle Traffic Sender fields
+    if (updateCampaign.trafficSenderEnabled !== undefined) {
+      updateData.trafficSenderEnabled = updateCampaign.trafficSenderEnabled;
+      console.log('🔍 DEBUG: Setting trafficSenderEnabled to:', updateData.trafficSenderEnabled);
+      
+      // If we're enabling Traffic Sender, we should set the action time
+      if (updateCampaign.trafficSenderEnabled === true) {
+        updateData.lastTrafficSenderAction = new Date();
+        console.log('🔍 DEBUG: Setting lastTrafficSenderAction to current time');
+      }
+    }
+    
+    // Handle other Traffic Sender fields if provided
+    if (updateCampaign.lastTrafficSenderStatus !== undefined) {
+      updateData.lastTrafficSenderStatus = updateCampaign.lastTrafficSenderStatus;
+    }
+    
+    if (updateCampaign.lastBudgetUpdateTime !== undefined) {
+      updateData.lastBudgetUpdateTime = updateCampaign.lastBudgetUpdateTime;
+    }
+    
     // Always record the time if a TrafficStar campaign ID is set
     if (updateData.trafficstarCampaignId) {
       updateData.lastTrafficstarSync = new Date();
