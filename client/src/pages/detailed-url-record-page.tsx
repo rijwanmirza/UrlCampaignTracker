@@ -431,7 +431,8 @@ export default function DetailedUrlRecordPage() {
             <div className="flex items-center justify-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : chartData.length > 0 ? (
+          ) : viewType === 'daily' && chartData.length > 0 ? (
+            // Daily view chart
             <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
@@ -444,7 +445,66 @@ export default function DetailedUrlRecordPage() {
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`${value} clicks`, 'Clicks']}
-                    labelFormatter={(label) => viewType === 'daily' ? `Date: ${label}` : `Time: ${label}`}
+                    labelFormatter={(label) => `Date: ${label}`}
+                  />
+                  <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
+                  <Bar dataKey="value" fill="#3366FF" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : viewType === 'hourly' && clickData?.hourlyByDate && Object.keys(clickData.hourlyByDate).length > 0 ? (
+            // Hourly view organized by date
+            <div className="space-y-8">
+              {Object.entries(clickData.hourlyByDate).map(([date, hourlyData]) => (
+                <div key={date} className="border rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4">Date: {date}</h3>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={Object.entries(hourlyData).map(([hour, clicks]) => ({
+                          name: hour,
+                          value: Number(clicks)
+                        })).sort((a, b) => {
+                          const hourA = parseInt(a.name.split(':')[0]);
+                          const hourB = parseInt(b.name.split(':')[0]);
+                          return hourA - hourB;
+                        })}
+                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                      >
+                        <XAxis 
+                          dataKey="name" 
+                          angle={0} 
+                          textAnchor="middle" 
+                          tick={{ fontSize: 10 }}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value: number) => [`${value} clicks`, 'Clicks']}
+                          labelFormatter={(label) => `Hour: ${label}`}
+                        />
+                        <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
+                        <Bar dataKey="value" fill="#3366FF" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : viewType === 'hourly' && chartData.length > 0 ? (
+            // Fallback hourly view (for backward compatibility)
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: number) => [`${value} clicks`, 'Clicks']}
+                    labelFormatter={(label) => `Hour: ${label}`}
                   />
                   <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
                   <Bar dataKey="value" fill="#3366FF" radius={[4, 4, 0, 0]} />
