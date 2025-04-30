@@ -1699,16 +1699,32 @@ class TrafficStarService {
             })
             .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
             
-          // If campaign should be paused but isn't, make API call to pause it
+          // Only if campaign should be paused but isn't currently paused, make API call to pause it
           if (apiCampaign.active && totalRemainingClicks <= 7500) {
-            console.log(`Mid-range clicks but trending lower (${totalRemainingClicks} <= 7,500) - making pause API call`);
-            await this.pauseCampaign(trafficstarId);
+            console.log(`Mid-range clicks but trending lower (${totalRemainingClicks} <= 7,500) - checking if pause needed`);
+            
+            // Get latest status to avoid redundant API calls
+            const latestStatus = await this.getCampaign(trafficstarId);
+            if (latestStatus.active === true) {
+              console.log(`Confirmed campaign ${trafficstarId} is still active - making pause API call`);
+              await this.pauseCampaign(trafficstarId);
+            } else {
+              console.log(`Campaign ${trafficstarId} is already paused - no API call needed`);
+            }
           }
           
-          // If campaign should be active but isn't, make API call to activate it
+          // Only if campaign should be active but isn't currently active, make API call to activate it
           if (!apiCampaign.active && totalRemainingClicks >= 12500) {
-            console.log(`Mid-range clicks but trending higher (${totalRemainingClicks} >= 12,500) - making activate API call`);
-            await this.activateCampaign(trafficstarId);
+            console.log(`Mid-range clicks but trending higher (${totalRemainingClicks} >= 12,500) - checking if activation needed`);
+            
+            // Get latest status to avoid redundant API calls
+            const latestStatus = await this.getCampaign(trafficstarId);
+            if (latestStatus.active === false) {
+              console.log(`Confirmed campaign ${trafficstarId} is still paused - making activation API call`);
+              await this.activateCampaign(trafficstarId);
+            } else {
+              console.log(`Campaign ${trafficstarId} is already active - no API call needed`);
+            }
           }
           
         } catch (statusCheckError) {
