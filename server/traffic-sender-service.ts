@@ -92,6 +92,20 @@ class TrafficSenderService {
         console.log(`⚠️ Campaign ${campaign.id} has no TrafficStar campaign ID`);
         return;
       }
+
+      // CRITICAL FIX: Verify that Traffic Sender is still enabled for this campaign
+      // This ensures we never process a campaign that has had Traffic Sender disabled
+      const latestCampaignStatus = await db
+        .select({ trafficSenderEnabled: campaigns.trafficSenderEnabled })
+        .from(campaigns)
+        .where(eq(campaigns.id, campaign.id))
+        .limit(1);
+
+      // If Traffic Sender has been disabled, skip processing this campaign
+      if (latestCampaignStatus.length > 0 && !latestCampaignStatus[0].trafficSenderEnabled) {
+        console.log(`ℹ️ Campaign ${campaign.id} has Traffic Sender disabled, skipping processing`);
+        return;
+      }
       
       const trafficstarId = Number(campaign.trafficstarCampaignId);
       const now = new Date();
@@ -129,7 +143,7 @@ class TrafficSenderService {
     } catch (error) {
       console.error(`❌ Error processing Traffic Sender campaign ${campaign.id}:`, error);
       
-      // Update the campaign with the error
+      // Update the campaign with the error, but never disable Traffic Sender
       await db.update(campaigns)
         .set({
           lastTrafficSenderStatus: `Error: ${error instanceof Error ? error.message : String(error)}`,
@@ -209,6 +223,7 @@ class TrafficSenderService {
   
   /**
    * Check spent value and reactivate a campaign if conditions are met
+   * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async checkSpentValueAndReactivate(campaign: any) {
     const campaignId = campaign.id;
@@ -293,6 +308,7 @@ class TrafficSenderService {
    * Activate a campaign with an updated budget based on spent value + pending clicks
    * This is used for Step 5: When spent value is more than $10
    * Implementation of missing requirement: Check campaign status before activating
+   * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async activateWithBudget(campaign: any, spentValue: number, pendingClickPrice: number, totalRemainingClicks: number) {
     const campaignId = campaign.id;
@@ -358,6 +374,7 @@ class TrafficSenderService {
    * Activate a campaign with just an end time (for cases with low spent value)
    * This is used for Step 6: When spent value is less than $10 AND remaining clicks >= 10000
    * Implementation of missing requirement: Check campaign status before activating
+   * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async activateWithEndTime(campaign: any, totalRemainingClicks: number) {
     const campaignId = campaign.id;
@@ -418,6 +435,7 @@ class TrafficSenderService {
    * Implements the new requirement: 
    * @Now last step we have to implement when our 6th step has been run by adding pending click value in daily spent value 
    * of traffic star campaign if we got new url click value in our site campaign then we will plus their budget in daily budget
+   * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
    */
   private async checkForNewUrlsAndUpdateBudget(campaign: any) {
     const campaignId = campaign.id;
