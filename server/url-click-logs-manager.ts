@@ -81,6 +81,7 @@ export class UrlClickLogsManager {
       // Also log to database for analytics
       await db.insert(urlClickLogs).values({
         urlId,
+        logEntry: logMessage, // Store the exact log message as it appears in the file
         clickTime: now,
         indianTime,
         dateKey,

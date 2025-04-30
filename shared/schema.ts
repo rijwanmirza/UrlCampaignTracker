@@ -344,8 +344,9 @@ export type InsertUrlClickRecord = z.infer<typeof insertUrlClickRecordSchema>;
 export const urlClickLogs = pgTable("url_click_logs", {
   id: serial("id").primaryKey(),
   urlId: integer("url_id").notNull(),
+  logEntry: text("log_entry").notNull(), // The actual log entry text
   clickTime: timestamp("click_time").defaultNow().notNull(),
-  indianTime: text("indian_time").notNull(), // Format: "YYYY-MM-DD HH:MM:SS"
+  indianTime: text("indian_time").notNull(), // Format: "DD-Month-YYYY:HH:MM:SS"
   dateKey: text("date_key").notNull(), // Format: "YYYY-MM-DD" for faster filtering
   hourKey: integer("hour_key").notNull(), // 0-23 for hour-based filtering
   createdAt: timestamp("created_at").defaultNow().notNull(),
