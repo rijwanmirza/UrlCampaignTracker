@@ -1359,6 +1359,9 @@ class TrafficStarService {
   /**
    * Auto-manage a single campaign based on its settings
    */
+  // Store the last auto-management check time for each campaign to avoid redundant checks
+  private lastAutoManagementChecks: Map<number, Date> = new Map();
+  
   private async autoManageCampaign(campaign: any): Promise<void> {
     try {
       // Skip if no TrafficStar campaign ID
@@ -1371,6 +1374,14 @@ class TrafficStarService {
       const trafficstarId = isNaN(Number(campaign.trafficstarCampaignId)) ? 
         parseInt(campaign.trafficstarCampaignId.replace(/\D/g, '')) : 
         Number(campaign.trafficstarCampaignId);
+        
+      // Check if we recently checked this campaign (within the last 5 minutes)
+      const lastCheck = this.lastAutoManagementChecks.get(trafficstarId);
+      const currentTime = new Date();
+      if (lastCheck && (currentTime.getTime() - lastCheck.getTime() < 5 * 60 * 1000)) {
+        console.log(`Campaign ${campaign.id} was checked recently (${Math.floor((currentTime.getTime() - lastCheck.getTime()) / 1000)} seconds ago) - skipping redundant check`);
+        return;
+      }
       
       // Get current date in UTC
       const currentUtcDate = new Date().toISOString().split('T')[0];
@@ -1379,6 +1390,8 @@ class TrafficStarService {
       // If it is, skip the click threshold management for today
       if (this.shouldRemainPausedDueToSpentValue(trafficstarId, currentUtcDate)) {
         console.log(`Campaign ${campaign.id} is paused due to high spent value - skipping click threshold management`);
+        // Still record that we checked this campaign
+        this.lastAutoManagementChecks.set(trafficstarId, currentTime);
         return;
       }
       
@@ -1392,6 +1405,20 @@ class TrafficStarService {
           .where(eq(trafficstarCampaigns.trafficstarId, trafficstarId.toString()));
         
         if (dbCampaign) {
+          // If we have a very recent status update, use it without API verification
+          const lastStatusUpdateTime = dbCampaign.updatedAt || new Date(0);
+          const statusAge = currentTime.getTime() - lastStatusUpdateTime.getTime();
+          
+          if (statusAge < 5 * 60 * 1000) { // Less than 5 minutes old
+            console.log(`Using cached status for campaign ${trafficstarId}: ${JSON.stringify({
+              active: dbCampaign.active,
+              status: dbCampaign.status,
+              lastRequestedAction: dbCampaign.lastRequestedAction,
+              lastRequestedActionAt: dbCampaign.lastRequestedActionAt,
+              lastRequestedActionSuccess: dbCampaign.lastRequestedActionSuccess
+            })}`);
+          }
+          
           currentTrafficstarStatus = {
             active: dbCampaign.active,
             status: dbCampaign.status,
@@ -1426,10 +1453,9 @@ class TrafficStarService {
         new Date(campaign.lastTrafficstarSync).toISOString().split('T')[0] : null;
       
       // Get current time in UTC to check if it's time for budget update
-      const now = new Date();
-      const currentUtcTime = now.getUTCHours().toString().padStart(2, '0') + ':' + 
-                           now.getUTCMinutes().toString().padStart(2, '0') + ':' + 
-                           now.getUTCSeconds().toString().padStart(2, '0');
+      const currentUtcTime = currentTime.getUTCHours().toString().padStart(2, '0') + ':' + 
+                           currentTime.getUTCMinutes().toString().padStart(2, '0') + ':' + 
+                           currentTime.getUTCSeconds().toString().padStart(2, '0');
       
       // Format current date for end time (YYYY-MM-DD format that TrafficStar requires)
       // TrafficStar API requires YYYY-MM-DD HH:MM:SS format with seconds
@@ -2252,7 +2278,8 @@ class TrafficStarService {
         }
       }, 3 * 60 * 1000); // Every 3 minutes (staggered to avoid overlap)
       
-      // Schedule to run regular auto-management every minute for immediate effect
+      // Schedule to run regular auto-management every 5 minutes for less API strain
+      // Changed from 1 minute to 5 minutes to reduce redundant checks
       setInterval(async () => {
         try {
           console.log('Running scheduled auto-management for TrafficStar campaigns');
@@ -2260,7 +2287,7 @@ class TrafficStarService {
         } catch (error) {
           console.error('Error in scheduled auto-management:', error);
         }
-      }, 60 * 1000); // Every minute
+      }, 5 * 60 * 1000); // Every 5 minutes (changed from every minute)
       
       // Schedule processing of pending URL budget updates every minute
       setInterval(async () => {
