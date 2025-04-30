@@ -453,40 +453,47 @@ export default function DetailedUrlRecordPage() {
               </ResponsiveContainer>
             </div>
           ) : viewType === 'hourly' && clickData?.hourlyByDate && Object.keys(clickData.hourlyByDate).length > 0 ? (
-            // Hourly view organized by date
+            // Hourly view organized by date in table format
             <div className="space-y-8">
-              {Object.entries(clickData.hourlyByDate || {}).map(([date, hourlyData]) => (
+              {Object.entries(clickData.hourlyByDate || {}).map(([date, hourlyData], dateIndex) => (
                 <div key={date} className="border rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-4">Date: {date}</h3>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={Object.entries(hourlyData as Record<string, number>).map(([hour, clicks]) => ({
-                          name: hour,
-                          value: Number(clicks)
-                        })).sort((a, b) => {
-                          const hourA = parseInt(a.name.split(':')[0]);
-                          const hourB = parseInt(b.name.split(':')[0]);
-                          return hourA - hourB;
-                        })}
-                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
-                      >
-                        <XAxis 
-                          dataKey="name" 
-                          angle={0} 
-                          textAnchor="middle" 
-                          tick={{ fontSize: 10 }}
-                        />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: number) => [`${value} clicks`, 'Clicks']}
-                          labelFormatter={(label) => `Hour: ${label}`}
-                        />
-                        <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-                        <Bar dataKey="value" fill="#3366FF" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div className="w-full overflow-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-secondary">
+                          <th className="p-2 text-left">Time</th>
+                          <th className="p-2 text-left">Clicks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(hourlyData as Record<string, number>)
+                          .filter(([_, clicks]) => clicks > 0)
+                          .sort((a, b) => {
+                            const hourA = parseInt(a[0].split(':')[0]);
+                            const hourB = parseInt(b[0].split(':')[0]);
+                            return hourA - hourB;
+                          })
+                          .map(([hour, clicks], index) => (
+                            <tr key={hour} className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}>
+                              <td className="p-2 border border-border">{hour}</td>
+                              <td className="p-2 border border-border">{clicks}</td>
+                            </tr>
+                          ))}
+                        {!Object.entries(hourlyData as Record<string, number>).some(([_, clicks]) => clicks > 0) && (
+                          <tr>
+                            <td colSpan={2} className="p-2 text-center text-muted-foreground">No clicks recorded</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
+                  
+                  {dateIndex < Object.entries(clickData.hourlyByDate || {}).length - 1 && (
+                    <div className="mt-4 flex justify-center">
+                      <p className="text-xs text-muted-foreground">Scroll down for next date</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
