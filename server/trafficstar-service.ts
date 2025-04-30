@@ -1307,23 +1307,7 @@ class TrafficStarService {
     }
   }
 
-  /**
-   * Auto-manage TrafficStar campaigns - REMOVED
-   * This feature has been disabled as requested
-   */
-  async autoManageCampaigns(): Promise<void> {
-    console.log('TrafficStar auto-management has been disabled');
-    return;
-  }
-  
-  /**
-   * Auto-manage a single campaign - REMOVED
-   * This feature has been disabled as requested
-   */
-  private async autoManageCampaign(campaign: any): Promise<void> {
-    // Method intentionally left empty - auto-management removed as requested
-    return;
-  }
+  // Auto-management methods completely removed as requested
   
   /**
    * Track when campaigns were paused due to spent value exceeding the threshold
@@ -1814,14 +1798,11 @@ class TrafficStarService {
   }
   
   /**
-   * Schedule TrafficStar operations
-   * Auto-management functionality has been removed as requested
+   * Schedule TrafficStar spent value updates
+   * This method replaces the previous auto-management scheduler
    */
-  async scheduleAutoManagement(): Promise<void> {
+  async scheduleSpentValueUpdates(): Promise<void> {
     try {
-      // Only keep spent value updates which are still needed
-      console.log('TrafficStar auto-management has been disabled, only keeping spent value updates');
-      
       // Initial update for all campaigns
       await this.updateAllCampaignsSpentValues();
       
@@ -1846,7 +1827,7 @@ class TrafficStarService {
         }
       }, 60 * 1000); // Every minute
       
-      console.log('TrafficStar spent value scheduler initialized (auto-management disabled)');
+      console.log('TrafficStar spent value scheduler initialized (no auto-management)');
     } catch (error) {
       console.error('Error scheduling spent value updates:', error);
     }

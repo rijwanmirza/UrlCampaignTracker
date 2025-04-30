@@ -71,9 +71,9 @@ export function registerTestTrafficstarRoutes(app: any) {
         totalClickLimit += Math.floor(remainingClicks / activeUrls.length);
       }
       
-      // Force trafficStarService to check this campaign
-      console.log(`🧪 TEST: Running auto-management for campaign ${campaignId} with ${remainingClicks} remaining clicks`);
-      await trafficStarService.autoManageCampaigns();
+      // Force trafficStarService to update spent values
+      console.log(`🧪 TEST: Running spent value update for campaign ${campaignId} with ${remainingClicks} remaining clicks`);
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       // After 5 seconds, restore original values
       setTimeout(async () => {
@@ -167,9 +167,9 @@ export function registerTestTrafficstarRoutes(app: any) {
         totalRemaining += clicksPerUrl;
       }
       
-      // Force trafficStarService to check this campaign
-      console.log(`🧪 TEST: Running auto-management for campaign ${campaignId} with ${remainingClicks} remaining clicks`);
-      await trafficStarService.autoManageCampaigns();
+      // Force trafficStarService to update spent values
+      console.log(`🧪 TEST: Running spent value update for campaign ${campaignId} with ${remainingClicks} remaining clicks`);
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       // After 5 seconds, restore original values
       setTimeout(async () => {
@@ -231,8 +231,8 @@ export function registerTestTrafficstarRoutes(app: any) {
       const isActive = active === 'true' || active === true;
       const statusStr = status.toString();
       
-      // Force auto-management with the updated database status
-      await trafficStarService.autoManageCampaigns();
+      // Force TrafficStar service to update spent values 
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       return res.status(200).json({
         message: `Campaign ${campaignId} cached status set to ${status}, active=${active}`,
