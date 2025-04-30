@@ -1813,11 +1813,17 @@ class TrafficStarService {
     }
   }
   
+  /**
+   * Schedule TrafficStar operations
+   * Auto-management functionality has been removed as requested
+   */
   async scheduleAutoManagement(): Promise<void> {
     try {
-      // Run initial auto-management and spent value updates
-      await this.autoManageCampaigns();
-      await this.updateAllCampaignsSpentValues(); // Initial update for all campaigns
+      // Only keep spent value updates which are still needed
+      console.log('TrafficStar auto-management has been disabled, only keeping spent value updates');
+      
+      // Initial update for all campaigns
+      await this.updateAllCampaignsSpentValues();
       
       // Schedule spent value update for ALL campaigns to run every 2 minutes
       // This ensures all campaign data is up-to-date with current UTC date spent values
@@ -1830,26 +1836,6 @@ class TrafficStarService {
         }
       }, 2 * 60 * 1000); // Every 2 minutes
       
-      // Schedule spent value check for auto-managed campaigns (for pause if over threshold)
-      setInterval(async () => {
-        try {
-          console.log('Running scheduled spent value check for TrafficStar campaigns');
-          await this.checkCampaignsSpentValue();
-        } catch (error) {
-          console.error('Error in scheduled spent value check:', error);
-        }
-      }, 3 * 60 * 1000); // Every 3 minutes (staggered to avoid overlap)
-      
-      // Schedule to run regular auto-management every minute for immediate effect
-      setInterval(async () => {
-        try {
-          console.log('Running scheduled auto-management for TrafficStar campaigns');
-          await this.autoManageCampaigns();
-        } catch (error) {
-          console.error('Error in scheduled auto-management:', error);
-        }
-      }, 60 * 1000); // Every minute
-      
       // Schedule processing of pending URL budget updates every minute
       setInterval(async () => {
         try {
@@ -1860,9 +1846,9 @@ class TrafficStarService {
         }
       }, 60 * 1000); // Every minute
       
-      console.log('TrafficStar auto-management scheduler initialized');
+      console.log('TrafficStar spent value scheduler initialized (auto-management disabled)');
     } catch (error) {
-      console.error('Error scheduling auto-management:', error);
+      console.error('Error scheduling spent value updates:', error);
     }
   }
   
