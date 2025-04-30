@@ -7,7 +7,6 @@ import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
 import { trafficStarService } from "./trafficstar-service-new";
-import { trafficSenderService } from "./traffic-sender-service";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import * as spdy from 'spdy';
@@ -156,13 +155,7 @@ app.use((req, res, next) => {
         await initializeTrafficStar();
         log('TrafficStar API initialized successfully');
         
-        // Start the Traffic Sender service
-        try {
-          await trafficSenderService.start();
-          log('Traffic Sender service started successfully');
-        } catch (trafficSenderError) {
-          log(`Error starting Traffic Sender service: ${trafficSenderError}`);
-        }
+        // Traffic Sender service has been removed
       } catch (trafficstarError) {
         log(`Error initializing TrafficStar API: ${trafficstarError}`);
       }
