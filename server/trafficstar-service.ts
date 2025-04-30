@@ -1835,8 +1835,7 @@ class TrafficStarService {
   
   /**
    * Update all TrafficStar campaigns with their latest spent values
-   * This function fetches and updates all campaigns with trafficstarCampaignId,
-   * not just those with auto-management enabled
+   * This function fetches and updates all campaigns with trafficstarCampaignId
    */
   public async updateAllCampaignsSpentValues(): Promise<void> {
     try {
@@ -1897,18 +1896,13 @@ class TrafficStarService {
    */
   public async checkCampaignsSpentValue(): Promise<void> {
     try {
-      // Get all campaigns with auto-management enabled
+      // Get all campaigns with TrafficStar integration
       const campaignsToCheck = await db
         .select()
         .from(campaigns)
-        .where(
-          and(
-            eq(campaigns.autoManageTrafficstar, true),
-            isNotNull(campaigns.trafficstarCampaignId)
-          )
-        );
+        .where(isNotNull(campaigns.trafficstarCampaignId));
       
-      console.log(`Found ${campaignsToCheck.length} campaigns with auto-management enabled for spent value check`);
+      console.log(`Found ${campaignsToCheck.length} campaigns with TrafficStar integration for spent value check`);
       
       // Get current date in UTC
       const currentUtcDate = new Date().toISOString().split('T')[0];
