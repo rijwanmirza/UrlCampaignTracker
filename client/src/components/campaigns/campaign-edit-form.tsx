@@ -83,8 +83,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       trafficstarCampaignId: campaign.trafficstarCampaignId || "",
       // autoManageTrafficstar has been removed
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
-      // Traffic Sender settings
-      trafficSenderEnabled: campaign.trafficSenderEnabled || false,
+      // Traffic Sender settings - explicitly use boolean comparison to avoid type issues
+      trafficSenderEnabled: campaign.trafficSenderEnabled === true,
     },
   });
   
@@ -97,6 +97,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     trafficstarCampaignId: campaign.trafficstarCampaignId || "",
+    trafficSenderEnabled: campaign.trafficSenderEnabled === true, // Add traffic sender status to logging
     // Auto-management has been removed
   });
   
@@ -109,9 +110,10 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         : (campaign.pricePerThousand || 0)
     );
     
-    // Set Traffic Sender enabled state
-    form.setValue('trafficSenderEnabled', campaign.trafficSenderEnabled === true);
-    console.log('Setting initial trafficSenderEnabled value to:', campaign.trafficSenderEnabled);
+    // Set Traffic Sender enabled state to a proper boolean value
+    const trafficSenderStatus = campaign.trafficSenderEnabled === true;
+    form.setValue('trafficSenderEnabled', trafficSenderStatus);
+    console.log('Setting initial trafficSenderEnabled value to:', trafficSenderStatus, '(original value:', campaign.trafficSenderEnabled, ')');
   }, 100);
   
   // Force budget update mutation - will be used when budgetUpdateTime changes
@@ -598,7 +600,11 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                           checked={field.value}
                           onCheckedChange={(value) => {
                             console.log('Traffic Sender toggle changed to:', value);
-                            field.onChange(value);
+                            // Prevent the toggle from automatically switching back
+                            setTimeout(() => {
+                              field.onChange(value);
+                              console.log('Traffic Sender toggle value set in form to:', value);
+                            }, 0);
                           }}
                           aria-readonly={updateCampaignMutation.isPending}
                         />

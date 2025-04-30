@@ -506,8 +506,9 @@ export class DatabaseStorage implements IStorage {
     
     // Handle Traffic Sender fields
     if (updateCampaign.trafficSenderEnabled !== undefined) {
-      updateData.trafficSenderEnabled = updateCampaign.trafficSenderEnabled;
-      console.log('🔍 DEBUG: Setting trafficSenderEnabled to:', updateData.trafficSenderEnabled);
+      // CRITICAL FIX: Make sure we explicitly set this as a boolean to prevent any type conversion issues
+      updateData.trafficSenderEnabled = updateCampaign.trafficSenderEnabled === true;
+      console.log('🔍 DEBUG: Setting trafficSenderEnabled to:', updateData.trafficSenderEnabled, '(original value:', updateCampaign.trafficSenderEnabled, ')');
       
       // If we're enabling Traffic Sender, we should set the action time
       if (updateCampaign.trafficSenderEnabled === true) {

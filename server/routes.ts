@@ -858,6 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('🔍 DEBUG: Campaign update request received:', JSON.stringify(req.body, null, 2));
+      console.log('🔍 DEBUG: Traffic Sender enabled value:', req.body.trafficSenderEnabled, 'type:', typeof req.body.trafficSenderEnabled);
       
       // ENHANCED PROTECTION: Block any direct modifications to click limits
       if (req.body.clickLimit || req.body.originalClickLimit) {
