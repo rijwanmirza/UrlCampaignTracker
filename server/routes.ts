@@ -2700,7 +2700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Only process if TrafficStar integration is enabled
-      if (!campaign.trafficstarCampaignId || !campaign.autoManageTrafficstar) {
+      if (!campaign.trafficstarCampaignId) {
         return res.status(400).json({ 
           message: "Cannot force budget update: TrafficStar integration not enabled for this campaign" 
         });
@@ -3213,12 +3213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaignsToCheck = await db
         .select()
         .from(campaigns)
-        .where(
-          and(
-            eq(campaigns.autoManageTrafficstar, true),
-            isNotNull(campaigns.trafficstarCampaignId)
-          )
-        );
+        .where(isNotNull(campaigns.trafficstarCampaignId));
       
       console.log(`TEST: Found ${campaignsToCheck.length} campaigns with auto-management enabled`);
       
