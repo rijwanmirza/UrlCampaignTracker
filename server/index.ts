@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import { gmailReader } from "./gmail-reader";
 import { storage } from "./storage";
 import { initializeTrafficStar } from "./init-trafficstar";
-import { trafficStarService } from "./trafficstar-service";
+import { trafficStarService } from "./trafficstar-service-new";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import * as spdy from 'spdy';
