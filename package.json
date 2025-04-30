@@ -50,6 +50,7 @@
     "@types/imap": "^0.8.42",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/mailparser": "^3.4.5",
+    "@types/memoizee": "^0.4.12",
     "@types/nodemailer": "^6.4.17",
     "@types/spdy": "^3.4.9",
     "axios": "^1.8.4",
