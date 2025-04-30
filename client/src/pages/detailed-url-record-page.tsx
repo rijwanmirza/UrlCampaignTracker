@@ -76,14 +76,24 @@ export default function DetailedUrlRecordPage() {
   const { data: urlData, isLoading: loadingUrl } = useQuery({
     queryKey: [`/api/urls/${id}`],
     queryFn: async () => {
+      console.log(`Fetching URL details for ID: ${id}`);
       const response = await fetch(`/api/urls/${id}`);
       
+      // Log the response details for debugging
+      console.log(`URL details response status: ${response.status}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch URL details');
+        const errorText = await response.text();
+        console.error('Failed to fetch URL details:', errorText);
+        throw new Error(`Failed to fetch URL details: ${response.status} ${errorText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('URL data received:', data);
+      return data;
     },
+    retry: 3,
+    retryDelay: 1000,
   });
   
   // Fetch URL click data for the selected period including hourly breakdown
@@ -94,15 +104,26 @@ export default function DetailedUrlRecordPage() {
   } = useQuery({
     queryKey: [`/api/url-click-records/${id}`, queryParams],
     queryFn: async () => {
+      console.log(`Fetching click data for URL ID: ${id} with params:`, queryParams);
       const params = new URLSearchParams(queryParams);
       const response = await fetch(`/api/url-click-records/${id}?${params.toString()}`);
       
+      // Log the response details for debugging
+      console.log(`Click data response status: ${response.status}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch URL click details');
+        const errorText = await response.text();
+        console.error('Failed to fetch URL click details:', errorText);
+        throw new Error(`Failed to fetch URL click details: ${response.status} ${errorText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('Click data received:', data);
+      return data;
     },
+    retry: 3,
+    retryDelay: 1000,
+    enabled: !!urlData, // Only run this query when URL data is available
   });
   
   // Format the chart data based on view type (daily or hourly)
