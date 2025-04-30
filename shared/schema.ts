@@ -61,8 +61,8 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   pricePerThousand: z.number().min(0).max(10000).default(0),
   // TrafficStar fields
   trafficstarCampaignId: z.string().optional(),
-  // DEPRECATED: Auto-manage functionality has been removed
-  autoManageTrafficstar: z.boolean().default(false).optional(),
+  // DEPRECATED: Auto-management functionality has been completely removed from the system
+  autoManageTrafficstar: z.boolean().default(false).optional(), // DEPRECATED
   lastTrafficstarSync: z.date().optional().nullable(),
 });
 
@@ -81,8 +81,8 @@ export const updateCampaignSchema = z.object({
   pricePerThousand: z.number().min(0).max(10000).optional(),
   // TrafficStar fields
   trafficstarCampaignId: z.string().optional(),
-  // DEPRECATED: Auto-manage functionality has been removed
-  autoManageTrafficstar: z.boolean().optional(),
+  // DEPRECATED: Auto-management functionality has been completely removed from the system
+  autoManageTrafficstar: z.boolean().optional(), // DEPRECATED
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
 });

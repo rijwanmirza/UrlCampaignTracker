@@ -32,7 +32,7 @@ export async function initializeTrafficStar() {
       console.log('🔍 DEBUG: Successfully saved TrafficStar API key to database');
     }
     
-    // Schedule spent value updates (this replaces the previous auto-management functionality)
+    // Schedule spent value updates for tracking purposes only
     try {
       await trafficStarService.scheduleSpentValueUpdates();
       console.log('🔍 DEBUG: Successfully scheduled TrafficStar spent value updates');
