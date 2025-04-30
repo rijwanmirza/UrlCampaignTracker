@@ -46,7 +46,7 @@ const campaignEditSchema = z.object({
   pricePerThousand: z.number().min(0, "Price must be at least 0").max(10000, "Price can't exceed $10,000").optional(),
   // TrafficStar integration fields
   trafficstarCampaignId: z.string().optional(),
-  autoManageTrafficstar: z.boolean().optional(),
+  // Auto-management has been removed
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
 });
 
@@ -79,7 +79,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
       pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
       trafficstarCampaignId: campaign.trafficstarCampaignId || "",
-      autoManageTrafficstar: Boolean(campaign.autoManageTrafficstar),
+      // autoManageTrafficstar has been removed
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
     },
   });
@@ -161,8 +161,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       // trigger immediate budget update
       if (
         budgetUpdateTimeChanged && 
-        variables.autoManageTrafficstar && 
-        variables.trafficstarCampaignId
+        variables.trafficstarCampaignId && 
+        variables.trafficstarCampaignId !== "none"
       ) {
         console.log("Budget update time changed - triggering immediate update");
         forceBudgetUpdateMutation.mutate(campaign.id);
@@ -465,33 +465,20 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 )}
               />
               
-              {/* TrafficStar Spent Tracking */}
-              <FormField
-                control={form.control}
-                name="autoManageTrafficstar"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
-                    <div className="space-y-0.5">
-                      <FormLabel>TrafficStar Spent Tracking</FormLabel>
-                      <FormDescription>
-                        Enable spent value tracking from TrafficStar<br />
-                        Updates daily spent value every 2 minutes<br />
-                        Sets daily budget to $10.15 at specified UTC time
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={!form.watch("trafficstarCampaignId") || form.watch("trafficstarCampaignId") === "none"}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              {/* TrafficStar spent tracking is now automatically enabled when a TrafficStar campaign is selected */}
+              <div className="rounded-lg border p-3 mt-4">
+                <div className="space-y-0.5">
+                  <h4 className="font-medium">TrafficStar Spent Tracking</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Spent value tracking is automatically enabled when a TrafficStar campaign is selected.<br />
+                    • Updates daily spent value every 2 minutes<br />
+                    • Sets daily budget to $10.15 at specified UTC time
+                  </p>
+                </div>
+              </div>
               
               {/* Budget Update Time */}
-              {form.watch("autoManageTrafficstar") && (
+              {form.watch("trafficstarCampaignId") && form.watch("trafficstarCampaignId") !== "none" && (
                 <FormField
                   control={form.control}
                   name="budgetUpdateTime"
