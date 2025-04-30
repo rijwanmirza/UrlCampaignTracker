@@ -93,7 +93,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     trafficstarCampaignId: campaign.trafficstarCampaignId || "",
-    autoManageTrafficstar: Boolean(campaign.autoManageTrafficstar),
+    // Auto-management has been removed
   });
   
   // CRITICAL FIX: Force the pricePerThousand to be set properly in the form

@@ -246,7 +246,7 @@ export class DatabaseStorage implements IStorage {
           campaignsWithUrls.push({
             ...campaign,
             trafficstarCampaignId: null as any, // Type assertion to handle missing field
-            autoManageTrafficstar: false as any, // Type assertion to handle missing field
+            // Auto-management has been removed
             lastTrafficstarSync: null as any, // Type assertion to handle missing field
             budgetUpdateTime: "00:00:00" as any, // Default to midnight UTC
             urls
@@ -323,7 +323,7 @@ export class DatabaseStorage implements IStorage {
         const campaignWithDefaults = {
           ...campaign,
           trafficstarCampaignId: null as any,
-          autoManageTrafficstar: false as any,
+          // Auto-management has been removed
           lastTrafficstarSync: null as any,
           budgetUpdateTime: "00:00:00" as any // Default to midnight UTC
         };
@@ -388,7 +388,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...campaign,
           trafficstarCampaignId: null as any,
-          autoManageTrafficstar: false as any, 
+          // Auto-management has been removed
           lastTrafficstarSync: null as any,
           budgetUpdateTime: "00:00:00" as any, // Default to midnight UTC
           urls
@@ -496,11 +496,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Handle TrafficStar auto-management - CRITICAL FIX
-    if (updateCampaign.autoManageTrafficstar !== undefined) {
-      updateData.autoManageTrafficstar = updateCampaign.autoManageTrafficstar;
-      console.log('🔍 DEBUG: Setting autoManageTrafficstar to:', updateData.autoManageTrafficstar);
-    }
+    // Auto-management functionality has been removed
     
     // Handle budgetUpdateTime field
     if (updateCampaign.budgetUpdateTime !== undefined) {
@@ -508,8 +504,8 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting budgetUpdateTime to:', updateData.budgetUpdateTime);
     }
     
-    // If auto-management is enabled, record the time of change
-    if (updateData.autoManageTrafficstar === true) {
+    // Always record the time if a TrafficStar campaign ID is set
+    if (updateData.trafficstarCampaignId) {
       updateData.lastTrafficstarSync = new Date();
     }
     
