@@ -3209,13 +3209,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Temporarily set test mode environment variable
       process.env.TEST_MODE = 'true';
       
-      // Get all campaigns with auto-management enabled
+      // Get all campaigns with TrafficStar integration
       const campaignsToCheck = await db
         .select()
         .from(campaigns)
         .where(isNotNull(campaigns.trafficstarCampaignId));
       
-      console.log(`TEST: Found ${campaignsToCheck.length} campaigns with auto-management enabled`);
+      console.log(`TEST: Found ${campaignsToCheck.length} campaigns with TrafficStar integration`);
       
       // Test URL counts - to verify click threshold functionality
       const urlCounts = await Promise.all(campaignsToCheck.map(async (campaign) => {
@@ -3335,14 +3335,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error in test-spent-value-monitoring:', error);
       res.status(500).json({
         success: false,
-        message: 'Error testing auto-management functionality',
+        message: 'Error testing TrafficStar monitoring functionality',
         error: String(error)
       });
     }
   });
 
   /**
-   * Test routes for manually verifying specific auto-management scenarios
+   * Test routes for manually verifying specific TrafficStar spent tracking scenarios
    * These endpoints allow testing of:
    * 1. Date change behavior
    * 2. Click threshold (15,000/5,000) behavior
