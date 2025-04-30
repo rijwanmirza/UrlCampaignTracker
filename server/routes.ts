@@ -40,7 +40,7 @@ import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
@@ -2924,20 +2924,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { addTrafficSenderFields } = await import("./migrations/add-traffic-sender-fields");
       
       // Execute the migration
-      const result = await addTrafficSenderFields();
+      const result = await addTrafficSenderFields(pool);
       
       if (result.success) {
         console.log("✅ Traffic Sender fields migration successful");
         res.status(200).json({
           success: true,
-          message: "Traffic Sender fields migration completed successfully"
+          message: result.message || "Traffic Sender fields migration completed successfully"
         });
       } else {
-        console.error("❌ Traffic Sender fields migration failed:", result.message);
+        console.error("❌ Traffic Sender fields migration failed:", result.error || result.message);
         res.status(500).json({
           success: false,
           message: "Traffic Sender fields migration failed",
-          error: result.message
+          error: result.error || result.message
         });
       }
     } catch (error) {
