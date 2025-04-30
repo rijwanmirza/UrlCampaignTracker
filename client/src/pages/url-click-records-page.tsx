@@ -375,7 +375,7 @@ export default function UrlClickRecordsPage() {
                   <span>ID</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <FileSparkles className="h-3 w-3" />
+                  <NameIcon className="h-3 w-3" />
                   <span>Name</span>
                 </div>
                 <div className="flex items-center gap-1">
