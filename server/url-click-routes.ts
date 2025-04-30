@@ -121,6 +121,18 @@ export function registerUrlClickRoutes(app: any) {
    */
   app.get("/api/url-click-records/summary", async (req: Request, res: Response) => {
     try {
+      // Check if an ID was provided in the URL
+      if (req.query.urlId) {
+        // Redirect to the specific URL endpoint
+        const urlId = parseInt(req.query.urlId as string);
+        if (isNaN(urlId)) {
+          return res.status(400).json({ message: "Invalid URL ID" });
+        }
+        
+        // Forward to the specific URL endpoint
+        return res.redirect(`/api/url-click-records/${urlId}?${new URLSearchParams(req.query as any).toString()}`);
+      }
+      
       // Parse and validate filter parameters
       const filterResult = timeRangeFilterSchema.safeParse({
         filterType: req.query.filterType || 'today',
