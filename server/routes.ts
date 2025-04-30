@@ -2840,90 +2840,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Traffic Sender toggle endpoint
-  app.post("/api/traffic-sender/toggle", async (req: Request, res: Response) => {
-    try {
-      const result = trafficSenderActionSchema.safeParse(req.body);
-      if (!result.success) {
-        const validationError = fromZodError(result.error);
-        return res.status(400).json({ message: validationError.message });
-      }
+  // Traffic Sender toggle endpoint - REMOVED
 
-      const { campaignId, enabled } = result.data;
-      
-      // Update campaign with traffic sender status
-      await db.update(campaigns)
-        .set({ 
-          trafficSenderEnabled: enabled,
-          lastTrafficSenderAction: new Date(),
-          lastTrafficSenderStatus: enabled ? 'enabled' : 'disabled',
-          updatedAt: new Date()
-        })
-        .where(eq(campaigns.id, campaignId));
-      
-      // If enabling traffic sender, record the initial budget update time
-      if (enabled) {
-        await db.update(campaigns)
-          .set({ lastBudgetUpdateTime: new Date() })
-          .where(eq(campaigns.id, campaignId));
-      }
-      
-      // Respond with success message
-      res.json({ 
-        success: true, 
-        message: `Traffic Sender ${enabled ? 'enabled' : 'disabled'} for campaign ${campaignId}`,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Start or update Traffic Sender process in background
-      if (enabled) {
-        try {
-          // Import and start the traffic sender service
-          const { trafficSenderService } = await import('./traffic-sender-service');
-          trafficSenderService.start();
-        } catch (error) {
-          console.error('Error starting traffic sender service:', error);
-          // Don't return error to client as the database update was successful
-        }
-      }
-    } catch (error) {
-      console.error('Error updating Traffic Sender status:', error);
-      res.status(500).json({ 
-        message: "Failed to update Traffic Sender status",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Process pending budget updates for Traffic Sender - needed for testing
-  app.post("/api/trafficstar/process-pending-budget-updates", async (_req: Request, res: Response) => {
-    try {
-      const { trafficSenderService } = await import('./traffic-sender-service');
-      await trafficSenderService.processPendingBudgetUpdates();
-      res.json({ success: true, message: 'Processing triggered successfully' });
-    } catch (error) {
-      console.error('Error processing pending budget updates:', error);
-      res.status(500).json({ 
-        message: "Failed to process pending budget updates",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Get list of pending budget updates for Traffic Sender
-  app.get("/api/trafficstar/pending-budget-updates", async (_req: Request, res: Response) => {
-    try {
-      const { trafficSenderService } = await import('./traffic-sender-service');
-      const pendingUpdates = await trafficSenderService.getPendingBudgetUpdates();
-      res.json(pendingUpdates);
-    } catch (error) {
-      console.error('Error getting pending budget updates:', error);
-      res.status(500).json({ 
-        message: "Failed to get pending budget updates",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+  // Traffic Sender related endpoints - REMOVED
 
   // Database migration - add TrafficStar fields to campaigns table
   app.post("/api/system/migrate-trafficstar-fields", async (_req: Request, res: Response) => {
