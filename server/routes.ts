@@ -3196,10 +3196,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  /**
-   * Comprehensive test route for verifying both click threshold and spent value monitoring functionality
-   */
-  app.post("/api/system/test-spent-value-monitoring", async (_req: Request, res: Response) => {
+  // Test route removed as per user requirements
+  /* app.post("/api/system/test-spent-value-monitoring", async (_req: Request, res: Response) => {
     try {
       // Temporarily set test mode environment variable
       process.env.TEST_MODE = 'true';
@@ -3336,15 +3334,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  /**
-   * Test routes for manually verifying specific TrafficStar spent tracking scenarios
-   * These endpoints allow testing of:
-   * 1. Date change behavior
-   * 2. Click threshold (15,000/5,000) behavior
-   * 3. Spent value ($10) behavior
-   * 4. 10-minute recheck after spent value pause
-   */
-  
+  // Test routes for TrafficStar scenarios have been removed as per user requirements
+  /*
   // Test 1: Date Change Testing
   app.post("/api/system/test-date-change", async (_req: Request, res: Response) => {
     try {
@@ -3686,11 +3677,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  /**
-   * Test route for verifying the URL budget handling functionality
-   * This route allows testing the URL budget tracking and update functionality
-   */
-  app.post("/api/system/test-url-budget-update", async (req: Request, res: Response) => {
+  // Last test route removed as per user requirements
+  /* app.post("/api/system/test-url-budget-update", async (req: Request, res: Response) => {
     try {
       const { campaignId, urlId, clickValue } = req.body;
       
@@ -3759,6 +3747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  */
 
   // Bulk operation schema for original URL records
   const bulkOriginalUrlRecordActionSchema = z.object({
