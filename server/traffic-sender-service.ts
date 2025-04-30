@@ -9,7 +9,7 @@
 import { db } from './db';
 import { campaigns, trafficstarCampaigns } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { trafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service-new';
 
 class TrafficSenderService {
   private checkInterval: NodeJS.Timeout | null = null;
