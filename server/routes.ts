@@ -2842,6 +2842,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetUpdateTimeMigrationNeeded = await isBudgetUpdateTimeMigrationNeeded();
       const trafficStarFieldsMigrationNeeded = await isTrafficStarFieldsMigrationNeeded();
       
+      // Check for Traffic Sender fields
+      const trafficSenderFieldsResult = await db.execute(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'campaigns' AND column_name = 'traffic_sender_enabled'
+      `);
+      const trafficSenderFieldsMigrationNeeded = trafficSenderFieldsResult.rows.length === 0;
+      
       // Check if the original_url_records table exists
       const originalUrlRecordsTableResult = await db.execute(`
         SELECT EXISTS (
@@ -2853,16 +2860,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Print debug info to help troubleshoot
       console.log("Budget update time migration check result:", budgetUpdateTimeMigrationNeeded);
       console.log("TrafficStar fields migration check result:", trafficStarFieldsMigrationNeeded);
+      console.log("Traffic Sender fields migration check result:", trafficSenderFieldsMigrationNeeded);
       console.log("Original URL records table result:", originalUrlRecordsTableResult);
       
-      // Force all migration checks to return false
-      // We've manually verified all tables and columns exist
+      // Determine if any migration is needed
+      const migrationNeeded = trafficSenderFieldsMigrationNeeded;
+      
       res.status(200).json({
-        budgetUpdateTimeMigrationNeeded: false,
-        trafficStarFieldsMigrationNeeded: false,
+        budgetUpdateTimeMigrationNeeded: false, // These are already done
+        trafficStarFieldsMigrationNeeded: false, // These are already done
+        trafficSenderFieldsMigrationNeeded,
         originalUrlRecordsTableExists: true,
-        migrationNeeded: false,
-        message: "All migrations are already applied - no action needed"
+        migrationNeeded,
+        message: migrationNeeded 
+          ? "Migration needed for Traffic Sender functionality" 
+          : "All migrations are already applied - no action needed"
       });
     } catch (error) {
       console.error("Failed to check migration status:", error);
@@ -2871,8 +2883,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error instanceof Error ? error.message : String(error),
         // Assume migrations are needed if check fails
         migrationNeeded: true,
-        budgetUpdateTimeMigrationNeeded: true,
-        trafficStarFieldsMigrationNeeded: true
+        budgetUpdateTimeMigrationNeeded: false,
+        trafficStarFieldsMigrationNeeded: false,
+        trafficSenderFieldsMigrationNeeded: true
       });
     }
   });
@@ -2901,6 +2914,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to add budget update time field:", error);
       res.status(500).json({ message: "Failed to add budget update time field to campaigns table" });
+    }
+  });
+  
+  // Database migration - add Traffic Sender fields to campaigns table
+  app.post("/api/system/migrate-traffic-sender", async (_req: Request, res: Response) => {
+    try {
+      // Import the migration function
+      const { addTrafficSenderFields } = await import("./migrations/add-traffic-sender-fields");
+      
+      // Execute the migration
+      const result = await addTrafficSenderFields();
+      
+      if (result.success) {
+        console.log("✅ Traffic Sender fields migration successful");
+        res.status(200).json({
+          success: true,
+          message: "Traffic Sender fields migration completed successfully"
+        });
+      } else {
+        console.error("❌ Traffic Sender fields migration failed:", result.message);
+        res.status(500).json({
+          success: false,
+          message: "Traffic Sender fields migration failed",
+          error: result.message
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add Traffic Sender fields:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to add Traffic Sender fields to campaigns table",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
   
