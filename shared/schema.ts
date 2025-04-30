@@ -232,6 +232,12 @@ export const trafficstarCampaignEndTimeSchema = z.object({
   scheduleEndTime: z.string(),
 });
 
+// Traffic Sender feature schema
+export const trafficSenderActionSchema = z.object({
+  campaignId: z.number(),
+  enabled: z.boolean(),
+});
+
 // Original URL Records schema
 export const originalUrlRecords = pgTable("original_url_records", {
   id: serial("id").primaryKey(),

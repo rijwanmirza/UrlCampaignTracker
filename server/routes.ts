@@ -28,6 +28,8 @@ import {
   insertTrafficstarCredentialSchema,
   trafficstarCampaignActionSchema,
   trafficstarCampaignBudgetSchema,
+  // Add Traffic Sender schema
+  trafficSenderActionSchema,
   trafficstarCampaignEndTimeSchema,
   insertOriginalUrlRecordSchema,
   updateOriginalUrlRecordSchema,
@@ -2805,6 +2807,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error updating TrafficStar campaign end time:', error);
       res.status(500).json({ 
         message: "Failed to update TrafficStar campaign end time",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Traffic Sender toggle endpoint
+  app.post("/api/traffic-sender/toggle", async (req: Request, res: Response) => {
+    try {
+      const result = trafficSenderActionSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const { campaignId, enabled } = result.data;
+      
+      // Update campaign with traffic sender status
+      await db.update(campaigns)
+        .set({ 
+          trafficSenderEnabled: enabled,
+          lastTrafficSenderAction: new Date(),
+          lastTrafficSenderStatus: enabled ? 'enabled' : 'disabled',
+          updatedAt: new Date()
+        })
+        .where(eq(campaigns.id, campaignId));
+      
+      // If enabling traffic sender, record the initial budget update time
+      if (enabled) {
+        await db.update(campaigns)
+          .set({ lastBudgetUpdateTime: new Date() })
+          .where(eq(campaigns.id, campaignId));
+      }
+      
+      // Respond with success message
+      res.json({ 
+        success: true, 
+        message: `Traffic Sender ${enabled ? 'enabled' : 'disabled'} for campaign ${campaignId}`,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Start or update Traffic Sender process in background
+      if (enabled) {
+        try {
+          // Import and start the traffic sender service
+          const { trafficSenderService } = await import('./traffic-sender-service');
+          trafficSenderService.start();
+        } catch (error) {
+          console.error('Error starting traffic sender service:', error);
+          // Don't return error to client as the database update was successful
+        }
+      }
+    } catch (error) {
+      console.error('Error updating Traffic Sender status:', error);
+      res.status(500).json({ 
+        message: "Failed to update Traffic Sender status",
         error: error instanceof Error ? error.message : String(error)
       });
     }
