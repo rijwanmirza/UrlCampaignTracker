@@ -3388,9 +3388,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Updated campaign ${campaign.id} lastTrafficstarSync to yesterday: ${yesterday.toISOString()}`);
       
-      // Trigger auto-management
-      console.log('Triggering auto-management to test date change behavior...');
-      await trafficStarService.autoManageCampaigns();
+      // Trigger spent value updates
+      console.log('Triggering spent value updates to test date change behavior...');
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       res.json({
         success: true,
@@ -3486,10 +3486,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Updated existing URLs to have 3000 clicks remaining (well below 5000 threshold)');
       }
       
-      // Trigger auto-management to see the pause due to low clicks
+      // Trigger spent value updates for click checking
       console.log('✅ TEST CASE: Campaign with less than 5000 clicks should PAUSE');
-      console.log('Triggering auto-management to test pause due to low clicks (<5000)...');
-      await trafficStarService.autoManageCampaigns();
+      console.log('Triggering spent value updates to test pause due to low clicks (<5000)...');
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       // Wait a moment to let the API call complete
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -3513,10 +3513,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
       console.log('Updated URLs to have 20000 clicks remaining (well above 15000 threshold)');
       
-      // Trigger auto-management to see the activation due to high clicks
+      // Trigger spent value updates for click checking
       console.log('✅ TEST CASE: Campaign with more than 15000 clicks should ACTIVATE');
-      console.log('Triggering auto-management to test activation due to high clicks (>15000)...');
-      await trafficStarService.autoManageCampaigns();
+      console.log('Triggering spent value updates to test activation due to high clicks (>15000)...');
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       // Wait a moment to let the API call complete
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -3568,10 +3568,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('✅ TEST CASE: Click threshold should be DISABLED until next UTC date change');
       console.log('Trying to reactivate campaign by updating clicks...');
       
-      // Trigger auto-management to verify click threshold is disabled
+      // Trigger spent value updates to verify click threshold is disabled
       // Even with lots of clicks, campaign should remain paused
-      console.log('Triggering auto-management with spent value pause active...');
-      await trafficStarService.autoManageCampaigns();
+      console.log('Triggering spent value updates with spent value pause active...');
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       // Wait a moment to let the API call complete
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -3676,8 +3676,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check that click threshold is disabled after spent value pause
-      console.log('Triggering auto-management to verify click threshold is disabled...');
-      await trafficStarService.autoManageCampaigns();
+      console.log('Triggering spent value updates to verify click threshold is disabled...');
+      await trafficStarService.updateAllCampaignsSpentValues();
       
       // Clean up
       process.env.TEST_MODE = 'false';
