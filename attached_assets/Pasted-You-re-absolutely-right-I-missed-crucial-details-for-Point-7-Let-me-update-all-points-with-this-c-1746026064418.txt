@@ -1,0 +1,98 @@
+You're absolutely right - I missed crucial details for Point 7. Let me update all points with this correction:
+
+Point 1: UI Implementation
+
+Add "Traffic Sender" section below "Traffic spent tracking" section
+Implement enable/disable toggle button
+Code required:
+Add section to campaign-edit-form.tsx with FormField for trafficSenderEnabled
+Add Switch component with checked={field.value} and onCheckedChange handlers
+Add display in campaign-details.tsx to show enabled/disabled status
+Point 2: Traffic Sender Activation Process
+
+Pause TrafficStar campaign with current UTC date/time when enabled
+Code required:
+In traffic-sender-service.ts: implement pauseTrafficStarCampaign method
+Add timestamp tracking with lastTrafficSenderAction field
+Set lastTrafficSenderStatus to 'paused'
+Point 3: 10-Minute Waiting Period
+
+Wait exactly 10 minutes after pausing
+Code required:
+Store PAUSE_RECHECK_MINUTES = 10 as constant
+Implement time comparison logic: minutesElapsed = (now - lastAction) / (60 * 1000)
+Skip further actions if minutesElapsed < PAUSE_RECHECK_MINUTES
+Point 4: Spent Value Check
+
+Check TrafficStar spent value for current UTC date after waiting period
+Code required:
+Implement logic to retrieve spent value from campaign.dailySpent
+Ensure dailySpentDate matches current UTC date
+Parse the value as float: const spentValue = parseFloat(campaign.dailySpent || '0')
+Point 5: Handling Spent Value ≥ $10
+
+Calculate cost for remaining clicks
+Code required:
+Query for remaining clicks: SELECT SUM(click_limit - clicks) FROM urls WHERE campaign_id = [id] AND status = 'active'
+Calculate price: const pricePerClick = parseFloat(campaign.pricePerThousand) / 1000
+Calculate total cost: const pendingClickPrice = totalRemainingClicks * pricePerClick
+Calculate new budget: const newBudget = spentValue + pendingClickPrice
+Format to 4 decimal places: newBudget.toFixed(4)
+Point 6: Budget Update and Activation (for spent ≥ $10)
+
+Update budget and activate campaign with end time 23:59
+Code required:
+Call trafficStarService.updateCampaignDailyBudget(trafficstarId, newBudget)
+Calculate current UTC date 23:59 end time
+Call trafficStarService.activateCampaign(trafficstarId)
+Update lastTrafficSenderStatus to 'activated_with_budget'
+Point 7: Handling Spent Value < $10 (CORRECTED)
+
+For spent < $10:
+Check if remaining clicks ≥ 10,000:
+If yes: Activate campaign with end time set to current UTC date 23:59
+Set campaign daily budget to $10.15
+Continuously monitor remaining clicks:
+If remaining clicks ≤ 5,000:
+Immediately pause TrafficStar campaign
+Set end time to current UTC date and time
+This 5,000 to 10,000 threshold check only applies when spent < $10
+If spent ≥ $10, this condition is not applicable and Point 5 logic should be used instead
+Code required:
+If (spentValue < MINIMUM_SPENT_VALUE && totalRemainingClicks >= 10000):
+Set end time to current UTC date 23:59
+Call trafficStarService.updateCampaignDailyBudget(trafficstarId, 10.15)
+Call trafficStarService.updateCampaignEndTime(trafficstarId, endTime)
+Call trafficStarService.activateCampaign(trafficstarId)
+Update lastTrafficSenderStatus to 'activated_with_end_time'
+In the continuous monitoring loop:
+If (campaign.trafficSenderEnabled && campaign.lastTrafficSenderStatus === 'activated_with_end_time'):
+Check if remaining clicks ≤ 5000
+If true, call pauseTrafficStarCampaign method
+Point 8: Campaign Status Verification
+
+Check campaign status before any API calls
+Code required:
+Before activation: const tsInfo = await trafficStarService.getCampaign(trafficstarId)
+Check if (tsInfo && tsInfo.status === 'active') for already active
+Check if (tsInfo && tsInfo.status === 'paused') for already paused
+Only make API calls if status differs from desired state
+Point 9: Handling New URLs Added After Budget Update
+
+Track newly added URLs and update budget after waiting
+Code required:
+Store NEW_URL_WAIT_MINUTES = 12 as constant
+Track lastBudgetUpdateTime in database
+Query for URLs newer than lastBudgetUpdateTime:
+SELECT SUM(click_limit - clicks) as new_clicks 
+FROM urls 
+WHERE campaign_id = [id] 
+AND status = 'active' 
+AND created_at > [lastBudgetUpdateTime]
+Calculate minutes elapsed: (now - lastBudgetUpdateTime) / (60 * 1000)
+Only update if minutesElapsed >= NEW_URL_WAIT_MINUTES
+Calculate additional budget: newClicksTotal * pricePerClick
+Get current budget from TrafficStar and add additional amount
+Update TrafficStar budget with new total
+Update lastBudgetUpdateTime to current time
+Thank you for the correction. This update now includes the critical functionality of setting the budget to $10.15 for the "<$10 spent" scenario and the continuous monitoring to pause campaigns when remaining clicks drop to ≤5,000 (specifically for campaigns activated through the spent<$10 path).

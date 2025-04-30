@@ -130,6 +130,16 @@ class TrafficSenderService {
         return;
       }
       
+      // SPECIAL CASE: If campaign was activated with end time (spent < $10 path)
+      // and remaining clicks dropped below threshold, pause immediately
+      if (campaign.lastTrafficSenderStatus === 'activated_with_end_time' && 
+          totalRemainingClicks <= 5000 && 
+          (tsInfo.status === 'active' || tsInfo.lastVerifiedStatus === 'active')) {
+        console.log(`Campaign ${campaign.id} was activated with end time but remaining clicks (${totalRemainingClicks}) dropped below 5,000 threshold, pausing immediately`);
+        await this.pauseTrafficStarCampaign(campaign.id, parseInt(tsInfo.trafficstarId));
+        return;
+      }
+      
       // Check if the campaign is already paused in TrafficStar
       if (tsInfo.status === 'paused' || tsInfo.lastVerifiedStatus === 'paused') {
         // Calculate time elapsed since the last action
@@ -149,6 +159,13 @@ class TrafficSenderService {
       } else {
         // Campaign is active, check for new URLs and update budget if needed
         await this.checkForNewUrlsAndUpdateBudget(campaign);
+        
+        // For active campaigns that were activated with end time,
+        // continuously monitor remaining clicks (for spent < $10 path)
+        if (campaign.lastTrafficSenderStatus === 'activated_with_end_time') {
+          console.log(`Campaign ${campaign.id} is active with end time, continuously monitoring remaining clicks (currently ${totalRemainingClicks})`);
+          // Actual pause will happen on next run if clicks drop below 5,000 (see check above)
+        }
       }
     } catch (error) {
       console.error(`Error processing Traffic Sender campaign ${campaign.id}:`, error);
@@ -274,7 +291,7 @@ class TrafficSenderService {
         console.log(`TrafficStar campaign ${trafficstarId} is already active, just updating budget`);
         
         // Just update the budget
-        await trafficStarService.updateCampaignDailyBudget(trafficstarId, newBudget);
+        await trafficStarService.updateCampaignBudget(trafficstarId, newBudget);
         
         // Update the campaign with the latest Traffic Sender action time
         await db.update(campaigns)
@@ -290,7 +307,7 @@ class TrafficSenderService {
       }
       
       // Update the budget and activate the campaign
-      await trafficStarService.updateCampaignDailyBudget(trafficstarId, newBudget);
+      await trafficStarService.updateCampaignBudget(trafficstarId, newBudget);
       await trafficStarService.activateCampaign(trafficstarId);
       
       // Update the campaign with the latest Traffic Sender action time
@@ -310,7 +327,7 @@ class TrafficSenderService {
   }
 
   /**
-   * Activate a campaign with just an end time (for cases with low spent value)
+   * Activate a campaign with just an end time and fixed budget for cases with low spent value
    * This is used for Step 6: When spent value is less than $10 AND remaining clicks >= 10000
    * Implementation of missing requirement: Check campaign status before activating
    * IMPORTANT: This never changes the trafficSenderEnabled setting which is exclusively controlled by the user
@@ -319,21 +336,30 @@ class TrafficSenderService {
     try {
       console.log(`Activating campaign ${campaign.id} with end time (spent value < $${this.MINIMUM_SPENT_VALUE} but clicks >= ${this.MINIMUM_CLICKS_FOR_SMALL_BUDGET})`);
       
-      // Calculate future end time (24 hours from now)
-      const endTimeDate = new Date();
-      endTimeDate.setHours(endTimeDate.getHours() + 24);
+      // Calculate end time for current UTC date at 23:59
+      const now = new Date();
+      const endTimeDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        23, 59, 0 // 23:59:00 UTC
+      ));
       const endTime = endTimeDate.toISOString();
       
       // Get the TrafficStar campaign ID
       const trafficstarId = parseInt(campaign.trafficstarCampaignId);
       
+      // Set fixed budget amount to $10.15 as specified in requirements
+      const fixedBudget = 10.15;
+      
       // First check if the campaign is already active to avoid unnecessary API calls
       const tsInfo = await trafficStarService.getCampaign(trafficstarId);
       
       if (tsInfo && tsInfo.status === 'active') {
-        console.log(`TrafficStar campaign ${trafficstarId} is already active, just updating end time`);
+        console.log(`TrafficStar campaign ${trafficstarId} is already active, updating budget and end time`);
         
-        // Just update the end time
+        // Update the budget and end time
+        await trafficStarService.updateCampaignBudget(trafficstarId, fixedBudget);
         await trafficStarService.updateCampaignEndTime(trafficstarId, endTime);
         
         // Update the campaign with the latest Traffic Sender action time
@@ -348,7 +374,8 @@ class TrafficSenderService {
         return;
       }
       
-      // Update the end time and activate the campaign
+      // Set the budget, update the end time and activate the campaign
+      await trafficStarService.updateCampaignBudget(trafficstarId, fixedBudget);
       await trafficStarService.updateCampaignEndTime(trafficstarId, endTime);
       await trafficStarService.activateCampaign(trafficstarId);
       
@@ -361,7 +388,7 @@ class TrafficSenderService {
         })
         .where(eq(campaigns.id, campaign.id));
         
-      console.log(`Successfully activated TrafficStar campaign ${trafficstarId} with end time ${endTime}`);
+      console.log(`Successfully activated TrafficStar campaign ${trafficstarId} with end time ${endTime} and budget $${fixedBudget.toFixed(2)}`);
     } catch (error) {
       console.error(`Error activating campaign ${campaign.id} with end time:`, error);
     }
@@ -433,7 +460,7 @@ class TrafficSenderService {
           console.log(`New budget for campaign ${campaign.id}: $${newBudget.toFixed(4)} (current $${currentBudget.toFixed(4)} + additional $${additionalBudget.toFixed(4)})`);
           
           // Update the budget
-          await trafficStarService.updateCampaignDailyBudget(trafficstarId, newBudget);
+          await trafficStarService.updateCampaignBudget(trafficstarId, newBudget);
           
           // Update the campaign with the latest budget update time
           await db.update(campaigns)
