@@ -14,13 +14,23 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch Traffic Generator status
-  const { data: status, isLoading, error } = useQuery({
+  const { data: statusData, isLoading, error } = useQuery({
     queryKey: ['/api/traffic-generator/status', campaignId],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/traffic-generator/status/${campaignId}`);
       return await response.json();
     },
     refetchInterval: 10000, // Refresh status every 10 seconds
+  });
+  
+  // Also fetch campaign data to get additional information
+  const { data: campaignData } = useQuery({
+    queryKey: ['/api/campaigns', campaignId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/campaigns/${campaignId}`);
+      return await response.json();
+    },
+    refetchInterval: 30000, // Refresh campaign data every 30 seconds
   });
 
   // Use to manually refresh status
@@ -64,10 +74,10 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
 
   // Calculate wait time progress if in waiting state
   const calculateWaitProgress = () => {
-    if (!status?.status || status.status.state !== 'waiting' || !status.status.waitStartTime) return 0;
+    if (!statusData?.status || statusData.status.state !== 'waiting' || !statusData.status.waitStartTime) return 0;
     
-    const startTime = new Date(status.status.waitStartTime).getTime();
-    const waitMs = (status.status.waitMinutes || 2) * 60 * 1000;
+    const startTime = new Date(statusData.status.waitStartTime).getTime();
+    const waitMs = (statusData.status.waitMinutes || 2) * 60 * 1000;
     const endTime = startTime + waitMs;
     const now = new Date().getTime();
     
@@ -133,32 +143,32 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
         </div>
       </CardHeader>
       <CardContent>
-        {status?.status ? (
+        {statusData?.status ? (
           <div className="space-y-4">
             {/* State Header */}
             <div className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
               <div className="flex items-center">
                 <div className={`w-2 h-2 rounded-full mr-2 ${
-                  status.status.state === 'idle' ? 'bg-gray-400' : 
-                  status.status.state === 'waiting' ? 'bg-blue-400' : 
-                  status.status.state === 'condition1' ? 'bg-green-400' : 
-                  status.status.state === 'condition2' ? 'bg-purple-400' : 'bg-gray-400'
+                  statusData.status.state === 'idle' ? 'bg-gray-400' : 
+                  statusData.status.state === 'waiting' ? 'bg-blue-400' : 
+                  statusData.status.state === 'condition1' ? 'bg-green-400' : 
+                  statusData.status.state === 'condition2' ? 'bg-purple-400' : 'bg-gray-400'
                 }`}></div>
                 <span className="font-medium">Generator Status</span>
               </div>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge className={getStateBadge(status.status.state || "idle")}>
-                      {formatStateName(status.status.state || "idle")}
+                    <Badge className={getStateBadge(statusData.status.state || "idle")}>
+                      {formatStateName(statusData.status.state || "idle")}
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">
-                      {status.status.state === 'idle' ? 'Monitoring campaign status' : 
-                       status.status.state === 'waiting' ? 'Waiting after pause before checking spent value' : 
-                       status.status.state === 'condition1' ? 'Using click-based logic (spent < $10)' : 
-                       status.status.state === 'condition2' ? 'Using budget-based logic (spent ≥ $10)' : 
+                      {statusData.status.state === 'idle' ? 'Monitoring campaign status' : 
+                       statusData.status.state === 'waiting' ? 'Waiting after pause before checking spent value' : 
+                       statusData.status.state === 'condition1' ? 'Using click-based logic (spent < $10)' : 
+                       statusData.status.state === 'condition2' ? 'Using budget-based logic (spent ≥ $10)' : 
                        'Unknown state'}
                     </p>
                   </TooltipContent>
@@ -174,7 +184,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   Daily Spent
                 </div>
                 <div className="font-mono font-medium">
-                  ${status.status.dailySpent ? parseFloat(status.status.dailySpent).toFixed(4) : "0.0000"}
+                  ${campaignData?.dailySpent ? parseFloat(campaignData.dailySpent).toFixed(4) : "0.0000"}
                 </div>
               </div>
               
@@ -184,7 +194,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   Remaining Clicks
                 </div>
                 <div className="font-mono font-medium">
-                  {status.status.remainingClicks?.toLocaleString() || "0"}
+                  {statusData.remainingClicks?.toLocaleString() || "0"}
                 </div>
               </div>
               
@@ -194,8 +204,8 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   Campaign Status
                 </div>
                 <div>
-                  <Badge variant={status.status.tsStatus === 'active' ? "success" : "destructive"} className="font-medium text-xs">
-                    {status.status.tsStatus === 'active' ? "Active" : "Paused"}
+                  <Badge variant={campaignData?.lastTrafficstarStatus === 'active' ? "success" : "destructive"} className="font-medium text-xs">
+                    {campaignData?.lastTrafficstarStatus === 'active' ? "Active" : "Paused"}
                   </Badge>
                 </div>
               </div>
@@ -206,14 +216,14 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   Wait Time
                 </div>
                 <div className="font-mono font-medium">
-                  {status.status.waitMinutes || 2} min
+                  {statusData.status.waitMinutes || 2} min
                 </div>
               </div>
             </div>
             
             {/* State-Specific Information */}
             <div className="flex flex-col gap-3">
-              {status.status.state === 'waiting' && (
+              {statusData.status.state === 'waiting' && (
                 <div className="border rounded-lg p-3 bg-blue-50">
                   <div className="flex items-center text-sm font-medium text-blue-700 mb-2">
                     <Clock className="h-4 w-4 mr-2" />
@@ -221,7 +231,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   </div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-blue-600">
-                      {status.status.waitStartTime ? new Date(status.status.waitStartTime).toLocaleTimeString() : ''}
+                      {statusData.status.waitStartTime ? new Date(statusData.status.waitStartTime).toLocaleTimeString() : ''}
                     </span>
                     <span className="text-xs text-blue-600 font-mono">
                       {calculateWaitProgress()}%
@@ -229,12 +239,12 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   </div>
                   <Progress value={calculateWaitProgress()} className="h-2 bg-blue-200" indicatorClassName="bg-blue-500" />
                   <div className="text-xs text-blue-600 mt-2">
-                    Waiting for {status.status.waitMinutes || 2} minutes before checking TrafficStar spent value
+                    Waiting for {statusData.status.waitMinutes || 2} minutes before checking TrafficStar spent value
                   </div>
                 </div>
               )}
               
-              {status.status.state === 'condition1' && (
+              {statusData.status.state === 'condition1' && (
                 <div className="border rounded-lg p-3 bg-green-50">
                   <div className="flex items-center text-sm font-medium text-green-700 mb-1">
                     <ArrowRight className="h-4 w-4 mr-1" />
@@ -250,7 +260,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                 </div>
               )}
               
-              {status.status.state === 'condition2' && (
+              {statusData.status.state === 'condition2' && (
                 <div className="border rounded-lg p-3 bg-purple-50">
                   <div className="flex items-center text-sm font-medium text-purple-700 mb-1">
                     <ArrowRight className="h-4 w-4 mr-1" />
@@ -268,14 +278,14 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
             </div>
             
             {/* Pending URL Budgets */}
-            {status.status.pendingUrlBudgets && Object.keys(status.status.pendingUrlBudgets).length > 0 && (
+            {statusData.status.pendingUrlBudgets && Object.keys(statusData.status.pendingUrlBudgets).length > 0 && (
               <div className="border rounded-lg p-3">
                 <div className="text-sm font-medium mb-2 flex items-center">
                   <DollarSign className="h-4 w-4 mr-1" />
                   Pending URL Budgets
                 </div>
                 <div className="text-xs bg-gray-50 p-2 rounded border max-h-40 overflow-y-auto">
-                  {Object.entries(status.status.pendingUrlBudgets).map(([urlId, budget]) => (
+                  {Object.entries(statusData.status.pendingUrlBudgets).map(([urlId, budget]) => (
                     <div key={urlId} className="flex justify-between py-1 border-b last:border-b-0">
                       <span>URL #{urlId}:</span>
                       <span className="font-mono">
@@ -294,7 +304,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
             )}
             
             {/* Budgeted URLs */}
-            {status.status.budgetedUrlIds && status.status.budgetedUrlIds.length > 0 && (
+            {statusData.status.budgetedUrlIds && statusData.status.budgetedUrlIds.length > 0 && (
               <div className="border rounded-lg p-3">
                 <div className="text-sm font-medium mb-2 flex items-center">
                   <CheckCircle className="h-4 w-4 mr-1" />
@@ -302,7 +312,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                 </div>
                 <div className="text-xs bg-gray-50 p-2 rounded border max-h-40 overflow-y-auto">
                   <div className="flex flex-wrap gap-1">
-                    {status.status.budgetedUrlIds.map((urlId) => (
+                    {statusData.status.budgetedUrlIds.map((urlId) => (
                       <Badge key={urlId} variant="outline" className="bg-white">
                         URL #{urlId}
                       </Badge>
