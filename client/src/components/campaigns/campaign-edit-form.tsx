@@ -563,9 +563,18 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                                   className="w-16 text-center"
                                   {...field}
                                   onChange={(e) => {
-                                    const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 1 && value <= 60) {
-                                      field.onChange(value);
+                                    // Always accept the input text first
+                                    const inputValue = e.target.value;
+                                    // Try to parse as a number
+                                    const value = parseInt(inputValue);
+                                    
+                                    if (inputValue === '') {
+                                      // Allow empty input temporarily for typing
+                                      field.onChange('');
+                                    } else if (!isNaN(value)) {
+                                      // Clamp value between 1-60
+                                      const clampedValue = Math.max(1, Math.min(60, value));
+                                      field.onChange(clampedValue);
                                     }
                                   }}
                                   value={field.value}
