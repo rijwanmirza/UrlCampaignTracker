@@ -68,6 +68,17 @@ class TrafficStarService {
   // This prevents multiple adjustments on the same UTC date
   private budgetAdjustedCampaigns: Map<number, string> = new Map();
   
+  // Map to track pending URL budget updates by campaign ID
+  // Records URL IDs, click values, and when they were received
+  private pendingUrlBudgets: Map<number, Array<{
+    urlId: number;
+    campaignId: number;
+    receivedAt: Date;
+    updateAt: Date; // 10 minutes after receivedAt
+    clickValue: number;
+    processed: boolean;
+  }>> = new Map();
+  
   /**
    * Check if current time is within a window of minutes after target time
    * @param currentTime Current time in HH:MM:SS format
@@ -378,6 +389,193 @@ class TrafficStarService {
     }
   }
 
+  /**
+   * Update a campaign's status in TrafficStar
+   * @param id The campaign ID
+   * @param status The new status ('enabled', 'paused', 'disabled', etc.)
+   */
+  /**
+   * Update a campaign in TrafficStar
+   * This function can update any field of a campaign
+   * @param id The campaign ID
+   * @param updateData Object containing the fields to update
+   */
+  async updateCampaign(id: string, updateData: any): Promise<void> {
+    try {
+      console.log(`Updating campaign ${id} with data:`, updateData);
+      const token = await this.ensureToken();
+      
+      let success = false;
+      
+      // Try different endpoint patterns
+      for (const baseUrl of API_BASE_URLS) {
+        try {
+          console.log(`Trying to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          
+          // Make the PATCH request
+          const response = await axios.patch(
+            `${baseUrl}/campaigns/${id}`,
+            updateData,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+            }
+          );
+          
+          // Check if the request was successful
+          if (response.status >= 200 && response.status < 300) {
+            console.log(`Successfully updated campaign ${id}`);
+            success = true;
+            break;
+          } else {
+            console.log(`Unexpected response when updating campaign ${id}: ${response.status}`);
+          }
+        } catch (error) {
+          console.log(`Failed to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        console.error(`Failed to update campaign ${id} after trying all endpoints`);
+        throw new Error(`Failed to update campaign ${id}`);
+      }
+    } catch (error) {
+      console.error(`Error updating campaign ${id}: ${error}`);
+      throw new Error(`Failed to update campaign ${id}`);
+    }
+  }
+  
+  /**
+   * Update a campaign's end time in TrafficStar
+   * @param id The campaign ID
+   * @param scheduleEndTime The new end time in YYYY-MM-DD HH:MM:SS format
+   */
+  /**
+   * Update a campaign's daily budget in TrafficStar
+   * @param id The campaign ID
+   * @param maxDaily The new maximum daily budget
+   */
+  async updateCampaignDailyBudget(id: string, maxDaily: number): Promise<void> {
+    try {
+      console.log(`Updating campaign ${id} daily budget to $${maxDaily}`);
+      
+      // Use the general update function with specific data
+      await this.updateCampaign(id, {
+        max_daily: maxDaily
+      });
+      
+      console.log(`Successfully updated campaign ${id} daily budget to $${maxDaily}`);
+      
+      // Update the budget update time in our database
+      await this.updateCampaignBudgetUpdateTime(parseInt(id));
+    } catch (error) {
+      console.error(`Error updating campaign ${id} daily budget: ${error}`);
+      throw new Error(`Failed to update campaign ${id} daily budget`);
+    }
+  }
+  
+  /**
+   * Update the budget update time for a campaign in our database
+   * @param trafficstarId The TrafficStar campaign ID
+   */
+  private async updateCampaignBudgetUpdateTime(trafficstarId: number): Promise<void> {
+    try {
+      // Find our internal campaign ID that corresponds to this TrafficStar ID
+      const [dbCampaign] = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.trafficstarCampaignId, trafficstarId.toString()));
+      
+      if (dbCampaign) {
+        // Update the budget update time
+        await db
+          .update(campaigns)
+          .set({ budgetUpdateTime: new Date() })
+          .where(eq(campaigns.id, dbCampaign.id));
+        
+        console.log(`Updated budget update time for campaign ${dbCampaign.id} (TrafficStar ID: ${trafficstarId})`);
+      } else {
+        console.log(`No internal campaign found for TrafficStar ID ${trafficstarId}`);
+      }
+    } catch (error) {
+      console.error(`Error updating budget update time for TrafficStar campaign ${trafficstarId}: ${error}`);
+    }
+  }
+  
+  async updateCampaignEndTime(id: string, scheduleEndTime: string): Promise<void> {
+    try {
+      console.log(`Updating campaign ${id} end time to ${scheduleEndTime}`);
+      
+      // Use the general update function with specific data
+      await this.updateCampaign(id, {
+        schedule_end_time: scheduleEndTime
+      });
+      
+      console.log(`Successfully updated campaign ${id} end time to ${scheduleEndTime}`);
+    } catch (error) {
+      console.error(`Error updating campaign ${id} end time: ${error}`);
+      throw new Error(`Failed to update campaign ${id} end time`);
+    }
+  }
+
+  async updateCampaignStatus(id: string, status: string): Promise<void> {
+    try {
+      console.log(`Updating campaign ${id} status to ${status}`);
+      const token = await this.ensureToken();
+      
+      let success = false;
+      
+      // Try different endpoint patterns
+      for (const baseUrl of API_BASE_URLS) {
+        try {
+          console.log(`Trying to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          
+          // Prepare the data for the update
+          const updateData = {
+            status: status
+          };
+          
+          // Make the PATCH request
+          const response = await axios.patch(
+            `${baseUrl}/campaigns/${id}`,
+            updateData,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+            }
+          );
+          
+          // Check if the request was successful
+          if (response.status >= 200 && response.status < 300) {
+            console.log(`Successfully updated campaign ${id} to status ${status}`);
+            success = true;
+            break;
+          } else {
+            console.log(`Unexpected response when updating campaign ${id}: ${response.status}`);
+          }
+        } catch (error) {
+          console.log(`Failed to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+          // Continue to next attempt
+        }
+      }
+      
+      if (!success) {
+        console.error(`Failed to update campaign ${id} status to ${status} after trying all endpoints`);
+        throw new Error(`Failed to update campaign ${id}`);
+      }
+    } catch (error) {
+      console.error(`Error updating campaign ${id} status: ${error}`);
+      throw new Error(`Failed to update campaign ${id}`);
+    }
+  }
+  
   /**
    * Get a single campaign from TrafficStar
    */
