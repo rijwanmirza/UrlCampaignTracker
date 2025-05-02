@@ -235,7 +235,8 @@ async function getRealTimeTrafficStarCampaignStatus(campaignId: string): Promise
     }
     
     // Determine if campaign is active based on status
-    const isActive = campaign.status === 'active';
+    // TrafficStar uses 'enabled' status, but we need to check if it's active too
+    const isActive = (campaign.status === 'active' || campaign.status === 'enabled') && campaign.active === true;
     
     log(`REAL STATUS: TrafficStar campaign ${campaignId} status=${campaign.status}, active=${isActive}`, 'info');
     
