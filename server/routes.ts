@@ -2684,16 +2684,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get enabled value from request body
-      const { enabled } = req.body;
+      const { enabled, force = false } = req.body;
       if (typeof enabled !== 'boolean') {
         return res.status(400).json({
           success: false,
           message: "Missing or invalid 'enabled' parameter in request body"
         });
       }
+
+      // Get the campaign first to check its TrafficStar status before attempting any changes
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({
+          success: false,
+          message: `Campaign ${campaignId} not found`
+        });
+      }
+
+      // If enabling without force flag, check if the campaign is already paused in TrafficStar
+      if (enabled && !force && campaign.trafficstarCampaignId) {
+        try {
+          const status = await trafficStarService.getCampaign(parseInt(campaign.trafficstarCampaignId));
+          
+          // If the campaign is active in TrafficStar, advise the user to pause it first
+          if (status.active || status.status === 'enabled' || status.status === 'active') {
+            return res.status(400).json({
+              success: false,
+              requiresPause: true,
+              message: "The Traffic Generator cannot be enabled while the campaign is active in TrafficStar. Please pause the campaign in TrafficStar first, or use the 'force' option to attempt automatic pausing.",
+              campaignStatus: {
+                active: status.active,
+                status: status.status
+              }
+            });
+          }
+        } catch (error) {
+          console.error(`Error checking campaign status before enabling Traffic Generator:`, error);
+          // Continue with the toggle operation
+        }
+      }
       
       // Toggle Traffic Generator
-      await toggleTrafficGenerator(campaignId, enabled);
+      await toggleTrafficGenerator(campaignId, enabled, { force });
       
       // Return success response
       res.json({
@@ -2703,10 +2735,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error(`Error toggling Traffic Generator for campaign:`, error);
+      
+      // Provide more detailed error message based on the type of error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Special handling for campaign pausing failures
+      if (errorMessage.includes('Failed to pause') || errorMessage.includes('Could not update status')) {
+        return res.status(400).json({
+          success: false,
+          pauseError: true,
+          message: "Failed to pause the campaign in TrafficStar. Traffic Generator requires campaigns to be paused before enabling.",
+          error: errorMessage,
+          suggestion: "Please pause the campaign manually in TrafficStar before enabling Traffic Generator."
+        });
+      }
+      
       res.status(500).json({ 
         success: false,
         message: "Failed to toggle Traffic Generator", 
-        error: error instanceof Error ? error.message : String(error) 
+        error: errorMessage
       });
     }
   });

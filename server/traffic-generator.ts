@@ -793,8 +793,10 @@ export async function processPendingUrlBudgets(campaign: Campaign): Promise<void
  * Enable or disable Traffic Generator for a campaign
  * @param campaignId The campaign ID
  * @param enabled Whether to enable or disable
+ * @param options Optional settings for the toggle operation
+ * @param options.force Force enable even if pausing fails (defaults to false)
  */
-export async function toggleTrafficGenerator(campaignId: number, enabled: boolean): Promise<void> {
+export async function toggleTrafficGenerator(campaignId: number, enabled: boolean, options: { force?: boolean } = {}): Promise<void> {
   try {
     log(`Setting Traffic Generator for campaign ${campaignId} to ${enabled ? 'enabled' : 'disabled'}`, 'info');
     
@@ -816,6 +818,7 @@ export async function toggleTrafficGenerator(campaignId: number, enabled: boolea
         log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already paused, continuing`, 'info');
       } else {
         // Pause the campaign in TrafficStar - this is MANDATORY before enabling Traffic Generator
+        // unless force option is used
         try {
           // Pause the campaign in TrafficStar
           await trafficStarService.updateCampaignStatus(campaign.trafficstarCampaignId, 'paused');
@@ -827,10 +830,25 @@ export async function toggleTrafficGenerator(campaignId: number, enabled: boolea
             throw new Error(`Campaign status could not be updated to paused: Current status=${verifyStatus.status}, active=${verifyStatus.active}`);
           }
         } catch (error) {
-          // Throw an error instead of continuing - pausing MUST succeed
-          const errorMessage = `Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}: ${error}`;
-          log(errorMessage, 'error');
-          throw new Error(errorMessage);
+          // If force option is enabled, log the error but continue 
+          if (options.force === true) {
+            const warningMessage = `Warning: Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}, but continuing due to force option: ${error}`;
+            log(warningMessage, 'warn');
+            
+            // Add a note in the database that this campaign was force-enabled
+            await db
+              .update(campaigns)
+              .set({ 
+                trafficGeneratorForceEnabled: true,
+                trafficGeneratorForceEnabledAt: new Date()
+              })
+              .where(eq(campaigns.id, campaignId));
+          } else {
+            // Otherwise, throw an error - pausing MUST succeed
+            const errorMessage = `Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}: ${error}`;
+            log(errorMessage, 'error');
+            throw new Error(errorMessage);
+          }
         }
       }
     }
