@@ -38,6 +38,7 @@ export interface IStorage {
   
   // URL operations
   getUrls(campaignId: number): Promise<UrlWithActiveStatus[]>;
+  getUrlsByCampaignId(campaignId: number): Promise<UrlWithActiveStatus[]>; // Added for Traffic Generator
   getAllUrls(page: number, limit: number, search?: string, status?: string): Promise<{ urls: UrlWithActiveStatus[], total: number }>;
   getUrl(id: number): Promise<Url | undefined>;
   createUrl(url: InsertUrl): Promise<Url>;
