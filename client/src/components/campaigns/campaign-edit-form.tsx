@@ -50,6 +50,7 @@ const campaignEditSchema = z.object({
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   // Traffic Generator fields
   trafficGeneratorEnabled: z.boolean().default(false),
+  trafficGeneratorWaitMinutes: z.number().int().min(1).max(60).default(2),
   // Traffic Sender fields removed
 });
 
@@ -86,6 +87,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
       // Traffic Generator settings
       trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
+      trafficGeneratorWaitMinutes: campaign.trafficGeneratorWaitMinutes || 2,
       // Traffic Sender settings removed
     },
   });

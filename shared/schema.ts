@@ -41,6 +41,7 @@ export const campaigns = pgTable("campaigns", {
   lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time spent was checked
   // Traffic Generator feature
   trafficGeneratorEnabled: boolean("traffic_generator_enabled").default(false), // Enable/disable traffic generator
+  trafficGeneratorWaitMinutes: integer("traffic_generator_wait_minutes").default(2), // Wait time in minutes after pause (1-60)
   // DEPRECATED: Traffic Sender feature has been removed
   // Keeping these fields in the schema for backward compatibility but they are no longer used
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
@@ -95,6 +96,7 @@ export const updateCampaignSchema = z.object({
   lastTrafficstarSync: z.date().optional().nullable(),
   // Traffic Generator feature
   trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
+  trafficGeneratorWaitMinutes: z.number().int().min(1).max(60).optional(), // Wait time in minutes (1-60)
   // DEPRECATED: Traffic Sender fields - no longer in use
   trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED
