@@ -511,6 +511,17 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting trafficGeneratorEnabled to:', updateData.trafficGeneratorEnabled, '(original value:', updateCampaign.trafficGeneratorEnabled, ')');
     }
     
+    // Handle postPauseCheckMinutes field (1-30 minute range)
+    if (updateCampaign.postPauseCheckMinutes !== undefined) {
+      // Ensure value is within valid range (1-30)
+      let minutes = updateCampaign.postPauseCheckMinutes;
+      if (minutes < 1) minutes = 1;
+      if (minutes > 30) minutes = 30;
+      
+      updateData.postPauseCheckMinutes = minutes;
+      console.log('🔍 DEBUG: Setting postPauseCheckMinutes to:', updateData.postPauseCheckMinutes);
+    }
+    
     // Handle Traffic Sender fields
     if (updateCampaign.trafficSenderEnabled !== undefined) {
       // CRITICAL FIX: Make sure we explicitly set this as a boolean to prevent any type conversion issues
