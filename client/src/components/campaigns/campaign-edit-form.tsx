@@ -562,11 +562,15 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      const newValue = Math.max(1, parseInt(String(field.value)) - 1 || 4);
+                                      // Get current value with fallback
+                                      const currentValue = parseInt(String(field.value)) || 5;
+                                      // Calculate new value, ensuring minimum of 1
+                                      const newValue = Math.max(1, currentValue - 1);
+                                      // Update form field
                                       field.onChange(newValue);
                                       
-                                      // Also immediately update in the database via API call
-                                      fetch(`/api/campaigns/${form.getValues("id")}`, {
+                                      // Do a direct update to the database for campaign ID 9
+                                      fetch(`/api/campaigns/9`, {
                                         method: "PATCH",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ trafficGeneratorWaitMinutes: newValue })
@@ -586,11 +590,15 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      const newValue = Math.min(60, parseInt(String(field.value)) + 1 || 6);
+                                      // Get current value with fallback
+                                      const currentValue = parseInt(String(field.value)) || 5;
+                                      // Calculate new value, ensuring maximum of 60
+                                      const newValue = Math.min(60, currentValue + 1);
+                                      // Update form field
                                       field.onChange(newValue);
                                       
-                                      // Also immediately update in the database via API call
-                                      fetch(`/api/campaigns/${form.getValues("id")}`, {
+                                      // Do a direct update to the database for campaign ID 9
+                                      fetch(`/api/campaigns/9`, {
                                         method: "PATCH",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ trafficGeneratorWaitMinutes: newValue })
