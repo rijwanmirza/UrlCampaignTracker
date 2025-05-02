@@ -126,9 +126,10 @@ async function processTrafficGeneratorCampaign(campaign: Campaign) {
       return;
     }
     
-    // Check if campaign was recently paused and is in IDLE state
-    if (campaign.trafficGeneratorState === TrafficGeneratorState.IDLE && !status.active) {
-      log(`Campaign ${campaign.id} is paused and in IDLE state - starting wait period`, 'info');
+    // Check if campaign is in IDLE state - could be from re-enabling or being paused
+    if (campaign.trafficGeneratorState === TrafficGeneratorState.IDLE) {
+      // For recently re-enabled or paused campaigns, start processing
+      log(`Campaign ${campaign.id} is in IDLE state - starting wait period for processing`, 'info');
       
       // Start waiting period
       const waitStartTime = new Date();
@@ -773,8 +774,11 @@ export async function toggleTrafficGenerator(campaignId: number, enabled: boolea
       .update(campaigns)
       .set({ 
         trafficGeneratorEnabled: enabled,
-        // If disabling, reset all Traffic Generator state
-        ...(enabled ? {} : {
+        // If enabling, set to IDLE state to trigger processing
+    // If disabling, reset all Traffic Generator state
+        ...(enabled ? { 
+          trafficGeneratorState: TrafficGeneratorState.IDLE
+        } : {
           trafficGeneratorState: TrafficGeneratorState.IDLE,
           trafficGeneratorWaitStartTime: null,
           trafficGeneratorWaitMinutes: null,
