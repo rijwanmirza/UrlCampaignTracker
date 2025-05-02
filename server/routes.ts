@@ -908,10 +908,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the current campaign to see if traffic generator is being enabled
       const existingCampaign = await storage.getCampaign(id);
       
-      // Track if traffic generator is being enabled (was off, now being turned on)
-      const trafficGeneratorBeingEnabled = 
-        req.body.trafficGeneratorEnabled === true && 
-        (!existingCampaign?.trafficGeneratorEnabled || existingCampaign?.trafficGeneratorEnabled === false);
+      // Always force the traffic generator check when enabled in a PUT request
+      // This ensures the check runs regardless of previous state
+      const trafficGeneratorBeingEnabled = req.body.trafficGeneratorEnabled === true;
       
       // CRITICAL FIX: Make sure trafficSenderEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
