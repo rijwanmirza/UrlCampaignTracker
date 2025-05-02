@@ -76,6 +76,17 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
   const calculateWaitProgress = () => {
     if (!statusData?.status || statusData.status.state !== 'waiting' || !statusData.status.waitStartTime) return 0;
     
+    // If API returns remaining wait seconds directly, use that for more accurate timing
+    if (statusData.status.remainingWaitSeconds !== null && statusData.status.remainingWaitSeconds !== undefined) {
+      const totalWaitMs = (statusData.status.waitMinutes || 2) * 60 * 1000;
+      const remainingMs = statusData.status.remainingWaitSeconds * 1000;
+      const elapsedMs = totalWaitMs - remainingMs;
+      
+      if (remainingMs <= 0) return 100;
+      return Math.round((elapsedMs / totalWaitMs) * 100);
+    }
+    
+    // Fallback to client-side calculation if API doesn't return remaining seconds
     const startTime = new Date(statusData.status.waitStartTime).getTime();
     const waitMs = (statusData.status.waitMinutes || 2) * 60 * 1000;
     const endTime = startTime + waitMs;
@@ -83,6 +94,31 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
     
     if (now >= endTime) return 100;
     return Math.round(((now - startTime) / waitMs) * 100);
+  };
+  
+  // Format remaining wait time as MM:SS
+  const formatRemainingTime = () => {
+    if (!statusData?.status || statusData.status.state !== 'waiting') return '00:00';
+    
+    let remainingSeconds;
+    
+    // Use API provided remaining seconds if available
+    if (statusData.status.remainingWaitSeconds !== null && statusData.status.remainingWaitSeconds !== undefined) {
+      remainingSeconds = statusData.status.remainingWaitSeconds;
+    } else {
+      // Fallback to client-side calculation
+      const startTime = new Date(statusData.status.waitStartTime).getTime();
+      const waitMs = (statusData.status.waitMinutes || 2) * 60 * 1000;
+      const endTime = startTime + waitMs;
+      const now = new Date().getTime();
+      
+      remainingSeconds = Math.max(0, Math.ceil((endTime - now) / 1000));
+    }
+    
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   if (isLoading) {
@@ -225,9 +261,15 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
             <div className="flex flex-col gap-3">
               {statusData.status.state === 'waiting' && (
                 <div className="border rounded-lg p-3 bg-blue-50">
-                  <div className="flex items-center text-sm font-medium text-blue-700 mb-2">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Wait Progress
+                  <div className="flex items-center justify-between text-sm font-medium text-blue-700 mb-2">
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2" />
+                      Wait Progress
+                    </div>
+                    <div className="flex items-center bg-blue-100 px-2 py-1 rounded">
+                      <AlarmClock className="h-3 w-3 mr-1 text-blue-700" />
+                      <span className="font-mono text-xs">{formatRemainingTime()}</span>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-blue-600">
@@ -238,8 +280,12 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                     </span>
                   </div>
                   <Progress value={calculateWaitProgress()} className="h-2 bg-blue-200" indicatorClassName="bg-blue-500" />
-                  <div className="text-xs text-blue-600 mt-2">
-                    Waiting for {statusData.status.waitMinutes || 2} minutes before checking TrafficStar spent value
+                  <div className="text-xs text-blue-600 mt-2 flex items-start">
+                    <AlertCircle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                    <span>
+                      Waiting for {statusData.status.waitMinutes || 2} minutes before checking TrafficStar spent value.
+                      The system will strictly honor this wait time.
+                    </span>
                   </div>
                 </div>
               )}

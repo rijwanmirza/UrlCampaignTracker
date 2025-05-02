@@ -846,6 +846,7 @@ export async function getTrafficGeneratorStatus(campaignId: number): Promise<{
   state: TrafficGeneratorState | null;
   waitStartTime: Date | null;
   waitMinutes: number | null;
+  remainingWaitSeconds: number | null;
   budgetedUrlIds: number[];
   pendingUrlBudgets: Record<string, number>;
 }> {
@@ -856,11 +857,28 @@ export async function getTrafficGeneratorStatus(campaignId: number): Promise<{
       throw new Error(`Campaign ${campaignId} not found`);
     }
     
+    // Calculate remaining wait time in seconds if in WAITING state
+    let remainingWaitSeconds = null;
+    if (campaign.trafficGeneratorState === TrafficGeneratorState.WAITING && 
+        campaign.trafficGeneratorWaitStartTime && 
+        campaign.trafficGeneratorWaitMinutes) {
+      
+      const now = new Date();
+      const waitTimeMs = campaign.trafficGeneratorWaitMinutes * 60 * 1000;
+      const elapsedMs = now.getTime() - campaign.trafficGeneratorWaitStartTime.getTime();
+      const remainingMs = Math.max(0, waitTimeMs - elapsedMs);
+      
+      remainingWaitSeconds = Math.ceil(remainingMs / 1000);
+      
+      log(`Remaining wait time for campaign ${campaignId}: ${remainingWaitSeconds} seconds`, 'info');
+    }
+    
     return {
       enabled: campaign.trafficGeneratorEnabled || false,
       state: campaign.trafficGeneratorState || null,
       waitStartTime: campaign.trafficGeneratorWaitStartTime || null,
       waitMinutes: campaign.trafficGeneratorWaitMinutes || null,
+      remainingWaitSeconds,
       budgetedUrlIds: campaign.budgetedUrlIds || [],
       pendingUrlBudgets: campaign.pendingUrlBudgets || {}
     };
