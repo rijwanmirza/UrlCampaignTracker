@@ -555,23 +555,23 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                             <FormLabel className="text-sm">Wait time after pause:</FormLabel>
                             <div className="flex items-center">
                               <FormControl>
-                                <Select
-                                  value={String(field.value)}
-                                  onValueChange={(value) => {
-                                    field.onChange(parseInt(value));
+                                {/* Simple native mobile-friendly select */}
+                                <select 
+                                  className="p-2 border rounded-md w-24 text-sm"
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (!isNaN(value)) {
+                                      field.onChange(value);
+                                    }
                                   }}
                                 >
-                                  <SelectTrigger className="w-24">
-                                    <SelectValue placeholder="Minutes" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Array.from({ length: 60 }, (_, i) => i + 1).map((minutes) => (
-                                      <SelectItem key={minutes} value={String(minutes)}>
-                                        {minutes}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                  {Array.from({ length: 60 }, (_, i) => i + 1).map((minutes) => (
+                                    <option key={minutes} value={minutes}>
+                                      {minutes}
+                                    </option>
+                                  ))}
+                                </select>
                               </FormControl>
                               <span className="ml-2 text-sm text-gray-500">minutes</span>
                             </div>
