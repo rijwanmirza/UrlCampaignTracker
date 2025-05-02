@@ -12,22 +12,27 @@ import { campaigns } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
 /**
- * Get TrafficStar campaign status
+ * Get TrafficStar campaign status - ALWAYS uses real-time data
  * @param trafficstarCampaignId The TrafficStar campaign ID
  * @returns The campaign status (active, paused, etc.) or null if error
  */
 export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string) {
   try {
-    // Use trafficStarService to get campaign status
-    const campaign = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
+    console.log(`TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign ${trafficstarCampaignId}`);
     
-    if (!campaign) {
-      console.error(`Failed to get TrafficStar campaign ${trafficstarCampaignId}`);
+    // Use trafficStarService to get campaign status - uses getCampaignStatus to ensure real-time data
+    const status = await trafficStarService.getCampaignStatus(Number(trafficstarCampaignId));
+    
+    if (!status) {
+      console.error(`Failed to get TrafficStar campaign ${trafficstarCampaignId} status`);
       return null;
     }
     
-    // Return the campaign status
-    return campaign.status;
+    // Return the campaign status (active or paused)
+    console.log(`TRAFFIC-GENERATOR: TrafficStar campaign ${trafficstarCampaignId} REAL status is ${status.status}, active=${status.active}`);
+    
+    // Convert status object to string status for compatibility with existing code
+    return status.active ? 'active' : 'paused';
   } catch (error) {
     console.error('Error getting TrafficStar campaign status:', error);
     return null;

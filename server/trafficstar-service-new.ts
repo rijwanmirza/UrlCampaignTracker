@@ -399,16 +399,23 @@ class TrafficStarService {
       let success = false;
       let lastError = null;
       
-      // First try to get the campaign from our database cache
-      const [savedCampaign] = await db
-        .select()
-        .from(trafficstarCampaigns)
-        .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      // ** IMPORTANT: DO NOT USE DATABASE CACHE FOR STATUS CHECKS **
+      // Always get real-time status from the API
       
-      if (savedCampaign && savedCampaign.campaignData) {
-        // Return the cached campaign data if available
-        return savedCampaign.campaignData as Campaign;
-      }
+      // OLD CODE REMOVED:
+      // First try to get the campaign from our database cache
+      // const [savedCampaign] = await db
+      //   .select()
+      //   .from(trafficstarCampaigns)
+      //   .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      // 
+      // if (savedCampaign && savedCampaign.campaignData) {
+      //   // Return the cached campaign data if available
+      //   return savedCampaign.campaignData as Campaign;
+      // }
+      
+      // We want to ALWAYS check the real TrafficStar API
+      console.log(`REAL-TIME CHECK: Bypassing cache to get ACTUAL status of TrafficStar campaign ${id}`);
       
       // Try different endpoint patterns
       for (const baseUrl of API_BASE_URLS) {
@@ -453,6 +460,12 @@ class TrafficStarService {
       }
       
       if (!success) {
+        // Attempt to get saved campaign from database
+        const [savedCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
         if (savedCampaign) {
           // If we have a saved campaign but no campaignData, construct a basic Campaign object
           campaign = {
@@ -475,7 +488,12 @@ class TrafficStarService {
       // Save the campaign data to our database
       if (campaign) {
         // Check if we already have this campaign in our database
-        if (savedCampaign) {
+        const [dbSavedCampaign] = await db
+          .select()
+          .from(trafficstarCampaigns)
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        if (dbSavedCampaign) {
           // Update the existing record
           await db.update(trafficstarCampaigns)
             .set({
@@ -489,7 +507,7 @@ class TrafficStarService {
               campaignData: campaign,
               updatedAt: new Date()
             })
-            .where(eq(trafficstarCampaigns.id, savedCampaign.id));
+            .where(eq(trafficstarCampaigns.id, dbSavedCampaign.id));
         } else {
           // Insert a new record
           await db.insert(trafficstarCampaigns)
@@ -580,11 +598,16 @@ class TrafficStarService {
   }
 
   /**
-   * Get campaign status from API
+   * Get campaign status from API - ALWAYS uses real-time data
    */
   async getCampaignStatus(id: number): Promise<{ active: boolean, status: string }> {
     try {
+      console.log(`REAL-TIME STATUS CHECK: Getting current status for TrafficStar campaign ${id}`);
+      // This will now ALWAYS get real-time status since we modified getCampaign
       const campaign = await this.getCampaign(id);
+      
+      console.log(`REAL STATUS: TrafficStar campaign ${id} status=${campaign.status}, active=${campaign.active}`);
+      
       return {
         active: campaign.active,
         status: campaign.status
