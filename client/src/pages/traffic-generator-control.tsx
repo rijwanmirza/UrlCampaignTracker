@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlayCircle } from "lucide-react";
 
 export default function TrafficGeneratorControlPage() {
   const [enabled, setEnabled] = useState(false);
   const [waitMinutes, setWaitMinutes] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRunningNow, setIsRunningNow] = useState(false);
   const { toast } = useToast();
   
   const campaignId = 9; // Hardcoded for campaign #9
@@ -144,6 +145,38 @@ export default function TrafficGeneratorControlPage() {
       setIsSaving(false);
     }
   };
+  
+  // Run Traffic Generator check now
+  const runTrafficGeneratorNow = async () => {
+    try {
+      setIsRunningNow(true);
+      const response = await fetch(`/api/traffic-generator/run-now`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to run Traffic Generator check");
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: "Success",
+        description: `Traffic Generator check completed: ${result.message || 'Process completed'}`,
+      });
+    } catch (error) {
+      console.error("Error running Traffic Generator:", error);
+      toast({
+        title: "Error",
+        description: "Failed to run Traffic Generator check",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRunningNow(false);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -230,6 +263,26 @@ export default function TrafficGeneratorControlPage() {
               )}
             </div>
           </CardContent>
+          
+          <CardFooter className="border-t pt-6">
+            <Button 
+              onClick={runTrafficGeneratorNow}
+              disabled={isRunningNow || !enabled}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700"
+            >
+              {isRunningNow ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Running check...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="mr-2 h-5 w-5" />
+                  Run Traffic Generator check now
+                </>
+              )}
+            </Button>
+          </CardFooter>
         </Card>
       )}
     </div>

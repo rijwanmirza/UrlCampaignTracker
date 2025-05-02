@@ -167,6 +167,9 @@ function Router() {
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
           </Route>
+          <Route path="/traffic-generator">
+            <TrafficGeneratorControlPage />
+          </Route>
           <Route>
             <NotFound />
           </Route>
