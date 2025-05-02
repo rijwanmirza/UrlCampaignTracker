@@ -1,0 +1,118 @@
+Detailed 8-Phase Implementation Plan for Traffic Generator
+Phase 1: Database Schema & Structure Setup
+Add trafficGeneratorEnabled boolean field to campaigns table
+Add trafficGeneratorState enum (IDLE, WAITING, CONDITION_ONE, CONDITION_TWO)
+Add trafficGeneratorWaitStartTime timestamp to track when pause started
+Add trafficGeneratorWaitMinutes integer field (default: 2) for configurable wait
+Add budgetedUrlIds array field to track URLs with budget allocated
+Add pendingUrlBudgets JSON field for queued budget updates
+Add lastBudgetUpdateTime timestamp field for budget tracking
+Create migration script for these schema changes
+Update shared schema.ts with new field definitions
+Apply schema changes to database
+Phase 2: Core Framework & Utility Functions
+Create traffic-generator.ts file with proper structure
+Add initialization function to run on server startup
+Implement scheduler for minute-by-minute checks
+Build function to fetch enabled campaigns
+Create utility functions:
+waitForMinutes() - handle wait timing
+getTodayEndTime() - generate 23:59 UTC time
+getCurrentUtcTime() - get current UTC time
+isHighBudgetCampaign() - detect if budget ≥ $50
+calculateRequiredBudget() - campaign price/1000 × remaining clicks
+getRemainingClicks() - get current remaining clicks
+trackBudgetedUrl() - mark URL as having received budget
+hasUrlBeenBudgeted() - check if URL already received budget
+Connect with TrafficStar API for real-time status checks
+Implement comprehensive logging for all operations
+Phase 3: Post-Pause Wait & Check Logic
+Create handler for campaigns that have just been paused
+Implement 2-minute wait functionality (configurable)
+Build timestamp tracking for pause events
+Create mechanism to check TrafficStar spent value
+Implement decision logic:
+If spent < $10: Move to Condition #1
+If spent ≥ $10: Move to Condition #2
+Build state machine to manage transitions between states
+Implement state persistence to database
+Add recovery for interrupted state transitions
+Create detection for when campaigns are paused
+Build verification for time elapsed since pause
+Phase 4: Condition #1 Implementation (<$10)
+Create dedicated handler for spent value < $10 condition
+Implement remaining clicks check:
+If clicks > 15,000: Start campaign
+Set end time to 23:59 UTC
+Build continuous monitoring system:
+Check clicks every minute
+Detect when clicks ≤ 5,000
+Create automatic pause mechanism when threshold reached
+Implement cycle restart (wait 2 minutes, check spent, repeat)
+Add verification that campaign status is correct
+Build safeguards against endless start/pause cycles
+Implement proper logging for all Condition #1 actions
+Create transition to Condition #2 when spent value changes
+Phase 5: Condition #2 Implementation (≥$10)
+Create dedicated handler for spent value ≥ $10 condition
+Implement budget calculation formula:
+Calculate: campaign price/1000 × remaining clicks
+Create daily budget update functionality:
+Get current daily budget from TrafficStar
+Add calculated budget to daily budget
+Update via TrafficStar API
+Build URL budget tracking system:
+Track which URLs have had budget allocated
+Prevent duplicate budget allocations
+Implement campaign start with end time set to 23:59 UTC
+Add verification that campaign status is correct
+Create budget verification system
+Build proper logging for all Condition #2 actions
+Phase 6: Advanced Budget Management
+Implement detection for high budget campaigns (≥$50)
+Create two distinct budget update paths:
+For daily budget < $50:
+Implement 10-minute periodic checks
+Process new URLs as they come in
+Calculate and add budget for each URL
+For daily budget ≥ $50:
+Disable 10-minute updates
+Create wait mechanism for spent to reach threshold
+Calculate threshold as (current budget - $1)
+Implement spent value monitoring
+Add all pending URL budgets when threshold reached
+Build pending URL budget queue system
+Create budget update history tracking
+Implement budget cap protection
+Add safeguards against budget calculation errors
+Phase 7: Toggle & Real-Time Status Verification
+Implement enable/disable toggle functionality:
+When enabled: Check campaign status, start process
+When disabled: Stop all monitoring, reset state
+Create real-time status verification system:
+Check every minute if campaign status matches expected
+For started campaigns: Verify they are actually running
+For paused campaigns: Verify they are actually paused
+Build automatic correction for mismatched statuses:
+Send additional API calls to correct status if needed
+Implement error recovery for API failures
+Create comprehensive state tracking
+Add detailed logging for all status changes
+Build proper error handling throughout
+Phase 8: User Interface & Final Integration
+Create toggle switch for enabling/disabling Traffic Generator
+Add input field for configurable wait time (default: 2 minutes)
+Build status indicator showing current state
+Create display for current condition being applied (1 or 2)
+Implement displays for key metrics:
+Remaining clicks
+Spent value
+Budget information
+Current state and wait time
+Add real-time updates for dashboard
+Perform comprehensive testing of all workflows
+Create detailed documentation
+Build admin monitoring capabilities
+Implement final performance optimizations
+Complete end-to-end verification of the entire system
+This 8-phase plan covers all requirements for the Traffic Generator feature, ensuring each aspect is properly implemented and tested.
