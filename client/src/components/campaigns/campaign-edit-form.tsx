@@ -527,6 +527,45 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   <p className="text-sm text-muted-foreground">
                     When enabled, Traffic Generator will automatically manage traffic for this campaign.
                   </p>
+                  
+                  {/* Wait Time Minutes Input */}
+                  {form.watch("trafficGeneratorEnabled") && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <FormField
+                        control={form.control}
+                        name="trafficGeneratorWaitMinutes"
+                        render={({ field }) => (
+                          <FormItem className="grid grid-cols-2 gap-2 items-center">
+                            <FormLabel className="text-sm">Wait time after pause:</FormLabel>
+                            <div className="flex items-center">
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="1"
+                                  max="60"
+                                  step="1"
+                                  className="w-16 text-center"
+                                  {...field}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (!isNaN(value) && value >= 1 && value <= 60) {
+                                      field.onChange(value);
+                                    }
+                                  }}
+                                  value={field.value}
+                                />
+                              </FormControl>
+                              <span className="ml-2 text-sm text-gray-500">minutes</span>
+                            </div>
+                            <FormDescription className="col-span-2 text-xs">
+                              Minutes to wait after pausing a campaign before checking spent value (1-60).
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               

@@ -203,11 +203,12 @@ export async function processTrafficGenerator(campaignId: number) {
             })
             .where(eq(campaigns.id, campaign.id));
           
-          // Schedule a post-pause spent value check after 2 minutes
-          console.log(`⏱️ Scheduling post-pause spent value check for campaign ${campaign.id} in 2 minutes...`);
+          // Get the custom wait time (default to 2 minutes if not set)
+          const waitMinutes = campaign.trafficGeneratorWaitMinutes || 2;
+          console.log(`⏱️ Scheduling post-pause spent value check for campaign ${campaign.id} in ${waitMinutes} minutes...`);
           
           setTimeout(async () => {
-            console.log(`⏰ Running scheduled post-pause spent value check for campaign ${campaign.id}`);
+            console.log(`⏰ Running scheduled post-pause spent value check for campaign ${campaign.id} after ${waitMinutes} minutes`);
             
             try {
               // Get the spent value
@@ -222,7 +223,7 @@ export async function processTrafficGenerator(campaignId: number) {
             } catch (error) {
               console.error(`❌ Error in post-pause spent value check for campaign ${campaign.id}:`, error);
             }
-          }, 2 * 60 * 1000); // 2 minutes in milliseconds
+          }, waitMinutes * 60 * 1000); // Convert minutes to milliseconds
         } else {
           console.error(`❌ Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
         }
