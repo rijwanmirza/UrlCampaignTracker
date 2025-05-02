@@ -728,29 +728,41 @@ class TrafficStarService {
   }
   
   /**
-   * Pause a campaign
+   * Pause a campaign using the batch pause API endpoint
+   * 
+   * This method uses the correct v2 API endpoint for pausing campaigns
+   * as documented in trafficstar-api-docs.ts
+   * 
+   * PUT /v2/campaigns/pause with campaign_ids array
    */
   async pauseCampaign(id: number): Promise<void> {
     try {
       const token = await this.ensureToken();
       
-      let success = false;
-      let lastError = null;
+      // Use the correct V2 API endpoint for batch pausing campaigns
+      const baseUrl = 'https://api.trafficstars.com/v2';
+      const endpoint = `${baseUrl}/campaigns/pause`;
       
-      // Try different endpoint patterns
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          console.log(`Trying to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-          const response = await axios.post(`${baseUrl}/campaigns/${id}/pause`, {}, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            },
-          });
+      console.log(`Trying to pause campaign ${id} using V2 batch API: ${endpoint}`);
+      console.log(`Using campaign_ids array with ID: ${id}`);
+      
+      try {
+        const response = await axios.put(endpoint, {
+          campaign_ids: [id]
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+        });
+        
+        if (response.status === 200) {
+          const results = response.data;
+          console.log(`Pause campaign API response:`, results);
           
-          if (response.status === 200 || response.status === 201 || response.status === 204) {
-            console.log(`Successfully paused campaign ${id}`);
-            success = true;
+          if (results.success && results.success.includes(id)) {
+            console.log(`Successfully paused campaign ${id} using V2 batch API`);
             
             // Update our database record
             await db.update(trafficstarCampaigns)
@@ -760,19 +772,48 @@ class TrafficStarService {
                 updatedAt: new Date()
               })
               .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            
-            break;
+              
+            return;
+          } else if (results.failed && results.failed.includes(id)) {
+            console.error(`API reported failure pausing campaign ${id}`);
+            throw new Error(`API reported failure pausing campaign ${id}`);
           }
-        } catch (error) {
-          console.log(`Failed to pause campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}/pause`);
-          lastError = error;
-          // Continue to next attempt
         }
         
-        // Try alternate endpoint pattern
+        // Try old methods if the V2 API didn't work
+        
+        // Method 1: Try individual pause endpoint
+        console.log(`Trying individual pause endpoint: ${baseUrl}/campaigns/${id}/pause`);
+        const response1 = await axios.post(`${baseUrl}/campaigns/${id}/pause`, {}, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          },
+        });
+        
+        if (response1.status === 200 || response1.status === 201 || response1.status === 204) {
+          console.log(`Successfully paused campaign ${id} using individual pause endpoint`);
+          
+          // Update our database record
+          await db.update(trafficstarCampaigns)
+            .set({
+              active: false,
+              status: 'paused',
+              updatedAt: new Date()
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+            
+          return;
+        }
+      } catch (error) {
+        console.error(`Error pausing campaign ${id}:`, error);
+        
+        // Try v1.1 API which we know works for reading campaigns
         try {
-          console.log(`Trying alternate endpoint to pause campaign ${id}: ${baseUrl}/campaigns/${id}`);
-          const response = await axios.put(`${baseUrl}/campaigns/${id}`, {
+          const v1BaseUrl = 'https://api.trafficstars.com/v1.1';
+          console.log(`Trying v1.1 API to pause campaign ${id}: ${v1BaseUrl}/campaigns/${id}`);
+          
+          const response = await axios.put(`${v1BaseUrl}/campaigns/${id}`, {
             active: false
           }, {
             headers: {
@@ -783,8 +824,7 @@ class TrafficStarService {
           });
           
           if (response.status === 200 || response.status === 201 || response.status === 204) {
-            console.log(`Successfully paused campaign ${id} using alternate endpoint`);
-            success = true;
+            console.log(`Successfully paused campaign ${id} using v1.1 API`);
             
             // Update our database record
             await db.update(trafficstarCampaigns)
@@ -794,18 +834,15 @@ class TrafficStarService {
                 updatedAt: new Date()
               })
               .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            
-            break;
+              
+            return;
           }
-        } catch (error) {
-          console.log(`Failed to pause campaign ${id} using alternate endpoint: ${baseUrl}/campaigns/${id}`);
-          // Continue to next attempt
+        } catch (innerError) {
+          console.error(`Error pausing campaign ${id} with v1.1 API:`, innerError);
         }
       }
       
-      if (!success) {
-        throw new Error(`Failed to pause campaign ${id} after trying all endpoints. Last error: ${lastError}`);
-      }
+      throw new Error(`Failed to pause campaign ${id} after trying all API methods`);
     } catch (error) {
       console.error(`Error pausing campaign ${id}:`, error);
       throw new Error(`Failed to pause campaign ${id}`);

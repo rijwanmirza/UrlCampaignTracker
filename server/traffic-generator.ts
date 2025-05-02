@@ -99,22 +99,22 @@ export async function processTrafficGenerator(campaignId: number) {
     
     console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} status: ${status}`);
     
-    // Just log the status for now until we fix the pause API call
+    // Now we have the correct API implemented, so we can resume pausing campaigns
     if (status === 'active') {
       console.log(`✓ CORRECTLY DETECTED: TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE!`);
-      console.log(`⚠️ SKIPPING PAUSE ACTION: API configuration needed - see logs above for details`);
+      console.log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} using updated API endpoints...`);
       
-      // TEMPORARY: Log success instead of actually pausing
-      // This will let you see the active status is working correctly
-      console.log(`✅ STATUS DETECTION WORKING CORRECTLY - Your campaign is correctly showing as ACTIVE`);
-      
-      // DISABLED until API is fixed:
-      // const success = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
-      // if (success) {
-      //   console.log(`Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-      // } else {
-      //   console.error(`Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-      // }
+      // Try to pause the campaign using our improved API endpoints
+      try {
+        const success = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+        if (success) {
+          console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        } else {
+          console.error(`❌ Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        }
+      } catch (error) {
+        console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
+      }
     } else {
       console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already ${status}, no action needed`);
     }
