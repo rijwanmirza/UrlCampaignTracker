@@ -1,168 +1,139 @@
 /**
- * Traffic Generator Module
+ * Traffic Generator Post-Pause Feature
  * 
- * This module manages the traffic generator functionality,
- * which checks TrafficStar campaign status and manages campaigns
- * based on the traffic generator settings.
+ * This file implements the Traffic Generator post-pause feature, which:
+ * 1. Checks campaign status after pausing
+ * 2. Waits for a configurable time (default: 2 minutes)
+ * 3. Checks TrafficStar spent value 
+ * 4. Applies different actions based on spent value:
+ *    - If < $10: Uses remaining clicks thresholds to start/pause campaigns
+ *    - If ≥ $10: Uses budget management approach
+ * 
+ * See docs/traffic-generator.md for full implementation plan and details.
  */
 
-import { trafficStarService } from './trafficstar-service-new';
 import { db } from './db';
-import { campaigns } from '../shared/schema';
+import { campaigns } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { trafficStarService } from './trafficstar-service-new';
+import { storage } from './storage';
+// Use the log function from vite.ts instead of a separate logger
+import { log } from './vite';
 
-/**
- * Get TrafficStar campaign status - ALWAYS uses real-time data
- * @param trafficstarCampaignId The TrafficStar campaign ID
- * @returns The campaign status (active, paused, etc.) or null if error
- */
-export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string) {
-  try {
-    console.log(`TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign ${trafficstarCampaignId}`);
-    
-    // Use trafficStarService to get campaign status - uses getCampaignStatus to ensure real-time data
-    const status = await trafficStarService.getCampaignStatus(Number(trafficstarCampaignId));
-    
-    if (!status) {
-      console.error(`Failed to get TrafficStar campaign ${trafficstarCampaignId} status`);
-      return null;
-    }
-    
-    // Return the campaign status (active or paused)
-    console.log(`TRAFFIC-GENERATOR: TrafficStar campaign ${trafficstarCampaignId} REAL status is ${status.status}, active=${status.active}`);
-    
-    // Convert status object to string status for compatibility with existing code
-    return status.active ? 'active' : 'paused';
-  } catch (error) {
-    console.error('Error getting TrafficStar campaign status:', error);
-    return null;
-  }
+// State enum for traffic generator
+export enum TrafficGeneratorState {
+  IDLE = 'idle',
+  WAITING = 'waiting',
+  CONDITION_ONE = 'condition1',
+  CONDITION_TWO = 'condition2'
 }
 
 /**
- * Pause TrafficStar campaign
- * @param trafficstarCampaignId The TrafficStar campaign ID
- * @returns True if the pause operation was successful, false otherwise
+ * Initialize the Traffic Generator scheduler
+ * This runs on server startup to set up periodic checks
  */
-export async function pauseTrafficStarCampaign(trafficstarCampaignId: string) {
-  try {
-    // Use trafficStarService to pause campaign
-    const result = await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
-    
-    if (!result) {
-      console.error(`Failed to pause TrafficStar campaign ${trafficstarCampaignId}`);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error pausing TrafficStar campaign:', error);
-    return false;
-  }
+export async function initializeTrafficGenerator() {
+  log('Initializing Traffic Generator scheduler');
+  
+  // Run an immediate check on startup
+  await runTrafficGeneratorCheck();
+  
+  // Schedule checks every 5 minutes
+  setInterval(async () => {
+    log('Running scheduled traffic generator check (every 5 minutes)');
+    await runTrafficGeneratorCheck();
+  }, 5 * 60 * 1000);
+  
+  log('Traffic Generator scheduler initialized successfully');
 }
 
 /**
- * Process Traffic Generator for a campaign
- * @param campaignId The campaign ID
+ * Main function to run the Traffic Generator check
+ * Finds all campaigns with the feature enabled and processes them
  */
-export async function processTrafficGenerator(campaignId: number) {
+export async function runTrafficGeneratorCheck() {
   try {
-    // Get campaign details
-    const campaign = await db.query.campaigns.findFirst({
-      where: (campaign, { eq }) => eq(campaign.id, campaignId)
-    });
-    
-    if (!campaign) {
-      console.log(`Campaign ${campaignId} not found for traffic generator processing`);
-      return;
-    }
-    
-    // Check if traffic generator is enabled
-    if (!campaign.trafficGeneratorEnabled) {
-      console.log(`Traffic generator is disabled for campaign ${campaignId}`);
-      return;
-    }
-    
-    // Check if campaign has TrafficStar campaign ID
-    if (!campaign.trafficstarCampaignId) {
-      console.log(`Campaign ${campaignId} has no TrafficStar campaign ID`);
-      return;
-    }
-    
-    // Get TrafficStar campaign status
-    const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
-    
-    if (!status) {
-      console.error(`Failed to get status for TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-      return;
-    }
-    
-    console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} status: ${status}`);
-    
-    // Now we have the correct API implemented, so we can resume pausing campaigns
-    if (status === 'active') {
-      console.log(`✓ CORRECTLY DETECTED: TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE!`);
-      console.log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} using updated API endpoints...`);
-      
-      // Try to pause the campaign using our improved API endpoints
-      try {
-        const success = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
-        if (success) {
-          console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-        } else {
-          console.error(`❌ Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-        }
-      } catch (error) {
-        console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
-      }
-    } else {
-      console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already ${status}, no action needed`);
-    }
-  } catch (error) {
-    console.error('Error processing traffic generator for campaign:', campaignId, error);
-  }
-}
-
-/**
- * Run traffic generator for all campaigns
- * This function should be scheduled to run periodically
- */
-export async function runTrafficGeneratorForAllCampaigns() {
-  try {
-    // Get all campaigns with traffic generator enabled
-    const campaignsWithGenerator = await db.select()
+    // Find all campaigns with traffic generator enabled
+    const enabledCampaigns = await db
+      .select()
       .from(campaigns)
       .where(eq(campaigns.trafficGeneratorEnabled, true));
     
-    console.log(`Processing ${campaignsWithGenerator.length} campaigns with traffic generator enabled`);
+    log(`Processing ${enabledCampaigns.length} campaigns with traffic generator enabled`);
     
     // Process each campaign
-    for (const campaign of campaignsWithGenerator) {
-      await processTrafficGenerator(campaign.id);
+    for (const campaign of enabledCampaigns) {
+      await processTrafficGeneratorCampaign(campaign);
     }
   } catch (error) {
-    console.error('Error running traffic generator for all campaigns:', error);
+    log(`Error running traffic generator check: ${error}`, 'error');
   }
 }
 
 /**
- * Initialize Traffic Generator scheduler
- * This function sets up a periodic job to run the traffic generator
+ * Process a single campaign with Traffic Generator
+ * This is the entry point for handling an individual campaign
  */
-export function initializeTrafficGeneratorScheduler() {
-  console.log('Initializing Traffic Generator scheduler');
-  
-  // Check all campaigns with traffic generator enabled every 5 minutes
-  const intervalMinutes = 5;
-  const intervalMs = intervalMinutes * 60 * 1000;
-  
-  // Set up interval to run traffic generator
-  setInterval(() => {
-    console.log(`Running scheduled traffic generator check (every ${intervalMinutes} minutes)`);
-    runTrafficGeneratorForAllCampaigns();
-  }, intervalMs);
-  
-  // Also run immediately on startup
-  console.log('Running initial traffic generator check on startup');
-  runTrafficGeneratorForAllCampaigns();
+async function processTrafficGeneratorCampaign(campaign: any) {
+  try {
+    // If the campaign has no TrafficStar ID, skip it
+    if (!campaign.trafficstarCampaignId) {
+      logger.warn(`Campaign ${campaign.id} has no TrafficStar ID, skipping traffic generator`);
+      return;
+    }
+    
+    logger.info(`TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign ${campaign.trafficstarCampaignId}`);
+    
+    // Get the REAL-TIME status of the TrafficStar campaign (no caching)
+    const status = await getRealTimeTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+    logger.info(`TRAFFIC-GENERATOR: TrafficStar campaign ${campaign.trafficstarCampaignId} REAL status is ${status.status}, active=${status.active}`);
+    
+    // TODO: Implement post-pause workflow logic for Phase 3
+
+  } catch (error) {
+    logger.error(`Error processing traffic generator for campaign ${campaign.id}`, { error });
+  }
 }
+
+/**
+ * Get the real-time status of a TrafficStar campaign
+ * This bypasses any caching to ensure we have the actual current status
+ */
+async function getRealTimeTrafficStarCampaignStatus(campaignId: string): Promise<{ status: string, active: boolean }> {
+  try {
+    logger.info(`REAL-TIME STATUS CHECK: Getting current status for TrafficStar campaign ${campaignId}`);
+    logger.info(`REAL-TIME CHECK: Bypassing cache to get ACTUAL status of TrafficStar campaign ${campaignId}`);
+    
+    const campaign = await trafficStarService.getCampaign(campaignId, true);
+    
+    if (!campaign) {
+      logger.error(`Failed to get real-time status for TrafficStar campaign ${campaignId}`);
+      return { status: 'unknown', active: false };
+    }
+    
+    // Determine if campaign is active based on status
+    const isActive = campaign.status === 'active';
+    
+    logger.info(`REAL STATUS: TrafficStar campaign ${campaignId} status=${campaign.status}, active=${isActive}`);
+    
+    return {
+      status: campaign.status,
+      active: isActive
+    };
+  } catch (error) {
+    logger.error(`Error getting real-time status for TrafficStar campaign ${campaignId}`, { error });
+    return { status: 'error', active: false };
+  }
+}
+
+// --- Phase 2: Core Utility Functions (To be implemented) ---
+
+// --- Phase 3: Wait & Check Logic (To be implemented) ---
+
+// --- Phase 4: Condition #1 Implementation (To be implemented) ---
+
+// --- Phase 5: Condition #2 Implementation (To be implemented) ---
+
+// --- Phase 6: Advanced Budget Management (To be implemented) ---
+
+// --- Phase 7: Campaign Toggle & UI (API endpoints - To be implemented) ---

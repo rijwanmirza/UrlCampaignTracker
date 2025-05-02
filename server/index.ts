@@ -9,7 +9,7 @@ import { initializeTrafficStar } from "./init-trafficstar";
 import { trafficStarService } from "./trafficstar-service-new";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
-import { initializeTrafficGeneratorScheduler } from "./traffic-generator";
+import { initializeTrafficGenerator } from "./traffic-generator";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
