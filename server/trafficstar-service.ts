@@ -531,7 +531,8 @@ class TrafficStarService {
         console.log(`API status check completed - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
         
         // If already paused, skip the API call since it's not needed
-        if (apiCampaign.active === false || apiCampaign.status === 'paused') {
+        // A campaign is considered paused if active is false AND status is paused/enabled 
+        if (apiCampaign.active === false && (apiCampaign.status === 'paused' || apiCampaign.status === 'enabled')) {
           console.log(`Note: Campaign ${id} is already paused according to TrafficStar API - skipping redundant API call`);
           needsExplicitPauseCall = false;
           
@@ -680,8 +681,9 @@ class TrafficStarService {
         
         console.log(`API status check completed - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
         
-        // If already active, skip the API call since it's not needed
-        if (apiCampaign.active === true || apiCampaign.status === 'enabled') {
+        // If already active, skip the API call since it's not needed 
+        // A campaign is considered active only if active=true AND status=enabled
+        if (apiCampaign.active === true && apiCampaign.status === 'enabled') {
           console.log(`Note: Campaign ${id} is already active according to TrafficStar API - skipping redundant API call`);
           needsExplicitActivationCall = false;
           
