@@ -48,6 +48,8 @@ const campaignEditSchema = z.object({
   trafficstarCampaignId: z.string().optional(),
   // Auto-management has been removed
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
+  // Traffic Generator fields
+  trafficGeneratorEnabled: z.boolean().default(false),
   // Traffic Sender fields removed
 });
 
@@ -82,6 +84,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       trafficstarCampaignId: campaign.trafficstarCampaignId || "",
       // autoManageTrafficstar has been removed
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
+      // Traffic Generator settings
+      trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
       // Traffic Sender settings removed
     },
   });
@@ -479,6 +483,37 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                     When a TrafficStar campaign is selected:<br />
                     • Daily spent value is tracked every 2 minutes<br />
                     • Daily budget is set to $10.15 at specified UTC time
+                  </p>
+                </div>
+              </div>
+              
+              {/* Traffic Generator Section */}
+              <div className="rounded-lg border p-3 mt-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Traffic Generator</h4>
+                    <FormField
+                      control={form.control}
+                      name="trafficGeneratorEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">
+                              {field.value ? "Enabled" : "Disabled"}
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, Traffic Generator will automatically manage traffic for this campaign.
                   </p>
                 </div>
               </div>

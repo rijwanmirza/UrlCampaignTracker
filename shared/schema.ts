@@ -39,6 +39,8 @@ export const campaigns = pgTable("campaigns", {
   dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent value from TrafficStar
   dailySpentDate: timestamp("daily_spent_date", { mode: 'date' }).defaultNow(), // Date of the daily spent value (date only)
   lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time spent was checked
+  // Traffic Generator feature
+  trafficGeneratorEnabled: boolean("traffic_generator_enabled").default(false), // Enable/disable traffic generator
   // DEPRECATED: Traffic Sender feature has been removed
   // Keeping these fields in the schema for backward compatibility but they are no longer used
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
@@ -91,6 +93,8 @@ export const updateCampaignSchema = z.object({
   autoManageTrafficstar: z.boolean().optional(), // DEPRECATED
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
+  // Traffic Generator feature
+  trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
   // DEPRECATED: Traffic Sender fields - no longer in use
   trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED
