@@ -6,7 +6,7 @@
  * based on the traffic generator settings.
  */
 
-import { trafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service-new';
 import { db } from './db';
 import { campaigns } from '../shared/schema';
 import { eq } from 'drizzle-orm';

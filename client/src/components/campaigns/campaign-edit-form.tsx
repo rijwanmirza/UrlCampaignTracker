@@ -57,7 +57,7 @@ type CampaignEditValues = z.infer<typeof campaignEditSchema>;
 
 interface CampaignEditFormProps {
   campaign: Campaign;
-  onSuccess?: (campaign: Campaign) => void;
+  onSuccess?: (campaign: Campaign | any) => void;
 }
 
 export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFormProps) {
@@ -183,7 +183,17 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       
       // Call onSuccess callback if provided
       if (onSuccess) {
-        onSuccess(data);
+        // Parse the response data if it's a Response object
+        if (data instanceof Response) {
+          data.json().then(parsedData => {
+            onSuccess(parsedData);
+          }).catch(error => {
+            console.error('Error parsing response:', error);
+          });
+        } else {
+          // Otherwise pass the data directly
+          onSuccess(data);
+        }
       }
     },
     onError: (error) => {
