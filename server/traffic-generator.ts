@@ -133,7 +133,9 @@ async function processTrafficGeneratorCampaign(campaign: Campaign) {
       
       // Start waiting period
       const waitStartTime = new Date();
-      const waitMinutes = 2; // Default wait time of 2 minutes
+      const waitMinutes = campaign.trafficGeneratorWaitMinutes || 2; // Use configured wait time or default to 2
+      
+      log(`Using configured wait time of ${waitMinutes} minutes`, 'info');
       
       // Update campaign state to WAITING
       await updateCampaignTrafficGeneratorState(
@@ -769,17 +771,36 @@ export async function toggleTrafficGenerator(campaignId: number, enabled: boolea
   try {
     log(`Setting Traffic Generator for campaign ${campaignId} to ${enabled ? 'enabled' : 'disabled'}`, 'info');
     
-    // Update the campaign
+    // Get the current campaign
+    const campaign = await storage.getCampaign(campaignId);
+    if (!campaign) {
+      throw new Error(`Campaign ${campaignId} not found`);
+    }
+    
+    // If we're enabling Traffic Generator, pause the campaign in TrafficStar first
+    if (enabled && campaign.trafficstarCampaignId) {
+      log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} before enabling Traffic Generator`, 'info');
+      try {
+        // Pause the campaign in TrafficStar
+        await trafficStarService.updateCampaignStatus(campaign.trafficstarCampaignId, 'paused');
+        log(`TrafficStar campaign ${campaign.trafficstarCampaignId} paused successfully`, 'info');
+      } catch (error) {
+        log(`Warning: Failed to pause TrafficStar campaign: ${error}`, 'warn');
+        // Continue anyway - we'll let the Traffic Generator handle it
+      }
+    }
+    
+    // Update the campaign in the database
     await db
       .update(campaigns)
       .set({ 
         trafficGeneratorEnabled: enabled,
-        // If enabling, set to WAITING state to immediately start processing
-    // If disabling, reset all Traffic Generator state
+        // If enabling, set to WAITING state and use the specified wait time
+        // If disabling, reset all Traffic Generator state
         ...(enabled ? { 
           trafficGeneratorState: TrafficGeneratorState.WAITING,
-          trafficGeneratorWaitStartTime: new Date(Date.now() - 3 * 60 * 1000), // Set wait start time to 3 minutes ago to ensure it processes immediately
-          trafficGeneratorWaitMinutes: 2 // Default 2 minute wait time
+          trafficGeneratorWaitStartTime: new Date(), // Set to now - we'll actually wait the configured time
+          trafficGeneratorWaitMinutes: campaign.trafficGeneratorWaitMinutes || 2 // Use configured wait time or default to 2
         } : {
           trafficGeneratorState: TrafficGeneratorState.IDLE,
           trafficGeneratorWaitStartTime: null,
