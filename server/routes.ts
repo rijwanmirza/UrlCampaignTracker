@@ -900,6 +900,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
       
+      // Log wait minutes value if provided
+      if (req.body.trafficGeneratorWaitMinutes !== undefined) {
+        console.log('🔍 DEBUG: Traffic Generator wait minutes value:', req.body.trafficGeneratorWaitMinutes, 'type:', typeof req.body.trafficGeneratorWaitMinutes);
+      }
+      
       // Track if traffic generator setting was changed
       const trafficGeneratorStateChanged = originalTrafficGeneratorEnabled !== undefined;
       

@@ -511,6 +511,22 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting trafficGeneratorEnabled to:', updateData.trafficGeneratorEnabled, '(original value:', updateCampaign.trafficGeneratorEnabled, ')');
     }
     
+    // Handle Traffic Generator wait minutes
+    if (updateCampaign.trafficGeneratorWaitMinutes !== undefined) {
+      // Make sure the wait time is between 1 and 60 minutes
+      const waitMinutes = typeof updateCampaign.trafficGeneratorWaitMinutes === 'string' 
+        ? parseInt(updateCampaign.trafficGeneratorWaitMinutes, 10) 
+        : updateCampaign.trafficGeneratorWaitMinutes;
+      
+      // Default to 2 minutes if invalid
+      updateData.trafficGeneratorWaitMinutes = !isNaN(waitMinutes) && waitMinutes >= 1 && waitMinutes <= 60 
+        ? waitMinutes 
+        : 2;
+      
+      console.log('🔍 DEBUG: Setting trafficGeneratorWaitMinutes to:', updateData.trafficGeneratorWaitMinutes, 
+        '(original value:', updateCampaign.trafficGeneratorWaitMinutes, ')');
+    }
+    
     // Handle Traffic Sender fields
     if (updateCampaign.trafficSenderEnabled !== undefined) {
       // CRITICAL FIX: Make sure we explicitly set this as a boolean to prevent any type conversion issues
