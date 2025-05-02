@@ -26,6 +26,7 @@ import { Loader2, AlertTriangle } from "lucide-react";
 import DecimalMultiplierMigration from "@/components/system/decimal-multiplier-migration";
 import TrafficSenderMigration from "@/components/system/traffic-sender-migration";
 import { ServerMonitor } from "@/components/server-monitor/server-stats";
+import { TrafficGeneratorManager } from "@/components/campaigns/traffic-generator-manager";
 
 export default function SystemSettings() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -102,6 +103,12 @@ export default function SystemSettings() {
         <h2 className="text-xl font-bold mb-4">Database Migrations</h2>
         <DecimalMultiplierMigration />
         <TrafficSenderMigration />
+      </div>
+      
+      {/* Traffic Generator Controls */}
+      <div className="mb-10">
+        <h2 className="text-xl font-bold mb-4">Traffic Generator Controls</h2>
+        <TrafficGeneratorManager />
       </div>
       
       {/* System cleanup section */}
