@@ -1,0 +1,141 @@
+Edit a campaign
+curl -X PATCH "https://api.trafficstars.com/v1.1/campaigns/1"
+ -H "Authorization: Bearer oauth2_token" \
+ -H "Content-Type: application/json" \
+ -d '{"price": 0.2}'
+Click to copy
+Status: 200 OK
+
+{
+    "compromised": false,
+    "created_at": "2017-01-31T14:22:21Z",
+    "ecpm": 0,
+    "enabled_subids": [
+        "hash_subID_1",
+        "hash_subID_2"
+    ],
+    "disabled_subids": null,
+    "exclude_ip_range": null,
+    "flat_rate": null,
+    "flat_rate_amount": null,
+    "format_id": 1,
+    "hours_targeting": "111111111111111111",
+    "id": 1,
+    "ip_range": null,
+    "is_traced": false,
+    "categories": [
+        1,
+        2
+    ],
+    "exclude_categories": [],
+    "keywords": [
+        "key",
+        "word"
+    ],
+    "countries": [
+        "JP"
+    ],
+    "geo_targets": [
+        "US.1222",
+        "UK.4332"
+    ],
+    "browsers": [
+        1,
+        2,
+        3
+    ],
+    "browser_versions": [
+        1,
+        2,
+        3
+    ],
+    "oses": [
+        1,
+        2,
+        3
+    ],
+    "os_versions": [
+        1,
+        2,
+        3
+    ],
+    "devices": [
+        1,
+        2,
+        3
+    ],
+    "device_brands": [
+        1,
+        2,
+        3
+    ],
+    "device_models": [
+        1,
+        2,
+        3
+    ],
+    "device_release_date_offset": 3,
+    "device_price_on_release_from": 100,
+    "device_price_on_release_to": 500,
+    "backup": false,
+    "exclusive": false,
+    "max_daily": 1000,
+    "use_total_budget": false,
+    "total_budget": 0,
+    "name": "My campaign",
+    "price": 0.2,
+    "price_mode": null,
+    "allow_setting_any_price": false,
+    "price_rtb": 0.1,
+    "disable_rtb": false,
+    "pricing_model": "cpm",
+    "private_browsing": null,
+    "reject_comment": "",
+    "reject_reason": null,
+    "schedule_end_time": "",
+    "schedule_start_time": "2017-01-31 00:00:00",
+    "schedule_timezone": 0,
+    "status": "unapproved",
+    "approved": "rejected",
+    "active": true,
+    "is_archived": false,
+    "no_funds": false,
+    "stretch_time": false,
+    "timezone": 0,
+    "type": "image",
+    "last_note": "some comment here",
+    "is_prime": false,
+    "traffic_type": "ron",
+    "traffic_source_type": "direct",
+    "network_traffic_type": "proxy",
+    "push_format_options": "all",
+    "push_subscription_interval": "any",
+    "test_period": false,
+    "test_period_budget": 0,
+    "retargeting_list_id": "a790496f-7ca3-46eb-a817-fa369cef12e1",
+    "native_creatives_limit": 0,
+    "postback_payout_modifier": false,
+    "postback_payout_modifier_percent": 0,
+    "enabled_applications": null,
+    "disabled_applications": null,
+    "adspots": [
+        "56a493fbfca4415bb05fea4c1b3d9d90",
+        "c6163399c4cf43168d9b917b413e0a0a"
+    ],
+    "spots": [
+        22762,
+        63
+    ],
+    "updated_at": "2017-01-31T14:22:21Z",
+    "user_id": 2,
+    "weight": 5
+}
+Click to copy
+HTTP Request
+Header	Description
+Authorization	bearer access_token
+Content-Type	application/json
+> PATCH /v1.1/campaigns/{id}
+
+Form parameters
+Same as in create campaign API

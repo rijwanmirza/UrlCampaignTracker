@@ -729,11 +729,13 @@ class TrafficStarService {
   
   /**
    * Pause a campaign using the batch pause API endpoint
+   * AND set its end time to the current UTC date/time
    * 
    * This method uses the correct v2 API endpoint for pausing campaigns
    * as documented in trafficstar-api-docs.ts
    * 
    * PUT /v2/campaigns/pause with campaign_ids array
+   * PATCH /v1.1/campaigns/{id} with schedule_end_time
    */
   async pauseCampaign(id: number): Promise<void> {
     try {
@@ -745,6 +747,8 @@ class TrafficStarService {
       
       console.log(`Trying to pause campaign ${id} using V2 batch API: ${endpoint}`);
       console.log(`Using campaign_ids array with ID: ${id}`);
+      
+      let pauseSuccess = false;
       
       try {
         const response = await axios.put(endpoint, {
@@ -763,6 +767,7 @@ class TrafficStarService {
           
           if (results.success && results.success.includes(id)) {
             console.log(`Successfully paused campaign ${id} using V2 batch API`);
+            pauseSuccess = true;
             
             // Update our database record
             await db.update(trafficstarCampaigns)
@@ -772,41 +777,12 @@ class TrafficStarService {
                 updatedAt: new Date()
               })
               .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-              
-            return;
           } else if (results.failed && results.failed.includes(id)) {
             console.error(`API reported failure pausing campaign ${id}`);
-            throw new Error(`API reported failure pausing campaign ${id}`);
           }
         }
-        
-        // Try old methods if the V2 API didn't work
-        
-        // Method 1: Try individual pause endpoint
-        console.log(`Trying individual pause endpoint: ${baseUrl}/campaigns/${id}/pause`);
-        const response1 = await axios.post(`${baseUrl}/campaigns/${id}/pause`, {}, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          },
-        });
-        
-        if (response1.status === 200 || response1.status === 201 || response1.status === 204) {
-          console.log(`Successfully paused campaign ${id} using individual pause endpoint`);
-          
-          // Update our database record
-          await db.update(trafficstarCampaigns)
-            .set({
-              active: false,
-              status: 'paused',
-              updatedAt: new Date()
-            })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-            
-          return;
-        }
       } catch (error) {
-        console.error(`Error pausing campaign ${id}:`, error);
+        console.error(`Error pausing campaign ${id} with V2 API:`, error);
         
         // Try v1.1 API which we know works for reading campaigns
         try {
@@ -825,6 +801,7 @@ class TrafficStarService {
           
           if (response.status === 200 || response.status === 201 || response.status === 204) {
             console.log(`Successfully paused campaign ${id} using v1.1 API`);
+            pauseSuccess = true;
             
             // Update our database record
             await db.update(trafficstarCampaigns)
@@ -834,14 +811,62 @@ class TrafficStarService {
                 updatedAt: new Date()
               })
               .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-              
-            return;
           }
         } catch (innerError) {
           console.error(`Error pausing campaign ${id} with v1.1 API:`, innerError);
         }
       }
       
+      // Now set the end time to current UTC date/time regardless of whether pause succeeded
+      // This way even if pause fails, we still try to set the end time
+      try {
+        // Get current UTC time
+        const now = new Date();
+        
+        // Format as YYYY-MM-DD HH:MM:SS in 24-hour UTC format
+        const formattedEndTime = now.toISOString()
+          .replace('T', ' ')      // Replace 'T' with space
+          .replace(/\.\d+Z$/, ''); // Remove milliseconds and Z
+        
+        console.log(`Setting campaign ${id} end time to current UTC time: ${formattedEndTime}`);
+        
+        // Use v1.1 API for campaign edit/update
+        const v1BaseUrl = 'https://api.trafficstars.com/v1.1';
+        const editEndpoint = `${v1BaseUrl}/campaigns/${id}`;
+        
+        const patchResponse = await axios.patch(editEndpoint, {
+          schedule_end_time: formattedEndTime
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+        });
+        
+        if (patchResponse.status === 200) {
+          console.log(`Successfully set end time for campaign ${id} to ${formattedEndTime}`);
+          
+          // Update our database record with the end time
+          await db.update(trafficstarCampaigns)
+            .set({
+              scheduleEndTime: formattedEndTime,
+              updatedAt: new Date()
+            })
+            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        } else {
+          console.error(`Failed to set end time for campaign ${id}, status: ${patchResponse.status}`);
+        }
+      } catch (endTimeError) {
+        console.error(`Error setting end time for campaign ${id}:`, endTimeError);
+      }
+      
+      // If pause was successful, we're done
+      if (pauseSuccess) {
+        return;
+      }
+      
+      // If we got here, pause wasn't successful with any method
       throw new Error(`Failed to pause campaign ${id} after trying all API methods`);
     } catch (error) {
       console.error(`Error pausing campaign ${id}:`, error);

@@ -57,6 +57,38 @@
  */
 
 /**
+ * Edit a campaign
+ * 
+ * PATCH /v1.1/campaigns/{id}
+ * 
+ * This endpoint allows editing campaign properties including setting the end time.
+ * 
+ * Request example (setting price):
+ * {
+ *   "price": 0.2
+ * }
+ * 
+ * Request example (setting end time):
+ * {
+ *   "schedule_end_time": "2025-05-02 06:30:00"
+ * }
+ * 
+ * Response: Full campaign object
+ * {
+ *    "id": 1,
+ *    "name": "My campaign",
+ *    "price": 0.2,
+ *    "schedule_end_time": "2025-05-02 06:30:00",
+ *    "active": true,
+ *    ...
+ * }
+ * 
+ * Notes:
+ * - Time format must be "YYYY-MM-DD HH:MM:SS" in 24-hour format
+ * - End time should be in UTC timezone unless schedule_timezone is specified
+ */
+
+/**
  * Implementation examples
  */
 
@@ -112,6 +144,64 @@ export async function pauseCampaigns(campaignIds: number[], token: string): Prom
     return await response.json();
   } catch (error) {
     console.error('Error pausing campaigns:', error);
+    throw error;
+  }
+}
+
+// Function to update campaign end time
+export async function updateCampaignEndTime(campaignId: number, token: string, endTime?: Date): Promise<any> {
+  try {
+    // If no end time is provided, use current UTC time
+    const now = endTime || new Date();
+    
+    // Format the date as YYYY-MM-DD HH:MM:SS in 24-hour format (UTC)
+    const formattedEndTime = now.toISOString()
+      .replace('T', ' ')      // Replace 'T' with space
+      .replace(/\.\d+Z$/, ''); // Remove milliseconds and Z
+    
+    console.log(`Setting campaign ${campaignId} end time to: ${formattedEndTime} (UTC)`);
+    
+    const baseUrl = 'https://api.trafficstars.com/v1.1';
+    const endpoint = `${baseUrl}/campaigns/${campaignId}`;
+    
+    const response = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        schedule_end_time: formattedEndTime
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update campaign end time: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error updating campaign ${campaignId} end time:`, error);
+    throw error;
+  }
+}
+
+// Function to pause a campaign AND set its end time to current UTC time
+export async function pauseCampaignWithEndTime(campaignId: number, token: string): Promise<any> {
+  try {
+    // First pause the campaign
+    const pauseResult = await pauseCampaigns([campaignId], token);
+    
+    // Then set the end time to current UTC time
+    const updateResult = await updateCampaignEndTime(campaignId, token);
+    
+    return {
+      pauseResult,
+      updateResult
+    };
+  } catch (error) {
+    console.error(`Error pausing campaign ${campaignId} with end time:`, error);
     throw error;
   }
 }
