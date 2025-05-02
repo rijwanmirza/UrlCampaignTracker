@@ -48,7 +48,12 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
-import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns } from "./traffic-generator";
+import { 
+  processTrafficGenerator, 
+  runTrafficGeneratorForAllCampaigns,
+  toggleTrafficGenerator,
+  getTrafficGeneratorStatus
+} from "./traffic-generator";
 // Test routes import removed
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -2666,6 +2671,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         message: "Failed to run Traffic Generator", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Toggle Traffic Generator for a campaign
+  app.post("/api/traffic-generator/toggle/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId, 10);
+      
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid campaign ID" 
+        });
+      }
+      
+      // Get enabled value from request body
+      const { enabled } = req.body;
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: "Missing or invalid 'enabled' parameter in request body"
+        });
+      }
+      
+      // Toggle Traffic Generator
+      await toggleTrafficGenerator(campaignId, enabled);
+      
+      // Return success response
+      res.json({
+        success: true,
+        message: `Traffic Generator ${enabled ? 'enabled' : 'disabled'} for campaign ${campaignId}`,
+        status: { enabled }
+      });
+    } catch (error) {
+      console.error(`Error toggling Traffic Generator for campaign:`, error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to toggle Traffic Generator", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Get Traffic Generator status for a campaign
+  app.get("/api/traffic-generator/status/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId, 10);
+      
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid campaign ID" 
+        });
+      }
+      
+      // Get Traffic Generator status
+      const status = await getTrafficGeneratorStatus(campaignId);
+      
+      // Return status response
+      res.json({
+        success: true,
+        status
+      });
+    } catch (error) {
+      console.error(`Error getting Traffic Generator status for campaign:`, error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to get Traffic Generator status", 
         error: error instanceof Error ? error.message : String(error) 
       });
     }
