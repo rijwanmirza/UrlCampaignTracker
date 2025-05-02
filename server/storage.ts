@@ -634,6 +634,16 @@ export class DatabaseStorage implements IStorage {
       };
     });
   }
+  
+  /**
+   * Get all URLs for a campaign - alias for Traffic Generator compatibility
+   * This method is an alias to getUrls to maintain backward compatibility
+   * with the Traffic Generator feature
+   */
+  async getUrlsByCampaignId(campaignId: number): Promise<UrlWithActiveStatus[]> {
+    console.log(`Getting URLs by campaign ID ${campaignId} (Traffic Generator compatibility method)`);
+    return this.getUrls(campaignId);
+  }
 
   async getAllUrls(
     page: number = 1, 
