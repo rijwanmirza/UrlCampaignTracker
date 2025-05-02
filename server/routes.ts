@@ -890,6 +890,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('🔍 DEBUG: Campaign update request received:', JSON.stringify(req.body, null, 2));
       
+      // Make sure trafficGeneratorEnabled is always a proper boolean
+      // This ensures consistent behavior regardless of what the client sends
+      if (req.body.trafficGeneratorEnabled !== undefined) {
+        // Explicitly convert to boolean using strict comparison
+        req.body.trafficGeneratorEnabled = req.body.trafficGeneratorEnabled === true;
+      }
+      
+      console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
+      
       // CRITICAL FIX: Make sure trafficSenderEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
       if (req.body.trafficSenderEnabled !== undefined) {

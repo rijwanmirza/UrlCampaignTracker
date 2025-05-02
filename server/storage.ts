@@ -504,6 +504,13 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting budgetUpdateTime to:', updateData.budgetUpdateTime);
     }
     
+    // Handle Traffic Generator feature toggle
+    if (updateCampaign.trafficGeneratorEnabled !== undefined) {
+      // Make sure we explicitly set this as a boolean to prevent any type conversion issues
+      updateData.trafficGeneratorEnabled = updateCampaign.trafficGeneratorEnabled === true;
+      console.log('🔍 DEBUG: Setting trafficGeneratorEnabled to:', updateData.trafficGeneratorEnabled, '(original value:', updateCampaign.trafficGeneratorEnabled, ')');
+    }
+    
     // Handle Traffic Sender fields
     if (updateCampaign.trafficSenderEnabled !== undefined) {
       // CRITICAL FIX: Make sure we explicitly set this as a boolean to prevent any type conversion issues
