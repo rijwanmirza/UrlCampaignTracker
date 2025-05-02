@@ -774,10 +774,12 @@ export async function toggleTrafficGenerator(campaignId: number, enabled: boolea
       .update(campaigns)
       .set({ 
         trafficGeneratorEnabled: enabled,
-        // If enabling, set to IDLE state to trigger processing
+        // If enabling, set to WAITING state to immediately start processing
     // If disabling, reset all Traffic Generator state
         ...(enabled ? { 
-          trafficGeneratorState: TrafficGeneratorState.IDLE
+          trafficGeneratorState: TrafficGeneratorState.WAITING,
+          trafficGeneratorWaitStartTime: new Date(Date.now() - 3 * 60 * 1000), // Set wait start time to 3 minutes ago to ensure it processes immediately
+          trafficGeneratorWaitMinutes: 2 // Default 2 minute wait time
         } : {
           trafficGeneratorState: TrafficGeneratorState.IDLE,
           trafficGeneratorWaitStartTime: null,
