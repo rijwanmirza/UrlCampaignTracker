@@ -1005,8 +1005,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Immediate check for Traffic Generator if it was just enabled
       if (trafficGeneratorStateChanged && req.body.trafficGeneratorEnabled === true) {
-        // Import at the top if using ES modules
-        const { processTrafficGenerator } = require('./traffic-generator');
         console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
         
         // Run the traffic generator check for this campaign immediately
