@@ -168,7 +168,7 @@ export function TrafficGeneratorStatus({ campaignId }: { campaignId: number }) {
                   </div>
                   <Progress value={calculateWaitProgress()} className="h-2" />
                   <div className="text-xs text-gray-500 pt-1">
-                    Waiting for {status.waitMinutes || 2} minutes before checking spent value
+                    Waiting for {status.waitMinutes || 2} minutes before checking spent value (configurable in edit form)
                   </div>
                 </>
               )}
