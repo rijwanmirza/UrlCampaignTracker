@@ -157,7 +157,7 @@ app.use((req, res, next) => {
         log('TrafficStar API initialized successfully');
         
         // Initialize Traffic Generator scheduler
-        initializeTrafficGeneratorScheduler();
+        initializeTrafficGenerator();
         log('Traffic Generator scheduler initialized successfully');
         
         // Traffic Sender service has been removed
