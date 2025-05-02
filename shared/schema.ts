@@ -41,6 +41,11 @@ export const campaigns = pgTable("campaigns", {
   lastSpentCheck: timestamp("last_spent_check").defaultNow(), // Last time spent was checked
   // Traffic Generator feature
   trafficGeneratorEnabled: boolean("traffic_generator_enabled").default(false), // Enable/disable traffic generator
+  trafficGeneratorState: text("traffic_generator_state").default('idle'), // Current state of traffic generator (IDLE, WAITING, CONDITION_ONE, CONDITION_TWO)
+  trafficGeneratorWaitStartTime: timestamp("traffic_generator_wait_start_time"), // When the post-pause wait started
+  trafficGeneratorWaitMinutes: integer("traffic_generator_wait_minutes").default(2), // Minutes to wait after pause (configurable)
+  budgetedUrlIds: integer("budgeted_url_ids").array(), // Array of URL IDs that have had budget allocated
+  pendingUrlBudgets: jsonb("pending_url_budgets").default({}), // JSON object storing pending budget updates
   // DEPRECATED: Traffic Sender feature has been removed
   // Keeping these fields in the schema for backward compatibility but they are no longer used
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
@@ -95,6 +100,11 @@ export const updateCampaignSchema = z.object({
   lastTrafficstarSync: z.date().optional().nullable(),
   // Traffic Generator feature
   trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
+  trafficGeneratorState: z.enum(['idle', 'waiting', 'condition1', 'condition2']).optional(), // State enum
+  trafficGeneratorWaitStartTime: z.date().optional().nullable(), // When wait started
+  trafficGeneratorWaitMinutes: z.number().int().min(1).max(60).optional(), // Minutes to wait (1-60)
+  budgetedUrlIds: z.array(z.number()).optional(), // URLs with budget allocated
+  pendingUrlBudgets: z.record(z.string(), z.any()).optional(), // Pending budget updates
   // DEPRECATED: Traffic Sender fields - no longer in use
   trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED
