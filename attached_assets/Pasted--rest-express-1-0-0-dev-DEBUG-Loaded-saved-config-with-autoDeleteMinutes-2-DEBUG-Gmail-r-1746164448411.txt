@@ -1,0 +1,597 @@
+> rest-express@1.0.0 dev
+🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+5:39:00 AM [gmail-reader] Loaded 0 previously processed email IDs
+Server monitoring initialized - collecting stats every minute
+🔄 Running fix for missing URL click logs...
+5:39:00 AM [express] serving on port 5000
+✅ Fixed 0 URLs with missing click logs
+⏭️ Skipped 3 URLs with existing log files
+🔄 Auto-fix for missing URL click logs completed: Fixed 0 URLs with missing click logs
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+🔍 DEBUG: Updating Gmail config with autoDeleteMinutes: undefined
+🔍 DEBUG: Updated Gmail config autoDeleteMinutes is now: 2
+🔍 DEBUG: Saved config with autoDeleteMinutes: 2
+5:39:06 AM [gmail-reader] SMTP connection verified successfully
+5:39:06 AM [gmail-reader] Gmail credentials verified successfully, starting reader...
+5:39:06 AM [gmail-reader] 📧 Starting Gmail reader with auto-delete enabled: 2 minutes
+5:39:06 AM [gmail-reader] Gmail reader started successfully and monitoring emails from help@donot-reply.in
+🔍 DEBUG: Found TrafficStar API key in environment variables, ensuring it is saved in database
+[connection] Connected to host
+<= '* OK Gimap ready for requests from 34.83.136.234 ta16mb46928834pjb'
+=> 'A0 CAPABILITY'
+<= '* CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 XYZZY SASL-IR AUTH=XOAUTH2 AUTH=PLAIN AUTH=PLAIN-CLIENTTOKEN AUTH=OAUTHBEARER'
+<= 'A0 OK Thats all she wrote! ta16mb46928834pjb'
+=> 'A1 LOGIN "compaignwalabhai@gmail.com" "hciuemplthdkwfho"'
+🔍 DEBUG: TrafficStar API key already saved in database
+Updating spent values for all 1 campaigns with TrafficStar IDs for 2025-05-02
+Fetching spent value for campaign 1000866 on 2025-05-02
+Using TrafficStar API key from environment variable
+Requesting new TrafficStar access token from https://api.trafficstars.com/v1/auth/token
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 DEBUG: Campaign update request received: {
+  "trafficGeneratorEnabled": true
+}
+🔍 DEBUG: Traffic Generator enabled value (after normalization): true type: boolean
+🔍 DEBUG: Traffic Sender enabled value (after normalization): undefined type: undefined
+🔍 DEBUG: Campaign update request TYPE: undefined
+🔍 DEBUG: Campaign update request VALUE: undefined
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 DEBUG: Campaign update requested: ID 9
+  - Current multiplier: 1 (type: number)
+  - Requested multiplier: 1 (type: number)
+🔍 DEBUG: Setting trafficGeneratorEnabled to: true (original value: true )
+🔍 DEBUG: No multiplier change detected, skipping URL updates
+5:39:06 AM [express] PUT /api/campaigns/9 200 in 83ms :: {"id":9,"name":"Test Click Count Fix","redi…
+Successfully got token from https://api.trafficstars.com/v1/auth/token
+Received new access token, expires in 86400 seconds
+Fetching spent value for campaign 1000866 from 2025-05-02 to 2025-05-02
+Successfully retrieved spent value for campaign 1000866
+Updated campaign 9 with latest spent value: $0.0000 for date 2025-05-02
+TrafficStar spent value scheduler initialized (spent value tracking only)
+🔍 DEBUG: Successfully scheduled TrafficStar spent value updates
+5:39:07 AM [express] TrafficStar API initialized successfully
+Initializing Traffic Generator scheduler
+Running initial traffic generator check on startup
+5:39:07 AM [express] Traffic Generator scheduler initialized successfully
+Processing 1 campaigns with traffic generator enabled
+Using TrafficStar API key from environment variable
+Requesting new TrafficStar access token from https://api.trafficstars.com/v1/auth/token
+Successfully got token from https://api.trafficstars.com/v1/auth/token
+Received new access token, expires in 86400 seconds
+TrafficStar campaign 1000866 status: paused
+TrafficStar campaign 1000866 is already paused, no action needed
+<= '* CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 UIDPLUS COMPRESS=DEFLATE ENABLE MOVE CONDSTORE ESEARCH UTF8=ACCEPT LIST-EXTENDED LIST-STATUS LITERAL- SPECIAL-USE APPENDLIMIT=35651584'
+<= 'A1 OK compaignwalabhai@gmail.com authenticated (Success)'
+=> 'A2 NAMESPACE'
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+5:39:13 AM [express] GET /api/campaigns/9 200 in 88ms :: {"id":9,"name":"Test Click Count Fix","redi…
+5:39:13 AM [express] GET /api/campaigns 200 in 142ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+Budget update time migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'budget_update_time' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+TrafficStar fields migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'trafficstar_campaign_id' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+5:39:13 AM [express] GET /api/trafficstar/saved-campaigns 304 in 101ms :: [{"id":5,"trafficstarId":"…
+Budget update time migration check result: false
+TrafficStar fields migration check result: false
+Original URL records table result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { exists: true } ],
+  fields: [
+    Field {
+      name: 'exists',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 16,
+      dataTypeSize: 1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBool] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+5:39:13 AM [express] GET /api/system/check-migrations 304 in 117ms :: {"budgetUpdateTimeMigrationNee…
+Budget update time migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'budget_update_time' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+TrafficStar fields migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'trafficstar_campaign_id' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+Budget update time migration check result: false
+TrafficStar fields migration check result: false
+Original URL records table result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { exists: true } ],
+  fields: [
+    Field {
+      name: 'exists',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 16,
+      dataTypeSize: 1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBool] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+5:39:14 AM [express] GET /api/system/check-migrations 304 in 51ms :: {"budgetUpdateTimeMigrationNeed…
+<= '* NAMESPACE (("" "/")) NIL NIL'
+<= 'A2 OK Success'
+=> 'A3 LIST "" ""'
+<= '* LIST (\\Noselect) "/" "/"'
+<= 'A3 OK Success'
+5:39:16 AM [gmail-reader] IMAP connection established
+5:39:16 AM [gmail-reader] Auto-delete enabled: emails will be deleted 2 minutes after processing
+5:39:16 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+5:39:16 AM [gmail-reader] Current IMAP connection state: authenticated
+5:39:16 AM [gmail-reader] Scanning for processed emails older than 2025-05-02T05:37:16.623Z (2 minutes ago)
+5:39:16 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+=> 'A4 SELECT "INBOX" (CONDSTORE)'
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 8 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14363] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 8222627]'
+<= 'A4 OK [READ-WRITE] INBOX selected. (Success)'
+5:39:19 AM [gmail-reader] Searching for ALL messages in inbox - found in mailbox: 8
+=> 'A5 UID SEARCH ALL'
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997'
+<= 'A5 OK SEARCH completed (Success)'
+5:39:19 AM [gmail-reader] Found 8 emails in mailbox
+=> 'A6 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+5:39:20 AM [gmail-reader] Processing email (ID: 11452)
+5:39:20 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+5:39:20 AM [gmail-reader] Processing email (ID: 11762)
+5:39:20 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+5:39:20 AM [gmail-reader] Processing email (ID: 12778)
+5:39:20 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+5:39:20 AM [gmail-reader] Processing email (ID: 12808)
+5:39:20 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+5:39:20 AM [gmail-reader] Processing email (ID: 13039)
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+5:39:20 AM [gmail-reader] Processing email (ID: 13513)
+5:39:20 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+5:39:20 AM [gmail-reader] Processing email (ID: 13798)
+5:39:20 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+5:39:20 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+5:39:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= 'A6 OK Success'
+=> 'IDLE IDLE'
+5:39:21 AM [gmail-reader] Processing email (ID: 13997)
+5:39:21 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+5:39:21 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+5:39:21 AM [gmail-reader] Finished processing batch of 8 emails
+5:39:21 AM [gmail-reader] Initial email scan complete. Future scans will only process new emails.
+<= '+ idling'
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 1727390,
+        "nice": 380,
+        "sys": 470080,
+        "idle": 8896990,
+        "irq": 219620
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 1742930,
+        "nice": 4230,
+        "sys": 478290,
+        "idle": 8858370,
+        "irq": 226630
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3035600,
+        "nice": 0,
+        "sys": 662470,
+        "idle": 7175100,
+        "irq": 243380
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3057360,
+        "nice": 330,
+        "sys": 648810,
+        "idle": 7210350,
+        "irq": 234710
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2983610,
+        "nice": 0,
+        "sys": 685030,
+        "idle": 7096040,
+        "irq": 249600
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2971780,
+        "nice": 0,
+        "sys": 681410,
+        "idle": 7131000,
+        "irq": 246780
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3055690,
+        "nice": 1140,
+        "sys": 665640,
+        "idle": 7114670,
+        "irq": 243540
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3020760,
+        "nice": 60,
+        "sys": 662960,
+        "idle": 7133310,
+        "irq": 246750
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 30079406080
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.77,
+  "currentLoad": 31.95559138742059,
+  "currentLoadUser": 24.24162620988672,
+  "currentLoadSystem": 5.561886749753488,
+  "currentLoadNice": 0.006892470279308938,
+  "currentLoadIdle": 68.04440861257942,
+  "currentLoadIrq": 2.145185957501073,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 28466910,
+  "rawCurrentLoadUser": 21595100,
+  "rawCurrentLoadSystem": 4954680,
+  "rawCurrentLoadNice": 6140,
+  "rawCurrentLoadIdle": 60615810,
+  "rawCurrentLoadIrq": 1910990,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 21.36621753598275,
+      "loadUser": 15.267114177003743,
+      "loadSystem": 4.154687147850757,
+      "loadNice": 0.003358537091948791,
+      "loadIdle": 78.63378246401726,
+      "loadIrq": 1.9410576740362988,
+      "rawLoad": 2417470,
+      "rawLoadUser": 1727390,
+      "rawLoadSystem": 470080,
+      "rawLoadNice": 380,
+      "rawLoadIdle": 8896980,
+      "rawLoadIrq": 219620,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 21.679774014296513,
+      "loadUser": 15.409908535911478,
+      "loadSystem": 4.228744214421177,
+      "loadNice": 0.037399042478415974,
+      "loadIdle": 78.32022598570349,
+      "loadIrq": 2.0037222214854404,
+      "rawLoad": 2452080,
+      "rawLoadUser": 1742930,
+      "rawLoadSystem": 478290,
+      "rawLoadNice": 4230,
+      "rawLoadIdle": 8858370,
+      "rawLoadIrq": 226630,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.45569443757281,
+      "loadUser": 27.307033207245052,
+      "loadSystem": 5.959312916327457,
+      "loadNice": 0,
+      "loadIdle": 64.5443055624272,
+      "loadIrq": 2.1893483140002967,
+      "rawLoad": 3941450,
+      "rawLoadUser": 3035600,
+      "rawLoadSystem": 662470,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 7175100,
+      "rawLoadIrq": 243380,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.34211418333253,
+      "loadUser": 27.41639271347276,
+      "loadSystem": 5.818030514171137,
+      "loadNice": 0.002959232536492718,
+      "loadIdle": 64.65788581666747,
+      "loadIrq": 2.1047317231521383,
+      "rawLoad": 3941190,
+      "rawLoadUser": 3057350,
+      "rawLoadSystem": 648800,
+      "rawLoadNice": 330,
+      "rawLoadIdle": 7210350,
+      "rawLoadIrq": 234710,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.57412338720587,
+      "loadUser": 27.088585988903485,
+      "loadSystem": 6.219477096530229,
+      "loadNice": 0,
+      "loadIdle": 64.42587661279413,
+      "loadIrq": 2.2660603017721557,
+      "rawLoad": 3918230,
+      "rawLoadUser": 2983610,
+      "rawLoadSystem": 685030,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 7096040,
+      "rawLoadIrq": 249590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.354674479827686,
+      "loadUser": 26.94026630501788,
+      "loadSystem": 6.177250212130223,
+      "loadNice": 0,
+      "loadIdle": 64.64532552017232,
+      "loadIrq": 2.237157962679585,
+      "rawLoad": 3899960,
+      "rawLoadUser": 2971770,
+      "rawLoadSystem": 681410,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 7131000,
+      "rawLoadIrq": 246780,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.79209180680573,
+      "loadUser": 27.576786942294053,
+      "loadSystem": 6.007223396440285,
+      "loadNice": 0.010288195829490301,
+      "loadIdle": 64.20790819319426,
+      "loadIrq": 2.1977932722419062,
+      "rawLoad": 3966000,
+      "rawLoadUser": 3055690,
+      "rawLoadSystem": 665640,
+      "rawLoadNice": 1140,
+      "rawLoadIdle": 7114660,
+      "rawLoadIrq": 243530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.52591143762021,
+      "loadUser": 27.30299787415581,
+      "loadSystem": 5.992132930338833,
+      "loadNice": 0.0005423071917164384,
+      "loadIdle": 64.47408856237978,
+      "loadIrq": 2.2302383259338527,
+      "rawLoad": 3930530,
+      "rawLoadUser": 3020760,
+      "rawLoadSystem": 662960,
+      "rawLoadNice": 60,
+      "rawLoadIdle": 7133310,
+      "rawLoadIrq": 246750,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 6.33, 5.63, 5.11 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [6.33,5.63,5.11]
+Using 1-minute load average: 6.33
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.77,"currentLoad":31.95559138742059,"currentLoadUser":24.24162620988672,"currentLoadSystem":5.561886749753488,"currentLoadNice":0.006892470279308938,"currentLoadIdle":68.04440861257942,"currentLoadIrq":2.145185957501073,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":28466910,"rawCurrentLoadUser":21595100,"rawCurrentLoadSystem":4954680,"rawCurrentLoadNice":6140,"rawCurrentLoadIdle":60615810,"rawCurrentLoadIrq":1910990,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":21.36621753598275,"loadUser":15.267114177003743,"loadSystem":4.154687147850757,"loadNice":0.003358537091948791,"loadIdle":78.63378246401726,"loadIrq":1.9410576740362988,"rawLoad":2417470,"rawLoadUser":1727390,"rawLoadSystem":470080,"rawLoadNice":380,"rawLoadIdle":8896980,"rawLoadIrq":219620,"rawLoadSteal":0,"rawLoadGuest":0},{"load":21.679774014296513,"loadUser":15.409908535911478,"loadSystem":4.228744214421177,"loadNice":0.037399042478415974,"loadIdle":78.32022598570349,"loadIrq":2.0037222214854404,"rawLoad":2452080,"rawLoadUser":1742930,"rawLoadSystem":478290,"rawLoadNice":4230,"rawLoadIdle":8858370,"rawLoadIrq":226630,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.45569443757281,"loadUser":27.307033207245052,"loadSystem":5.959312916327457,"loadNice":0,"loadIdle":64.5443055624272,"loadIrq":2.1893483140002967,"rawLoad":3941450,"rawLoadUser":3035600,"rawLoadSystem":662470,"rawLoadNice":0,"rawLoadIdle":7175100,"rawLoadIrq":243380,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.34211418333253,"loadUser":27.41639271347276,"loadSystem":5.818030514171137,"loadNice":0.002959232536492718,"loadIdle":64.65788581666747,"loadIrq":2.1047317231521383,"rawLoad":3941190,"rawLoadUser":3057350,"rawLoadSystem":648800,"rawLoadNice":330,"rawLoadIdle":7210350,"rawLoadIrq":234710,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.57412338720587,"loadUser":27.088585988903485,"loadSystem":6.219477096530229,"loadNice":0,"loadIdle":64.42587661279413,"loadIrq":2.2660603017721557,"rawLoad":3918230,"rawLoadUser":2983610,"rawLoadSystem":685030,"rawLoadNice":0,"rawLoadIdle":7096040,"rawLoadIrq":249590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.354674479827686,"loadUser":26.94026630501788,"loadSystem":6.177250212130223,"loadNice":0,"loadIdle":64.64532552017232,"loadIrq":2.237157962679585,"rawLoad":3899960,"rawLoadUser":2971770,"rawLoadSystem":681410,"rawLoadNice":0,"rawLoadIdle":7131000,"rawLoadIrq":246780,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.79209180680573,"loadUser":27.576786942294053,"loadSystem":6.007223396440285,"loadNice":0.010288195829490301,"loadIdle":64.20790819319426,"loadIrq":2.1977932722419062,"rawLoad":3966000,"rawLoadUser":3055690,"rawLoadSystem":665640,"rawLoadNice":1140,"rawLoadIdle":7114660,"rawLoadIrq":243530,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.52591143762021,"loadUser":27.30299787415581,"loadSystem":5.992132930338833,"loadNice":0.0005423071917164384,"loadIdle":64.47408856237978,"loadIrq":2.2302383259338527,"rawLoad":3930530,"rawLoadUser":3020760,"rawLoadSystem":662960,"rawLoadNice":60,"rawLoadIdle":7133310,"rawLoadIrq":246750,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 79.125
+Final system load calculation (before fallbacks): 79
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 79
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+Running scheduled processing of pending URL budget updates
+Processing pending URL budget updates
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+5:40:31 AM [express] GET /api/trafficstar/saved-campaigns 304 in 153ms :: [{"id":5,"trafficstarId":"…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+5:40:31 AM [express] GET /api/campaigns 200 in 212ms :: [{"id":9,"name":"Test Click Count Fix","redi…

@@ -892,12 +892,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Make sure trafficGeneratorEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
+      const originalTrafficGeneratorEnabled = req.body.trafficGeneratorEnabled;
       if (req.body.trafficGeneratorEnabled !== undefined) {
         // Explicitly convert to boolean using strict comparison
         req.body.trafficGeneratorEnabled = req.body.trafficGeneratorEnabled === true;
       }
       
       console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
+      
+      // Track if traffic generator setting was changed
+      const trafficGeneratorStateChanged = originalTrafficGeneratorEnabled !== undefined;
       
       // CRITICAL FIX: Make sure trafficSenderEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
@@ -997,6 +1001,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         console.log('🔍 DEBUG: No multiplier change detected, skipping URL updates');
+      }
+      
+      // Immediate check for Traffic Generator if it was just enabled
+      if (trafficGeneratorStateChanged && req.body.trafficGeneratorEnabled === true) {
+        // Import at the top if using ES modules
+        const { processTrafficGenerator } = require('./traffic-generator');
+        console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
+        
+        // Run the traffic generator check for this campaign immediately
+        // We run this in the background (no await) to avoid delaying the response
+        processTrafficGenerator(id).catch(err => {
+          console.error(`Error in immediate traffic generator check for campaign ${id}:`, err);
+        });
       }
       
       res.json(updatedCampaign);
