@@ -12,7 +12,6 @@ import CampaignDeleteButton from "./campaign-delete-button";
 import { useLocation } from "wouter";
 import RunMigrationButton from "@/components/RunMigrationButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TrafficGeneratorStatus } from "./traffic-generator-status";
 
 interface CampaignDetailsProps {
   campaign: FormattedCampaign;
@@ -99,11 +98,6 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
         </Alert>
       )}
       
-      {/* Traffic Generator Status (conditional) */}
-      {campaign.trafficGeneratorEnabled && (
-        <TrafficGeneratorStatus campaignId={campaign.id} />
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2 flex flex-row items-start justify-between">

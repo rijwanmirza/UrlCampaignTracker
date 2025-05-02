@@ -531,8 +531,7 @@ class TrafficStarService {
         console.log(`API status check completed - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
         
         // If already paused, skip the API call since it's not needed
-        // A campaign is considered paused if active is false AND status is paused/enabled 
-        if (apiCampaign.active === false && (apiCampaign.status === 'paused' || apiCampaign.status === 'enabled')) {
+        if (apiCampaign.active === false || apiCampaign.status === 'paused') {
           console.log(`Note: Campaign ${id} is already paused according to TrafficStar API - skipping redundant API call`);
           needsExplicitPauseCall = false;
           
@@ -681,9 +680,8 @@ class TrafficStarService {
         
         console.log(`API status check completed - Current campaign ${id} status: active=${currentStatus.active}, status=${currentStatus.status}`);
         
-        // If already active, skip the API call since it's not needed 
-        // A campaign is considered active only if active=true AND status=enabled
-        if (apiCampaign.active === true && apiCampaign.status === 'enabled') {
+        // If already active, skip the API call since it's not needed
+        if (apiCampaign.active === true || apiCampaign.status === 'enabled') {
           console.log(`Note: Campaign ${id} is already active according to TrafficStar API - skipping redundant API call`);
           needsExplicitActivationCall = false;
           
@@ -1104,43 +1102,31 @@ class TrafficStarService {
       console.log(`Setting campaign ${id} end time to: ${formattedEndTime} (original input: ${scheduleEndTime})`);
       
       try {
-        // Try all API base URLs in sequence until one works
-        for (const baseUrl of API_BASE_URLS) {
-          try {
-            console.log(`Trying to update campaign ${id} end time using endpoint: ${baseUrl}/campaigns/${id}`);
-            
-            const response = await axios.patch(`${baseUrl}/campaigns/${id}`, {
-              schedule_end_time: formattedEndTime
-            }, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000 // 10 second timeout
-            });
-            
-            console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime} using ${baseUrl}`);
-            console.log(`API Response:`, response.data);
-    
-            // Update local record
-            await db.update(trafficstarCampaigns)
-              .set({ scheduleEndTime, updatedAt: new Date() })
-              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-              
-            return; // Success - exit the function
-          } catch (endpointError) {
-            console.log(`Failed to update campaign ${id} end time using ${baseUrl}: ${endpointError.message}`);
-            // Continue to next endpoint
-          }
-        }
+        // Use the v1.1 API endpoint directly
+        const response = await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+          schedule_end_time: formattedEndTime
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000 // 30 second timeout
+        });
         
-        // If we get here, all endpoints failed
-        throw new Error(`Failed to update campaign ${id} end time using any API endpoint`);
-      } catch (apiError) {
-        console.error(`Error from TrafficStar API when updating end time:`, apiError.response?.data);
+        console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime}`);
+        console.log(`API Response:`, response.data);
+
+        // Update local record
+        await db.update(trafficstarCampaigns)
+          .set({ scheduleEndTime, updatedAt: new Date() })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+          
+        return;
+      } catch (error: any) {
+        console.error(`Error from TrafficStar API when updating end time:`, error.response?.data);
         
         // If the error is related to date format, try another format
-        if (apiError.response?.data?.msg?.includes('parsing time')) {
+        if (error.response?.data?.msg?.includes('parsing time')) {
           try {
             // Try with full HH:MM:SS format if not already using it
             if (!formattedEndTime.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
@@ -1155,35 +1141,15 @@ class TrafficStarService {
               const fullFormat = `${datePart} ${timePart}`;
               console.log(`Retrying with full time format: ${fullFormat}`);
               
-              // Try all API base URLs for this format too
-              let formatSuccess = false;
-              
-              for (const baseUrl of API_BASE_URLS) {
-                try {
-                  console.log(`Trying full format on endpoint: ${baseUrl}/campaigns/${id}`);
-                  
-                  await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                    schedule_end_time: fullFormat
-                  }, {
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json'
-                    },
-                    timeout: 10000
-                  });
-                  
-                  console.log(`Successfully updated campaign ${id} end time to ${fullFormat} using ${baseUrl}`);
-                  formatSuccess = true;
-                  break; // Exit the loop on success
-                } catch (formatEndpointError) {
-                  console.log(`Failed alternative format using ${baseUrl}: ${formatEndpointError.message}`);
-                  // Continue to next endpoint
-                }
-              }
-              
-              if (!formatSuccess) {
-                throw new Error(`All endpoints failed when trying full format end time`);
-              }
+              await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+                schedule_end_time: fullFormat
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 30000
+              });
               
               console.log(`Successfully updated campaign ${id} end time to ${fullFormat}`);
               
@@ -1194,63 +1160,43 @@ class TrafficStarService {
                 
               return;
             }
-          } catch (retryError) {
-            console.error(`Retry with full format failed:`, retryError.message);
+          } catch (retryError: any) {
+            console.error(`Retry with full format failed:`, retryError.response?.data || retryError.message);
           }
           
+          // As a last resort, try date-only format
+          const dateOnly = formattedEndTime.split(' ')[0];
+          console.log(`Retrying with date-only format: ${dateOnly}`);
+          
           try {
-            // As a last resort, try date-only format
-            const dateOnly = formattedEndTime.split(' ')[0];
-            console.log(`Retrying with date-only format: ${dateOnly}`);
+            await axios.patch(`https://api.trafficstars.com/v1.1/campaigns/${id}`, {
+              schedule_end_time: dateOnly
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000
+            });
             
-            // Try all API base URLs for date-only format as well
-            let dateOnlySuccess = false;
-            
-            for (const baseUrl of API_BASE_URLS) {
-              try {
-                console.log(`Trying date-only format on endpoint: ${baseUrl}/campaigns/${id}`);
-                
-                await axios.patch(`${baseUrl}/campaigns/${id}`, {
-                  schedule_end_time: dateOnly
-                }, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  timeout: 10000
-                });
-                
-                console.log(`Successfully updated campaign ${id} end time to ${dateOnly} using ${baseUrl}`);
-                dateOnlySuccess = true;
-                break; // Exit the loop on success
-              } catch (dateOnlyEndpointError) {
-                console.log(`Failed date-only format using ${baseUrl}: ${dateOnlyEndpointError.message}`);
-                // Continue to next endpoint
-              }
-            }
-            
-            if (!dateOnlySuccess) {
-              throw new Error(`All endpoints failed when trying date-only format end time`);
-            }
-              
             console.log(`Successfully updated campaign ${id} end time to ${dateOnly} (date-only format)`);
-              
+            
             // Update local record
             await db.update(trafficstarCampaigns)
               .set({ scheduleEndTime: dateOnly, updatedAt: new Date() })
               .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
-                
+              
             return;
-          } catch (dateOnlyError) {
-            console.error(`All format attempts failed:`, dateOnlyError.message);
+          } catch (dateOnlyError: any) {
+            console.error(`All format attempts failed:`, dateOnlyError.response?.data || dateOnlyError.message);
           }
         }
         
-        throw apiError;
+        throw error;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error updating TrafficStar campaign ${id} end time:`, error.message);
-      throw new Error(`Failed to update campaign ${id} end time: ${error.message}`);
+      throw new Error(`Failed to update campaign ${id} end time`);
     }
   }
 

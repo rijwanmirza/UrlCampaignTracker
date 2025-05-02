@@ -48,12 +48,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
-import { 
-  processTrafficGenerator, 
-  runTrafficGeneratorForAllCampaigns,
-  toggleTrafficGenerator,
-  getTrafficGeneratorStatus
-} from "./traffic-generator";
+import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns } from "./traffic-generator";
 // Test routes import removed
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -905,12 +900,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
       
-      // Get the current campaign to see if traffic generator is being enabled
-      const existingCampaign = await storage.getCampaign(id);
-      
-      // Always force the traffic generator check when enabled in a PUT request
-      // This ensures the check runs regardless of previous state
-      const trafficGeneratorBeingEnabled = req.body.trafficGeneratorEnabled === true;
+      // Track if traffic generator setting was changed
+      const trafficGeneratorStateChanged = originalTrafficGeneratorEnabled !== undefined;
       
       // CRITICAL FIX: Make sure trafficSenderEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
@@ -942,8 +933,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if multiplier is being updated
       const { multiplier } = result.data;
+      const existingCampaign = await storage.getCampaign(id);
       
-      // We already fetched the existing campaign above, use that
       if (!existingCampaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
@@ -1012,7 +1003,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🔍 DEBUG: No multiplier change detected, skipping URL updates');
       }
       
-      // No immediate check - we'll let the scheduled process handle it after the wait time
+      // Immediate check for Traffic Generator if it was just enabled
+      if (trafficGeneratorStateChanged && req.body.trafficGeneratorEnabled === true) {
+        console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
+        
+        // Run the traffic generator check for this campaign immediately
+        // We run this in the background (no await) to avoid delaying the response
+        processTrafficGenerator(id).catch(err => {
+          console.error(`Error in immediate traffic generator check for campaign ${id}:`, err);
+        });
+      }
       
       res.json(updatedCampaign);
     } catch (error) {
@@ -2666,123 +2666,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         message: "Failed to run Traffic Generator", 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-  
-  // Toggle Traffic Generator for a campaign
-  app.post("/api/traffic-generator/toggle/:campaignId", async (req: Request, res: Response) => {
-    try {
-      const campaignId = parseInt(req.params.campaignId, 10);
-      
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid campaign ID" 
-        });
-      }
-      
-      // Get enabled value from request body
-      const { enabled, force = false } = req.body;
-      if (typeof enabled !== 'boolean') {
-        return res.status(400).json({
-          success: false,
-          message: "Missing or invalid 'enabled' parameter in request body"
-        });
-      }
-
-      // Get the campaign first to check its TrafficStar status before attempting any changes
-      const campaign = await storage.getCampaign(campaignId);
-      if (!campaign) {
-        return res.status(404).json({
-          success: false,
-          message: `Campaign ${campaignId} not found`
-        });
-      }
-
-      // If enabling without force flag, check if the campaign is already paused in TrafficStar
-      if (enabled && !force && campaign.trafficstarCampaignId) {
-        try {
-          const status = await trafficStarService.getCampaign(parseInt(campaign.trafficstarCampaignId));
-          
-          // If the campaign is active in TrafficStar, advise the user to pause it first
-          if (status.active || status.status === 'enabled' || status.status === 'active') {
-            return res.status(400).json({
-              success: false,
-              requiresPause: true,
-              message: "The Traffic Generator cannot be enabled while the campaign is active in TrafficStar. Please pause the campaign in TrafficStar first, or use the 'force' option to attempt automatic pausing.",
-              campaignStatus: {
-                active: status.active,
-                status: status.status
-              }
-            });
-          }
-        } catch (error) {
-          console.error(`Error checking campaign status before enabling Traffic Generator:`, error);
-          // Continue with the toggle operation
-        }
-      }
-      
-      // Toggle Traffic Generator
-      await toggleTrafficGenerator(campaignId, enabled, { force });
-      
-      // Return success response
-      res.json({
-        success: true,
-        message: `Traffic Generator ${enabled ? 'enabled' : 'disabled'} for campaign ${campaignId}`,
-        status: { enabled }
-      });
-    } catch (error) {
-      console.error(`Error toggling Traffic Generator for campaign:`, error);
-      
-      // Provide more detailed error message based on the type of error
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      // Special handling for campaign pausing failures
-      if (errorMessage.includes('Failed to pause') || errorMessage.includes('Could not update status')) {
-        return res.status(400).json({
-          success: false,
-          pauseError: true,
-          message: "Failed to pause the campaign in TrafficStar. Traffic Generator requires campaigns to be paused before enabling.",
-          error: errorMessage,
-          suggestion: "Please pause the campaign manually in TrafficStar before enabling Traffic Generator."
-        });
-      }
-      
-      res.status(500).json({ 
-        success: false,
-        message: "Failed to toggle Traffic Generator", 
-        error: errorMessage
-      });
-    }
-  });
-  
-  // Get Traffic Generator status for a campaign
-  app.get("/api/traffic-generator/status/:campaignId", async (req: Request, res: Response) => {
-    try {
-      const campaignId = parseInt(req.params.campaignId, 10);
-      
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid campaign ID" 
-        });
-      }
-      
-      // Get Traffic Generator status
-      const status = await getTrafficGeneratorStatus(campaignId);
-      
-      // Return status response
-      res.json({
-        success: true,
-        status
-      });
-    } catch (error) {
-      console.error(`Error getting Traffic Generator status for campaign:`, error);
-      res.status(500).json({ 
-        success: false,
-        message: "Failed to get Traffic Generator status", 
         error: error instanceof Error ? error.message : String(error) 
       });
     }

@@ -38,7 +38,6 @@ export interface IStorage {
   
   // URL operations
   getUrls(campaignId: number): Promise<UrlWithActiveStatus[]>;
-  getUrlsByCampaignId(campaignId: number): Promise<UrlWithActiveStatus[]>; // Added for Traffic Generator
   getAllUrls(page: number, limit: number, search?: string, status?: string): Promise<{ urls: UrlWithActiveStatus[], total: number }>;
   getUrl(id: number): Promise<Url | undefined>;
   createUrl(url: InsertUrl): Promise<Url>;
@@ -633,16 +632,6 @@ export class DatabaseStorage implements IStorage {
         isActive: url.clicks < url.clickLimit && url.status === 'active'
       };
     });
-  }
-  
-  /**
-   * Get all URLs for a campaign - alias for Traffic Generator compatibility
-   * This method is an alias to getUrls to maintain backward compatibility
-   * with the Traffic Generator feature
-   */
-  async getUrlsByCampaignId(campaignId: number): Promise<UrlWithActiveStatus[]> {
-    console.log(`Getting URLs by campaign ID ${campaignId} (Traffic Generator compatibility method)`);
-    return this.getUrls(campaignId);
   }
 
   async getAllUrls(
