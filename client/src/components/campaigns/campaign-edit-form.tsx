@@ -555,25 +555,36 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                             <FormLabel className="text-sm">Wait time after pause:</FormLabel>
                             <div className="flex items-center">
                               <FormControl>
-                                {/* Simple native mobile-friendly select */}
-                                <select 
-                                  className="p-2 border rounded-md w-24 text-sm"
-                                  value={field.value}
-                                  onChange={(e) => {
-                                    const value = parseInt(e.target.value);
-                                    if (!isNaN(value)) {
-                                      field.onChange(value);
-                                    }
-                                  }}
-                                >
-                                  {Array.from({ length: 60 }, (_, i) => i + 1).map((minutes) => (
-                                    <option key={minutes} value={minutes}>
-                                      {minutes}
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className="flex items-center space-x-2">
+                                  <button 
+                                    type="button"
+                                    className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700"
+                                    onClick={() => {
+                                      const newValue = Math.max(1, (field.value || 15) - 1);
+                                      field.onChange(newValue);
+                                    }}
+                                  >
+                                    -
+                                  </button>
+                                  
+                                  <div className="text-center w-10">
+                                    {field.value || 15}
+                                  </div>
+                                  
+                                  <button 
+                                    type="button"
+                                    className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700"
+                                    onClick={() => {
+                                      const newValue = Math.min(60, (field.value || 15) + 1);
+                                      field.onChange(newValue);
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                  
+                                  <span className="ml-2 text-sm text-gray-500">minutes</span>
+                                </div>
                               </FormControl>
-                              <span className="ml-2 text-sm text-gray-500">minutes</span>
                             </div>
                             <FormDescription className="col-span-2 text-xs">
                               Minutes to wait after pausing a campaign before checking spent value (1-60).
