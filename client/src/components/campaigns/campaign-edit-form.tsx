@@ -50,7 +50,6 @@ const campaignEditSchema = z.object({
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   // Traffic Generator fields
   trafficGeneratorEnabled: z.boolean().default(false),
-  trafficGeneratorWaitMinutes: z.number().int().min(1).max(60).default(2),
   // Traffic Sender fields removed
 });
 
@@ -87,7 +86,6 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
       // Traffic Generator settings
       trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
-      trafficGeneratorWaitMinutes: campaign.trafficGeneratorWaitMinutes || 2,
       // Traffic Sender settings removed
     },
   });
@@ -101,9 +99,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     trafficstarCampaignId: campaign.trafficstarCampaignId || "",
-    budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
-    trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
-    trafficGeneratorWaitMinutes: campaign.trafficGeneratorWaitMinutes || 2
+    // Traffic Sender references removed
+    // Auto-management has been removed
   });
   
   // CRITICAL FIX: Force the form values to be set properly
@@ -115,22 +112,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         : (campaign.pricePerThousand || 0)
     );
     
-    // Set Traffic Generator wait minutes
-    form.setValue('trafficGeneratorWaitMinutes', 
-      typeof campaign.trafficGeneratorWaitMinutes === 'number'
-        ? campaign.trafficGeneratorWaitMinutes
-        : 2
-    );
-    
-    // Set Traffic Generator enabled status
-    form.setValue('trafficGeneratorEnabled', 
-      campaign.trafficGeneratorEnabled === true
-    );
-    
-    // Set budget update time
-    if (campaign.budgetUpdateTime) {
-      form.setValue('budgetUpdateTime', campaign.budgetUpdateTime);
-    }
+    // Traffic Sender code removed
   }, 100);
   
   // Force budget update mutation - will be used when budgetUpdateTime changes
@@ -520,111 +502,29 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Traffic Generator</h4>
-                    <div className="flex flex-row items-center space-x-2 space-y-0">
-                      <Switch
-                        checked={form.getValues("trafficGeneratorEnabled") === true}
-                        onCheckedChange={(checked) => {
-                          // Update form value
-                          form.setValue("trafficGeneratorEnabled", checked);
-                          
-                          // Directly update database
-                          fetch(`/api/campaigns/9`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ trafficGeneratorEnabled: checked })
-                          }).then(() => {
-                            console.log("Traffic Generator enabled value updated to:", checked);
-                          });
-                        }}
-                      />
-                      <div className="space-y-0.5">
-                        <div className="text-sm">
-                          {form.getValues("trafficGeneratorEnabled") ? "Enabled" : "Disabled"}
-                        </div>
-                      </div>
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="trafficGeneratorEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">
+                              {field.value ? "Enabled" : "Disabled"}
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                   <p className="text-sm text-muted-foreground">
                     When enabled, Traffic Generator will automatically manage traffic for this campaign.
                   </p>
-                  
-                  {/* Wait Time Minutes Input */}
-                  {form.watch("trafficGeneratorEnabled") && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <FormField
-                        control={form.control}
-                        name="trafficGeneratorWaitMinutes"
-                        render={({ field }) => (
-                          <FormItem className="grid grid-cols-2 gap-2 items-center">
-                            <FormLabel className="text-sm">Wait time after pause:</FormLabel>
-                            <div className="flex items-center">
-                              <FormControl>
-                                <div className="flex items-center space-x-2">
-                                  <button 
-                                    type="button"
-                                    className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      // Get current value with fallback
-                                      const currentValue = parseInt(String(field.value)) || 5;
-                                      // Calculate new value, ensuring minimum of 1
-                                      const newValue = Math.max(1, currentValue - 1);
-                                      // Update form field
-                                      field.onChange(newValue);
-                                      
-                                      // Do a direct update to the database for campaign ID 9
-                                      fetch(`/api/campaigns/9`, {
-                                        method: "PATCH",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ trafficGeneratorWaitMinutes: newValue })
-                                      });
-                                    }}
-                                  >
-                                    -
-                                  </button>
-                                  
-                                  <div className="text-center w-10 font-bold text-lg">
-                                    {field.value || 5}
-                                  </div>
-                                  
-                                  <button 
-                                    type="button"
-                                    className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      // Get current value with fallback
-                                      const currentValue = parseInt(String(field.value)) || 5;
-                                      // Calculate new value, ensuring maximum of 60
-                                      const newValue = Math.min(60, currentValue + 1);
-                                      // Update form field
-                                      field.onChange(newValue);
-                                      
-                                      // Do a direct update to the database for campaign ID 9
-                                      fetch(`/api/campaigns/9`, {
-                                        method: "PATCH",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ trafficGeneratorWaitMinutes: newValue })
-                                      });
-                                    }}
-                                  >
-                                    +
-                                  </button>
-                                  
-                                  <span className="ml-2 text-sm text-gray-500">minutes</span>
-                                </div>
-                              </FormControl>
-                            </div>
-                            <FormDescription className="col-span-2 text-xs">
-                              Minutes to wait after pausing a campaign before checking spent value (1-60).
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
               

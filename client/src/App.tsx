@@ -18,7 +18,6 @@ import CampaignClickRecordsPage from "@/pages/campaign-click-records-page";
 import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
 import UrlClickRecordsPage from "@/pages/url-click-records-page";
 import DetailedUrlRecordPage from "@/pages/detailed-url-record-page";
-import TrafficGeneratorControlPage from "@/pages/traffic-generator-control";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -101,9 +100,6 @@ function Router() {
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
           </Route>
-          <Route path="/traffic-generator">
-            <TrafficGeneratorControlPage />
-          </Route>
           <Route>
             <NotFound />
           </Route>
@@ -166,9 +162,6 @@ function Router() {
           </Route>
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
-          </Route>
-          <Route path="/traffic-generator">
-            <TrafficGeneratorControlPage />
           </Route>
           <Route>
             <NotFound />

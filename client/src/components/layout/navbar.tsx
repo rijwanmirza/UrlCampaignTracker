@@ -179,20 +179,6 @@ export default function Navbar() {
           </div>
         </Link>
         
-        <Link 
-          href="/traffic-generator" 
-          className="block py-3 border-b"
-          onClick={() => setMenuOpen(false)}
-        >
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 5v2M5 15h2M18 12h2M12 18v2M8 8l1.5 1.5M19 19l-1.5-1.5M16 16l-2-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="font-medium">Traffic Generator</span>
-          </div>
-        </Link>
-        
         <div className="block py-3 border-b text-gray-400 cursor-not-allowed">
           <div className="flex items-center">
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
