@@ -50,6 +50,7 @@ const campaignEditSchema = z.object({
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   // Traffic Generator fields
   trafficGeneratorEnabled: z.boolean().default(false),
+  postPauseCheckMinutes: z.number().int().min(1).max(30).default(2), // Minutes to wait after pause (1-30)
   // Traffic Sender fields removed
 });
 
@@ -86,6 +87,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
       // Traffic Generator settings
       trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
+      postPauseCheckMinutes: campaign.postPauseCheckMinutes || 2, // Default to 2 minutes
       // Traffic Sender settings removed
     },
   });
@@ -525,6 +527,42 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   <p className="text-sm text-muted-foreground">
                     When enabled, Traffic Generator will automatically manage traffic for this campaign.
                   </p>
+                  
+                  {/* Post-Pause Check Time Interval - only show when Traffic Generator is enabled */}
+                  {form.watch("trafficGeneratorEnabled") && (
+                    <FormField
+                      control={form.control}
+                      name="postPauseCheckMinutes"
+                      render={({ field }) => (
+                        <FormItem className="mt-3 pt-3 border-t border-gray-100">
+                          <FormLabel>Time Interval After Pause (minutes)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="30"
+                              step="1"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? '' : e.target.value;
+                                const parsedValue = parseInt(value, 10);
+                                if (!isNaN(parsedValue)) {
+                                  field.onChange(parsedValue);
+                                } else {
+                                  field.onChange(value);
+                                }
+                              }}
+                              value={field.value}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Time to wait after pausing a campaign before checking spent value (1-30 minutes).
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </div>
               
