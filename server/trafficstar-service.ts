@@ -1103,45 +1103,44 @@ class TrafficStarService {
       
       console.log(`Setting campaign ${id} end time to: ${formattedEndTime} (original input: ${scheduleEndTime})`);
       
-      // Try all API base URLs in sequence until one works
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          console.log(`Trying to update campaign ${id} end time using endpoint: ${baseUrl}/campaigns/${id}`);
-          
-          const response = await axios.patch(`${baseUrl}/campaigns/${id}`, {
-            schedule_end_time: formattedEndTime
-          }, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 10000 // 10 second timeout
-          });
-          
-          console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime} using ${baseUrl}`);
-          console.log(`API Response:`, response.data);
-  
-          // Update local record
-          await db.update(trafficstarCampaigns)
-            .set({ scheduleEndTime, updatedAt: new Date() })
-            .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+      try {
+        // Try all API base URLs in sequence until one works
+        for (const baseUrl of API_BASE_URLS) {
+          try {
+            console.log(`Trying to update campaign ${id} end time using endpoint: ${baseUrl}/campaigns/${id}`);
             
-          return; // Success - exit the function
-        } catch (endpointError) {
-          console.log(`Failed to update campaign ${id} end time using ${baseUrl}: ${endpointError.message}`);
-          // Continue to next endpoint
+            const response = await axios.patch(`${baseUrl}/campaigns/${id}`, {
+              schedule_end_time: formattedEndTime
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000 // 10 second timeout
+            });
+            
+            console.log(`Successfully updated campaign ${id} end time to ${formattedEndTime} using ${baseUrl}`);
+            console.log(`API Response:`, response.data);
+    
+            // Update local record
+            await db.update(trafficstarCampaigns)
+              .set({ scheduleEndTime, updatedAt: new Date() })
+              .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+              
+            return; // Success - exit the function
+          } catch (endpointError) {
+            console.log(`Failed to update campaign ${id} end time using ${baseUrl}: ${endpointError.message}`);
+            // Continue to next endpoint
+          }
         }
-      }
-      
-      // If we get here, all endpoints failed
-      console.error(`All endpoints failed when updating end time for campaign ${id}`);
-      throw new Error(`Failed to update campaign ${id} end time using any API endpoint`);
-      
-      } catch (error: any) {
-        console.error(`Error from TrafficStar API when updating end time:`, error.response?.data);
+        
+        // If we get here, all endpoints failed
+        throw new Error(`Failed to update campaign ${id} end time using any API endpoint`);
+      } catch (apiError) {
+        console.error(`Error from TrafficStar API when updating end time:`, apiError.response?.data);
         
         // If the error is related to date format, try another format
-        if (error.response?.data?.msg?.includes('parsing time')) {
+        if (apiError.response?.data?.msg?.includes('parsing time')) {
           try {
             // Try with full HH:MM:SS format if not already using it
             if (!formattedEndTime.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
@@ -1195,8 +1194,8 @@ class TrafficStarService {
                 
               return;
             }
-          } catch (retryError: any) {
-            console.error(`Retry with full format failed:`, retryError.response?.data || retryError.message);
+          } catch (retryError) {
+            console.error(`Retry with full format failed:`, retryError.message);
           }
           
           try {
@@ -1247,11 +1246,11 @@ class TrafficStarService {
           }
         }
         
-        throw error;
+        throw apiError;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error updating TrafficStar campaign ${id} end time:`, error.message);
-      throw new Error(`Failed to update campaign ${id} end time`);
+      throw new Error(`Failed to update campaign ${id} end time: ${error.message}`);
     }
   }
 
