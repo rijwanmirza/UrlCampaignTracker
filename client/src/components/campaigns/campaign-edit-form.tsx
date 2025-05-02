@@ -555,30 +555,23 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                             <FormLabel className="text-sm">Wait time after pause:</FormLabel>
                             <div className="flex items-center">
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  max="60"
-                                  step="1"
-                                  className="w-16 text-center"
-                                  {...field}
-                                  onChange={(e) => {
-                                    // Always accept the input text first
-                                    const inputValue = e.target.value;
-                                    // Try to parse as a number
-                                    const value = parseInt(inputValue);
-                                    
-                                    if (inputValue === '') {
-                                      // Allow empty input temporarily for typing
-                                      field.onChange('');
-                                    } else if (!isNaN(value)) {
-                                      // Clamp value between 1-60
-                                      const clampedValue = Math.max(1, Math.min(60, value));
-                                      field.onChange(clampedValue);
-                                    }
+                                <Select
+                                  value={String(field.value)}
+                                  onValueChange={(value) => {
+                                    field.onChange(parseInt(value));
                                   }}
-                                  value={field.value}
-                                />
+                                >
+                                  <SelectTrigger className="w-24">
+                                    <SelectValue placeholder="Minutes" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from({ length: 60 }, (_, i) => i + 1).map((minutes) => (
+                                      <SelectItem key={minutes} value={String(minutes)}>
+                                        {minutes}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </FormControl>
                               <span className="ml-2 text-sm text-gray-500">minutes</span>
                             </div>
