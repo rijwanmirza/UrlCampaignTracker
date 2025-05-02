@@ -48,6 +48,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
+import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns } from "./traffic-generator";
 // Test routes import removed
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -2595,6 +2596,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Failed to fetch saved TrafficStar campaigns",
         error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // API routes for Traffic Generator
+  app.post("/api/traffic-generator/run-all", async (_req: Request, res: Response) => {
+    try {
+      console.log('Manually triggering Traffic Generator for all campaigns...');
+      await runTrafficGeneratorForAllCampaigns();
+      res.json({ 
+        success: true, 
+        message: "Traffic Generator has been manually triggered for all enabled campaigns" 
+      });
+    } catch (error) {
+      console.error('Error running Traffic Generator for all campaigns:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to run Traffic Generator", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.post("/api/traffic-generator/run/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId, 10);
+      
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid campaign ID" 
+        });
+      }
+      
+      console.log(`Manually triggering Traffic Generator for campaign ${campaignId}...`);
+      await processTrafficGenerator(campaignId);
+      
+      res.json({ 
+        success: true, 
+        message: `Traffic Generator has been manually triggered for campaign ${campaignId}` 
+      });
+    } catch (error) {
+      console.error(`Error running Traffic Generator for campaign:`, error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to run Traffic Generator", 
+        error: error instanceof Error ? error.message : String(error) 
       });
     }
   });

@@ -6,16 +6,10 @@
  * based on the traffic generator settings.
  */
 
-import { getTrafficStarAccessToken } from './trafficstar-api';
+import { trafficStarService } from './trafficstar-service';
 import { db } from './db';
 import { campaigns } from '../shared/schema';
-import { pool } from './db';
 import { eq } from 'drizzle-orm';
-import axios from 'axios';
-import { getEnvironmentVars } from './config';
-
-// Base URL for TrafficStar API
-const TRAFFICSTAR_API_BASE_URL = 'https://api.trafficstars.com/v1';
 
 /**
  * Get TrafficStar campaign status
@@ -24,34 +18,16 @@ const TRAFFICSTAR_API_BASE_URL = 'https://api.trafficstars.com/v1';
  */
 export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string) {
   try {
-    const { TRAFFICSTAR_API_KEY } = getEnvironmentVars();
+    // Use trafficStarService to get campaign status
+    const campaign = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
     
-    // Get access token
-    const accessToken = await getTrafficStarAccessToken(TRAFFICSTAR_API_KEY);
-    
-    if (!accessToken) {
-      console.error('Failed to get TrafficStar access token for checking campaign status');
-      return null;
-    }
-    
-    // Make API call to get campaign status
-    const response = await axios.get(
-      `${TRAFFICSTAR_API_BASE_URL}/campaigns/${trafficstarCampaignId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    if (response.status !== 200) {
-      console.error(`Failed to get TrafficStar campaign status, status code: ${response.status}`);
+    if (!campaign) {
+      console.error(`Failed to get TrafficStar campaign ${trafficstarCampaignId}`);
       return null;
     }
     
     // Return the campaign status
-    return response.data.status;
+    return campaign.status;
   } catch (error) {
     console.error('Error getting TrafficStar campaign status:', error);
     return null;
@@ -65,30 +41,11 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
  */
 export async function pauseTrafficStarCampaign(trafficstarCampaignId: string) {
   try {
-    const { TRAFFICSTAR_API_KEY } = getEnvironmentVars();
+    // Use trafficStarService to pause campaign
+    const result = await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
     
-    // Get access token
-    const accessToken = await getTrafficStarAccessToken(TRAFFICSTAR_API_KEY);
-    
-    if (!accessToken) {
-      console.error('Failed to get TrafficStar access token for pausing campaign');
-      return false;
-    }
-    
-    // Make API call to pause campaign
-    const response = await axios.put(
-      `${TRAFFICSTAR_API_BASE_URL}/campaigns/${trafficstarCampaignId}/status`,
-      { status: 'paused' },
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    if (response.status !== 200) {
-      console.error(`Failed to pause TrafficStar campaign, status code: ${response.status}`);
+    if (!result) {
+      console.error(`Failed to pause TrafficStar campaign ${trafficstarCampaignId}`);
       return false;
     }
     
