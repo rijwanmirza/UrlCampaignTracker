@@ -101,8 +101,9 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     trafficstarCampaignId: campaign.trafficstarCampaignId || "",
-    // Traffic Sender references removed
-    // Auto-management has been removed
+    budgetUpdateTime: campaign.budgetUpdateTime || "00:00:00",
+    trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
+    trafficGeneratorWaitMinutes: campaign.trafficGeneratorWaitMinutes || 2
   });
   
   // CRITICAL FIX: Force the form values to be set properly
@@ -114,7 +115,22 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         : (campaign.pricePerThousand || 0)
     );
     
-    // Traffic Sender code removed
+    // Set Traffic Generator wait minutes
+    form.setValue('trafficGeneratorWaitMinutes', 
+      typeof campaign.trafficGeneratorWaitMinutes === 'number'
+        ? campaign.trafficGeneratorWaitMinutes
+        : 2
+    );
+    
+    // Set Traffic Generator enabled status
+    form.setValue('trafficGeneratorEnabled', 
+      campaign.trafficGeneratorEnabled === true
+    );
+    
+    // Set budget update time
+    if (campaign.budgetUpdateTime) {
+      form.setValue('budgetUpdateTime', campaign.budgetUpdateTime);
+    }
   }, 100);
   
   // Force budget update mutation - will be used when budgetUpdateTime changes
