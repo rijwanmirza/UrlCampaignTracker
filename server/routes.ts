@@ -905,8 +905,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
       
-      // Track if traffic generator setting was changed
-      const trafficGeneratorStateChanged = originalTrafficGeneratorEnabled !== undefined;
+      // Get the current campaign to see if traffic generator is being enabled
+      const existingCampaign = await storage.getCampaign(id);
+      
+      // Track if traffic generator is being enabled (was off, now being turned on)
+      const trafficGeneratorBeingEnabled = 
+        req.body.trafficGeneratorEnabled === true && 
+        (!existingCampaign?.trafficGeneratorEnabled || existingCampaign?.trafficGeneratorEnabled === false);
       
       // CRITICAL FIX: Make sure trafficSenderEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
@@ -938,8 +943,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if multiplier is being updated
       const { multiplier } = result.data;
-      const existingCampaign = await storage.getCampaign(id);
       
+      // We already fetched the existing campaign above, use that
       if (!existingCampaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
@@ -1009,7 +1014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Immediate check for Traffic Generator if it was just enabled
-      if (trafficGeneratorStateChanged && req.body.trafficGeneratorEnabled === true) {
+      if (trafficGeneratorBeingEnabled) {
         console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
         
         // Run the traffic generator check for this campaign immediately
