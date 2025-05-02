@@ -522,57 +522,113 @@ class TrafficStarService {
     }
   }
 
-  async updateCampaignStatus(id: string, status: string): Promise<void> {
+  async updateCampaignStatus(id: string, status: string, options = { maxRetries: 3, verifyChanges: true }): Promise<void> {
     try {
       console.log(`Updating campaign ${id} status to ${status}`);
       const token = await this.ensureToken();
       
-      let success = false;
+      // Get the current status before making any changes
+      const initialStatus = await this.getCampaign(id, true); // Force fresh API call
+      console.log(`Initial campaign status - Status: ${initialStatus.status}, Active: ${initialStatus.active}`);
       
-      // Try different endpoint patterns
-      for (const baseUrl of API_BASE_URLS) {
-        try {
-          console.log(`Trying to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
-          
-          // Prepare the data for the update
-          const updateData = {
-            status: status
-          };
-          
-          // Make the PATCH request
-          const response = await axios.patch(
-            `${baseUrl}/campaigns/${id}`,
-            updateData,
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
+      // If the campaign already has the desired status, no need to update
+      const isStatusMatched = status === 'paused' ? 
+        (initialStatus.status === 'paused' && !initialStatus.active) : 
+        (initialStatus.status === 'enabled' && initialStatus.active);
+        
+      if (isStatusMatched) {
+        console.log(`Campaign ${id} already has the desired status '${status}' - skipping update`);
+        return;
+      }
+      
+      let success = false;
+      let attemptCount = 0;
+      const maxRetries = options.maxRetries || 3;
+      
+      // Keep retrying until success or we reach max retries
+      while (!success && attemptCount < maxRetries) {
+        attemptCount++;
+        console.log(`Attempt ${attemptCount}/${maxRetries} to update campaign ${id} status to ${status}`);
+        
+        // Try each endpoint
+        for (const baseUrl of API_BASE_URLS) {
+          try {
+            console.log(`Trying to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
+            
+            // Prepare the data for the update
+            const updateData = {
+              status: status
+            };
+            
+            // Make the PATCH request
+            const response = await axios.patch(
+              `${baseUrl}/campaigns/${id}`,
+              updateData,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+              }
+            );
+            
+            // Check if the request was successful (status code)
+            if (response.status >= 200 && response.status < 300) {
+              console.log(`API call successful for campaign ${id} to status ${status}`);
+              
+              // If verification is requested, check that the status actually changed
+              if (options.verifyChanges) {
+                // Wait a moment to allow the API status to update
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Get the current status after the update
+                const updatedStatus = await this.getCampaign(id, true); // Force fresh API call
+                console.log(`Updated campaign status - Status: ${updatedStatus.status}, Active: ${updatedStatus.active}`);
+                
+                // Check if the status matches what we expect
+                const isNowMatched = status === 'paused' ? 
+                  (updatedStatus.status === 'paused' && !updatedStatus.active) : 
+                  (updatedStatus.status === 'enabled' && updatedStatus.active);
+                  
+                if (isNowMatched) {
+                  console.log(`Successfully verified campaign ${id} status change to ${status}`);
+                  success = true;
+                  break; // Success, exit the endpoints loop
+                } else {
+                  console.warn(`API call succeeded but status did not change for campaign ${id}: Expected ${status}, got ${updatedStatus.status} (active: ${updatedStatus.active})`);
+                  // Continue to next attempt or endpoint
+                }
+              } else {
+                // No verification requested, consider it a success
+                success = true;
+                break; // Exit the endpoints loop
+              }
+            } else {
+              console.log(`Unexpected response when updating campaign ${id}: ${response.status}`);
             }
-          );
-          
-          // Check if the request was successful
-          if (response.status >= 200 && response.status < 300) {
-            console.log(`Successfully updated campaign ${id} to status ${status}`);
-            success = true;
-            break;
-          } else {
-            console.log(`Unexpected response when updating campaign ${id}: ${response.status}`);
+          } catch (error) {
+            console.log(`Failed to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}: ${error}`);
+            // Continue to next endpoint
           }
-        } catch (error) {
-          console.log(`Failed to update campaign ${id} using endpoint: ${baseUrl}/campaigns/${id}`);
-          // Continue to next attempt
+        }
+        
+        if (!success && attemptCount < maxRetries) {
+          // Wait before retrying (exponential backoff)
+          const waitTime = Math.min(1000 * Math.pow(2, attemptCount - 1), 10000);
+          console.log(`Waiting ${waitTime}ms before retry ${attemptCount + 1} for campaign ${id}`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
       
       if (!success) {
-        console.error(`Failed to update campaign ${id} status to ${status} after trying all endpoints`);
-        throw new Error(`Failed to update campaign ${id}`);
+        const errorMsg = `Failed to update campaign ${id} status to ${status} after ${attemptCount} attempts`;
+        console.error(errorMsg);
+        throw new Error(errorMsg);
       }
     } catch (error) {
       console.error(`Error updating campaign ${id} status: ${error}`);
-      throw new Error(`Failed to update campaign ${id}`);
+      throw new Error(`Failed to update campaign ${id} status to ${status}: ${error}`);
     }
   }
   

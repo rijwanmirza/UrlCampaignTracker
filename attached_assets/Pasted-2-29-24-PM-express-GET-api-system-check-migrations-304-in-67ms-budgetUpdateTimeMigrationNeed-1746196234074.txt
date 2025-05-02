@@ -1,0 +1,22 @@
+2:29:24 PM [express] GET /api/system/check-migrations 304 in 67ms :: {"budgetUpdateTimeMigrationNeed…
+Successfully retrieved campaign 1000866 from https://api.trafficstars.com/v1.1/campaigns/1000866
+2:29:24 PM [info] REAL STATUS: TrafficStar campaign 1000866 status=enabled, active=true
+2:29:24 PM [error] Failed to verify campaign 1000866 is paused - API reports status=enabled, active=true
+2:29:24 PM [error] Critical: Failed to pause campaign 1000866: Error: Failed to verify campaign 1000866 is paused - API reports status=enabled, active=true
+2:29:24 PM [error] Error processing traffic generator for campaign 9: Error: Critical: Failed to pause campaign 1000866: Error: Failed to verify campaign 1000866 is paused - API reports status=enabled, active=true
+2:29:24 PM [express] Traffic Generator scheduler initialized successfully
+Successfully retrieved campaign 1000866 from https://api.trafficstars.com/v1.1/campaigns/1000866
+2:29:24 PM [info] REAL STATUS: TrafficStar campaign 1000866 status=enabled, active=true
+2:29:24 PM [error] Failed to pause TrafficStar campaign 1000866: Error: Campaign status could not be updated to paused: Current status=enabled, active=true
+2:29:24 PM [error] Error toggling Traffic Generator for campaign 9: Error: Failed to pause TrafficStar campaign 1000866: Error: Campaign status could not be updated to paused: Current status=enabled, active=true
+Error toggling Traffic Generator for campaign: Error: Failed to pause TrafficStar campaign 1000866: Error: Campaign status could not be updated to paused: Current status=enabled, active=true
+    at toggleTrafficGenerator (/home/runner/workspace/server/traffic-generator.ts:833:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:2696:7)
+2:29:24 PM [express] POST /api/traffic-generator/toggle/9 500 in 4820ms :: {"success":false,"message…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+2:29:30 PM [express] POST /api/trafficstar/campaigns/1000866/status 200 in 3ms
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔄 Bulk updating 4 URLs with action: pause
+🔄 Starting bidirectional sync for 4 original URL records with status: paused
+✅ Found 4 matching original URL records to update
