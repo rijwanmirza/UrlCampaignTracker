@@ -1012,16 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🔍 DEBUG: No multiplier change detected, skipping URL updates');
       }
       
-      // Immediate check for Traffic Generator if it was just enabled
-      if (trafficGeneratorBeingEnabled) {
-        console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
-        
-        // Run the traffic generator check for this campaign immediately
-        // We run this in the background (no await) to avoid delaying the response
-        processTrafficGenerator(id).catch(err => {
-          console.error(`Error in immediate traffic generator check for campaign ${id}:`, err);
-        });
-      }
+      // No immediate check - we'll let the scheduled process handle it after the wait time
       
       res.json(updatedCampaign);
     } catch (error) {

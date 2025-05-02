@@ -117,6 +117,25 @@ async function processTrafficGeneratorCampaign(campaign: Campaign) {
     const status = await getRealTimeTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
     log(`TRAFFIC-GENERATOR: TrafficStar campaign ${campaign.trafficstarCampaignId} REAL status is ${status.status}, active=${status.active}`, 'info');
     
+    // If we just enabled Traffic Generator and campaign is active, pause it first
+    if (campaign.trafficGeneratorEnabled && 
+        (status.status === 'enabled' || status.status === 'active') && 
+        status.active && 
+        campaign.trafficGeneratorState === TrafficGeneratorState.WAITING) {
+      log(`Campaign ${campaign.id} is active but Traffic Generator was just enabled - pausing first`, 'info');
+      try {
+        await trafficStarService.updateCampaignStatus(campaign.trafficstarCampaignId, 'paused');
+        log(`Successfully paused campaign ${campaign.trafficstarCampaignId} as part of Traffic Generator process`, 'info');
+        
+        // Update the status for later processing
+        status.status = 'paused';
+        status.active = false;
+      } catch (error) {
+        log(`Warning: Failed to pause campaign ${campaign.trafficstarCampaignId}: ${error}`, 'warn');
+        // Continue with processing anyway
+      }
+    }
+    
     // Phase 3: Post-Pause Workflow Logic
     // Check current state of the campaign
     if (!campaign.trafficGeneratorState) {
