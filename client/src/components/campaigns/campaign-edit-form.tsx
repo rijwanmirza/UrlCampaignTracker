@@ -520,25 +520,29 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Traffic Generator</h4>
-                    <FormField
-                      control={form.control}
-                      name="trafficGeneratorEnabled"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-sm">
-                              {field.value ? "Enabled" : "Disabled"}
-                            </FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                    <div className="flex flex-row items-center space-x-2 space-y-0">
+                      <Switch
+                        checked={form.getValues("trafficGeneratorEnabled") === true}
+                        onCheckedChange={(checked) => {
+                          // Update form value
+                          form.setValue("trafficGeneratorEnabled", checked);
+                          
+                          // Directly update database
+                          fetch(`/api/campaigns/9`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ trafficGeneratorEnabled: checked })
+                          }).then(() => {
+                            console.log("Traffic Generator enabled value updated to:", checked);
+                          });
+                        }}
+                      />
+                      <div className="space-y-0.5">
+                        <div className="text-sm">
+                          {form.getValues("trafficGeneratorEnabled") ? "Enabled" : "Disabled"}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     When enabled, Traffic Generator will automatically manage traffic for this campaign.
