@@ -10,6 +10,7 @@ import { trafficStarService } from './trafficstar-service-new';
 import { db } from './db';
 import { campaigns } from '../shared/schema';
 import { eq } from 'drizzle-orm';
+import { getSpentValueForDate } from './spent-value';
 
 /**
  * Get TrafficStar campaign status - ALWAYS uses real-time data
@@ -36,6 +37,85 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
   } catch (error) {
     console.error('Error getting TrafficStar campaign status:', error);
     return null;
+  }
+}
+
+/**
+ * Get current spent value for a TrafficStar campaign
+ * @param campaignId The campaign ID in our system
+ * @param trafficstarCampaignId The TrafficStar campaign ID
+ * @returns The current spent value as a number, or null if error
+ */
+export async function getTrafficStarCampaignSpentValue(campaignId: number, trafficstarCampaignId: string): Promise<number | null> {
+  try {
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    
+    console.log(`Fetching spent value for campaign ${trafficstarCampaignId} on ${formattedDate}`);
+    
+    // Use the existing spent value tracking functionality
+    const spentValue = await getSpentValueForDate(Number(trafficstarCampaignId), formattedDate);
+    
+    if (spentValue === null) {
+      console.error(`Failed to get spent value for campaign ${trafficstarCampaignId}`);
+      return null;
+    }
+    
+    // Convert spent value to number - remove $ and parse as float
+    const numericValue = parseFloat(spentValue.replace('$', ''));
+    console.log(`Campaign ${trafficstarCampaignId} spent value: $${numericValue.toFixed(4)}`);
+    
+    return numericValue;
+  } catch (error) {
+    console.error(`Error getting spent value for campaign ${trafficstarCampaignId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Handle campaign based on spent value threshold after pause
+ * @param campaignId The campaign ID in our system
+ * @param trafficstarCampaignId The TrafficStar campaign ID
+ * @param spentValue The current spent value of the campaign
+ */
+export async function handleCampaignBySpentValue(campaignId: number, trafficstarCampaignId: string, spentValue: number) {
+  const THRESHOLD = 10.0; // $10 threshold for different handling
+  
+  try {
+    console.log(`TRAFFIC-GENERATOR: Handling campaign ${trafficstarCampaignId} by spent value - current spent: $${spentValue.toFixed(4)}`);
+    
+    if (spentValue < THRESHOLD) {
+      // Handle campaign with less than $10 spent
+      console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
+      
+      // Mark this in the database
+      await db.update(campaigns)
+        .set({
+          lastTrafficSenderStatus: 'low_spend',
+          lastTrafficSenderAction: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(campaigns.id, campaignId));
+      
+      console.log(`✅ Marked campaign ${campaignId} as 'low_spend' in database`);
+    } else {
+      // Handle campaign with $10 or more spent
+      console.log(`🟢 HIGH SPEND ($${spentValue.toFixed(4)} >= $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent $${THRESHOLD.toFixed(2)} or more`);
+      
+      // Mark this in the database
+      await db.update(campaigns)
+        .set({
+          lastTrafficSenderStatus: 'high_spend',
+          lastTrafficSenderAction: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(campaigns.id, campaignId));
+      
+      console.log(`✅ Marked campaign ${campaignId} as 'high_spend' in database`);
+    }
+  } catch (error) {
+    console.error(`Error handling campaign ${trafficstarCampaignId} by spent value:`, error);
   }
 }
 
@@ -104,13 +184,48 @@ export async function processTrafficGenerator(campaignId: number) {
       console.log(`✓ CORRECTLY DETECTED: TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE!`);
       console.log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} using updated API endpoints...`);
       
+      let pauseSuccessful = false;
+      
       // Try to pause the campaign using our improved API endpoints
       try {
-        // Our pauseTrafficStarCampaign function doesn't actually return a success value
-        // It either completes successfully or throws an error
-        await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
-        // If we get here, it means the pause was successful (no exception was thrown)
-        console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        const result = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+        pauseSuccessful = result;
+        
+        if (pauseSuccessful) {
+          console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+          
+          // Update campaign status in database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'paused',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+          
+          // Schedule a post-pause spent value check after 2 minutes
+          console.log(`⏱️ Scheduling post-pause spent value check for campaign ${campaign.id} in 2 minutes...`);
+          
+          setTimeout(async () => {
+            console.log(`⏰ Running scheduled post-pause spent value check for campaign ${campaign.id}`);
+            
+            try {
+              // Get the spent value
+              const spentValue = await getTrafficStarCampaignSpentValue(campaign.id, campaign.trafficstarCampaignId!);
+              
+              if (spentValue !== null) {
+                // Handle campaign based on spent value
+                await handleCampaignBySpentValue(campaign.id, campaign.trafficstarCampaignId!, spentValue);
+              } else {
+                console.error(`❌ Failed to get spent value for post-pause check of campaign ${campaign.id}`);
+              }
+            } catch (error) {
+              console.error(`❌ Error in post-pause spent value check for campaign ${campaign.id}:`, error);
+            }
+          }, 2 * 60 * 1000); // 2 minutes in milliseconds
+        } else {
+          console.error(`❌ Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        }
       } catch (error) {
         console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
       }
