@@ -106,12 +106,11 @@ export async function processTrafficGenerator(campaignId: number) {
       
       // Try to pause the campaign using our improved API endpoints
       try {
-        const success = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
-        if (success) {
-          console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-        } else {
-          console.error(`❌ Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-        }
+        // Our pauseTrafficStarCampaign function doesn't actually return a success value
+        // It either completes successfully or throws an error
+        await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+        // If we get here, it means the pause was successful (no exception was thrown)
+        console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
       } catch (error) {
         console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
       }

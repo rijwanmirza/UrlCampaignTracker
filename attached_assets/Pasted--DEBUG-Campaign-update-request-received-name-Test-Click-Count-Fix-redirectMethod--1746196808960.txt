@@ -1,0 +1,60 @@
+🔍 DEBUG: Campaign update request received: {
+  "name": "Test Click Count Fix",
+  "redirectMethod": "direct",
+  "customPath": "clicktest",
+  "multiplier": 1,
+  "pricePerThousand": 1,
+  "trafficstarCampaignId": "1000866",
+  "budgetUpdateTime": "00:00:00",
+  "trafficGeneratorEnabled": true
+}
+🔍 DEBUG: Traffic Generator enabled value (after normalization): true type: boolean
+🔍 DEBUG: Traffic Sender enabled value (after normalization): undefined type: undefined
+🔍 DEBUG: Campaign update request TYPE: number
+🔍 DEBUG: Campaign update request VALUE: 1
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 DEBUG: Campaign update requested: ID 9
+  - Current multiplier: 1 (type: number)
+  - Requested multiplier: 1 (type: number)
+🔍 DEBUG: Received pricePerThousand: 1 type: number
+🔍 DEBUG: Setting pricePerThousand to: 1.0000
+🔍 DEBUG: Setting trafficstarCampaignId to: 1000866
+🔍 DEBUG: Setting budgetUpdateTime to: 00:00:00
+🔍 DEBUG: Setting trafficGeneratorEnabled to: true (original value: true )
+🔍 DEBUG: No multiplier change detected, skipping URL updates
+🔍 DEBUG: Traffic Generator was just enabled for campaign 9, running immediate check...
+2:39:27 PM [express] PUT /api/campaigns/9 200 in 80ms :: {"id":9,"name":"Test Click Count Fix","redi…
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+REAL-TIME STATUS CHECK: Getting current status for TrafficStar campaign 1000866
+REAL-TIME CHECK: Bypassing cache to get ACTUAL status of TrafficStar campaign 1000866
+Trying to get campaign 1000866 using endpoint: https://api.trafficstars.com/v1/campaigns/1000866
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+2:39:27 PM [express] GET /api/campaigns/9 200 in 44ms :: {"id":9,"name":"Test Click Count Fix","redi…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+2:39:27 PM [express] GET /api/campaigns 200 in 170ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+Failed to get campaign 1000866 using endpoint: https://api.trafficstars.com/v1/campaigns/1000866
+Trying to get campaign 1000866 using endpoint: https://api.trafficstars.com/campaigns/1000866
+Failed to get campaign 1000866 using endpoint: https://api.trafficstars.com/campaigns/1000866
+Trying to get campaign 1000866 using endpoint: https://api.trafficstars.com/v1.1/campaigns/1000866
+Successfully retrieved campaign 1000866 from https://api.trafficstars.com/v1.1/campaigns/1000866
+REAL STATUS: TrafficStar campaign 1000866 status=enabled, active=true
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+TrafficStar campaign 1000866 status: active
+✓ CORRECTLY DETECTED: TrafficStar campaign 1000866 is ACTIVE!
+Pausing TrafficStar campaign 1000866 using updated API endpoints...
+Trying to pause campaign 1000866 using V2 batch API: https://api.trafficstars.com/v2/campaigns/pause
+Using campaign_ids array with ID: 1000866
+Pause campaign API response: { success: [ 1000866 ], failed: [], total: 1 }
+Successfully paused campaign 1000866 using V2 batch API
+Setting campaign 1000866 end time to current UTC time: 2025-05-02 14:39:30
+Successfully set end time for campaign 1000866 to 2025-05-02 14:39:30
+Failed to pause TrafficStar campaign 1000866
+❌ Failed to pause TrafficStar campaign 1000866
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies betwe
