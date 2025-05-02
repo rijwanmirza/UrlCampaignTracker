@@ -150,10 +150,9 @@ export default function TrafficGeneratorControlPage() {
   const runTrafficGeneratorNow = async () => {
     try {
       setIsRunningNow(true);
-      const response = await fetch(`/api/traffic-generator/run-now`, {
+      const response = await fetch(`/api/traffic-generator/run/${campaignId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId })
+        headers: { "Content-Type": "application/json" }
       });
       
       if (!response.ok) {
