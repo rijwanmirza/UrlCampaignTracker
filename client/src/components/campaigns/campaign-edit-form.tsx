@@ -558,25 +558,43 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                                 <div className="flex items-center space-x-2">
                                   <button 
                                     type="button"
-                                    className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700"
-                                    onClick={() => {
-                                      const newValue = Math.max(1, (field.value || 15) - 1);
+                                    className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const newValue = Math.max(1, parseInt(String(field.value)) - 1 || 4);
                                       field.onChange(newValue);
+                                      
+                                      // Also immediately update in the database via API call
+                                      fetch(`/api/campaigns/${form.getValues("id")}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ trafficGeneratorWaitMinutes: newValue })
+                                      });
                                     }}
                                   >
                                     -
                                   </button>
                                   
-                                  <div className="text-center w-10">
-                                    {field.value || 15}
+                                  <div className="text-center w-10 font-bold text-lg">
+                                    {field.value || 5}
                                   </div>
                                   
                                   <button 
                                     type="button"
-                                    className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700"
-                                    onClick={() => {
-                                      const newValue = Math.min(60, (field.value || 15) + 1);
+                                    className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const newValue = Math.min(60, parseInt(String(field.value)) + 1 || 6);
                                       field.onChange(newValue);
+                                      
+                                      // Also immediately update in the database via API call
+                                      fetch(`/api/campaigns/${form.getValues("id")}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ trafficGeneratorWaitMinutes: newValue })
+                                      });
                                     }}
                                   >
                                     +
