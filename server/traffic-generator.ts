@@ -119,10 +119,8 @@ async function processTrafficGeneratorCampaign(campaign: Campaign) {
     
     // If we just enabled Traffic Generator and campaign is active, pause it first
     if (campaign.trafficGeneratorEnabled && 
-        (status.status === 'enabled' || status.status === 'active') && 
-        status.active && 
-        campaign.trafficGeneratorState === TrafficGeneratorState.WAITING) {
-      log(`Campaign ${campaign.id} is active but Traffic Generator was just enabled - pausing first`, 'info');
+        (status.status === 'enabled' || status.status === 'active' || status.active)) {
+      log(`Campaign ${campaign.id} is active but Traffic Generator is enabled - ensuring it's paused`, 'info');
       try {
         await trafficStarService.updateCampaignStatus(campaign.trafficstarCampaignId, 'paused');
         log(`Successfully paused campaign ${campaign.trafficstarCampaignId} as part of Traffic Generator process`, 'info');
@@ -130,9 +128,19 @@ async function processTrafficGeneratorCampaign(campaign: Campaign) {
         // Update the status for later processing
         status.status = 'paused';
         status.active = false;
+        
+        // Verify the campaign is actually paused
+        const verifyStatus = await getRealTimeTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+        if (verifyStatus.active === true || verifyStatus.status !== 'paused') {
+          const errorMsg = `Failed to verify campaign ${campaign.trafficstarCampaignId} is paused - API reports status=${verifyStatus.status}, active=${verifyStatus.active}`;
+          log(errorMsg, 'error');
+          throw new Error(errorMsg);
+        }
       } catch (error) {
-        log(`Warning: Failed to pause campaign ${campaign.trafficstarCampaignId}: ${error}`, 'warn');
-        // Continue with processing anyway
+        // This is a critical error - Traffic Generator requires campaigns to be paused
+        const errorMsg = `Critical: Failed to pause campaign ${campaign.trafficstarCampaignId}: ${error}`;
+        log(errorMsg, 'error');
+        throw new Error(errorMsg);
       }
     }
     
@@ -799,13 +807,31 @@ export async function toggleTrafficGenerator(campaignId: number, enabled: boolea
     // If we're enabling Traffic Generator, pause the campaign in TrafficStar first
     if (enabled && campaign.trafficstarCampaignId) {
       log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} before enabling Traffic Generator`, 'info');
-      try {
-        // Pause the campaign in TrafficStar
-        await trafficStarService.updateCampaignStatus(campaign.trafficstarCampaignId, 'paused');
-        log(`TrafficStar campaign ${campaign.trafficstarCampaignId} paused successfully`, 'info');
-      } catch (error) {
-        log(`Warning: Failed to pause TrafficStar campaign: ${error}`, 'warn');
-        // Continue anyway - we'll let the Traffic Generator handle it
+      
+      // Get the current real-time status
+      const currentStatus = await getRealTimeTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+      
+      // Check if the campaign is already paused
+      if (currentStatus.active === false && currentStatus.status === 'paused') {
+        log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already paused, continuing`, 'info');
+      } else {
+        // Pause the campaign in TrafficStar - this is MANDATORY before enabling Traffic Generator
+        try {
+          // Pause the campaign in TrafficStar
+          await trafficStarService.updateCampaignStatus(campaign.trafficstarCampaignId, 'paused');
+          log(`TrafficStar campaign ${campaign.trafficstarCampaignId} paused successfully`, 'info');
+          
+          // Double-check that it's actually paused
+          const verifyStatus = await getRealTimeTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+          if (verifyStatus.active === true || verifyStatus.status !== 'paused') {
+            throw new Error(`Campaign status could not be updated to paused: Current status=${verifyStatus.status}, active=${verifyStatus.active}`);
+          }
+        } catch (error) {
+          // Throw an error instead of continuing - pausing MUST succeed
+          const errorMessage = `Failed to pause TrafficStar campaign ${campaign.trafficstarCampaignId}: ${error}`;
+          log(errorMessage, 'error');
+          throw new Error(errorMessage);
+        }
       }
     }
     
