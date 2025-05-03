@@ -230,14 +230,14 @@ CREATE FUNCTION public.prevent_auto_click_updates() RETURNS trigger
                 OLD.click_limit, NEW.click_limit, NEW.id;
               NEW.click_limit := OLD.click_limit;
             END IF;
-            
+
             -- Restore the original clicks value if it was changed
             IF NEW.clicks IS DISTINCT FROM OLD.clicks THEN
               RAISE WARNING 'Preventing automatic update to clicks (from % to %) for URL %', 
                 OLD.clicks, NEW.clicks, NEW.id;
               NEW.clicks := OLD.clicks;
             END IF;
-            
+
             -- Restore the original original_click_limit value if it was changed
             IF NEW.original_click_limit IS DISTINCT FROM OLD.original_click_limit THEN
               RAISE WARNING 'Preventing automatic update to original_click_limit (from % to %) for URL %', 
@@ -245,7 +245,7 @@ CREATE FUNCTION public.prevent_auto_click_updates() RETURNS trigger
               NEW.original_click_limit := OLD.original_click_limit;
             END IF;
           END IF;
-          
+
           RETURN NEW;
         END;
         $$;
@@ -270,7 +270,7 @@ CREATE FUNCTION public.prevent_campaign_auto_click_updates() RETURNS trigger
               NEW.total_clicks := OLD.total_clicks;
             END IF;
           END IF;
-          
+
           RETURN NEW;
         END;
         $$;
@@ -292,7 +292,7 @@ CREATE FUNCTION public.prevent_test_auto_clicks_updates() RETURNS trigger
               RAISE NOTICE 'Blocked auto-update of clicks: % -> %', OLD.clicks, NEW.clicks;
               RETURN NULL;
             END IF;
-            
+
             -- For any other case, allow the update
             RETURN NEW;
           END;
@@ -315,18 +315,18 @@ CREATE FUNCTION public.prevent_unauthorized_click_updates() RETURNS trigger
             -- Bypass enabled, allow all updates
             RETURN NEW;
           END IF;
-          
+
           -- If we get here, click protection is enabled (bypass is not enabled)
           -- We still want click_limit to be updatable for multiplier changes, etc.
           -- But we never want original_click_limit to change unless bypass is enabled
-          
+
           -- Check if original click limit is being changed - never allow this without bypass
           IF NEW.original_click_limit IS DISTINCT FROM OLD.original_click_limit THEN
             RAISE WARNING 'Preventing unauthorized update to original_click_limit (from % to %) for URL %', 
               OLD.original_click_limit, NEW.original_click_limit, NEW.id;
             NEW.original_click_limit := OLD.original_click_limit;
           END IF;
-          
+
           RETURN NEW;
         END;
         $$;
@@ -347,20 +347,20 @@ BEGIN
     -- This is intentional change from our API, allow it
     RETURN NEW;
   END IF;
-  
+
   -- For all other changes (from campaigns, URL page, etc.)
   -- If the original_click_limit is being changed, keep original value
   IF NEW.original_click_limit IS DISTINCT FROM OLD.original_click_limit THEN
     -- Keep the original value
     NEW.original_click_limit := OLD.original_click_limit;
   END IF;
-  
+
   -- If click_limit was reset to match original_click_limit, that's good
   IF NEW.click_limit = OLD.original_click_limit THEN
     -- This is valid, allow it
     RETURN NEW;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$;
@@ -381,7 +381,7 @@ CREATE FUNCTION public.start_auto_sync() RETURNS integer
           INSERT INTO sync_operations (is_auto_sync) 
           VALUES (TRUE) 
           RETURNING id INTO operation_id;
-          
+
           RETURN operation_id;
         END;
         $$;
@@ -407,42 +407,42 @@ CREATE FUNCTION public.update_original_click_value(url_id integer, new_original_
           INTO current_url
           FROM urls
           WHERE id = url_id;
-          
+
           IF current_url IS NULL THEN
             RETURN jsonb_build_object('success', false, 'message', 'URL not found');
           END IF;
-          
+
           -- Calculate multiplier if any exists
           multiplier := 1;
           IF current_url.original_click_limit > 0 AND current_url.click_limit > current_url.original_click_limit THEN
             -- PostgreSQL ROUND takes numeric type for second parameter, not integer
             multiplier := ROUND(current_url.click_limit::float / current_url.original_click_limit::float);
           END IF;
-          
+
           -- Log what we're doing
           RAISE NOTICE 'URL %: Changing original_click_limit from % to % with multiplier %', 
             url_id, current_url.original_click_limit, new_original_click_limit, multiplier;
-          
+
           -- Apply multiplier to new limit
           new_click_limit := new_original_click_limit * multiplier;
-          
+
           -- Temporarily disable protection
           UPDATE protection_settings
           SET value = FALSE
           WHERE key = 'click_protection_enabled';
-          
+
           -- Update URL
           UPDATE urls
           SET original_click_limit = new_original_click_limit,
               click_limit = new_click_limit,
               updated_at = NOW()
           WHERE id = url_id;
-          
+
           -- Re-enable protection
           UPDATE protection_settings
           SET value = TRUE
           WHERE key = 'click_protection_enabled';
-          
+
           -- Return success
           RETURN jsonb_build_object(
             'success', true,
