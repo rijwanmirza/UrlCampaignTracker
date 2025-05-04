@@ -32,14 +32,6 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
     
     if (!status) {
       console.error(`Failed to get TrafficStar campaign ${trafficstarCampaignId} status`);
-      
-      // Development fallback for testing
-      if (process.env.NODE_ENV === 'development') {
-        console.log('DEVELOPMENT MODE: Using mock campaign status for testing');
-        // Default to 'paused' status for campaigns so we can test auto-activation
-        return 'paused';
-      }
-      
       return null;
     }
     
@@ -50,14 +42,6 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
     return status.active ? 'active' : 'paused';
   } catch (error) {
     console.error('Error getting TrafficStar campaign status:', error);
-    
-    // Development fallback for testing
-    if (process.env.NODE_ENV === 'development') {
-      console.log('DEVELOPMENT MODE: Using mock campaign status for testing due to error');
-      // Default to 'paused' status for campaigns so we can test auto-activation
-      return 'paused';
-    }
-    
     return null;
   }
 }
@@ -76,18 +60,23 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     
     console.log(`Fetching spent value for campaign ${trafficstarCampaignId} on ${formattedDate}`);
     
-    // Use the existing spent value tracking functionality
+    // Try to get spent value directly from the TrafficStar service
+    try {
+      const result = await trafficStarService.getCampaignSpentValue(Number(trafficstarCampaignId), formattedDate, formattedDate);
+      
+      if (result && typeof result.totalSpent === 'number') {
+        console.log(`Campaign ${trafficstarCampaignId} direct API spent value: $${result.totalSpent.toFixed(4)}`);
+        return result.totalSpent;
+      }
+    } catch (directApiError) {
+      console.error(`Failed to get spent value directly from TrafficStar API:`, directApiError);
+    }
+    
+    // Fallback to the existing spent value tracking functionality
     const spentValue = await getSpentValueForDate(Number(trafficstarCampaignId), formattedDate);
     
     if (spentValue === null) {
       console.error(`Failed to get spent value for campaign ${trafficstarCampaignId}`);
-      
-      // Development fallback for testing
-      if (process.env.NODE_ENV === 'development') {
-        console.log('DEVELOPMENT MODE: Using default spent value for testing');
-        return 5.0; // Default below $10 threshold to test logic
-      }
-      
       return null;
     }
     
