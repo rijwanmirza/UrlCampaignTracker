@@ -47,6 +47,46 @@ export function parseSpentValue(campaign: any): number {
 }
 
 /**
+ * Extract the total spent value from the TrafficStar Reports API response
+ * This specifically handles the format returned by the advertiser/custom/report/by-day endpoint
+ * 
+ * @param reportData Array of daily report objects from TrafficStar Reports API
+ * @returns The total amount spent across all days in the report
+ */
+export function parseReportSpentValue(reportData: any[]): number {
+  try {
+    // If report data is empty or not an array
+    if (!reportData || !Array.isArray(reportData) || reportData.length === 0) {
+      return 0;
+    }
+    
+    // Extract and sum up the 'amount' value from each day's report
+    // This is specifically the format we expect from the TrafficStar reports API
+    let totalSpent = 0;
+    
+    for (const day of reportData) {
+      // Check if this day's report has an 'amount' field
+      if (day && typeof day.amount === 'number') {
+        totalSpent += day.amount;
+        console.log(`Found report amount: ${day.amount} for day ${day.day}`);
+      } else if (day && typeof day.amount === 'string') {
+        // Try to parse string amount
+        const amount = parseFloat(day.amount);
+        if (!isNaN(amount)) {
+          totalSpent += amount;
+          console.log(`Parsed report amount: ${amount} for day ${day.day}`);
+        }
+      }
+    }
+    
+    return totalSpent;
+  } catch (error) {
+    console.error('Error parsing report spent value:', error);
+    return 0;
+  }
+}
+
+/**
  * Gets today's date formatted as YYYY-MM-DD for API requests
  */
 export function getTodayFormatted(): string {

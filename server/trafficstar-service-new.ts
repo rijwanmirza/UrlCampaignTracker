@@ -9,6 +9,7 @@ import axios from 'axios';
 import { db } from './db';
 import { campaigns } from '../shared/schema';
 import { eq, sql } from 'drizzle-orm';
+import { getTodayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
 
 // Interfaces for API responses and data
 interface TokenResponse {
@@ -145,37 +146,45 @@ export class TrafficStarService {
    * Get spent value for campaign using Reports API
    * 
    * Uses: GET /v1.1/advertiser/custom/report/by-day
+   * 
+   * Format based on TrafficStar documentation where we need to use
+   * the exact date format YYYY-MM-DD for the current UTC date
    */
   async getCampaignSpentValue(campaignId: number, dateFrom?: string, dateTo?: string): Promise<{ totalSpent: number }> {
     try {
-      console.log(`Getting spent value for campaign ${campaignId} from ${dateFrom} to ${dateTo}`);
+      // Get the current UTC date in YYYY-MM-DD format using our helper
+      const currentUTCDate = getTodayFormatted();
       
-      // Default to today if dates not provided
-      const today = new Date().toISOString().split('T')[0];
-      const from = dateFrom || today;
-      const to = dateTo || today;
+      // Always use the current UTC date if not explicitly overridden
+      const dateToUse = currentUTCDate;
+      
+      console.log(`Getting spent value for campaign ${campaignId} for date: ${dateToUse}`);
       
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
       
-      // Make API request
+      // Make API request to the campaigns report endpoint using correct format
       const url = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+      
+      console.log(`Sending report request to: ${url}`);
+      console.log(`Using date_from=${dateToUse}, date_to=${dateToUse}, campaign_id=${campaignId}`);
       
       const response = await axios.get(url, {
         headers,
         params: {
           campaign_id: campaignId,
-          date_from: from,
-          date_to: to
+          date_from: dateToUse,
+          date_to: dateToUse
         }
       });
       
+      // Log the raw response for debugging
+      console.log(`Report API raw response:`, JSON.stringify(response.data).substring(0, 200) + '...');
+      
       // If response is successful and has data
       if (response.data && Array.isArray(response.data)) {
-        // Calculate total spent from all days
-        const totalSpent = response.data.reduce((sum: number, day: SpentReportItem) => {
-          return sum + (day.amount || 0);
-        }, 0);
+        // Use our helper to extract the "amount" values from the report data
+        const totalSpent = parseReportSpentValue(response.data);
         
         console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
         return { totalSpent };
@@ -184,8 +193,15 @@ export class TrafficStarService {
       // If response is empty or not as expected
       console.log(`No spent data returned for campaign ${campaignId}`);
       return { totalSpent: 0 };
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error getting spent value for campaign ${campaignId}:`, error);
+      
+      // Log more details about the error
+      if (error.response) {
+        console.error(`Error response status: ${error.response.status}`);
+        console.error(`Error response data:`, error.response.data);
+      }
+      
       // Don't throw, just return 0 as spend
       return { totalSpent: 0 };
     }
