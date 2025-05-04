@@ -48,7 +48,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
-import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns } from "./traffic-generator";
+import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns, debugProcessCampaign } from "./traffic-generator";
 // Test routes import removed
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -66,6 +66,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerUrlClickRoutes(app);
   
   // Test TrafficStar routes have been removed as per user request
+  
+  // Debug route for traffic generator testing
+  app.get("/api/trafficstar/debug-generator/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId, 10);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid campaign ID"
+        });
+      }
+      
+      const result = await debugProcessCampaign(campaignId);
+      return res.json(result);
+    } catch (error) {
+      console.error('Error in debug generator route:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to run debug traffic generator", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
   
   // API route to fix missing URL click logs
   app.post("/api/system/fix-missing-url-click-logs", async (_req: Request, res: Response) => {

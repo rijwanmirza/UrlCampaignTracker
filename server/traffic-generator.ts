@@ -748,3 +748,157 @@ export function initializeTrafficGeneratorScheduler() {
   console.log('Running initial traffic generator check on startup');
   runTrafficGeneratorForAllCampaigns();
 }
+
+/**
+ * Debug function to test Traffic Generator with detailed logging
+ * This function helps test campaigns with different click quantities
+ * @param campaignId The campaign ID to test
+ * @returns Debug information about the process
+ */
+export async function debugProcessCampaign(campaignId: number) {
+  try {
+    console.log(`🔍 DEBUG: Running detailed Traffic Generator check for campaign ID ${campaignId}`);
+    
+    // Get campaign details
+    const campaign = await db.select()
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId))
+      .limit(1)
+      .then(results => results[0] || null);
+      
+    if (!campaign) {
+      return {
+        success: false,
+        message: `Campaign ${campaignId} not found`,
+      };
+    }
+    
+    // Get campaign URLs separately
+    const urls = await db.query.urls.findMany({
+      where: (url, { eq }) => eq(url.campaignId, campaignId)
+    });
+    
+    if (!campaign) {
+      return {
+        success: false,
+        message: `Campaign ${campaignId} not found`,
+      };
+    }
+    
+    const { trafficstarCampaignId } = campaign;
+    if (!trafficstarCampaignId) {
+      return {
+        success: false,
+        message: `Campaign ${campaignId} does not have a TrafficStar campaign ID`,
+      };
+    }
+    
+    // Get real-time campaign status from TrafficStar
+    const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
+    console.log(`TrafficStar campaign ${trafficstarCampaignId} status: ${status}`);
+    
+    if (status === null) {
+      return {
+        success: false,
+        message: `Failed to get status for TrafficStar campaign ${trafficstarCampaignId}`,
+      };
+    }
+    
+    // Calculate total remaining clicks for the campaign
+    let totalRemainingClicks = 0;
+    let highClickUrls = [];
+    let lowClickUrls = [];
+    
+    if (campaign.urls && campaign.urls.length > 0) {
+      for (const url of campaign.urls) {
+        if (url.status === 'active' && url.isActive) {
+          const remainingClicks = url.clickLimit - url.clicks;
+          totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
+          
+          if (remainingClicks >= 15000) {
+            highClickUrls.push({
+              id: url.id,
+              name: url.name,
+              clickLimit: url.clickLimit,
+              clicks: url.clicks,
+              remainingClicks: remainingClicks
+            });
+          } else if (remainingClicks <= 5000) {
+            lowClickUrls.push({
+              id: url.id,
+              name: url.name,
+              clickLimit: url.clickLimit,
+              clicks: url.clicks,
+              remainingClicks: remainingClicks
+            });
+          }
+        }
+      }
+    }
+    
+    // Get current spent value
+    const spentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
+    console.log(`Campaign ${trafficstarCampaignId} spent value: ${spentValue}`);
+    
+    // Identify what action the Traffic Generator would take
+    let expectedAction = "none";
+    let actionReason = "";
+    
+    if (spentValue === null) {
+      expectedAction = "error";
+      actionReason = "Could not retrieve spent value";
+    } else if (spentValue >= 10.0) {
+      expectedAction = "high_spend_handling";
+      actionReason = `Spent value $${spentValue.toFixed(4)} >= $10.00 threshold`;
+    } else if (totalRemainingClicks >= 15000 && status !== 'active') {
+      expectedAction = "activate";
+      actionReason = `Low spend ($${spentValue.toFixed(4)}) with high remaining clicks (${totalRemainingClicks} >= 15,000)`;
+    } else if (totalRemainingClicks <= 5000 && status === 'active') {
+      expectedAction = "pause";
+      actionReason = `Low spend ($${spentValue.toFixed(4)}) with low remaining clicks (${totalRemainingClicks} <= 5,000)`;
+    } else if (totalRemainingClicks >= 15000 && status === 'active') {
+      expectedAction = "monitor_active";
+      actionReason = `Low spend ($${spentValue.toFixed(4)}) with high remaining clicks (${totalRemainingClicks} >= 15,000) and already active`;
+    } else if (totalRemainingClicks <= 5000 && status !== 'active') {
+      expectedAction = "monitor_paused";
+      actionReason = `Low spend ($${spentValue.toFixed(4)}) with low remaining clicks (${totalRemainingClicks} <= 5,000) and already paused`;
+    } else {
+      expectedAction = "maintain_current";
+      actionReason = `Low spend ($${spentValue.toFixed(4)}) with clicks between thresholds (${totalRemainingClicks})`;
+    }
+    
+    return {
+      success: true,
+      campaign: {
+        id: campaign.id,
+        name: campaign.name,
+        trafficstarCampaignId: trafficstarCampaignId,
+        trafficGeneratorEnabled: campaign.trafficGeneratorEnabled,
+        postPauseCheckMinutes: campaign.postPauseCheckMinutes,
+        lastTrafficSenderStatus: campaign.lastTrafficSenderStatus,
+        lastTrafficSenderAction: campaign.lastTrafficSenderAction
+      },
+      trafficStarStatus: status,
+      spentValue: spentValue !== null ? `$${spentValue.toFixed(4)}` : "Unknown",
+      totalRemainingClicks,
+      urlStats: {
+        totalUrls: campaign.urls.length,
+        highClickUrls: highClickUrls.length,
+        lowClickUrls: lowClickUrls.length
+      },
+      trafficGeneratorAction: {
+        expectedAction,
+        actionReason
+      },
+      highClickUrls,
+      lowClickUrls
+    };
+  } catch (error) {
+    console.error(`Error in debug traffic generator for campaign ${campaignId}:`, error);
+    return {
+      success: false,
+      message: `Error processing campaign ${campaignId}`,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
