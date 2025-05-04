@@ -81,6 +81,7 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
  */
 export async function handleCampaignBySpentValue(campaignId: number, trafficstarCampaignId: string, spentValue: number) {
   const THRESHOLD = 10.0; // $10 threshold for different handling
+  const REMAINING_CLICKS_THRESHOLD = 15000; // Threshold for auto-activation if campaign has low spend
   
   try {
     console.log(`TRAFFIC-GENERATOR: Handling campaign ${trafficstarCampaignId} by spent value - current spent: $${spentValue.toFixed(4)}`);
@@ -89,10 +90,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // Handle campaign with less than $10 spent
       console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
       
-      // CUSTOM ACTION FOR LOW SPEND: Automatically reactivate the campaign if it's after a certain time
-      const currentHour = new Date().getUTCHours();
-      
-      // Get the campaign details to check URL status
+      // Get the campaign details to check URLs and remaining clicks
       const campaign = await db.query.campaigns.findFirst({
         where: (campaign, { eq }) => eq(campaign.id, campaignId),
         with: {
@@ -100,23 +98,30 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
         }
       });
       
-      // Only proceed with auto-reactivation if there are active URLs
-      const hasActiveUrls = campaign?.urls.some(url => url.status === 'active' && url.isActive);
-      
-      if (hasActiveUrls) {
-        console.log(`🔄 LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has active URLs - evaluating for auto-reactivation`);
+      if (!campaign || !campaign.urls || campaign.urls.length === 0) {
+        console.log(`⏹️ LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has no URLs - skipping auto-reactivation check`);
+      } else {
+        // Calculate total remaining clicks across all active URLs
+        let totalRemainingClicks = 0;
+        for (const url of campaign.urls) {
+          if (url.status === 'active' && url.isActive) {
+            const remainingClicks = url.clickLimit - url.clicks;
+            totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
+          }
+        }
         
-        // Auto-reactivate only during certain UTC hours (e.g., 12:00 UTC to 23:59 UTC)
-        // Adjust these hours based on your traffic patterns
-        if (currentHour >= 12) {
-          console.log(`⏰ Current UTC hour (${currentHour}) is within auto-reactivation window for low spend campaigns`);
+        console.log(`📊 Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} total remaining clicks across all active URLs`);
+        
+        // Check if there are enough remaining clicks to auto-reactivate
+        if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD) {
+          console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) - will attempt auto-reactivation`);
           
           try {
-            // Attempt to reactivate the campaign since it's low spend and within reactivation window
+            // Attempt to reactivate the campaign since it has low spend but high remaining clicks
             const activationResult = await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
             
             if (activationResult) {
-              console.log(`✅ AUTO-REACTIVATED low spend campaign ${trafficstarCampaignId} since it's within reactivation window`);
+              console.log(`✅ AUTO-REACTIVATED low spend campaign ${trafficstarCampaignId} - it has ${totalRemainingClicks} remaining clicks`);
               
               // Mark as auto-reactivated in the database
               await db.update(campaigns)
@@ -128,6 +133,10 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                 .where(eq(campaigns.id, campaignId));
               
               console.log(`✅ Marked campaign ${campaignId} as 'auto_reactivated_low_spend' in database`);
+              
+              // Start minute-by-minute monitoring to check if the campaign stays active
+              startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+              
               return;
             } else {
               console.error(`❌ Failed to auto-reactivate low spend campaign ${trafficstarCampaignId}`);
@@ -136,13 +145,11 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
             console.error(`❌ Error auto-reactivating low spend campaign ${trafficstarCampaignId}:`, error);
           }
         } else {
-          console.log(`⏰ Current UTC hour (${currentHour}) is outside auto-reactivation window for low spend campaigns`);
+          console.log(`⏹️ Campaign ${trafficstarCampaignId} only has ${totalRemainingClicks} remaining clicks (< ${REMAINING_CLICKS_THRESHOLD}) - skipping auto-reactivation`);
         }
-      } else {
-        console.log(`⏹️ LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has no active URLs - skipping auto-reactivation`);
       }
       
-      // Default action if auto-reactivation doesn't happen
+      // Default action if auto-reactivation doesn't happen or fails
       // Mark this in the database
       await db.update(campaigns)
         .set({
@@ -171,6 +178,81 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
   } catch (error) {
     console.error(`Error handling campaign ${trafficstarCampaignId} by spent value:`, error);
   }
+}
+
+/**
+ * Map to store active status check intervals by campaign ID
+ * This prevents duplicate intervals from being created for the same campaign
+ */
+const activeStatusChecks = new Map<number, NodeJS.Timeout>();
+
+/**
+ * Start minute-by-minute check for campaign status
+ * This ensures the campaign stays active after reactivation
+ * @param campaignId The campaign ID in our system
+ * @param trafficstarCampaignId The TrafficStar campaign ID
+ */
+function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: string) {
+  // Clear existing interval if there is one
+  if (activeStatusChecks.has(campaignId)) {
+    clearInterval(activeStatusChecks.get(campaignId));
+    activeStatusChecks.delete(campaignId);
+  }
+  
+  console.log(`🔄 Starting minute-by-minute status check for campaign ${trafficstarCampaignId}`);
+  
+  // Set up a new interval that runs every minute
+  const interval = setInterval(async () => {
+    console.log(`⏱️ Running minute check for campaign ${trafficstarCampaignId} status`);
+    
+    try {
+      // Get the current status
+      const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
+      
+      if (status === 'active') {
+        console.log(`✅ Campaign ${trafficstarCampaignId} is still active - monitoring will continue`);
+      } else {
+        console.log(`❌ Campaign ${trafficstarCampaignId} is no longer active (status: ${status}) - attempting to reactivate`);
+        
+        // Attempt to reactivate
+        const result = await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
+        
+        if (result) {
+          console.log(`✅ Successfully reactivated campaign ${trafficstarCampaignId} during minute check`);
+          
+          // Update database status
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'reactivated_during_monitoring',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+        } else {
+          console.error(`❌ Failed to reactivate campaign ${trafficstarCampaignId} during minute check`);
+          
+          // Stop monitoring after multiple failures
+          clearInterval(interval);
+          activeStatusChecks.delete(campaignId);
+          console.log(`⏹️ Stopped minute-by-minute monitoring for campaign ${trafficstarCampaignId} due to reactivation failure`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error during minute check for campaign ${trafficstarCampaignId}:`, error);
+    }
+  }, 60 * 1000); // Check every minute
+  
+  // Store the interval in our map
+  activeStatusChecks.set(campaignId, interval);
+  
+  // Automatically stop checking after 60 minutes (to prevent endless monitoring)
+  setTimeout(() => {
+    if (activeStatusChecks.has(campaignId)) {
+      clearInterval(activeStatusChecks.get(campaignId));
+      activeStatusChecks.delete(campaignId);
+      console.log(`⏱️ Automatically stopped minute-by-minute monitoring for campaign ${trafficstarCampaignId} after 60 minutes`);
+    }
+  }, 60 * 60 * 1000);
 }
 
 /**
