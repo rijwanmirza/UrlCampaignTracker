@@ -89,6 +89,60 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // Handle campaign with less than $10 spent
       console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
       
+      // CUSTOM ACTION FOR LOW SPEND: Automatically reactivate the campaign if it's after a certain time
+      const currentHour = new Date().getUTCHours();
+      
+      // Get the campaign details to check URL status
+      const campaign = await db.query.campaigns.findFirst({
+        where: (campaign, { eq }) => eq(campaign.id, campaignId),
+        with: {
+          urls: true
+        }
+      });
+      
+      // Only proceed with auto-reactivation if there are active URLs
+      const hasActiveUrls = campaign?.urls.some(url => url.status === 'active' && url.isActive);
+      
+      if (hasActiveUrls) {
+        console.log(`🔄 LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has active URLs - evaluating for auto-reactivation`);
+        
+        // Auto-reactivate only during certain UTC hours (e.g., 12:00 UTC to 23:59 UTC)
+        // Adjust these hours based on your traffic patterns
+        if (currentHour >= 12) {
+          console.log(`⏰ Current UTC hour (${currentHour}) is within auto-reactivation window for low spend campaigns`);
+          
+          try {
+            // Attempt to reactivate the campaign since it's low spend and within reactivation window
+            const activationResult = await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
+            
+            if (activationResult) {
+              console.log(`✅ AUTO-REACTIVATED low spend campaign ${trafficstarCampaignId} since it's within reactivation window`);
+              
+              // Mark as auto-reactivated in the database
+              await db.update(campaigns)
+                .set({
+                  lastTrafficSenderStatus: 'auto_reactivated_low_spend',
+                  lastTrafficSenderAction: new Date(),
+                  updatedAt: new Date()
+                })
+                .where(eq(campaigns.id, campaignId));
+              
+              console.log(`✅ Marked campaign ${campaignId} as 'auto_reactivated_low_spend' in database`);
+              return;
+            } else {
+              console.error(`❌ Failed to auto-reactivate low spend campaign ${trafficstarCampaignId}`);
+            }
+          } catch (error) {
+            console.error(`❌ Error auto-reactivating low spend campaign ${trafficstarCampaignId}:`, error);
+          }
+        } else {
+          console.log(`⏰ Current UTC hour (${currentHour}) is outside auto-reactivation window for low spend campaigns`);
+        }
+      } else {
+        console.log(`⏹️ LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has no active URLs - skipping auto-reactivation`);
+      }
+      
+      // Default action if auto-reactivation doesn't happen
       // Mark this in the database
       await db.update(campaigns)
         .set({
