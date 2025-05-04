@@ -1,0 +1,81 @@
+Authentication
+
+The REST API authentication is based on the OAuth 2.0 protocol.
+The access token should be passed in requests to all API endpoints in the appropriate header: Authorization: Bearer {access_token}.
+
+Sign in
+The request for getting access token requires grant_type. Mandatory parameters depend on the grant_type chosen.
+The access token has a lifetime - you need to monitor when it expires (the lifetime of the token is specified in the expires_in field, see below), and shortly before this moment, renew it by using the previously obtained refresh token. Otherwise, when the token expires, the access token will no longer be valid and all requests to the API will fail.
+
+Input parameters
+
+Parameter	Data type	Options	Description
+grant_type	string	required	Grant type (acceptable value: refresh_token)
+refresh_token	string	required if grant_type = refresh_token	Refresh token or API key
+You will need to generate an API key first. You can do it on the profile page.
+
+Using offline token to retrieve/update access token:
+
+curl --location --request POST "https://api.trafficstars.com/v1/auth/token" \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'grant_type=refresh_token' \
+--data-urlencode 'refresh_token=YourApiKeyHere'
+Click to copy
+Response:
+
+{
+    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4Vz",
+    "expires_in": 36000,
+    "token_type": "Bearer",
+    "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0a",
+}
+Click to copy
+Renew the access token
+
+Subsequently, you will need to refresh the access token using refresh token (if using the first flow) or offline token (if using the second flow) when the time specified in the expires_in field has elapsed in order to continue working with the system in the current session.
+
+Request:
+
+curl --location --request POST "https://api.trafficstars.com/v1/auth/token" \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'grant_type=refresh_token' \
+--data-urlencode 'refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZ'
+Click to copy
+Response:
+
+{
+    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4Vz",
+    "expires_in": 36000,
+    "token_type": "Bearer",
+    "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0a",
+}
+Click to copy
+Session info
+Get information about the current session.
+
+Request:
+
+curl "https://api.trafficstars.com/v1/auth/info" \
+  -X POST \
+  -H "Authorization: Bearer {access token}"
+Click to copy
+Response:
+
+{
+  "access_token": "43D4NmiZS8Wvir-b5TQQGw",
+  "expires_in": 3600,
+  "refresh_token": "SeV6BjLyQfmRsZLpSi61Sw",
+  "token_type": "bearer"
+}
+Click to copy
+Sign out
+Terminate the session.
+
+Request:
+
+curl "https://api.trafficstars.com/v1/auth/logout" \
+  -H "Authorization: bearer {access_token}"
+Click to copy
+Response:
+
+204 No content

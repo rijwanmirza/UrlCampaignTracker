@@ -2,7 +2,7 @@
  * TrafficStar API Service
  * This service handles all interactions with the TrafficStar API for spent value tracking and campaign management
  * 
- * Implementation based on official TrafficStar API documentation
+ * Implementation based on official TrafficStar API documentation using OAuth 2.0
  */
 
 import axios from 'axios';
@@ -58,6 +58,7 @@ export class TrafficStarService {
   private tokenExpiry: Date | null = null;
   
   // API Base URLs
+  private readonly BASE_URL_V1 = 'https://api.trafficstars.com/v1';
   private readonly BASE_URL_V1_1 = 'https://api.trafficstars.com/v1.1';
   private readonly BASE_URL_V2 = 'https://api.trafficstars.com/v2';
   
@@ -75,7 +76,8 @@ export class TrafficStarService {
   }
 
   /**
-   * Ensure we have a valid access token
+   * Ensure we have a valid access token using OAuth 2.0
+   * Based on TrafficStars official documentation
    */
   async ensureToken(): Promise<string> {
     const now = new Date();
@@ -86,53 +88,50 @@ export class TrafficStarService {
     }
     
     // Token expired or not exists, get a new one
-    console.log('Getting new TrafficStar API token');
+    console.log('Getting new TrafficStar API access token via OAuth 2.0');
     
     try {
-      // Get API key from environment variables
-      const clientId = process.env.TRAFFICSTAR_CLIENT_ID || '';
-      const clientSecret = process.env.TRAFFICSTAR_CLIENT_SECRET || '';
-      const apiKey = process.env.TRAFFICSTAR_API_KEY || '';
+      // Get the API key from environment (which is used as refresh_token in OAuth 2.0 flow)
+      const apiKey = process.env.TRAFFICSTAR_API_KEY;
       
-      if (!apiKey && (!clientId || !clientSecret)) {
-        throw new Error('TrafficStar API credentials not set. Make sure TRAFFICSTAR_API_KEY or TRAFFICSTAR_CLIENT_ID and TRAFFICSTAR_CLIENT_SECRET are set.');
+      if (!apiKey) {
+        throw new Error('TrafficStar API key not set. Set TRAFFICSTAR_API_KEY environment variable.');
       }
       
-      let tokenResponse: TokenResponse;
+      // Make token request according to TrafficStar OAuth 2.0 specification
+      const tokenUrl = `${this.BASE_URL_V1}/auth/token`;
       
-      // If using API key directly
-      if (apiKey) {
-        this.accessToken = apiKey;
-        // Set expiry to far in the future since API keys don't expire
-        this.tokenExpiry = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year
-        return this.accessToken;
-      } 
+      // Prepare form data for token request
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'refresh_token');
+      formData.append('refresh_token', apiKey);
       
-      // Otherwise use OAuth flow
-      const tokenUrl = 'https://id.trafficstars.com/auth/token';
-      const response = await axios.post(tokenUrl, {
-        grant_type: 'client_credentials',
-        client_id: clientId,
-        client_secret: clientSecret
+      // Request new access token
+      console.log('Requesting access token using API key as refresh_token');
+      const response = await axios.post(tokenUrl, formData.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
       
-      tokenResponse = response.data;
+      // Parse token response
+      const tokenResponse: TokenResponse = response.data;
       this.accessToken = tokenResponse.access_token;
       
       // Set token expiry (subtract 5 minutes for safety)
       const expiresIn = (tokenResponse.expires_in - 300) * 1000;
       this.tokenExpiry = new Date(now.getTime() + expiresIn);
       
-      console.log(`TrafficStar API token obtained. Expires in ${expiresIn / 60000} minutes`);
+      console.log(`TrafficStar OAuth access token obtained. Expires in ${expiresIn / 60000} minutes`);
       return this.accessToken;
     } catch (error) {
-      console.error('Error obtaining TrafficStar API token:', error);
-      throw new Error('Failed to authenticate with TrafficStar API');
+      console.error('Error obtaining TrafficStar API OAuth token:', error);
+      throw new Error('Failed to authenticate with TrafficStar API using OAuth 2.0');
     }
   }
 
   /**
-   * Get headers with authorization
+   * Get headers with authorization using Bearer token per OAuth 2.0 spec
    */
   private async getAuthHeaders(): Promise<Record<string, string>> {
     const token = await this.ensureToken();
