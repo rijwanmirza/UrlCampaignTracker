@@ -186,18 +186,18 @@ export class TrafficStarService {
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
       
-      // Format payload for reports API
+      // Format payload for reports API - critical fix: Use lowercase parameters as required by the API
       const payload = {
-        DateFrom: fromDate,
-        DateTo: toDate,
-        CampaignIds: [campaignId],
-        GroupBy: "day"
+        dateFrom: fromDate,
+        dateTo: toDate,
+        campaignIds: [campaignId],
+        groupBy: "day"
       };
       
       console.log(`Report API request payload:`, JSON.stringify(payload));
       
-      // Make API request to the reports API with JSON payload
-      const url = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+      // Make API request to the reports API with JSON payload - use correct endpoint
+      const url = `${this.BASE_URL_V1_1}/advertiser/custom-reports/by-day`;
       const response = await axios.post(url, payload, { headers });
       
       // Log the raw response for debugging
