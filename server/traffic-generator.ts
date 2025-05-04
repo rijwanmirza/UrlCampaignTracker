@@ -654,7 +654,51 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     
     if (shouldForceActivate) {
       console.log(`🧪 TESTING: Force activating TrafficStar campaign ${campaign.trafficstarCampaignId}`);
-      // Additional code for activating will be added later
+      
+      try {
+        // Set end time to 23:59 UTC today
+        const today = new Date();
+        const endTime = new Date(today);
+        endTime.setUTCHours(23, 59, 0, 0); // 23:59 UTC
+        
+        // Format date to TrafficStar expected format: YYYY-MM-DD HH:MM:SS
+        const formattedEndTime = `${endTime.getUTCFullYear()}-${String(endTime.getUTCMonth() + 1).padStart(2, '0')}-${String(endTime.getUTCDate()).padStart(2, '0')} 23:59:00`;
+        
+        console.log(`Setting campaign end time to ${formattedEndTime}`);
+        
+        // Update end time first
+        const endTimeUpdated = await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedEndTime);
+        
+        if (endTimeUpdated) {
+          console.log(`✅ Set campaign ${campaign.trafficstarCampaignId} end time to ${formattedEndTime}`);
+          
+          // Then activate the campaign
+          const activateResult = await trafficStarService.activateCampaign(Number(campaign.trafficstarCampaignId));
+          
+          if (activateResult) {
+            console.log(`✅ Successfully activated TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+            
+            // Update campaign status in database
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'active',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaign.id));
+            
+            // Start minute-by-minute check to ensure the campaign stays active
+            startMinutelyStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          } else {
+            console.error(`❌ Failed to activate TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+          }
+        } else {
+          console.error(`❌ Failed to set end time for TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        }
+      } catch (error) {
+        console.error(`❌ Error during force activation of TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
+      }
+      
       return;
     }
     
