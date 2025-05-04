@@ -6,11 +6,12 @@
  * based on the traffic generator settings.
  */
 
-import { trafficStarService } from './trafficstar-service-new';
+import { trafficStarService, TrafficStarService } from './trafficstar-service-new';
 import { db } from './db';
 import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getSpentValueForDate } from './spent-value';
+import axios from 'axios';
 
 // Extended URL type with active status
 interface UrlWithActiveStatus extends Url {
@@ -666,17 +667,43 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         
         console.log(`Setting campaign end time to ${formattedEndTime}`);
         
-        // Update end time first
-        const endTimeUpdated = await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedEndTime);
+        // Get API token
+        const trafficStarService = new TrafficStarService();
+        let accessToken;
+        try {
+          accessToken = await trafficStarService.ensureToken();
+          
+          if (!accessToken) {
+            console.error(`Failed to get access token for TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+            return;
+          }
+        } catch (tokenError) {
+          console.error(`Error getting access token for TrafficStar campaign ${campaign.trafficstarCampaignId}:`, tokenError);
+          return;
+        }
         
-        if (endTimeUpdated) {
-          console.log(`✅ Set campaign ${campaign.trafficstarCampaignId} end time to ${formattedEndTime}`);
+        // Use direct PATCH request to the API to both set end time and activate campaign
+        const apiUrl = `https://api.trafficstars.com/v1.1/campaigns/${campaign.trafficstarCampaignId}`;
+        console.log(`Making direct API call to ${apiUrl} to activate campaign and set end time to ${formattedEndTime}`);
+        
+        try {
+          const response = await axios.patch(
+            apiUrl, 
+            { 
+              active: true,
+              end_time: formattedEndTime
+            },
+            { 
+              headers: { 
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              } 
+            }
+          );
           
-          // Then activate the campaign
-          const activateResult = await trafficStarService.activateCampaign(Number(campaign.trafficstarCampaignId));
-          
-          if (activateResult) {
-            console.log(`✅ Successfully activated TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+          if (response.status === 200 || response.status === 204) {
+            console.log(`✅ Successfully activated TrafficStar campaign ${campaign.trafficstarCampaignId} and set end time to ${formattedEndTime}`);
             
             // Update campaign status in database
             await db.update(campaigns)
@@ -690,10 +717,10 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
             // Start minute-by-minute check to ensure the campaign stays active
             startMinutelyStatusCheck(campaign.id, campaign.trafficstarCampaignId);
           } else {
-            console.error(`❌ Failed to activate TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+            console.error(`❌ Unexpected status code ${response.status} when activating campaign ${campaign.trafficstarCampaignId}`);
           }
-        } else {
-          console.error(`❌ Failed to set end time for TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        } catch (apiError) {
+          console.error(`❌ API error activating campaign ${campaign.trafficstarCampaignId}:`, apiError);
         }
       } catch (error) {
         console.error(`❌ Error during force activation of TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
