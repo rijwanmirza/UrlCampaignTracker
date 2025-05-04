@@ -32,6 +32,14 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
     
     if (!status) {
       console.error(`Failed to get TrafficStar campaign ${trafficstarCampaignId} status`);
+      
+      // Development fallback for testing
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEVELOPMENT MODE: Using mock campaign status for testing');
+        // Default to 'paused' status for campaigns so we can test auto-activation
+        return 'paused';
+      }
+      
       return null;
     }
     
@@ -42,6 +50,14 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
     return status.active ? 'active' : 'paused';
   } catch (error) {
     console.error('Error getting TrafficStar campaign status:', error);
+    
+    // Development fallback for testing
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DEVELOPMENT MODE: Using mock campaign status for testing due to error');
+      // Default to 'paused' status for campaigns so we can test auto-activation
+      return 'paused';
+    }
+    
     return null;
   }
 }
