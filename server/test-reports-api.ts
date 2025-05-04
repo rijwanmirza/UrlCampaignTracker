@@ -9,6 +9,13 @@ import express, { Request, Response } from 'express';
 import axios from 'axios';
 import { getTodayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
 
+// Define error detail interface
+interface ErrorDetails {
+  message: string;
+  status?: number;
+  data?: any;
+}
+
 /**
  * Register TrafficStar Reports API Test Routes
  */
@@ -89,7 +96,7 @@ export function registerReportsAPITestRoutes(app: express.Application) {
         console.error('Error testing reports API:', error);
         
         // Include detailed error info
-        let errorDetails = { message: 'Unknown error' };
+        let errorDetails: ErrorDetails = { message: 'Unknown error' };
         
         if (error.response) {
           errorDetails = {
