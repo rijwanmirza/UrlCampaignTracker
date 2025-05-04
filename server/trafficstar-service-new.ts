@@ -60,7 +60,7 @@ interface CampaignsResponse {
 /**
  * TrafficStar API service class
  */
-class TrafficStarService {
+export class TrafficStarService {
   private accessToken: string | null = null;
   private tokenExpiry: Date | null = null;
   
