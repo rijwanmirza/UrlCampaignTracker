@@ -12,6 +12,11 @@ import { campaigns, type Campaign, type Url } from '../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { getSpentValueForDate } from './spent-value';
 
+// Extended URL type with active status
+interface UrlWithActiveStatus extends Url {
+  isActive: boolean;
+}
+
 /**
  * Get TrafficStar campaign status - ALWAYS uses real-time data
  * @param trafficstarCampaignId The TrafficStar campaign ID
@@ -97,7 +102,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
         with: {
           urls: true
         }
-      });
+      }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
       
       if (!campaign || !campaign.urls || campaign.urls.length === 0) {
         console.log(`⏹️ LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has no URLs - skipping auto-reactivation check`);
@@ -133,9 +138,10 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
             console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
             
             // Attempt to reactivate the campaign since it has low spend but high remaining clicks
-            const activationResult = await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
-            
-            if (activationResult) {
+            try {
+              await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
+              
+              // If we get here without an error, the campaign was activated successfully
               console.log(`✅ AUTO-REACTIVATED low spend campaign ${trafficstarCampaignId} - it has ${totalRemainingClicks} remaining clicks`);
               
               // Mark as auto-reactivated in the database
@@ -153,8 +159,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
               startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
               
               return;
-            } else {
-              console.error(`❌ Failed to auto-reactivate low spend campaign ${trafficstarCampaignId}`);
+            } catch (activateError) {
+              console.error(`❌ Failed to auto-reactivate low spend campaign ${trafficstarCampaignId}:`, activateError);
             }
           } catch (error) {
             console.error(`❌ Error auto-reactivating low spend campaign ${trafficstarCampaignId}:`, error);
@@ -169,30 +175,35 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
             const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
             
             // First pause the campaign
-            const pauseResult = await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
-            
-            if (pauseResult) {
-              // Then set its end time
-              await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
-              console.log(`✅ PAUSED low spend campaign ${trafficstarCampaignId} due to low remaining clicks (${totalRemainingClicks} <= ${MINIMUM_CLICKS_THRESHOLD})`);
+            try {
+              await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
               
-              // Mark as auto-paused in the database
-              await db.update(campaigns)
-                .set({
-                  lastTrafficSenderStatus: 'auto_paused_low_clicks',
-                  lastTrafficSenderAction: new Date(),
-                  updatedAt: new Date()
-                })
-                .where(eq(campaigns.id, campaignId));
-              
-              console.log(`✅ Marked campaign ${campaignId} as 'auto_paused_low_clicks' in database`);
-              
-              // Start pause status monitoring to ensure campaign stays paused
-              startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
-              
-              return;
-            } else {
-              console.error(`❌ Failed to pause low spend campaign ${trafficstarCampaignId} with low remaining clicks`);
+              try {
+                // Then set its end time
+                await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
+                
+                console.log(`✅ PAUSED low spend campaign ${trafficstarCampaignId} due to low remaining clicks (${totalRemainingClicks} <= ${MINIMUM_CLICKS_THRESHOLD})`);
+                
+                // Mark as auto-paused in the database
+                await db.update(campaigns)
+                  .set({
+                    lastTrafficSenderStatus: 'auto_paused_low_clicks',
+                    lastTrafficSenderAction: new Date(),
+                    updatedAt: new Date()
+                  })
+                  .where(eq(campaigns.id, campaignId));
+                
+                console.log(`✅ Marked campaign ${campaignId} as 'auto_paused_low_clicks' in database`);
+                
+                // Start pause status monitoring to ensure campaign stays paused
+                startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+                
+                return;
+              } catch (endTimeError) {
+                console.error(`❌ Error setting end time for campaign ${trafficstarCampaignId}:`, endTimeError);
+              }
+            } catch (pauseError) {
+              console.error(`❌ Failed to pause low spend campaign ${trafficstarCampaignId} with low remaining clicks:`, pauseError);
             }
           } catch (error) {
             console.error(`❌ Error pausing low spend campaign ${trafficstarCampaignId} with low remaining clicks:`, error);
@@ -327,7 +338,7 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
         const campaign = await db.query.campaigns.findFirst({
           where: (campaign, { eq }) => eq(campaign.id, campaignId),
           with: { urls: true }
-        });
+        }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
         
         if (campaign && campaign.urls && campaign.urls.length > 0) {
           // Calculate total remaining clicks
@@ -354,9 +365,9 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
               const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
               
               // First pause the campaign
-              const pauseResult = await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
-              
-              if (pauseResult) {
+              try {
+                await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+                
                 // Then set its end time
                 await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
                 console.log(`✅ PAUSED campaign ${trafficstarCampaignId} during active monitoring due to low remaining clicks (${totalRemainingClicks} <= ${MINIMUM_CLICKS_THRESHOLD})`);
@@ -372,6 +383,8 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
                 
                 // Start pause monitoring
                 startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+              } catch (pauseError) {
+                console.error(`❌ Error pausing campaign ${trafficstarCampaignId} during active monitoring:`, pauseError);
               }
             } catch (error) {
               console.error(`❌ Error pausing campaign ${trafficstarCampaignId} during active monitoring:`, error);
@@ -387,30 +400,33 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
         const endTimeStr = `${todayStr} 23:59:00`;
         
         // First set the end time, then activate
-        await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
-        console.log(`✅ Updated campaign ${trafficstarCampaignId} end time to ${endTimeStr} before reactivation`);
-        
-        // Attempt to reactivate
-        const result = await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
-        
-        if (result) {
-          console.log(`✅ Successfully reactivated campaign ${trafficstarCampaignId} during minute check`);
+        try {
+          await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
+          console.log(`✅ Updated campaign ${trafficstarCampaignId} end time to ${endTimeStr} before reactivation`);
           
-          // Update database status
-          await db.update(campaigns)
-            .set({
-              lastTrafficSenderStatus: 'reactivated_during_monitoring',
-              lastTrafficSenderAction: new Date(),
-              updatedAt: new Date()
-            })
-            .where(eq(campaigns.id, campaignId));
-        } else {
-          console.error(`❌ Failed to reactivate campaign ${trafficstarCampaignId} during minute check`);
-          
-          // Stop monitoring after multiple failures
-          clearInterval(interval);
-          activeStatusChecks.delete(campaignId);
-          console.log(`⏹️ Stopped minute-by-minute monitoring for campaign ${trafficstarCampaignId} due to reactivation failure`);
+          // Attempt to reactivate
+          try {
+            await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
+            console.log(`✅ Successfully reactivated campaign ${trafficstarCampaignId} during minute check`);
+            
+            // Update database status
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'reactivated_during_monitoring',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaignId));
+          } catch (activateError) {
+            console.error(`❌ Failed to reactivate campaign ${trafficstarCampaignId} during minute check:`, activateError);
+            
+            // Stop monitoring after multiple failures
+            clearInterval(interval);
+            activeStatusChecks.delete(campaignId);
+            console.log(`⏹️ Stopped minute-by-minute monitoring for campaign ${trafficstarCampaignId} due to reactivation failure`);
+          }
+        } catch (endTimeError) {
+          console.error(`❌ Error updating end time for campaign ${trafficstarCampaignId} during minute check:`, endTimeError);
         }
       }
     } catch (error) {
@@ -467,7 +483,7 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
         const campaign = await db.query.campaigns.findFirst({
           where: (campaign, { eq }) => eq(campaign.id, campaignId),
           with: { urls: true }
-        });
+        }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
         
         if (campaign && campaign.urls && campaign.urls.length > 0) {
           // Calculate total remaining clicks
@@ -495,26 +511,31 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
               const endTimeStr = `${todayStr} 23:59:00`;
               
               // First set the end time, then activate
-              await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
-              console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
-              
-              // Attempt to reactivate
-              const result = await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
-              
-              if (result) {
-                console.log(`✅ Successfully reactivated campaign ${trafficstarCampaignId} during pause monitoring`);
+              try {
+                await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
+                console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
                 
-                // Mark as auto-reactivated in the database
-                await db.update(campaigns)
-                  .set({
-                    lastTrafficSenderStatus: 'auto_reactivated_during_pause_monitoring',
-                    lastTrafficSenderAction: new Date(),
-                    updatedAt: new Date()
-                  })
-                  .where(eq(campaigns.id, campaignId));
-                
-                // Start active monitoring
-                startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+                // Attempt to reactivate
+                try {
+                  await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
+                  console.log(`✅ Successfully reactivated campaign ${trafficstarCampaignId} during pause monitoring`);
+                  
+                  // Mark as auto-reactivated in the database
+                  await db.update(campaigns)
+                    .set({
+                      lastTrafficSenderStatus: 'auto_reactivated_during_pause_monitoring',
+                      lastTrafficSenderAction: new Date(),
+                      updatedAt: new Date()
+                    })
+                    .where(eq(campaigns.id, campaignId));
+                  
+                  // Start active monitoring
+                  startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+                } catch (activateError) {
+                  console.error(`❌ Error reactivating campaign ${trafficstarCampaignId} during pause monitoring:`, activateError);
+                }
+              } catch (endTimeError) {
+                console.error(`❌ Error updating end time for campaign ${trafficstarCampaignId} during pause monitoring:`, endTimeError);
               }
             } catch (error) {
               console.error(`❌ Error reactivating campaign ${trafficstarCampaignId} during pause monitoring:`, error);
@@ -529,9 +550,9 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
         const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
         
         // Attempt to pause
-        const result = await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
-        
-        if (result) {
+        try {
+          await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+          
           // Update end time
           await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
           
@@ -545,8 +566,8 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
               updatedAt: new Date()
             })
             .where(eq(campaigns.id, campaignId));
-        } else {
-          console.error(`❌ Failed to pause campaign ${trafficstarCampaignId} during pause monitoring`);
+        } catch (pauseError) {
+          console.error(`❌ Failed to pause campaign ${trafficstarCampaignId} during pause monitoring:`, pauseError);
           
           // Stop monitoring after multiple failures
           clearInterval(interval);
@@ -577,16 +598,10 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
  * @param trafficstarCampaignId The TrafficStar campaign ID
  * @returns True if the pause operation was successful, false otherwise
  */
-export async function pauseTrafficStarCampaign(trafficstarCampaignId: string) {
+export async function pauseTrafficStarCampaign(trafficstarCampaignId: string): Promise<boolean> {
   try {
     // Use trafficStarService to pause campaign
-    const result = await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
-    
-    if (!result) {
-      console.error(`Failed to pause TrafficStar campaign ${trafficstarCampaignId}`);
-      return false;
-    }
-    
+    await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
     return true;
   } catch (error) {
     console.error('Error pausing TrafficStar campaign:', error);
@@ -637,12 +652,9 @@ export async function processTrafficGenerator(campaignId: number) {
       console.log(`✓ CORRECTLY DETECTED: TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE!`);
       console.log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} using updated API endpoints...`);
       
-      let pauseSuccessful = false;
-      
       // Try to pause the campaign using our improved API endpoints
       try {
-        const result = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
-        pauseSuccessful = result;
+        const pauseSuccessful = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
         
         if (pauseSuccessful) {
           console.log(`✅ Successfully paused TrafficStar campaign ${campaign.trafficstarCampaignId}`);
