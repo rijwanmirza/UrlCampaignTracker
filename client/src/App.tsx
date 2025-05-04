@@ -101,6 +101,9 @@ function Router() {
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
           </Route>
+          <Route path="/api-tester">
+            <ApiTesterPage />
+          </Route>
           <Route>
             <NotFound />
           </Route>
@@ -163,6 +166,9 @@ function Router() {
           </Route>
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
+          </Route>
+          <Route path="/api-tester">
+            <ApiTesterPage />
           </Route>
           <Route>
             <NotFound />

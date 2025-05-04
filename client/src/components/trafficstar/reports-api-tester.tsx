@@ -27,13 +27,22 @@ export function ReportsApiTester() {
       
       console.log(`Testing reports API for campaign ID: ${campaignId}`)
       
-      const response = await apiRequest('/api/test-reports-api', {
+      // Use fetch directly to have more control over the request
+      const response = await fetch('/api/test-reports-api', {
         method: 'POST',
-        body: JSON.stringify({ campaignId })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ campaignId: parseInt(campaignId) })
       })
       
-      setResult(response)
-      console.log('Reports API test result:', response)
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+      
+      const data = await response.json()
+      setResult(data)
+      console.log('Reports API test result:', data)
     } catch (err: any) {
       console.error('Error testing reports API:', err)
       setError(err?.message || 'An error occurred during the API test')
