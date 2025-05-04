@@ -152,6 +152,28 @@ export class TrafficStarService {
    */
   async getCampaignSpentValue(campaignId: number, dateFrom?: string, dateTo?: string): Promise<{ totalSpent: number }> {
     try {
+      // First try the direct campaign endpoint which is more reliable
+      console.log(`Getting campaign ${campaignId} details for spent value`);
+      const campaign = await this.getCampaign(campaignId);
+      
+      if (campaign && campaign.spent !== undefined) {
+        // Convert to number if it's a string
+        const spentValue = typeof campaign.spent === 'string' 
+          ? parseFloat(campaign.spent.replace(/[^0-9.]/g, '')) 
+          : (campaign.spent || 0);
+          
+        console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
+        
+        // If we got a valid spent value, update it in our database
+        if (!isNaN(spentValue)) {
+          await this.updateCampaignSpentValueInDb(campaignId, spentValue);
+          return { totalSpent: spentValue };
+        }
+      }
+      
+      // If direct method failed or returned invalid value, try reports API as fallback
+      console.log(`Trying reports API for campaign ${campaignId} spent value`);
+      
       // Get the current UTC date in YYYY-MM-DD format using our helper
       const currentUTCDate = getTodayFormatted();
       
@@ -164,22 +186,19 @@ export class TrafficStarService {
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
       
-      // Per the TrafficStar API docs, the report API needs specific parameter format
-      // We need campaign_id, date_from and date_to all in YYYY-MM-DD format
-      const params = new URLSearchParams();
-      params.append('campaign_id', campaignId.toString());
-      params.append('date_from', fromDate);
-      params.append('date_to', toDate);
+      // Format payload for reports API
+      const payload = {
+        DateFrom: fromDate,
+        DateTo: toDate,
+        CampaignIds: [campaignId],
+        GroupBy: "day"
+      };
       
-      console.log(`Report API request parameters: ${params.toString()}`);
+      console.log(`Report API request payload:`, JSON.stringify(payload));
       
-      // Make API request to the reports API with properly formatted URL
-      const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
-      const url = `${baseUrl}?${params.toString()}`;
-      
-      console.log(`Making direct request to: ${url}`);
-      
-      const response = await axios.get(url, { headers });
+      // Make API request to the reports API with JSON payload
+      const url = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+      const response = await axios.post(url, payload, { headers });
       
       // Log the raw response for debugging
       console.log(`Report API raw response:`, JSON.stringify(response.data).substring(0, 200) + '...');
@@ -190,11 +209,14 @@ export class TrafficStarService {
         const totalSpent = parseReportSpentValue(response.data);
         
         console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
+        
+        // Update the value in database
+        await this.updateCampaignSpentValueInDb(campaignId, totalSpent);
         return { totalSpent };
       }
       
-      // If response is empty or not as expected
-      console.log(`No spent data returned for campaign ${campaignId}`);
+      // If we get here, both methods failed
+      console.log(`No spent data returned for campaign ${campaignId} from either method`);
       return { totalSpent: 0 };
     } catch (error: any) {
       console.error(`Error getting spent value for campaign ${campaignId}:`, error);
@@ -205,26 +227,41 @@ export class TrafficStarService {
         console.error(`Error response data:`, error.response.data);
       }
       
-      // Try direct method with campaign endpoint as fallback
-      try {
-        console.log(`Falling back to campaign endpoint for spent value`);
-        const campaign = await this.getCampaign(campaignId);
-        
-        if (campaign && campaign.spent !== undefined) {
-          // Convert to number if it's a string
-          const spentValue = typeof campaign.spent === 'string' 
-            ? parseFloat(campaign.spent) 
-            : (campaign.spent || 0);
-            
-          console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
-          return { totalSpent: spentValue };
-        }
-      } catch (fallbackError) {
-        console.error(`Fallback method also failed:`, fallbackError);
-      }
-      
       // Don't throw, just return 0 as spend
       return { totalSpent: 0 };
+    }
+  }
+  
+  /**
+   * Update the campaign's spent value in our database
+   */
+  private async updateCampaignSpentValueInDb(trafficstarCampaignId: number, spentValue: number): Promise<void> {
+    try {
+      // Find our internal campaign ID from the TrafficStar campaign ID
+      const campaignResult = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.trafficstarCampaignId, trafficstarCampaignId.toString()));
+      
+      if (campaignResult && campaignResult.length > 0) {
+        const campaign = campaignResult[0];
+        
+        // Update the campaign with the spent value
+        await db.update(campaigns)
+          .set({
+            dailySpent: spentValue.toString(),
+            dailySpentDate: new Date(),
+            lastSpentCheck: new Date(),
+            lastTrafficSenderStatus: spentValue >= 10 ? 'high_spend' : 'low_spend',
+            updatedAt: new Date()
+          })
+          .where(eq(campaigns.id, campaign.id));
+        
+        console.log(`Updated spent value for campaign ${campaign.id} (TrafficStar ID: ${trafficstarCampaignId}): $${spentValue.toFixed(4)}`);
+        console.log(`✅ Marked campaign ${campaign.id} as '${spentValue >= 10 ? 'high_spend' : 'low_spend'}' in database (${spentValue} ${spentValue >= 10 ? '>=' : '<'} 10)`);
+      }
+    } catch (error) {
+      console.error(`Error updating spent value in database:`, error);
     }
   }
 
