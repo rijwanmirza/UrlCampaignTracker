@@ -197,7 +197,8 @@ export class TrafficStarService {
       console.log(`Report API request payload:`, JSON.stringify(payload));
       
       // Make API request to the reports API with JSON payload - use correct endpoint
-      const url = `${this.BASE_URL_V1_1}/advertiser/custom-reports/by-day`;
+      // According to TrafficStar API documentation, the correct endpoint is:
+      const url = `${this.BASE_URL_V1_1}/reports/custom/by-day`;
       const response = await axios.post(url, payload, { headers });
       
       // Log the raw response for debugging

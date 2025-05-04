@@ -48,38 +48,94 @@ export function parseSpentValue(campaign: any): number {
 
 /**
  * Extract the total spent value from the TrafficStar Reports API response
- * This specifically handles the format returned by the advertiser/custom/report/by-day endpoint
+ * This handles multiple formats that might be returned by various TrafficStar API endpoints
  * 
- * @param reportData Array of daily report objects from TrafficStar Reports API
+ * @param reportData Response data from TrafficStar Reports API
  * @returns The total amount spent across all days in the report
  */
-export function parseReportSpentValue(reportData: any[]): number {
+export function parseReportSpentValue(reportData: any): number {
   try {
-    // If report data is empty or not an array
-    if (!reportData || !Array.isArray(reportData) || reportData.length === 0) {
+    // Log the data type for debugging
+    console.log(`Report data type: ${typeof reportData}, isArray: ${Array.isArray(reportData)}`);
+    
+    // If report data is empty
+    if (!reportData) {
+      console.log('No report data to parse');
       return 0;
     }
     
-    // Extract and sum up the 'amount' value from each day's report
-    // This is specifically the format we expect from the TrafficStar reports API
-    let totalSpent = 0;
-    
-    for (const day of reportData) {
-      // Check if this day's report has an 'amount' field
-      if (day && typeof day.amount === 'number') {
-        totalSpent += day.amount;
-        console.log(`Found report amount: ${day.amount} for day ${day.day}`);
-      } else if (day && typeof day.amount === 'string') {
-        // Try to parse string amount
-        const amount = parseFloat(day.amount);
-        if (!isNaN(amount)) {
-          totalSpent += amount;
-          console.log(`Parsed report amount: ${amount} for day ${day.day}`);
+    // Handle array response format
+    if (Array.isArray(reportData)) {
+      // Extract and sum up values from array
+      let totalSpent = 0;
+      console.log(`Processing ${reportData.length} report data items`);
+      
+      for (const item of reportData) {
+        console.log(`Report item: ${JSON.stringify(item).substring(0, 100)}`);
+        
+        // Check for different field names that might contain the spent value
+        const possibleFields = ['amount', 'spent', 'sum', 'total', 'value'];
+        
+        for (const field of possibleFields) {
+          if (item && (typeof item[field] === 'number' || typeof item[field] === 'string')) {
+            let value = 0;
+            
+            if (typeof item[field] === 'number') {
+              value = item[field];
+            } else {
+              // Try to parse string value
+              const parsedValue = parseFloat(item[field].replace(/[^0-9.]/g, ''));
+              if (!isNaN(parsedValue)) {
+                value = parsedValue;
+              }
+            }
+            
+            if (value > 0) {
+              totalSpent += value;
+              console.log(`Found ${field}: ${value} in report item`);
+              break; // Break after finding first valid field
+            }
+          }
         }
+      }
+      
+      console.log(`Final calculated total spent: ${totalSpent}`);
+      return totalSpent;
+    }
+    
+    // Handle object response format (for direct campaign data)
+    if (typeof reportData === 'object') {
+      // Try to extract a spend value from the object
+      const possibleFields = ['amount', 'spent', 'sum', 'total', 'value'];
+      
+      for (const field of possibleFields) {
+        if (reportData[field] !== undefined) {
+          if (typeof reportData[field] === 'number') {
+            console.log(`Found ${field}: ${reportData[field]} in report object`);
+            return reportData[field];
+          } else if (typeof reportData[field] === 'string') {
+            const parsedValue = parseFloat(reportData[field].replace(/[^0-9.]/g, ''));
+            if (!isNaN(parsedValue)) {
+              console.log(`Parsed ${field}: ${parsedValue} in report object`);
+              return parsedValue;
+            }
+          }
+        }
+      }
+      
+      // If we have a data or items field, try to process its contents
+      if (reportData.data && Array.isArray(reportData.data)) {
+        return parseReportSpentValue(reportData.data); // Recursive call
+      }
+      
+      if (reportData.items && Array.isArray(reportData.items)) {
+        return parseReportSpentValue(reportData.items); // Recursive call
       }
     }
     
-    return totalSpent;
+    // If we get here, we couldn't extract a spent value
+    console.warn(`Could not parse spent value from report data: ${JSON.stringify(reportData).substring(0, 200)}`);
+    return 0;
   } catch (error) {
     console.error('Error parsing report spent value:', error);
     return 0;

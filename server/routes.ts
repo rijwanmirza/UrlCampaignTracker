@@ -2799,6 +2799,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Force update spent value for a specific campaign
+  app.post("/api/trafficstar/refresh-campaign-spent/:id", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ success: false, message: 'Invalid campaign ID' });
+      }
+      
+      // Get the campaign from our database
+      const campaignResult = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.id, campaignId));
+      
+      if (!campaignResult || campaignResult.length === 0) {
+        return res.status(404).json({ success: false, message: 'Campaign not found' });
+      }
+      
+      const campaign = campaignResult[0];
+      
+      if (!campaign.trafficstarCampaignId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'This campaign is not linked to a TrafficStar campaign'
+        });
+      }
+      
+      // Import the traffic generator function
+      const { getTrafficStarCampaignSpentValue } = require('./traffic-generator-new');
+      
+      console.log(`Manual refresh: Getting spent value for campaign ${campaign.trafficstarCampaignId}`);
+      const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarCampaignId);
+      
+      // Send response with detailed information
+      res.json({ 
+        success: true, 
+        message: `Refreshed spent value for campaign ${campaignId}`,
+        campaign: {
+          id: campaignId,
+          name: campaign.name,
+          trafficstarCampaignId: campaign.trafficstarCampaignId
+        },
+        spentValue: spentValue,
+        formattedSpentValue: `$${parseFloat(spentValue).toFixed(4)}`,
+        status: parseFloat(spentValue) >= 10 ? 'high_spend' : 'low_spend',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error refreshing campaign spent value:', error);
+      res.status(500).json({ success: false, message: 'Error refreshing campaign spent value' });
+    }
+  });
+  
   // API routes for Traffic Generator
   app.post("/api/traffic-generator/run-all", async (_req: Request, res: Response) => {
     try {
