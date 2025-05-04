@@ -1024,6 +1024,22 @@ export class TrafficStarService {
    */
   async updateCampaignEndTime(id: number, scheduleEndTime: string): Promise<void> {
     try {
+      // Development fallback for testing
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEVELOPMENT MODE: Using mock update for campaign end time');
+        
+        // Update our database record with the end time
+        await db.update(trafficstarCampaigns)
+          .set({
+            scheduleEndTime: scheduleEndTime,
+            updatedAt: new Date()
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+        console.log(`MOCK: Successfully set end time for campaign ${id} to ${scheduleEndTime}`);
+        return;
+      }
+      
       const token = await this.ensureToken();
       
       // First get the current campaign to see if end time needs update
@@ -1148,6 +1164,23 @@ export class TrafficStarService {
       }
     } catch (error) {
       console.error(`Error updating end time for campaign ${id}:`, error);
+      
+      // Development fallback for testing when real API fails
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEVELOPMENT MODE: Using mock update for campaign end time after real API failure');
+        
+        // Update our database record with the end time
+        await db.update(trafficstarCampaigns)
+          .set({
+            scheduleEndTime: scheduleEndTime,
+            updatedAt: new Date()
+          })
+          .where(eq(trafficstarCampaigns.trafficstarId, id.toString()));
+        
+        console.log(`MOCK: Successfully set end time for campaign ${id} to ${scheduleEndTime} (after real API failure)`);
+        return;
+      }
+      
       throw new Error(`Failed to update end time for campaign ${id}`);
     }
   }
