@@ -10,7 +10,7 @@ import { trafficStarService, TrafficStarService } from './trafficstar-service-ne
 import { db } from './db';
 import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { getSpentValueFromCampaignObject } from './trafficstar-spent-helper';
+import { parseSpentValue } from './trafficstar-spent-helper';
 import axios from 'axios';
 
 // Extended URL type with active status
@@ -60,12 +60,14 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     
     console.log(`Fetching spent value for campaign ${trafficstarCampaignId} on ${formattedDate}`);
     
-    // Try the new helper to extract spent value from campaign object
-    // This uses multiple approaches to find the spent value in the campaign data
+    // Try getting campaign data directly from API and use our helper to parse the value
     try {
-      const spentValue = await getSpentValueFromCampaignObject(Number(trafficstarCampaignId));
+      const campaignData = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
       
-      if (spentValue !== null) {
+      // Use our parseSpentValue helper to extract the spent value regardless of format
+      const spentValue = parseSpentValue(campaignData);
+      
+      if (spentValue > 0) {
         console.log(`Campaign ${trafficstarCampaignId} spent value from campaign object helper: $${spentValue.toFixed(4)}`);
         
         // Update our database record

@@ -1,117 +1,88 @@
 /**
  * TrafficStar Spent Value Helper
  * 
- * This module provides helper functions to extract spent values
- * from TrafficStar campaigns using the campaign object itself.
+ * This utility provides functions to reliably extract, parse and 
+ * validate spent values from campaign objects or API responses.
  */
 
-import { trafficStarService } from './trafficstar-service-new';
+import { format } from 'date-fns';
 
 /**
- * Get the spent value from a campaign by fetching the campaign object
- * and extracting the spent value from it directly.
+ * Parse a spent value from a campaign object
+ * Campaign objects may have spent values as strings or numbers
  * 
- * @param campaignId The TrafficStar campaign ID
- * @returns The spent value as a number, or null if it couldn't be extracted
+ * @param campaign Campaign object from TrafficStar API
+ * @returns The spent value as a number, or 0 if it cannot be determined
  */
-export async function getSpentValueFromCampaignObject(campaignId: number): Promise<number | null> {
+export function parseSpentValue(campaign: any): number {
   try {
-    console.log(`Getting spent value from campaign object for campaign ${campaignId}`);
-    
-    // Get the campaign from the TrafficStar API
-    const campaign = await trafficStarService.getCampaign(campaignId);
-    
+    // If campaign is null or undefined
     if (!campaign) {
-      console.log(`Failed to get campaign ${campaignId} from TrafficStar API`);
-      return null;
+      return 0;
     }
     
-    // Try to extract the spent value from various possible properties
-    let spentValue: number | null = null;
-    
-    // Log all properties for debugging
-    console.log(`Campaign ${campaignId} properties:`, Object.keys(campaign));
-    
-    // Check for 'spent' property (primary)
-    if (campaign.spent !== undefined) {
-      console.log(`Found 'spent' property in campaign ${campaignId}: ${campaign.spent}`);
-      spentValue = extractNumericValue(campaign.spent);
-    }
-    // Check for 'daily_spent' property
-    else if (campaign.daily_spent !== undefined) {
-      console.log(`Found 'daily_spent' property in campaign ${campaignId}: ${campaign.daily_spent}`);
-      spentValue = extractNumericValue(campaign.daily_spent);
-    }
-    // Check for 'cost' property
-    else if (campaign.cost !== undefined) {
-      console.log(`Found 'cost' property in campaign ${campaignId}: ${campaign.cost}`);
-      spentValue = extractNumericValue(campaign.cost);
-    }
-    // Check for 'budget_spent' property
-    else if (campaign.budget_spent !== undefined) {
-      console.log(`Found 'budget_spent' property in campaign ${campaignId}: ${campaign.budget_spent}`);
-      spentValue = extractNumericValue(campaign.budget_spent);
-    }
-    // Check for 'spent_today' property
-    else if (campaign.spent_today !== undefined) {
-      console.log(`Found 'spent_today' property in campaign ${campaignId}: ${campaign.spent_today}`);
-      spentValue = extractNumericValue(campaign.spent_today);
-    }
-    // Check for 'stats.spent' property (nested object)
-    else if (campaign.stats && campaign.stats.spent !== undefined) {
-      console.log(`Found 'stats.spent' property in campaign ${campaignId}: ${campaign.stats.spent}`);
-      spentValue = extractNumericValue(campaign.stats.spent);
+    // If spent is already a number
+    if (typeof campaign.spent === 'number') {
+      return campaign.spent;
     }
     
-    if (spentValue !== null) {
-      console.log(`Successfully extracted spent value for campaign ${campaignId}: $${spentValue.toFixed(4)}`);
-      return spentValue;
+    // If spent is a string, try to parse it
+    if (typeof campaign.spent === 'string') {
+      // Remove any currency symbols and whitespace
+      const cleanValue = campaign.spent.replace(/[^0-9.]/g, '');
+      const numValue = parseFloat(cleanValue);
+      
+      if (!isNaN(numValue)) {
+        return numValue;
+      }
     }
     
-    console.log(`No spent value found in campaign ${campaignId} properties`);
-    return null;
+    // If we get here, we couldn't determine the spent value
+    console.warn(`Could not parse spent value from campaign: ${JSON.stringify(campaign)}`);
+    return 0;
   } catch (error) {
-    console.error(`Error getting spent value from campaign object for campaign ${campaignId}:`, error);
-    return null;
+    console.error('Error parsing spent value:', error);
+    return 0;
   }
 }
 
 /**
- * Helper function to extract a numeric value from various formats
- * 
- * @param value The value to extract from (string, number, etc.)
- * @returns The numeric value or null if it couldn't be extracted
+ * Gets today's date formatted as YYYY-MM-DD for API requests
  */
-function extractNumericValue(value: any): number | null {
-  try {
-    if (value === null || value === undefined) {
-      return null;
-    }
-    
-    if (typeof value === 'number') {
-      return value;
-    }
-    
-    if (typeof value === 'string') {
-      // Remove any currency symbols or other non-numeric characters
-      const numericString = value.replace(/[^0-9.-]/g, '');
-      const result = parseFloat(numericString);
-      
-      if (isNaN(result)) {
-        return null;
-      }
-      
-      return result;
-    }
-    
-    if (typeof value === 'object') {
-      // Try to convert to string and then extract
-      return extractNumericValue(JSON.stringify(value));
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error extracting numeric value:', error);
-    return null;
-  }
+export function getTodayFormatted(): string {
+  return format(new Date(), 'yyyy-MM-dd');
+}
+
+/**
+ * Gets yesterday's date formatted as YYYY-MM-DD for API requests
+ */
+export function getYesterdayFormatted(): string {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return format(yesterday, 'yyyy-MM-dd');
+}
+
+/**
+ * Gets a date formatted as YYYY-MM-DD HH:mm:ss in UTC timezone
+ * Used for campaign end time updates
+ * 
+ * @param date The date to format, or current date if not provided
+ * @param hours Hours to set (24-hour format)
+ * @param minutes Minutes to set
+ * @param seconds Seconds to set
+ */
+export function getFormattedDateTime(
+  date: Date = new Date(),
+  hours: number = 23,
+  minutes: number = 59,
+  seconds: number = 0
+): string {
+  // Create a new date object to avoid modifying the input
+  const newDate = new Date(date);
+  
+  // Set the time components
+  newDate.setUTCHours(hours, minutes, seconds);
+  
+  // Format as YYYY-MM-DD HH:mm:ss
+  return format(newDate, "yyyy-MM-dd HH:mm:ss");
 }
