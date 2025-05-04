@@ -78,6 +78,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Import the traffic generator module to access the debug function
+      const { debugProcessCampaign } = await import('./traffic-generator');
       const result = await debugProcessCampaign(campaignId);
       return res.json(result);
     } catch (error) {

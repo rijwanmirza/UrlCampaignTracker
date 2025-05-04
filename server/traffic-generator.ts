@@ -9,7 +9,7 @@
 import { trafficStarService } from './trafficstar-service-new';
 import { db } from './db';
 import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { getSpentValueForDate } from './spent-value';
 
 // Extended URL type with active status
@@ -774,10 +774,10 @@ export async function debugProcessCampaign(campaignId: number) {
     
     const campaign = campaignResult[0];
     
-    // Get campaign URLs
-    const urlsResult = await db.select()
-      .from(urls)
-      .where(eq(urls.campaignId, campaignId));
+    // Get campaign URLs via direct SQL query to avoid schema issues
+    const urlsResult = await db.execute(
+      sql`SELECT * FROM urls WHERE "campaign_id" = ${campaignId}`
+    ).then(result => result.rows || []);
     
     const trafficstarCampaignId = campaign.trafficstarCampaignId;
     if (!trafficstarCampaignId) {
@@ -805,24 +805,33 @@ export async function debugProcessCampaign(campaignId: number) {
     
     if (urlsResult && urlsResult.length > 0) {
       for (const url of urlsResult) {
-        if (url.status === 'active') {
-          const remainingClicks = url.clickLimit - url.clicks;
+        // Cast the raw DB row to expected structure - handle both snake_case and camelCase
+        const typedUrl = {
+          status: url.status as string,
+          clickLimit: Number(url.click_limit || url.clickLimit || 0),
+          clicks: Number(url.clicks || 0),
+          id: Number(url.id),
+          name: url.name as string
+        };
+        
+        if (typedUrl.status === 'active') {
+          const remainingClicks = typedUrl.clickLimit - typedUrl.clicks;
           totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
           
           if (remainingClicks >= 15000) {
             highClickUrls.push({
-              id: url.id,
-              name: url.name,
-              clickLimit: url.clickLimit,
-              clicks: url.clicks,
+              id: typedUrl.id,
+              name: typedUrl.name,
+              clickLimit: typedUrl.clickLimit,
+              clicks: typedUrl.clicks,
               remainingClicks: remainingClicks
             });
           } else if (remainingClicks <= 5000) {
             lowClickUrls.push({
-              id: url.id,
-              name: url.name,
-              clickLimit: url.clickLimit,
-              clicks: url.clicks,
+              id: typedUrl.id,
+              name: typedUrl.name,
+              clickLimit: typedUrl.clickLimit,
+              clicks: typedUrl.clicks,
               remainingClicks: remainingClicks
             });
           }
