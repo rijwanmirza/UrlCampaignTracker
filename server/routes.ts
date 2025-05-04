@@ -92,6 +92,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test route to simulate different URL click quantities for Traffic Generator testing
+  app.post("/api/trafficstar/test-url-quantities/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId, 10);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid campaign ID"
+        });
+      }
+      
+      // Get test parameters
+      const { highClickUrl, lowClickUrl } = req.body;
+      
+      // Prepare SQL queries
+      if (highClickUrl) {
+        // Create a URL with high clicks (>15,000 remaining) for testing activation
+        await db.execute(sql`
+          INSERT INTO urls (name, campaign_id, status, target_url, click_limit, clicks, original_click_limit)
+          VALUES ('High Click Test URL', ${campaignId}, 'active', 'https://example.com/high', 20000, 0, 20000)
+          ON CONFLICT (id) DO NOTHING
+        `);
+        
+        console.log(`Created test URL with high clicks (20,000) for campaign ${campaignId}`);
+      }
+      
+      if (lowClickUrl) {
+        // Create a URL with low clicks (<5,000 remaining) for testing pause
+        await db.execute(sql`
+          INSERT INTO urls (name, campaign_id, status, target_url, click_limit, clicks, original_click_limit)
+          VALUES ('Low Click Test URL', ${campaignId}, 'active', 'https://example.com/low', 4000, 0, 4000)
+          ON CONFLICT (id) DO NOTHING
+        `);
+        
+        console.log(`Created test URL with low clicks (4,000) for campaign ${campaignId}`);
+      }
+      
+      return res.json({
+        success: true,
+        message: "Test URLs created successfully",
+        campaignId,
+        created: {
+          highClickUrl: !!highClickUrl,
+          lowClickUrl: !!lowClickUrl
+        }
+      });
+    } catch (error) {
+      console.error('Error creating test URLs:', error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to create test URLs",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // API route to fix missing URL click logs
   app.post("/api/system/fix-missing-url-click-logs", async (_req: Request, res: Response) => {
     try {

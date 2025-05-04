@@ -839,9 +839,28 @@ export async function debugProcessCampaign(campaignId: number) {
       }
     }
     
-    // Get current spent value
-    const spentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
-    console.log(`Campaign ${trafficstarCampaignId} spent value: ${spentValue}`);
+    // Get current spent value with timeout
+    let spentValue = null;
+    try {
+      // Set a timeout of 5 seconds for the spent value API call
+      const spentValuePromise = getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), 5000); // 5 seconds timeout
+      });
+      
+      spentValue = await Promise.race([spentValuePromise, timeoutPromise]);
+      if (spentValue === null) {
+        console.log(`Spent value API timed out for campaign ${trafficstarCampaignId}, using default value for debug purposes`);
+        // Use a default value for debug purposes
+        spentValue = 0.0;
+      } else {
+        console.log(`Campaign ${trafficstarCampaignId} spent value: ${spentValue}`);
+      }
+    } catch (error) {
+      console.error(`Error getting spent value for campaign ${trafficstarCampaignId}:`, error);
+      // For debug purposes only, use a default value
+      spentValue = 0.0;
+    }
     
     // Identify what action the Traffic Generator would take
     let expectedAction = "none";
