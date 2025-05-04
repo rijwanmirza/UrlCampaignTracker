@@ -1,0 +1,85 @@
+9:14:41 AM [gmail-reader] Gmail reader started successfully and monitoring emails from help@donot-reply.in
+🔍 DEBUG: Found TrafficStar API key in environment variables, ensuring it is saved in database
+9:14:41 AM [gmail-reader] SMTP connection verified successfully
+9:14:41 AM [gmail-reader] Gmail credentials verified successfully, starting reader...9:14:41 AM [gmail-reader] Gmail reader started successfully and monitoring emails from help@donot-reply.in
+🔍 DEBUG: Found TrafficStar API key in environment variables, ensuring it is saved in database
+🔍 DEBUG: TrafficStar API key already saved in database
+🔍 DEBUG: TrafficStar API key already saved in database
+[TrafficStarService] Updating spent values for all 1 campaigns with TrafficStar IDs for 2025-05-04
+[TrafficStarService] Fetching spent value for campaign 1000866 on 2025-05-04
+Using TrafficStar API key from environment variable
+Requesting new TrafficStar access token from https://api.trafficstars.com/v1/auth/token
+[TrafficStarService] Updating spent values for all 1 campaigns with TrafficStar IDs for 2025-05-04
+[TrafficStarService] Fetching spent value for campaign 1000866 on 2025-05-04
+Using TrafficStar API key from environment variable
+Requesting new TrafficStar access token from https://api.trafficstars.com/v1/auth/token
+[connection] Connected to host
+<= '* OK Gimap ready for requests from 2409:40c4:11e2:6d55:967:52e0:4e8f:14e ds15mb88764250pjb'
+=> 'A0 CAPABILITY'
+Successfully got token from https://api.trafficstars.com/v1/auth/token
+Received new access token, expires in 86400 seconds
+[TrafficStarService] Fetching spent value for campaign 1000866 from 2025-05-04 to 2025-05-04
+Successfully got token from https://api.trafficstars.com/v1/auth/token
+Received new access token, expires in 86400 seconds
+[TrafficStarService] Fetching spent value for campaign 1000866 from 2025-05-04 to 2025-05-04
+9:14:42 AM [gmail-reader] SMTP connection verified successfully
+9:14:42 AM [gmail-reader] Gmail credentials verified successfully, starting reader...9:14:42 AM [gmail-reader] Gmail reader started successfully and monitoring emails from help@donot-reply.in
+🔍 DEBUG: Found TrafficStar API key in environment variables, ensuring it is saved in database
+🔍 DEBUG: TrafficStar API key already saved in database
+9:14:42 AM [gmail-reader] SMTP connection verified successfully
+9:14:42 AM [gmail-reader] Gmail credentials verified successfully, starting reader...9:14:42 AM [gmail-reader] Gmail reader started successfully and monitoring emails from help@donot-reply.in
+🔍 DEBUG: Found TrafficStar API key in environment variables, ensuring it is saved in database
+[TrafficStarService] Updating spent values for all 1 campaigns with TrafficStar IDs for 2025-05-04
+[TrafficStarService] Fetching spent value for campaign 1000866 on 2025-05-04
+[TrafficStarService] Fetching spent value for campaign 1000866 from 2025-05-04 to 2025-05-04
+🔍 DEBUG: TrafficStar API key already saved in database
+[TrafficStarService] Updating spent values for all 1 campaigns with TrafficStar IDs for 2025-05-04
+[TrafficStarService] Fetching spent value for campaign 1000866 on 2025-05-04
+[TrafficStarService] Fetching spent value for campaign 1000866 from 2025-05-04 to 2025-05-04
+<= '* CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 XYZZY SASL-IR AUTH=XOAUTH2 AUTH=PLAIN AUTH=PLAIN-CLIENTTOKEN AUTH=OAUTHBEARER'      
+<= 'A0 OK Thats all she wrote! ds15mb88764250pjb'
+=> 'A1 LOGIN "compaignwalabhai@gmail.com" "hciuemplthdkwfho"'
+[TrafficStarService] Error getting spent value for campaign 1000866: Request failed with status code 404
+[TrafficStarService] API Error details: {
+  status: 404,
+  data: { detail: 'Not Found' },
+  url: 'https://api.trafficstars.com/v1.1/campaigns/1000866/stats',
+  params: { date_from: '2025-05-04', date_to: '2025-05-04' }
+}
+[TrafficStarService] No spent data returned for campaign 1
+TrafficStar spent value scheduler initialized
+🔍 DEBUG: Successfully scheduled TrafficStar spent value updates
+9:14:42 AM [express] TrafficStar API initialized successfully
+9:14:42 AM [express] Traffic Generator is disabled by environment variable
+[TrafficStarService] Error getting spent value for campaign 1000866: Request failed with status code 404
+[TrafficStarService] API Error details: {
+  status: 404,
+  data: { detail: 'Not Found' },
+  url: 'https://api.trafficstars.com/v1.1/campaigns/1000866/stats',
+  params: { date_from: '2025-05-04', date_to: '2025-05-04' }
+}
+[TrafficStarService] No spent data returned for campaign 1
+TrafficStar spent value scheduler initialized
+🔍 DEBUG: Successfully scheduled TrafficStar spent value updates
+9:14:42 AM [express] TrafficStar API initialized successfully
+9:14:42 AM [express] Traffic Generator is disabled by environment variable
+[TrafficStarService] Error getting spent value for campaign 1000866: Request failed with status code 404
+[TrafficStarService] API Error details: {
+  status: 404,
+  data: { detail: 'Not Found' },
+  url: 'https://api.trafficstars.com/v1.1/campaigns/1000866/stats',
+  params: { date_from: '2025-05-04', date_to: '2025-05-04' }
+}
+[TrafficStarService] No spent data returned for campaign 1
+TrafficStar spent value scheduler initialized
+🔍 DEBUG: Successfully scheduled TrafficStar spent value updates
+9:14:42 AM [express] TrafficStar API initialized successfully
+9:14:42 AM [express] Traffic Generator is disabled by environment variable
+[TrafficStarService] Error getting spent value for campaign 1000866: Request failed with status code 404
+[TrafficStarService] API Error details: {
+  status: 404,
+  data: { detail: 'Not Found' },
+  url: 'https://api.trafficstars.com/v1.1/campaigns/1000866/stats',
+  params: { date_from: '2025-05-04', date_to: '2025-05-04' }
+}
+[TrafficStarService] No spent data returned for campaign 1

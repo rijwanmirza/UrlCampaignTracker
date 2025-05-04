@@ -1319,10 +1319,11 @@ class TrafficStarService {
       let result: any = null;
       let lastError = null;
       
-      // Try different endpoint patterns
+      // Try different endpoint patterns and parameter combinations
       for (const baseUrl of API_BASE_URLS) {
+        // Try first endpoint with date_from/date_until (original params)
         try {
-          console.log(`Trying to get spent value using endpoint: ${baseUrl}/campaigns/${id}/spent`);
+          console.log(`Trying to get spent value using endpoint: ${baseUrl}/campaigns/${id}/spent with date_from/date_until`);
           const response = await axios.get(`${baseUrl}/campaigns/${id}/spent`, {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1334,47 +1335,43 @@ class TrafficStarService {
             }
           });
           
-          if (response.data && (
-              response.data.spent || 
-              response.data.total || 
-              response.data.amount || 
-              response.data.totalSpent ||
-              (response.data.response && (
-                response.data.response.spent || 
-                response.data.response.total || 
-                response.data.response.amount
-              ))
-          )) {
-            console.log(`Successfully retrieved spent value for campaign ${id}`);
-            
-            // Parse the response into a standardized format
-            const rawData = response.data.response || response.data;
-            const totalSpent = rawData.spent || rawData.total || rawData.amount || rawData.totalSpent || 0;
-            
-            result = {
-              totalSpent: typeof totalSpent === 'string' ? parseFloat(totalSpent) : totalSpent,
-              startDate: dateFrom,
-              endDate: dateUntil,
-              days: this.calculateDaysBetween(dateFrom, dateUntil),
-              rawResponse: rawData
-            };
-            
+          if (this.isValidSpentResponse(response.data)) {
+            console.log(`Successfully retrieved spent value for campaign ${id} with date_from/date_until`);
+            result = this.parseSpentResponse(response.data, dateFrom, dateUntil);
             success = true;
             break;
-          } else {
-            console.log(`Received unexpected response format from ${baseUrl}/campaigns/${id}/spent`);
-            console.log(`Response structure: ${JSON.stringify(Object.keys(response.data))}`);
           }
         } catch (error) {
-          console.log(`Failed to get spent value using endpoint: ${baseUrl}/campaigns/${id}/spent`);
-          lastError = error;
-          // Continue to next attempt
+          console.log(`Failed with date_from/date_until: ${baseUrl}/campaigns/${id}/spent`);
         }
         
-        // Try alternate endpoint format
+        // Try first endpoint with date_from/date_to
         try {
-          console.log(`Trying alternate format for spent value: ${baseUrl}/stats/campaigns/${id}`);
+          console.log(`Trying to get spent value using endpoint: ${baseUrl}/campaigns/${id}/spent with date_from/date_to`);
+          const response = await axios.get(`${baseUrl}/campaigns/${id}/spent`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+            params: {
+              date_from: dateFrom,
+              date_to: dateUntil
+            }
+          });
           
+          if (this.isValidSpentResponse(response.data)) {
+            console.log(`Successfully retrieved spent value for campaign ${id} with date_from/date_to`);
+            result = this.parseSpentResponse(response.data, dateFrom, dateUntil);
+            success = true;
+            break;
+          }
+        } catch (error) {
+          console.log(`Failed with date_from/date_to: ${baseUrl}/campaigns/${id}/spent`);
+        }
+        
+        // Try stats endpoint with date_from/date_until
+        try {
+          console.log(`Trying to get spent value using endpoint: ${baseUrl}/stats/campaigns/${id} with date_from/date_until`);
           const response = await axios.get(`${baseUrl}/stats/campaigns/${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1386,40 +1383,169 @@ class TrafficStarService {
             }
           });
           
-          if (response.data) {
-            console.log(`Successfully retrieved stats for campaign ${id} using alternate endpoint`);
-            
-            // Parse the response into a standardized format
-            const rawData = response.data.response || response.data;
-            const totalSpent = rawData.spent || rawData.total || rawData.amount || rawData.cost || 0;
-            
-            result = {
-              totalSpent: typeof totalSpent === 'string' ? parseFloat(totalSpent) : totalSpent,
-              startDate: dateFrom,
-              endDate: dateUntil,
-              days: this.calculateDaysBetween(dateFrom, dateUntil),
-              rawResponse: rawData
-            };
-            
+          if (this.isValidSpentResponse(response.data)) {
+            console.log(`Successfully retrieved stats for campaign ${id} with date_from/date_until`);
+            result = this.parseSpentResponse(response.data, dateFrom, dateUntil);
             success = true;
             break;
           }
         } catch (error) {
-          console.log(`Failed to get spent value using alternate endpoint: ${baseUrl}/stats/campaigns/${id}`);
-          // Continue to next attempt
+          console.log(`Failed with date_from/date_until: ${baseUrl}/stats/campaigns/${id}`);
+        }
+        
+        // Try stats endpoint with date_from/date_to
+        try {
+          console.log(`Trying to get spent value using endpoint: ${baseUrl}/stats/campaigns/${id} with date_from/date_to`);
+          const response = await axios.get(`${baseUrl}/stats/campaigns/${id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+            params: {
+              date_from: dateFrom,
+              date_to: dateUntil
+            }
+          });
+          
+          if (this.isValidSpentResponse(response.data)) {
+            console.log(`Successfully retrieved stats for campaign ${id} with date_from/date_to`);
+            result = this.parseSpentResponse(response.data, dateFrom, dateUntil);
+            success = true;
+            break;
+          }
+        } catch (error) {
+          const axiosError = error as any;
+          if (axiosError.response) {
+            console.log(`Failed with date_from/date_to: ${baseUrl}/stats/campaigns/${id} - Status: ${axiosError.response.status}`);
+            console.log(`API Error details:`, {
+              status: axiosError.response.status,
+              data: axiosError.response.data,
+              url: `${baseUrl}/stats/campaigns/${id}`,
+              params: { date_from: dateFrom, date_to: dateUntil }
+            });
+            lastError = error;
+          } else {
+            console.log(`Failed with date_from/date_to: ${baseUrl}/stats/campaigns/${id} - Network error`);
+          }
+        }
+        
+        // Try campaigns stats endpoint with date_from/date_to
+        try {
+          console.log(`Trying to get spent value using endpoint: ${baseUrl}/campaigns/${id}/stats with date_from/date_to`);
+          const response = await axios.get(`${baseUrl}/campaigns/${id}/stats`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+            params: {
+              date_from: dateFrom,
+              date_to: dateUntil
+            }
+          });
+          
+          if (this.isValidSpentResponse(response.data)) {
+            console.log(`Successfully retrieved campaign stats for campaign ${id} with date_from/date_to`);
+            result = this.parseSpentResponse(response.data, dateFrom, dateUntil);
+            success = true;
+            break;
+          }
+        } catch (error) {
+          const axiosError = error as any;
+          if (axiosError.response) {
+            console.log(`Failed with date_from/date_to: ${baseUrl}/campaigns/${id}/stats - Status: ${axiosError.response.status}`);
+            console.log(`API Error details:`, {
+              status: axiosError.response.status,
+              data: axiosError.response.data,
+              url: `${baseUrl}/campaigns/${id}/stats`,
+              params: { date_from: dateFrom, date_to: dateUntil }
+            });
+            lastError = error;
+          } else {
+            console.log(`Failed with date_from/date_to: ${baseUrl}/campaigns/${id}/stats - Network error`);
+          }
         }
       }
       
       if (!success) {
-        console.error(`Failed to get spent value for campaign ${id} after trying all endpoints. Last error:`, lastError);
+        console.error(`[TrafficStarService] Error getting spent value for campaign ${id}: Failed after trying all endpoints`);
+        if (lastError) {
+          const axiosError = lastError as any;
+          if (axiosError.response) {
+            console.error(`[TrafficStarService] API Error details:`, {
+              status: axiosError.response.status,
+              data: axiosError.response.data,
+              url: axiosError.config?.url,
+              params: axiosError.config?.params
+            });
+          }
+        }
+        console.error(`[TrafficStarService] No spent data returned for campaign ${id}`);
         return null;
       }
       
       return result;
     } catch (error) {
-      console.error(`Error getting spent value for campaign ${id}:`, error);
+      console.error(`[TrafficStarService] Error getting spent value for campaign ${id}:`, error);
       return null;
     }
+  }
+  
+  /**
+   * Helper to check if response contains valid spent data
+   */
+  private isValidSpentResponse(data: any): boolean {
+    if (!data) return false;
+    
+    // Check direct properties
+    if (data.spent || data.total || data.amount || data.totalSpent || data.cost) {
+      return true;
+    }
+    
+    // Check nested response property
+    if (data.response && (
+      data.response.spent || 
+      data.response.total || 
+      data.response.amount ||
+      data.response.cost
+    )) {
+      return true;
+    }
+    
+    // Check data.data pattern (some APIs nest under data.data)
+    if (data.data && (
+      data.data.spent ||
+      data.data.total ||
+      data.data.amount ||
+      data.data.cost
+    )) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Parse spent response into standardized format
+   */
+  private parseSpentResponse(data: any, dateFrom: string, dateUntil: string): any {
+    // Extract the actual data from whatever nesting level it's at
+    const rawData = data.response || data.data || data;
+    
+    // Try to find the spent value in various possible properties
+    const totalSpent = 
+      rawData.spent || 
+      rawData.total || 
+      rawData.amount || 
+      rawData.totalSpent || 
+      rawData.cost || 0;
+    
+    return {
+      totalSpent: typeof totalSpent === 'string' ? parseFloat(totalSpent) : totalSpent,
+      startDate: dateFrom,
+      endDate: dateUntil,
+      days: this.calculateDaysBetween(dateFrom, dateUntil),
+      rawResponse: rawData
+    };
   }
   
   /**
