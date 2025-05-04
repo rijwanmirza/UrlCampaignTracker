@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb, relations } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -185,7 +185,7 @@ export const trafficstarCredentials = pgTable("trafficstar_credentials", {
 
 export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   id: serial("id").primaryKey(),
-  trafficstarId: text("trafficstar_id").notNull().unique(), // Store as text for compatibility
+  trafficstarCampaignId: text("trafficstar_id").notNull().unique(), // Store as text for compatibility
   name: text("name").notNull(),
   status: text("status").notNull(),
   active: boolean("active").default(true),
