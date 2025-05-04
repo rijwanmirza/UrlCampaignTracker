@@ -965,70 +965,8 @@ export async function runTrafficGeneratorForAllCampaigns() {
 }
 
 /**
- * Update the spent values for all campaigns with TrafficStar integration
- * This ensures we always have the latest spent values for decision making
- */
-export async function updateAllCampaignSpentValues() {
-  try {
-    console.log('Updating spent values for all TrafficStar campaigns...');
-    
-    // Get all campaigns with TrafficStar integration
-    const campaignsWithTrafficStar = await db.select()
-      .from(campaigns)
-      .where(sql`${campaigns.trafficstarCampaignId} IS NOT NULL`);
-    
-    if (!campaignsWithTrafficStar || campaignsWithTrafficStar.length === 0) {
-      console.log('No campaigns with TrafficStar integration found');
-      return;
-    }
-    
-    console.log(`Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
-    
-    // Update spent value for each campaign
-    for (const campaign of campaignsWithTrafficStar) {
-      if (!campaign.trafficstarCampaignId) continue;
-      
-      try {
-        const spentValue = await getTrafficStarCampaignSpentValue(campaign.id, campaign.trafficstarCampaignId);
-        console.log(`Updated spent value for campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId}): $${spentValue !== null ? spentValue.toFixed(4) : 'N/A'}`);
-        
-        // Update database with spent status (<$10 or >=$10)
-        const THRESHOLD = 10.0;
-        if (spentValue !== null) {
-          if (spentValue >= THRESHOLD) {
-            // Mark as high spend
-            await db.update(campaigns)
-              .set({
-                lastTrafficSenderStatus: 'high_spend',
-                updatedAt: new Date()
-              })
-              .where(eq(campaigns.id, campaign.id));
-            console.log(`✅ Marked campaign ${campaign.id} as 'high_spend' in database (${spentValue} >= ${THRESHOLD})`);
-          } else {
-            // Mark as low spend
-            await db.update(campaigns)
-              .set({
-                lastTrafficSenderStatus: 'low_spend',
-                updatedAt: new Date()
-              })
-              .where(eq(campaigns.id, campaign.id));
-            console.log(`✅ Marked campaign ${campaign.id} as 'low_spend' in database (${spentValue} < ${THRESHOLD})`);
-          }
-        }
-      } catch (error) {
-        console.error(`Error updating spent value for campaign ${campaign.id}:`, error);
-      }
-    }
-    
-    console.log('Finished updating spent values for all TrafficStar campaigns');
-  } catch (error) {
-    console.error('Error updating campaign spent values:', error);
-  }
-}
-
-/**
  * Initialize Traffic Generator scheduler
- * This function sets up a periodic job to run the traffic generator and update spent values
+ * This function sets up a periodic job to run the traffic generator
  */
 export function initializeTrafficGeneratorScheduler() {
   console.log('Initializing Traffic Generator scheduler');
@@ -1037,20 +975,11 @@ export function initializeTrafficGeneratorScheduler() {
   console.log('Running initial traffic generator check on startup');
   runTrafficGeneratorForAllCampaigns();
   
-  // Update spent values on startup
-  updateAllCampaignSpentValues();
-  
   // Set up a periodic job to run the traffic generator every 5 minutes
   setInterval(() => {
     console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
   }, 5 * 60 * 1000); // 5 minutes
-  
-  // Set up a periodic job to update spent values every minute
-  setInterval(() => {
-    console.log('Running scheduled spent value update');
-    updateAllCampaignSpentValues();
-  }, 60 * 1000); // 1 minute
   
   console.log('Traffic Generator scheduler initialized successfully');
 }
