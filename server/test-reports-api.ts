@@ -69,15 +69,22 @@ export function registerReportsAPITestRoutes(app: express.Application) {
         console.log(`Sending report request to: ${reportUrl}`);
         console.log(`Using date_from=${today}, date_to=${today}, campaign_id=${campaignId}`);
         
-        const reportResponse = await axios.get(reportUrl, {
+        console.log(`Using authorization token: ${token.substring(0, 15)}...`);
+        
+        // Per the TrafficStar API docs, the report API needs specific parameter format
+        // We need campaign_id, date_from and date_to all in YYYY-MM-DD format
+        const params = new URLSearchParams();
+        params.append('campaign_id', campaignId.toString());
+        params.append('date_from', today);
+        params.append('date_to', today);
+        
+        console.log(`Request parameters: ${params.toString()}`);
+        
+        // Make the API call with proper URL encoding for params
+        const reportResponse = await axios.get(`${reportUrl}?${params.toString()}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
-          },
-          params: {
-            'campaign_id': campaignId,
-            'date_from': today,
-            'date_to': today
           }
         });
         

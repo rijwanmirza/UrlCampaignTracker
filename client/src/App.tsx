@@ -18,6 +18,7 @@ import CampaignClickRecordsPage from "@/pages/campaign-click-records-page";
 import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
 import UrlClickRecordsPage from "@/pages/url-click-records-page";
 import DetailedUrlRecordPage from "@/pages/detailed-url-record-page";
+import ApiTesterPage from "@/pages/api-tester";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
 import ProtectedRoute from "@/components/ProtectedRoute";

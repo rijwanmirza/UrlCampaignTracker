@@ -155,28 +155,31 @@ export class TrafficStarService {
       // Get the current UTC date in YYYY-MM-DD format using our helper
       const currentUTCDate = getTodayFormatted();
       
-      // Always use the current UTC date if not explicitly overridden
-      const dateToUse = currentUTCDate;
+      // Use provided dates or default to today
+      const fromDate = dateFrom || currentUTCDate;
+      const toDate = dateTo || currentUTCDate;
       
-      console.log(`Getting spent value for campaign ${campaignId} for date: ${dateToUse}`);
+      console.log(`Getting spent value for campaign ${campaignId} from ${fromDate} to ${toDate}`);
       
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
       
-      // Make API request to the campaigns report endpoint using correct format
-      const url = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+      // Per the TrafficStar API docs, the report API needs specific parameter format
+      // We need campaign_id, date_from and date_to all in YYYY-MM-DD format
+      const params = new URLSearchParams();
+      params.append('campaign_id', campaignId.toString());
+      params.append('date_from', fromDate);
+      params.append('date_to', toDate);
       
-      console.log(`Sending report request to: ${url}`);
-      console.log(`Using date_from=${dateToUse}, date_to=${dateToUse}, campaign_id=${campaignId}`);
+      console.log(`Report API request parameters: ${params.toString()}`);
       
-      const response = await axios.get(url, {
-        headers,
-        params: {
-          campaign_id: campaignId,
-          date_from: dateToUse,
-          date_to: dateToUse
-        }
-      });
+      // Make API request to the reports API with properly formatted URL
+      const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+      const url = `${baseUrl}?${params.toString()}`;
+      
+      console.log(`Making direct request to: ${url}`);
+      
+      const response = await axios.get(url, { headers });
       
       // Log the raw response for debugging
       console.log(`Report API raw response:`, JSON.stringify(response.data).substring(0, 200) + '...');
@@ -200,6 +203,24 @@ export class TrafficStarService {
       if (error.response) {
         console.error(`Error response status: ${error.response.status}`);
         console.error(`Error response data:`, error.response.data);
+      }
+      
+      // Try direct method with campaign endpoint as fallback
+      try {
+        console.log(`Falling back to campaign endpoint for spent value`);
+        const campaign = await this.getCampaign(campaignId);
+        
+        if (campaign && campaign.spent !== undefined) {
+          // Convert to number if it's a string
+          const spentValue = typeof campaign.spent === 'string' 
+            ? parseFloat(campaign.spent) 
+            : (campaign.spent || 0);
+            
+          console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
+          return { totalSpent: spentValue };
+        }
+      } catch (fallbackError) {
+        console.error(`Fallback method also failed:`, fallbackError);
       }
       
       // Don't throw, just return 0 as spend
