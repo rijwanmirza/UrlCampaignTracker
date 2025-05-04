@@ -171,15 +171,10 @@ export class TrafficStarService {
         }
       }
       
-      // If direct method failed or returned invalid value, try reports API as fallback
-      console.log(`Trying reports API for campaign ${campaignId} spent value`);
-      
-      // Get the current UTC date in YYYY-MM-DD format using our helper
-      const currentUTCDate = getTodayFormatted();
-      
-      // Use provided dates or default to today
-      const fromDate = dateFrom || currentUTCDate;
-      const toDate = dateTo || currentUTCDate;
+      // Get the current UTC date in YYYY-MM-DD format
+      const today = getTodayFormatted();
+      const fromDate = dateFrom || today;
+      const toDate = dateTo || today;
       
       console.log(`Getting spent value for campaign ${campaignId} from ${fromDate} to ${toDate}`);
       
@@ -196,50 +191,24 @@ export class TrafficStarService {
       
       console.log(`Report API request payload:`, JSON.stringify(payload));
       
-      // Instead of using the reports API that's giving us 404s, we'll use the campaign
-      // object directly which has the spent value information, since this seems to be working
-      // This gets the campaign details again, just to be sure we have the freshest data
-      console.log(`Getting campaign ${campaignId} spent value directly from campaign object instead of reports API`);
-      const campaignData = await this.getCampaign(campaignId);
+      // Make API request to the reports API with JSON payload - use correct endpoint
+      // According to TrafficStar API documentation, the correct endpoint is:
+      const url = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+      const response = await axios.post(url, payload, { headers });
       
-      if (campaignData && campaignData.spent !== undefined) {
-        // Convert to number if it's a string
-        const spentValue = typeof campaignData.spent === 'string' 
-          ? parseFloat(campaignData.spent.replace(/[^0-9.]/g, '')) 
-          : (campaignData.spent || 0);
-          
-        console.log(`Campaign ${campaignId} spent value from campaign object: $${spentValue.toFixed(4)}`);
-        
-        // Update our database with this value
-        await this.updateCampaignSpentValueInDb(campaignId, spentValue);
-        
-        // Return the spent value immediately
-        return { totalSpent: spentValue };
-      }
+      // Log the raw response for debugging
+      console.log(`Report API raw response:`, JSON.stringify(response.data).substring(0, 200) + '...');
       
-      // If we didn't get a value from the campaign object, try the reports API as a fallback
-      console.log(`Falling back to reports API for spent value (although this is likely to fail with 404)`);
-      try {
-        const url = `${this.BASE_URL_V1_1}/reports/custom/by-day`;
-        const response = await axios.post(url, payload, { headers });
-      
-        // Log the raw response for debugging
-        console.log(`Report API raw response:`, JSON.stringify(response.data).substring(0, 200) + '...');
+      // If response is successful and has data
+      if (response.data && Array.isArray(response.data)) {
+        // Use our helper to extract the "amount" values from the report data
+        const totalSpent = parseReportSpentValue(response.data);
         
-        // If response is successful and has data
-        if (response.data && Array.isArray(response.data)) {
-          // Use our helper to extract the "amount" values from the report data
-          const totalSpent = parseReportSpentValue(response.data);
-          
-          console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
-          
-          // Update the value in database
-          await this.updateCampaignSpentValueInDb(campaignId, totalSpent);
-          return { totalSpent };
-        }
-      } catch (reportError) {
-        console.error(`Error with reports API fallback:`, reportError);
-        // Continue to return default value below
+        console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
+        
+        // Update the value in database
+        await this.updateCampaignSpentValueInDb(campaignId, totalSpent);
+        return { totalSpent };
       }
       
       // If we get here, both methods failed

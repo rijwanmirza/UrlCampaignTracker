@@ -2827,11 +2827,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Import the traffic generator function
-      const { getTrafficStarCampaignSpentValue } = require('./traffic-generator-new');
+      // Use the imported service from the top of the file
+      // We don't need to import again inside a function
       
       console.log(`Manual refresh: Getting spent value for campaign ${campaign.trafficstarCampaignId}`);
-      const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarCampaignId);
+      const result = await trafficStarService.getCampaignSpentValue(parseInt(campaign.trafficstarCampaignId));
+      const spentValue = result.totalSpent;
       
       // Send response with detailed information
       res.json({ 
@@ -2843,8 +2844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           trafficstarCampaignId: campaign.trafficstarCampaignId
         },
         spentValue: spentValue,
-        formattedSpentValue: `$${parseFloat(spentValue).toFixed(4)}`,
-        status: parseFloat(spentValue) >= 10 ? 'high_spend' : 'low_spend',
+        formattedSpentValue: `$${spentValue.toFixed(4)}`,
+        status: spentValue >= 10 ? 'high_spend' : 'low_spend',
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -3003,7 +3004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // BACKGROUND API CALL - Process API call after response is sent
       setTimeout(() => {
         try {
-          trafficStarService.updateCampaignDailyBudget(campaignId, maxDaily)
+          trafficStarService.updateCampaignBudget(campaignId, maxDaily)
             .catch(error => console.error(`Background API call to update budget for campaign ${campaignId} failed:`, error));
             
           // Refresh campaign in background
@@ -3050,7 +3051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         // Set daily budget to $10.15 via TrafficStar API
-        await trafficStarService.updateCampaignDailyBudget(
+        await trafficStarService.updateCampaignBudget(
           Number(campaign.trafficstarCampaignId), 
           10.15
         );
