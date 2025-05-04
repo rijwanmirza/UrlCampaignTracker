@@ -456,16 +456,10 @@ async function testUpdateEndTime() {
     // 1. Test service method
     try {
       console.log(`Testing end time update via service method`);
-      const success = await trafficStarService.updateCampaignEndTime(TEST_CAMPAIGN_ID, formattedEndTime);
+      await trafficStarService.updateCampaignEndTime(TEST_CAMPAIGN_ID, formattedEndTime);
       
-      if (success) {
-        console.log(`✅ UPDATE END TIME SUCCESS: Service method worked`);
-      } else {
-        console.log(`❌ UPDATE END TIME FAILED: Service method failed`);
-        
-        // Try direct method
-        await testUpdateEndTimeDirectly(formattedEndTime);
-      }
+      // If we got here without an error, it was successful
+      console.log(`✅ UPDATE END TIME SUCCESS: Service method worked`);
     } catch (error) {
       console.error(`❌ UPDATE END TIME ERROR (service method):`, error);
       

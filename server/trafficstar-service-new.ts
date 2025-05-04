@@ -11,9 +11,9 @@ import { storage } from './storage';
 // Try a few different API base URLs
 // Different TrafficStar API versions might have different URL structures
 const API_BASE_URLS = [
+  'https://api.trafficstars.com/v1.1', // Prioritize the endpoint that's proven to work
   'https://api.trafficstars.com/v1', 
   'https://api.trafficstars.com',
-  'https://api.trafficstars.com/v1.1',
   'https://api.trafficstars.com/v2',
   'https://app.trafficstars.com/api/v1',
   'https://app.trafficstars.com/api',
@@ -22,7 +22,7 @@ const API_BASE_URLS = [
   'https://trafficstars.com/api/v1'
 ];
 
-// Default to first one but will try all of them
+// Default to first one (v1.1 API endpoint) which is proven to work
 const API_BASE_URL = API_BASE_URLS[0]; 
 
 // Auth endpoints - based on provided documentation
