@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb, relations } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -185,7 +186,7 @@ export const trafficstarCredentials = pgTable("trafficstar_credentials", {
 
 export const trafficstarCampaigns = pgTable("trafficstar_campaigns", {
   id: serial("id").primaryKey(),
-  trafficstarCampaignId: text("trafficstar_id").notNull().unique(), // Store as text for compatibility
+  trafficstarId: text("trafficstar_id").notNull().unique(), // Store as text for compatibility
   name: text("name").notNull(),
   status: text("status").notNull(),
   active: boolean("active").default(true),
@@ -386,3 +387,56 @@ export const insertUrlClickLogSchema = createInsertSchema(urlClickLogs).omit({
 // Types for URL Click Logs
 export type UrlClickLog = typeof urlClickLogs.$inferSelect;
 export type InsertUrlClickLog = z.infer<typeof insertUrlClickLogSchema>;
+
+// Define relationships between tables
+export const campaignsRelations = relations(campaigns, ({ many }) => ({
+  urls: many(urls),
+  campaignClickRecords: many(campaignClickRecords),
+  campaignRedirectLogs: many(campaignRedirectLogs),
+}));
+
+export const urlsRelations = relations(urls, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [urls.campaignId],
+    references: [campaigns.id],
+  }),
+  urlClickRecords: many(urlClickRecords),
+  urlClickLogs: many(urlClickLogs),
+}));
+
+export const urlClickRecordsRelations = relations(urlClickRecords, ({ one }) => ({
+  url: one(urls, {
+    fields: [urlClickRecords.urlId],
+    references: [urls.id],
+  }),
+}));
+
+export const urlClickLogsRelations = relations(urlClickLogs, ({ one }) => ({
+  url: one(urls, {
+    fields: [urlClickLogs.urlId],
+    references: [urls.id],
+  }),
+}));
+
+export const campaignClickRecordsRelations = relations(campaignClickRecords, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignClickRecords.campaignId],
+    references: [campaigns.id],
+  }),
+  url: one(urls, {
+    fields: [campaignClickRecords.urlId],
+    references: [urls.id],
+  }),
+}));
+
+export const campaignRedirectLogsRelations = relations(campaignRedirectLogs, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignRedirectLogs.campaignId],
+    references: [campaigns.id],
+  }),
+  url: one(urls, {
+    fields: [campaignRedirectLogs.urlId],
+    references: [urls.id],
+    nullable: true,
+  }),
+}));
