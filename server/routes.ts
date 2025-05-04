@@ -2703,7 +2703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get TrafficStar campaign spent value and update local database
+  // Get TrafficStar campaign spent value
   app.get("/api/trafficstar/campaigns/:id/spent", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -2724,58 +2724,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid dateUntil format. Use YYYY-MM-DD" });
       }
 
-      console.log(`Fetching spent value for TrafficStar campaign ${id} (Manual refresh)`);
       const stats = await trafficStarService.getCampaignSpentValue(id, dateFrom, dateUntil);
-      
-      // Update the database with the latest spent value
-      try {
-        // Find the campaign with this TrafficStar ID
-        const campaign = await db.select()
-          .from(campaigns)
-          .where(eq(campaigns.trafficstarCampaignId, id.toString()))
-          .limit(1);
-        
-        if (campaign.length > 0) {
-          const campaignId = campaign[0].id;
-          console.log(`Updating spent value for local campaign ${campaignId} with TrafficStar ID ${id}`);
-          
-          // Update the campaign with the latest spent value
-          await db.update(campaigns)
-            .set({
-              dailySpent: stats.totalSpent.toString(),
-              dailySpentDate: new Date(),
-              lastSpentCheck: new Date(),
-              updatedAt: new Date()
-            })
-            .where(eq(campaigns.id, campaignId));
-          
-          console.log(`Successfully updated spent value for campaign ${campaignId} to $${stats.totalSpent.toFixed(4)}`);
-          
-          // Return both the API result and the database update result
-          res.json({
-            ...stats,
-            campaignId,
-            updated: true,
-            message: `Successfully updated campaign ${campaignId} with TrafficStar spent value`
-          });
-        } else {
-          console.log(`No local campaign found with TrafficStar ID ${id}`);
-          res.json({
-            ...stats,
-            updated: false,
-            message: `No local campaign found with TrafficStar ID ${id}`
-          });
-        }
-      } catch (dbError) {
-        console.error(`Error updating database with spent value:`, dbError);
-        // Still return the API result even if database update failed
-        res.json({
-          ...stats,
-          updated: false,
-          error: dbError instanceof Error ? dbError.message : String(dbError),
-          message: "Got spent value from API but failed to update database"
-        });
-      }
+      res.json(stats);
     } catch (error) {
       console.error(`Error fetching spent value for TrafficStar campaign ${req.params.id}:`, error);
       res.status(500).json({ 

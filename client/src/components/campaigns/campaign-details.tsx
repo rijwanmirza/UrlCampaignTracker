@@ -195,51 +195,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
               {/* TrafficStar Daily Spent Section */}
               {campaign.trafficstarCampaignId && (
                 <div className="mt-2 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-slate-700">TrafficStar Spent:</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 px-2 text-xs"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`/api/trafficstar/campaigns/${campaign.trafficstarCampaignId}/spent`, {
-                            method: 'GET',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            }
-                          });
-                          
-                          if (!response.ok) {
-                            throw new Error('Failed to refresh spent value');
-                          }
-                          
-                          const data = await response.json();
-                          
-                          // Show toast message
-                          toast({
-                            title: "Spent Value Refreshed",
-                            description: `Updated to $${data.totalSpent.toFixed(4)}`,
-                            variant: "default"
-                          });
-                          
-                          // Refresh the campaign data
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 1000);
-                        } catch (error) {
-                          console.error('Error refreshing spent value:', error);
-                          toast({
-                            title: "Error",
-                            description: "Failed to refresh spent value. Try again later.",
-                            variant: "destructive"
-                          });
-                        }
-                      }}
-                    >
-                      Refresh
-                    </Button>
-                  </div>
+                  <span className="text-sm font-medium text-slate-700">TrafficStar Spent:</span>
                   <div className="flex items-center gap-2">
                     <p className="text-slate-900 font-semibold">
                       ${typeof campaign.dailySpent === 'string' 
