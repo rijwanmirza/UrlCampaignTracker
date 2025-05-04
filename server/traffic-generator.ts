@@ -8,7 +8,7 @@
 
 import { trafficStarService } from './trafficstar-service-new';
 import { db } from './db';
-import { campaigns, type Campaign, type Url } from '../shared/schema';
+import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { getSpentValueForDate } from './spent-value';
 
@@ -760,32 +760,26 @@ export async function debugProcessCampaign(campaignId: number) {
     console.log(`🔍 DEBUG: Running detailed Traffic Generator check for campaign ID ${campaignId}`);
     
     // Get campaign details
-    const campaign = await db.select()
+    const campaignResult = await db.select()
       .from(campaigns)
       .where(eq(campaigns.id, campaignId))
-      .limit(1)
-      .then(results => results[0] || null);
-      
-    if (!campaign) {
+      .limit(1);
+    
+    if (!campaignResult || campaignResult.length === 0) {
       return {
         success: false,
         message: `Campaign ${campaignId} not found`,
       };
     }
     
-    // Get campaign URLs separately
-    const urls = await db.query.urls.findMany({
-      where: (url, { eq }) => eq(url.campaignId, campaignId)
-    });
+    const campaign = campaignResult[0];
     
-    if (!campaign) {
-      return {
-        success: false,
-        message: `Campaign ${campaignId} not found`,
-      };
-    }
+    // Get campaign URLs
+    const urlsResult = await db.select()
+      .from(urls)
+      .where(eq(urls.campaignId, campaignId));
     
-    const { trafficstarCampaignId } = campaign;
+    const trafficstarCampaignId = campaign.trafficstarCampaignId;
     if (!trafficstarCampaignId) {
       return {
         success: false,
@@ -809,9 +803,9 @@ export async function debugProcessCampaign(campaignId: number) {
     let highClickUrls = [];
     let lowClickUrls = [];
     
-    if (campaign.urls && campaign.urls.length > 0) {
-      for (const url of campaign.urls) {
-        if (url.status === 'active' && url.isActive) {
+    if (urlsResult && urlsResult.length > 0) {
+      for (const url of urlsResult) {
+        if (url.status === 'active') {
           const remainingClicks = url.clickLimit - url.clicks;
           totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
           
@@ -882,7 +876,7 @@ export async function debugProcessCampaign(campaignId: number) {
       spentValue: spentValue !== null ? `$${spentValue.toFixed(4)}` : "Unknown",
       totalRemainingClicks,
       urlStats: {
-        totalUrls: campaign.urls.length,
+        totalUrls: urlsResult ? urlsResult.length : 0,
         highClickUrls: highClickUrls.length,
         lowClickUrls: lowClickUrls.length
       },
