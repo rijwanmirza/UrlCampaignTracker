@@ -759,16 +759,16 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       return;
     }
     
-    if (!campaign.trafficstarId) {
+    if (!campaign.trafficstarCampaignId) {
       console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping`);
       return;
     }
     
-    console.log(`Processing Traffic Generator for campaign ${campaignId} with TrafficStar ID ${campaign.trafficstarId}`);
+    console.log(`Processing Traffic Generator for campaign ${campaignId} with TrafficStar ID ${campaign.trafficstarCampaignId}`);
     
     // Handle force mode for testing
     if (forceMode === 'force_activate') {
-      console.log(`💪 FORCE MODE: Forcing activation of campaign ${campaign.trafficstarId}`);
+      console.log(`💪 FORCE MODE: Forcing activation of campaign ${campaign.trafficstarCampaignId}`);
       
       try {
         // Set end time to 23:59 UTC today
@@ -777,40 +777,40 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         const endTimeStr = `${todayStr} 23:59:00`;
         
         // First set the end time, then activate
-        await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarId), endTimeStr);
-        await trafficStarService.activateCampaign(Number(campaign.trafficstarId));
+        await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), endTimeStr);
+        await trafficStarService.activateCampaign(Number(campaign.trafficstarCampaignId));
         
-        console.log(`✅ FORCE MODE: Successfully activated campaign ${campaign.trafficstarId}`);
+        console.log(`✅ FORCE MODE: Successfully activated campaign ${campaign.trafficstarCampaignId}`);
         
         // Start minute-by-minute monitoring
-        startMinutelyStatusCheck(campaignId, campaign.trafficstarId);
+        startMinutelyStatusCheck(campaignId, campaign.trafficstarCampaignId);
         
         return;
       } catch (error) {
-        console.error(`❌ FORCE MODE: Error activating campaign ${campaign.trafficstarId}:`, error);
+        console.error(`❌ FORCE MODE: Error activating campaign ${campaign.trafficstarCampaignId}:`, error);
         return;
       }
     } else if (forceMode === 'force_pause') {
-      console.log(`💪 FORCE MODE: Forcing pause of campaign ${campaign.trafficstarId}`);
+      console.log(`💪 FORCE MODE: Forcing pause of campaign ${campaign.trafficstarCampaignId}`);
       
       try {
         // Pause the campaign
-        await pauseTrafficStarCampaign(campaign.trafficstarId);
+        await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
         
-        console.log(`✅ FORCE MODE: Successfully paused campaign ${campaign.trafficstarId}`);
+        console.log(`✅ FORCE MODE: Successfully paused campaign ${campaign.trafficstarCampaignId}`);
         
         // Start minute-by-minute pause monitoring
-        startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarId);
+        startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
         
         return;
       } catch (error) {
-        console.error(`❌ FORCE MODE: Error pausing campaign ${campaign.trafficstarId}:`, error);
+        console.error(`❌ FORCE MODE: Error pausing campaign ${campaign.trafficstarCampaignId}:`, error);
         return;
       }
     }
     
     // Get the current spent value for the campaign
-    const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarId);
+    const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarCampaignId);
     
     if (spentValue === null) {
       console.error(`Failed to get spent value for campaign ${campaignId}`);
@@ -820,7 +820,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     console.log(`Campaign ${campaignId} spent value: $${spentValue.toFixed(4)}`);
     
     // Handle the campaign based on spent value and clicks
-    await handleCampaignBySpentValue(campaignId, campaign.trafficstarId, spentValue);
+    await handleCampaignBySpentValue(campaignId, campaign.trafficstarCampaignId, spentValue);
   } catch (error) {
     console.error(`Error processing Traffic Generator for campaign ${campaignId}:`, error);
   }
@@ -903,13 +903,13 @@ export async function debugProcessCampaign(campaignId: number) {
       return { success: false, error: `Campaign ${campaignId} not found` };
     }
     
-    if (!campaign.trafficstarId) {
+    if (!campaign.trafficstarCampaignId) {
       return { success: false, error: `Campaign ${campaignId} has no TrafficStar ID` };
     }
     
     // Get all the debugging info
-    const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarId);
-    const status = await getTrafficStarCampaignStatus(campaign.trafficstarId);
+    const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarCampaignId);
+    const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
     
     // Calculate remaining clicks
     let totalRemainingClicks = 0;
@@ -946,7 +946,7 @@ export async function debugProcessCampaign(campaignId: number) {
       campaign: {
         id: campaign.id,
         name: campaign.name,
-        trafficstarId: campaign.trafficstarId,
+        trafficstarCampaignId: campaign.trafficstarCampaignId,
         trafficGeneratorEnabled: campaign.trafficGeneratorEnabled,
         lastTrafficSenderStatus: campaign.lastTrafficSenderStatus,
         lastTrafficSenderAction: campaign.lastTrafficSenderAction,
