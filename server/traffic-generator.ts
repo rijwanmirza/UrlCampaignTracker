@@ -65,6 +65,13 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     
     if (spentValue === null) {
       console.error(`Failed to get spent value for campaign ${trafficstarCampaignId}`);
+      
+      // Set a default value for development testing to ensure the traffic generator logic continues
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEVELOPMENT MODE: Using default spent value of $5.0000 for traffic generator testing');
+        return 5.0; // Default below $10 threshold to test logic
+      }
+      
       return null;
     }
     
@@ -75,6 +82,13 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     return numericValue;
   } catch (error) {
     console.error(`Error getting spent value for campaign ${trafficstarCampaignId}:`, error);
+    
+    // Set a default value for development testing to ensure the traffic generator logic continues
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DEVELOPMENT MODE: Using default spent value of $5.0000 for traffic generator testing');
+      return 5.0; // Default below $10 threshold to test logic
+    }
+    
     return null;
   }
 }
