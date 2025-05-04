@@ -437,6 +437,5 @@ export const campaignRedirectLogsRelations = relations(campaignRedirectLogs, ({ 
   url: one(urls, {
     fields: [campaignRedirectLogs.urlId],
     references: [urls.id],
-    nullable: true,
   }),
 }));
