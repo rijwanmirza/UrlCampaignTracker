@@ -107,7 +107,7 @@ export const updateCampaignSchema = z.object({
 // URL schema
 export const urls = pgTable("urls", {
   id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id"), // Can be null if not linked to a campaign
+  campaignId: integer("campaign_id").references(() => campaigns.id), // Can be null if not linked to a campaign
   name: text("name").notNull(),
   targetUrl: text("target_url").notNull(),
   clickLimit: integer("click_limit").notNull(),
@@ -291,8 +291,8 @@ export type UpdateOriginalUrlRecord = z.infer<typeof updateOriginalUrlRecordSche
 // Campaign Click Records Schema - Tracking all redirects for campaigns
 export const campaignClickRecords = pgTable("campaign_click_records", {
   id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").notNull(),
-  urlId: integer("url_id"), // Optional, as some clicks might be directly from campaign
+  campaignId: integer("campaign_id").notNull().references(() => campaigns.id),
+  urlId: integer("url_id").references(() => urls.id), // Optional, as some clicks might be directly from campaign
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   // Removed IP address, user agent, and referer fields as they're not needed
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -310,8 +310,8 @@ export type InsertCampaignClickRecord = z.infer<typeof insertCampaignClickRecord
 // Campaign Redirect Logs Schema - For detailed tracking of each redirect with timestamps
 export const campaignRedirectLogs = pgTable("campaign_redirect_logs", {
   id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").notNull(),
-  urlId: integer("url_id"), // Optional, for direct campaign redirects
+  campaignId: integer("campaign_id").notNull().references(() => campaigns.id),
+  urlId: integer("url_id").references(() => urls.id), // Optional, for direct campaign redirects
   redirectTime: timestamp("redirect_time").defaultNow().notNull(),
   indianTime: text("indian_time").notNull(), // Format: "YYYY-MM-DD HH:MM:SS"
   dateKey: text("date_key").notNull(), // Format: "YYYY-MM-DD" for faster filtering
@@ -350,7 +350,7 @@ export type TimeRangeFilter = z.infer<typeof timeRangeFilterSchema>;
 // URL Click Records Schema - Tracking all clicks for URLs (no personal data)
 export const urlClickRecords = pgTable("url_click_records", {
   id: serial("id").primaryKey(),
-  urlId: integer("url_id").notNull(),
+  urlId: integer("url_id").notNull().references(() => urls.id),
   clickTime: timestamp("click_time").defaultNow().notNull(),
   // Note: This table contains ip_address, user_agent, and referer fields in the database,
   // but we intentionally don't include them in our schema to avoid tracking personal data
@@ -369,7 +369,7 @@ export type InsertUrlClickRecord = z.infer<typeof insertUrlClickRecordSchema>;
 // URL Click Logs Schema - For detailed tracking of each URL click with timestamps
 export const urlClickLogs = pgTable("url_click_logs", {
   id: serial("id").primaryKey(),
-  urlId: integer("url_id").notNull(),
+  urlId: integer("url_id").notNull().references(() => urls.id),
   logEntry: text("log_entry").notNull(), // The actual log entry text
   clickTime: timestamp("click_time").defaultNow().notNull(),
   indianTime: text("indian_time").notNull(), // Format: "DD-Month-YYYY:HH:MM:SS"
