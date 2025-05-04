@@ -203,8 +203,9 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                       className="h-6 px-2 text-xs"
                       onClick={async () => {
                         try {
-                          const response = await fetch(`/api/trafficstar/campaigns/${campaign.trafficstarCampaignId}/spent`, {
-                            method: 'GET',
+                          // Use our new more reliable endpoint
+                          const response = await fetch(`/api/trafficstar/refresh-campaign-spent/${campaign.id}`, {
+                            method: 'POST',
                             headers: {
                               'Content-Type': 'application/json'
                             }
@@ -216,10 +217,10 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                           
                           const data = await response.json();
                           
-                          // Show toast message
+                          // Show toast message with more detailed information
                           toast({
                             title: "Spent Value Refreshed",
-                            description: `Updated to $${data.totalSpent.toFixed(4)}`,
+                            description: `Updated to ${data.formattedSpentValue} (${data.status === 'high_spend' ? 'High Spend' : 'Low Spend'})`,
                             variant: "default"
                           });
                           
