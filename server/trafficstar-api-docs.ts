@@ -11,34 +11,60 @@
  * Base URLs:
  * - https://api.trafficstars.com/v2
  * - https://api.trafficstars.com/v1.1
- * - https://api.trafficstars.com/v1
- * - https://api.trafficstars.com
  * 
  * Authentication endpoints:
- * - https://api.trafficstars.com/v1/auth/token
- * - https://api.trafficstars.com/auth/token
  * - https://id.trafficstars.com/auth/token
  * 
  * Campaign endpoints:
- * - GET /v1.1/campaigns - Get all campaigns
  * - GET /v1.1/campaigns/{id} - Get a specific campaign
- * - PUT /v1.1/campaigns/{id} - Update a campaign (set active: true/false)
  * - PATCH /v1.1/campaigns/{id} - Partially update a campaign
  * 
- * Campaign stats/spent endpoints:
- * - GET /v1.1/campaigns/{id}/stats - Get campaign stats
- * - GET /v1.1/campaigns/{id}/spent - Get campaign spent value
- * - GET /v1.1/reports/statistics - Get reporting data
+ * Campaign spent report endpoint:
+ * - GET /v1.1/advertiser/custom/report/by-day - Get spent report
  * 
- * NOTE: According to logs, the correct spent value endpoint may have these variants:
- * - The campaign object itself may contain a 'spent' property when fetched
- * - GET /v1.1/campaigns/{id} - This seems to be the most reliable method to fetch actual campaign data including spend
+ * Campaign run/pause endpoints:
+ * - PUT /v2/campaigns/run - Activate campaigns
+ * - PUT /v2/campaigns/pause - Pause campaigns
+ */
+
+/**
+ * Get spent value report
  * 
- * Statistics parameters:
+ * GET /v1.1/advertiser/custom/report/by-day
+ * 
+ * Request:
+ * Parameters:
+ * - campaign_id: Campaign ID
  * - date_from: YYYY-MM-DD
- * - date_to: YYYY-MM-DD (or date_until)
- * - Filter by campaign_id: [123]
- * - group_by: ["date", "campaign"]
+ * - date_to: YYYY-MM-DD
+ * 
+ * Response:
+ * [
+ *   {
+ *     "amount": 0.33135,    // This is the spent value
+ *     "clicks": 54,
+ *     "ctr": 0.814,
+ *     "day": "2015-01-01",
+ *     "ecpa": 0.11,
+ *     "ecpc": 0.006,
+ *     "ecpm": 0.049,
+ *     "impressions": 6627,
+ *     "leads": 3
+ *   }
+ * ]
+ */
+
+/**
+ * Get campaign details
+ * 
+ * GET /v1.1/campaigns/{id}
+ * 
+ * Response: Campaign object with detailed information including:
+ * - id: Campaign ID
+ * - active: Whether campaign is active
+ * - max_daily: Daily budget
+ * - schedule_end_time: End time for the campaign
+ * - ...many other fields
  */
 
 /**
@@ -82,39 +108,70 @@
  * 
  * PATCH /v1.1/campaigns/{id}
  * 
- * This endpoint allows editing campaign properties including setting the end time.
+ * This endpoint allows editing campaign properties including budget and end time.
  * 
- * Request example (setting price):
+ * Example payload to update budget:
  * {
- *   "price": 0.2
+ *   "max_daily": 100.0
  * }
  * 
- * Request example (setting end time):
+ * Example payload to update end time:
  * {
  *   "schedule_end_time": "2025-05-02 06:30:00"
  * }
  * 
- * Response: Full campaign object
- * {
- *    "id": 1,
- *    "name": "My campaign",
- *    "price": 0.2,
- *    "schedule_end_time": "2025-05-02 06:30:00",
- *    "active": true,
- *    ...
- * }
- * 
  * Notes:
  * - Time format must be "YYYY-MM-DD HH:MM:SS" in 24-hour format
- * - End time should be in UTC timezone unless schedule_timezone is specified
+ * - End time should be in UTC timezone
  */
 
 /**
- * Implementation examples
+ * Example implementation for getting spent value
  */
+export async function getSpentValue(campaignId: number, dateFrom: string, dateTo: string, token: string): Promise<number> {
+  try {
+    const baseUrl = 'https://api.trafficstars.com/v1.1';
+    const endpoint = `${baseUrl}/advertiser/custom/report/by-day`;
+    
+    const params = new URLSearchParams();
+    params.append('campaign_id', campaignId.toString());
+    params.append('date_from', dateFrom);
+    params.append('date_to', dateTo);
+    
+    const response = await fetch(`${endpoint}?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get spent value: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      return 0;
+    }
+    
+    // Calculate total spent across all days
+    const totalSpent = data.reduce((sum, day) => {
+      return sum + (day.amount || 0);
+    }, 0);
+    
+    return totalSpent;
+  } catch (error) {
+    console.error('Error getting spent value:', error);
+    return 0;
+  }
+}
 
-// Function to run one or more campaigns
-export async function runCampaigns(campaignIds: number[], token: string): Promise<any> {
+/**
+ * Example implementation for activating a campaign
+ */
+export async function activateCampaign(campaignId: number, token: string): Promise<boolean> {
   try {
     const baseUrl = 'https://api.trafficstars.com/v2';
     const endpoint = `${baseUrl}/campaigns/run`;
@@ -123,26 +180,35 @@ export async function runCampaigns(campaignIds: number[], token: string): Promis
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        campaign_ids: campaignIds
+        campaign_ids: [campaignId]
       })
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to run campaigns: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to activate campaign: ${response.status} ${response.statusText}`);
     }
     
-    return await response.json();
+    const result = await response.json();
+    
+    if (result.success && result.success.includes(campaignId)) {
+      return true;
+    }
+    
+    return false;
   } catch (error) {
-    console.error('Error running campaigns:', error);
-    throw error;
+    console.error('Error activating campaign:', error);
+    return false;
   }
 }
 
-// Function to pause one or more campaigns
-export async function pauseCampaigns(campaignIds: number[], token: string): Promise<any> {
+/**
+ * Example implementation for pausing a campaign
+ */
+export async function pauseCampaign(campaignId: number, token: string): Promise<boolean> {
   try {
     const baseUrl = 'https://api.trafficstars.com/v2';
     const endpoint = `${baseUrl}/campaigns/pause`;
@@ -151,37 +217,36 @@ export async function pauseCampaigns(campaignIds: number[], token: string): Prom
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        campaign_ids: campaignIds
+        campaign_ids: [campaignId]
       })
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to pause campaigns: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to pause campaign: ${response.status} ${response.statusText}`);
     }
     
-    return await response.json();
+    const result = await response.json();
+    
+    if (result.success && result.success.includes(campaignId)) {
+      return true;
+    }
+    
+    return false;
   } catch (error) {
-    console.error('Error pausing campaigns:', error);
-    throw error;
+    console.error('Error pausing campaign:', error);
+    return false;
   }
 }
 
-// Function to update campaign end time
-export async function updateCampaignEndTime(campaignId: number, token: string, endTime?: Date): Promise<any> {
+/**
+ * Example implementation for updating campaign end time
+ */
+export async function updateCampaignEndTime(campaignId: number, endTime: string, token: string): Promise<boolean> {
   try {
-    // If no end time is provided, use current UTC time
-    const now = endTime || new Date();
-    
-    // Format the date as YYYY-MM-DD HH:MM:SS in 24-hour format (UTC)
-    const formattedEndTime = now.toISOString()
-      .replace('T', ' ')      // Replace 'T' with space
-      .replace(/\.\d+Z$/, ''); // Remove milliseconds and Z
-    
-    console.log(`Setting campaign ${campaignId} end time to: ${formattedEndTime} (UTC)`);
-    
     const baseUrl = 'https://api.trafficstars.com/v1.1';
     const endpoint = `${baseUrl}/campaigns/${campaignId}`;
     
@@ -193,7 +258,7 @@ export async function updateCampaignEndTime(campaignId: number, token: string, e
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        schedule_end_time: formattedEndTime
+        schedule_end_time: endTime
       })
     });
     
@@ -201,28 +266,9 @@ export async function updateCampaignEndTime(campaignId: number, token: string, e
       throw new Error(`Failed to update campaign end time: ${response.status} ${response.statusText}`);
     }
     
-    return await response.json();
+    return true;
   } catch (error) {
-    console.error(`Error updating campaign ${campaignId} end time:`, error);
-    throw error;
-  }
-}
-
-// Function to pause a campaign AND set its end time to current UTC time
-export async function pauseCampaignWithEndTime(campaignId: number, token: string): Promise<any> {
-  try {
-    // First pause the campaign
-    const pauseResult = await pauseCampaigns([campaignId], token);
-    
-    // Then set the end time to current UTC time
-    const updateResult = await updateCampaignEndTime(campaignId, token);
-    
-    return {
-      pauseResult,
-      updateResult
-    };
-  } catch (error) {
-    console.error(`Error pausing campaign ${campaignId} with end time:`, error);
-    throw error;
+    console.error('Error updating campaign end time:', error);
+    return false;
   }
 }
