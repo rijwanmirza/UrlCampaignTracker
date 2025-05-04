@@ -1333,18 +1333,7 @@ export class TrafficStarService {
    */
   async getCampaignSpentValue(id: number, dateFrom?: string, dateUntil?: string): Promise<any> {
     try {
-      // In test mode, return a fixed value
-      if (process.env.TEST_MODE === 'true') {
-        console.log(`🧪 TEST MODE: Returning simulated spent value for campaign ${id}`);
-        
-        // Use a fixed test value of $0.25 for today
-        return {
-          totalSpent: 0.25,
-          startDate: dateFrom || new Date().toISOString().split('T')[0],
-          endDate: dateUntil || new Date().toISOString().split('T')[0],
-          days: 1
-        };
-      }
+      // Remove test mode functionality - we don't want any mock/test data
       
       const token = await this.ensureToken();
       

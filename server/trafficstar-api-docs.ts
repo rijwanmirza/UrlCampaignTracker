@@ -18,6 +18,27 @@
  * - https://api.trafficstars.com/v1/auth/token
  * - https://api.trafficstars.com/auth/token
  * - https://id.trafficstars.com/auth/token
+ * 
+ * Campaign endpoints:
+ * - GET /v1.1/campaigns - Get all campaigns
+ * - GET /v1.1/campaigns/{id} - Get a specific campaign
+ * - PUT /v1.1/campaigns/{id} - Update a campaign (set active: true/false)
+ * - PATCH /v1.1/campaigns/{id} - Partially update a campaign
+ * 
+ * Campaign stats/spent endpoints:
+ * - GET /v1.1/campaigns/{id}/stats - Get campaign stats
+ * - GET /v1.1/campaigns/{id}/spent - Get campaign spent value
+ * - GET /v1.1/reports/statistics - Get reporting data
+ * 
+ * NOTE: According to logs, the correct spent value endpoint may have these variants:
+ * - The campaign object itself may contain a 'spent' property when fetched
+ * - GET /v1.1/campaigns/{id} - This seems to be the most reliable method to fetch actual campaign data including spend
+ * 
+ * Statistics parameters:
+ * - date_from: YYYY-MM-DD
+ * - date_to: YYYY-MM-DD (or date_until)
+ * - Filter by campaign_id: [123]
+ * - group_by: ["date", "campaign"]
  */
 
 /**
