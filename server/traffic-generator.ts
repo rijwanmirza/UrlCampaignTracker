@@ -612,8 +612,9 @@ export async function pauseTrafficStarCampaign(trafficstarCampaignId: string): P
 /**
  * Process Traffic Generator for a campaign
  * @param campaignId The campaign ID
+ * @param forceMode Optional mode for testing - can be 'force_activate' or 'force_pause'
  */
-export async function processTrafficGenerator(campaignId: number) {
+export async function processTrafficGenerator(campaignId: number, forceMode?: string) {
   try {
     // Get campaign details
     const campaign = await db.query.campaigns.findFirst({
@@ -647,9 +648,23 @@ export async function processTrafficGenerator(campaignId: number) {
     
     console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} status: ${status}`);
     
+    // Handle force mode for testing if specified
+    const shouldForceActivate = forceMode === 'force_activate';
+    const shouldForcePause = forceMode === 'force_pause';
+    
+    if (shouldForceActivate) {
+      console.log(`🧪 TESTING: Force activating TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+      // Additional code for activating will be added later
+      return;
+    }
+    
     // Now we have the correct API implemented, so we can resume pausing campaigns
-    if (status === 'active') {
-      console.log(`✓ CORRECTLY DETECTED: TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE!`);
+    if (status === 'active' || shouldForcePause) {
+      if (shouldForcePause) {
+        console.log(`🧪 TESTING: Force pausing TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+      } else {
+        console.log(`✓ CORRECTLY DETECTED: TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE!`);
+      }
       console.log(`Pausing TrafficStar campaign ${campaign.trafficstarCampaignId} using updated API endpoints...`);
       
       // Try to pause the campaign using our improved API endpoints

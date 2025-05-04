@@ -148,6 +148,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Route to directly test the Traffic Generator for a campaign
+  app.post("/api/trafficstar/test-generator/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId, 10);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid campaign ID"
+        });
+      }
+      
+      // Get test options
+      const { forceMode } = req.body;
+      
+      // Import the traffic generator module and run the process
+      const { processTrafficGenerator } = await import('./traffic-generator');
+      
+      // Process the traffic generator for this campaign
+      console.log(`🧪 TESTING Traffic Generator for campaign ${campaignId} with mode: ${forceMode || 'standard'}`);
+      
+      // Run the actual process - this will check status, spending, etc.
+      await processTrafficGenerator(campaignId, forceMode);
+      
+      return res.json({
+        success: true,
+        message: `Traffic Generator process triggered for campaign ${campaignId}`,
+        campaignId,
+        options: {
+          forceMode: forceMode || 'standard'
+        }
+      });
+    } catch (error) {
+      console.error('Error testing Traffic Generator:', error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to test Traffic Generator",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // API route to fix missing URL click logs
   app.post("/api/system/fix-missing-url-click-logs", async (_req: Request, res: Response) => {
     try {
