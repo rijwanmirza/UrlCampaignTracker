@@ -257,6 +257,23 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                       </span>
                     )}
                   </div>
+                  
+                  {/* Spent threshold indicator */}
+                  <div className="mt-1 flex items-center">
+                    {campaign.lastTrafficSenderStatus === 'high_spend' ? (
+                      <Badge className="bg-amber-50 text-amber-700 border border-amber-200">
+                        High Spend (≥ $10.00)
+                      </Badge>
+                    ) : campaign.lastTrafficSenderStatus === 'low_spend' ? (
+                      <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                        Low Spend (&lt; $10.00)
+                      </Badge>
+                    ) : null}
+                    
+                    <div className="text-xs text-slate-500 ml-2">
+                      <span>Auto-updated every minute</span>
+                    </div>
+                  </div>
                 </div>
               )}
               
