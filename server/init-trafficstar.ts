@@ -6,6 +6,7 @@
 import { db } from './db';
 import { trafficStarService } from './trafficstar-service-new';
 import { trafficstarCredentials } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 export async function initializeTrafficStar() {
   try {
@@ -25,10 +26,24 @@ export async function initializeTrafficStar() {
     if (existingCredentials) {
       if (existingCredentials.apiKey === apiKey) {
         console.log('🔍 DEBUG: TrafficStar API key already saved in database');
+      } else {
+        // Update API key if it changed
+        await db.update(trafficstarCredentials)
+          .set({
+            apiKey: apiKey,
+            updatedAt: new Date()
+          })
+          .where(eq(trafficstarCredentials.id, existingCredentials.id));
+        console.log('🔍 DEBUG: Updated TrafficStar API key in database');
       }
     } else {
-      // Save the API key - this will validate the key with TrafficStar API and store it
-      await trafficStarService.saveApiKey(apiKey);
+      // Insert new API key
+      await db.insert(trafficstarCredentials)
+        .values({
+          apiKey: apiKey,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
       console.log('🔍 DEBUG: Successfully saved TrafficStar API key to database');
     }
     

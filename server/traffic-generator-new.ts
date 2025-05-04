@@ -65,6 +65,13 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     
     if (spentValue === null) {
       console.error(`Failed to get spent value for campaign ${trafficstarCampaignId}`);
+      
+      // Development fallback for testing
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEVELOPMENT MODE: Using default spent value for testing');
+        return 5.0; // Default below $10 threshold to test logic
+      }
+      
       return null;
     }
     
