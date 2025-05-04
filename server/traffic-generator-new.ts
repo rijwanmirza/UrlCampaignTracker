@@ -10,7 +10,7 @@ import { trafficStarService, TrafficStarService } from './trafficstar-service-ne
 import { db } from './db';
 import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { getSpentValueForDate } from './spent-value';
+import { getSpentValueFromCampaignObject } from './trafficstar-spent-helper';
 import axios from 'axios';
 
 // Extended URL type with active status
@@ -60,8 +60,31 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     
     console.log(`Fetching spent value for campaign ${trafficstarCampaignId} on ${formattedDate}`);
     
-    // Try a different approach - instead of trying to get the spent value directly,
-    // we'll use the campaign data from the TrafficStar API which includes the spent amount
+    // Try the new helper to extract spent value from campaign object
+    // This uses multiple approaches to find the spent value in the campaign data
+    try {
+      const spentValue = await getSpentValueFromCampaignObject(Number(trafficstarCampaignId));
+      
+      if (spentValue !== null) {
+        console.log(`Campaign ${trafficstarCampaignId} spent value from campaign object helper: $${spentValue.toFixed(4)}`);
+        
+        // Update our database record
+        await db.update(campaigns)
+          .set({
+            dailySpent: spentValue.toString(),
+            dailySpentDate: new Date(formattedDate),
+            lastSpentCheck: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(campaigns.id, campaignId));
+        
+        return spentValue;
+      }
+    } catch (helperError) {
+      console.error(`Failed to get spent value using helper for campaign ${trafficstarCampaignId}:`, helperError);
+    }
+    
+    // Fallback: Try getting campaign data directly from API
     try {
       const campaignData = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
       
@@ -99,19 +122,30 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
       console.error(`Failed to get campaign data for campaign ${trafficstarCampaignId}:`, campaignDataError);
     }
     
-    // If we couldn't get spent value from campaign data, try using the spent value service
+    // Fallback: Try using the spent value service
     try {
       const result = await trafficStarService.getCampaignSpentValue(Number(trafficstarCampaignId), formattedDate, formattedDate);
       
       if (result && typeof result.totalSpent === 'number') {
         console.log(`Campaign ${trafficstarCampaignId} direct API spent value: $${result.totalSpent.toFixed(4)}`);
+        
+        // Update our database record
+        await db.update(campaigns)
+          .set({
+            dailySpent: result.totalSpent.toString(),
+            dailySpentDate: new Date(formattedDate),
+            lastSpentCheck: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(campaigns.id, campaignId));
+        
         return result.totalSpent;
       }
     } catch (directApiError) {
       console.error(`Failed to get spent value directly from TrafficStar API:`, directApiError);
     }
     
-    // If all else fails, get the stored value from our database
+    // Last resort: Get the stored value from our database
     try {
       const [campaign] = await db
         .select()
@@ -130,6 +164,15 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     // If we couldn't get the spent value using any method, we'll use a default value of 0
     // This is not a mock/fallback, but a real representation that we don't have spent data
     console.log(`No spent data available for campaign ${trafficstarCampaignId} - using 0`);
+    
+    // Update database to record that we checked but found no value
+    await db.update(campaigns)
+      .set({
+        lastSpentCheck: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    
     return 0;
   } catch (error) {
     console.error(`Error getting spent value for campaign ${trafficstarCampaignId}:`, error);
