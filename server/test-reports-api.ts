@@ -7,7 +7,8 @@
 
 import express, { Request, Response } from 'express';
 import axios from 'axios';
-import { getTodayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
+import { getTodayFormatted, getYesterdayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
+import { trafficStarService } from './trafficstar-service-new';
 
 // Define error detail interface
 interface ErrorDetails {
@@ -29,53 +30,27 @@ export function registerReportsAPITestRoutes(app: express.Application) {
         return res.status(400).json({ error: 'Campaign ID is required' });
       }
       
-      // Get the API key from environment
-      const apiKey = process.env.TRAFFICSTAR_API_KEY;
-      
-      if (!apiKey) {
-        return res.status(500).json({ error: 'TrafficStar API key not set in environment variables' });
-      }
-      
-      // Get today's date in YYYY-MM-DD format using our helper
-      const today = getTodayFormatted();
-      
-      console.log(`Testing reports API for campaign ${campaignId} with date ${today}`);
-      
       try {
-        // First, get access token using the refresh_token grant (API key)
-        const tokenResponse = await axios.post(
-          'https://api.trafficstars.com/v1/auth/token',
-          new URLSearchParams({
-            'grant_type': 'refresh_token',
-            'refresh_token': apiKey
-          }).toString(),
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
-          }
-        );
+        // Get the current date in YYYY-MM-DD format
+        const today = getTodayFormatted();
+        const yesterday = getYesterdayFormatted();
         
-        if (!tokenResponse.data.access_token) {
-          return res.status(500).json({ error: 'Failed to get access token' });
-        }
+        // Generate a fresh token for this test
+        console.log('Generating a fresh token for reports API test');
+        const token = await trafficStarService.refreshToken();
         
-        const token = tokenResponse.data.access_token;
-        
-        // Now, call the reports API with the current date
-        // Using advertiser/custom/report/by-day endpoint as shown in the documentation
-        const reportUrl = `https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day`;
+        // Reports API URL
+        const reportUrl = `${trafficStarService.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
         
         console.log(`Sending report request to: ${reportUrl}`);
-        console.log(`Using date_from=${today}, date_to=${today}, campaign_id=${campaignId}`);
+        console.log(`Using date_from=${yesterday}, date_to=${today}, campaign_id=${campaignId}`);
         
         console.log(`Using authorization token: ${token.substring(0, 15)}...`);
         
-        // Per the TrafficStar API docs, the report API needs specific parameter format
-        // We need campaign_id, date_from and date_to all in YYYY-MM-DD format
+        // Try a wider date range - from yesterday to today
         const params = new URLSearchParams();
         params.append('campaign_id', campaignId.toString());
-        params.append('date_from', today);
+        params.append('date_from', yesterday);
         params.append('date_to', today);
         
         console.log(`Request parameters: ${params.toString()}`);
@@ -88,16 +63,51 @@ export function registerReportsAPITestRoutes(app: express.Application) {
           }
         });
         
-        console.log('Report API raw response:', JSON.stringify(reportResponse.data));
+        // Trim the response for logging
+        const responseDataString = JSON.stringify(reportResponse.data);
+        console.log('Report API raw response:', responseDataString.length > 500 
+          ? responseDataString.substring(0, 500) + '...' 
+          : responseDataString);
+        
+        // Log the raw data structure for debugging
+        console.log('Response data type:', typeof reportResponse.data);
+        if (Array.isArray(reportResponse.data)) {
+          console.log('Response is an array with length:', reportResponse.data.length);
+          
+          // Log the first item's structure if available
+          if (reportResponse.data.length > 0) {
+            console.log('First item keys:', Object.keys(reportResponse.data[0]));
+            console.log('First item sample:', JSON.stringify(reportResponse.data[0]).substring(0, 100));
+          }
+        } else {
+          console.log('Response is not an array, structure:', Object.keys(reportResponse.data || {}));
+        }
         
         // Use our helper to extract amount values
         const totalSpent = parseReportSpentValue(reportResponse.data);
         
+        // Also try a direct campaign lookup
+        console.log('Trying to get campaign details for comparison');
+        const campaign = await trafficStarService.getCampaign(campaignId);
+        console.log('Campaign direct lookup result:', JSON.stringify(campaign).substring(0, 500));
+        
+        let campaignSpentValue = 0;
+        if (campaign && campaign.spent !== undefined) {
+          if (typeof campaign.spent === 'string') {
+            campaignSpentValue = parseFloat(campaign.spent);
+          } else if (typeof campaign.spent === 'number') {
+            campaignSpentValue = campaign.spent;
+          }
+        }
+        
         return res.status(200).json({
           success: true,
           date: today,
+          dateRange: { from: yesterday, to: today },
           rawResponse: reportResponse.data,
-          extractedSpent: totalSpent
+          extractedSpent: totalSpent,
+          campaignDirectSpent: campaignSpentValue,
+          campaignData: campaign
         });
       } catch (error: any) {
         console.error('Error testing reports API:', error);
@@ -111,8 +121,25 @@ export function registerReportsAPITestRoutes(app: express.Application) {
             status: error.response.status,
             data: error.response.data
           };
+          
+          console.error('Error response status:', error.response.status);
+          console.error('Error response data:', error.response.data);
         } else if (error.message) {
           errorDetails = { message: error.message };
+        }
+        
+        // Try a fallback to regular campaign endpoint
+        try {
+          console.log('Trying fallback to direct campaign lookup');
+          const campaign = await trafficStarService.getCampaign(campaignId);
+          
+          return res.status(500).json({ 
+            error: 'Failed to test reports API - but got campaign data',
+            details: errorDetails,
+            fallbackCampaign: campaign
+          });
+        } catch (fallbackError) {
+          console.error('Even fallback lookup failed:', fallbackError);
         }
         
         return res.status(500).json({ 

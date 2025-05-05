@@ -149,14 +149,21 @@ export class TrafficStarService {
    * 
    * Format based on TrafficStar documentation where we need to use
    * the exact date format YYYY-MM-DD for the current UTC date
+   * 
+   * The function tries multiple approaches:
+   * 1. First tries the report API with yesterday-to-today range (most likely to have data)
+   * 2. If that fails, tries with just today's date
+   * 3. If both report API calls fail, falls back to the direct campaign endpoint
    */
   async getCampaignSpentValue(campaignId: number, dateFrom?: string, dateTo?: string): Promise<{ totalSpent: number }> {
     try {
-      // Get the current UTC date in YYYY-MM-DD format using our helper
+      // Get the current UTC date and yesterday in YYYY-MM-DD format
       const currentUTCDate = getTodayFormatted();
+      const yesterdayUTCDate = getYesterdayFormatted();
       
-      // Use provided dates or default to today
-      const fromDate = dateFrom || currentUTCDate;
+      // Use provided dates or default to yesterday-to-today range
+      // This gives us better chance of getting data
+      const fromDate = dateFrom || yesterdayUTCDate;
       const toDate = dateTo || currentUTCDate;
       
       console.log(`Getting spent value for campaign ${campaignId} from ${fromDate} to ${toDate}`);
@@ -164,64 +171,105 @@ export class TrafficStarService {
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
       
-      // Per the TrafficStar API docs, the report API needs specific parameter format
-      // We need campaign_id, date_from and date_to all in YYYY-MM-DD format
-      const params = new URLSearchParams();
-      params.append('campaign_id', campaignId.toString());
-      params.append('date_from', fromDate);
-      params.append('date_to', toDate);
-      
-      console.log(`Report API request parameters: ${params.toString()}`);
-      
-      // Make API request to the reports API with properly formatted URL
-      const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
-      const url = `${baseUrl}?${params.toString()}`;
-      
-      console.log(`Making direct request to: ${url}`);
-      
-      const response = await axios.get(url, { headers });
-      
-      // Log the raw response for debugging
-      console.log(`Report API raw response:`, JSON.stringify(response.data).substring(0, 200) + '...');
-      
-      // If response is successful and has data
-      if (response.data && Array.isArray(response.data)) {
-        // Use our helper to extract the "amount" values from the report data
-        const totalSpent = parseReportSpentValue(response.data);
+      // First try: Use yesterday-to-today range to maximize chance of getting data
+      try {
+        // Per the TrafficStar API docs, the report API needs specific parameter format
+        const params = new URLSearchParams();
+        params.append('campaign_id', campaignId.toString());
+        params.append('date_from', fromDate);
+        params.append('date_to', toDate);
         
-        console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
-        return { totalSpent };
+        console.log(`Report API request parameters: ${params.toString()}`);
+        
+        // Make API request to the reports API with properly formatted URL
+        const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+        const url = `${baseUrl}?${params.toString()}`;
+        
+        console.log(`Making direct request to: ${url}`);
+        
+        const response = await axios.get(url, { headers });
+        
+        // Log the raw response for debugging
+        console.log(`Report API raw response structure:`, typeof response.data);
+        if (Array.isArray(response.data)) {
+          console.log(`Response is an array with ${response.data.length} items`);
+          if (response.data.length > 0) {
+            console.log(`First item keys: ${Object.keys(response.data[0])}`);
+          }
+        } else if (typeof response.data === 'object') {
+          console.log(`Response is an object with keys: ${Object.keys(response.data)}`);
+        }
+        
+        // If response is successful and has data
+        if (response.data && Array.isArray(response.data)) {
+          // Use our helper to extract the "amount" values from the report data
+          const totalSpent = parseReportSpentValue(response.data);
+          
+          console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
+          return { totalSpent };
+        }
+        
+        console.log(`No spent data returned from reports API for campaign ${campaignId}`);
+      } catch (reportError: any) {
+        console.error(`Error using reports API (first try) for campaign ${campaignId}:`, reportError);
+        
+        // Log detailed error info from the API
+        if (reportError.response) {
+          console.error(`Error response status: ${reportError.response.status}`);
+          console.error(`Error response data:`, reportError.response.data);
+        }
       }
       
-      // If response is empty or not as expected
-      console.log(`No spent data returned for campaign ${campaignId}`);
+      // Second try: Use only today's date if yesterday-to-today didn't work
+      try {
+        const todayParams = new URLSearchParams();
+        todayParams.append('campaign_id', campaignId.toString());
+        todayParams.append('date_from', currentUTCDate);
+        todayParams.append('date_to', currentUTCDate);
+        
+        console.log(`Trying again with only today's date: ${currentUTCDate}`);
+        console.log(`New parameters: ${todayParams.toString()}`);
+        
+        const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+        const todayUrl = `${baseUrl}?${todayParams.toString()}`;
+        
+        const todayResponse = await axios.get(todayUrl, { headers });
+        
+        if (todayResponse.data && Array.isArray(todayResponse.data)) {
+          const totalSpent = parseReportSpentValue(todayResponse.data);
+          console.log(`Campaign ${campaignId} spent value from today-only report: $${totalSpent.toFixed(4)}`);
+          return { totalSpent };
+        }
+        
+        console.log(`No spent data from today-only request for campaign ${campaignId}`);
+      } catch (todayError: any) {
+        console.error(`Error using reports API (today-only) for campaign ${campaignId}:`, todayError);
+        
+        if (todayError.response) {
+          console.error(`Error response status: ${todayError.response.status}`);
+          console.error(`Error response data:`, todayError.response.data);
+        }
+      }
+      
+      // If both report API approaches failed, try the direct campaign endpoint
+      console.log(`Both report API approaches failed, trying direct campaign endpoint`);
+      const campaign = await this.getCampaign(campaignId);
+      
+      if (campaign && campaign.spent !== undefined) {
+        // Convert to number if it's a string
+        const spentValue = typeof campaign.spent === 'string' 
+          ? parseFloat(campaign.spent) 
+          : (campaign.spent || 0);
+          
+        console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
+        return { totalSpent: spentValue };
+      }
+      
+      // If all approaches failed, return 0
+      console.log(`All approaches failed for campaign ${campaignId}, returning 0`);
       return { totalSpent: 0 };
     } catch (error: any) {
-      console.error(`Error getting spent value for campaign ${campaignId}:`, error);
-      
-      // Log more details about the error
-      if (error.response) {
-        console.error(`Error response status: ${error.response.status}`);
-        console.error(`Error response data:`, error.response.data);
-      }
-      
-      // Try direct method with campaign endpoint as fallback
-      try {
-        console.log(`Falling back to campaign endpoint for spent value`);
-        const campaign = await this.getCampaign(campaignId);
-        
-        if (campaign && campaign.spent !== undefined) {
-          // Convert to number if it's a string
-          const spentValue = typeof campaign.spent === 'string' 
-            ? parseFloat(campaign.spent) 
-            : (campaign.spent || 0);
-            
-          console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
-          return { totalSpent: spentValue };
-        }
-      } catch (fallbackError) {
-        console.error(`Fallback method also failed:`, fallbackError);
-      }
+      console.error(`Unexpected error getting spent value for campaign ${campaignId}:`, error);
       
       // Don't throw, just return 0 as spend
       return { totalSpent: 0 };
