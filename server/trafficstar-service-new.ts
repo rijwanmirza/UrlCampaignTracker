@@ -9,7 +9,7 @@ import axios from 'axios';
 import { db } from './db';
 import { campaigns } from '../shared/schema';
 import { eq, sql } from 'drizzle-orm';
-import { getTodayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
+import { getTodayFormatted, getYesterdayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
 
 // Interfaces for API responses and data
 interface TokenResponse {
@@ -22,122 +22,107 @@ interface TokenResponse {
 interface Campaign {
   id: number;
   name: string;
-  status?: string;
   active?: boolean;
-  is_archived?: boolean;
-  max_daily?: number;
-  pricing_model?: string;
-  schedule_end_time?: string;
+  status?: string;
   spent?: number | string;
-  [key: string]: any; // For other properties
-}
-
-interface SpentReportItem {
-  amount: number;       // This is the spent value
-  clicks: number;
-  ctr: number;
-  day: string;
-  ecpa: number;
-  ecpc: number;
-  ecpm: number;
-  impressions: number;
-  leads: number;
+  spent_today?: number | string;
+  [key: string]: any;
 }
 
 interface CampaignRunPauseResponse {
-  success: number[];
-  failed: number[];
-  total: number;
+  success?: number[];
+  failed?: number[];
 }
 
 /**
- * TrafficStar API service class
+ * TrafficStar API Service
+ * 
+ * Provides methods to interact with the TrafficStar API
  */
-export class TrafficStarService {
-  // Authentication
+class TrafficStarService {
+  private BASE_URL = 'https://api.trafficstars.com';
+  private BASE_URL_V1_1 = 'https://api.trafficstars.com/v1.1';  
+  private BASE_URL_V2 = 'https://api.trafficstars.com/v2';
+  
   private accessToken: string | null = null;
-  private tokenExpiry: Date | null = null;
+  private tokenExpiry: number = 0;
   
-  // API Base URLs
-  private readonly BASE_URL_V1 = 'https://api.trafficstars.com/v1';
-  private readonly BASE_URL_V1_1 = 'https://api.trafficstars.com/v1.1';
-  private readonly BASE_URL_V2 = 'https://api.trafficstars.com/v2';
-  
-  // Default headers
-  private readonly DEFAULT_HEADERS = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  };
-
-  /**
-   * Initialize the service
-   */
   constructor() {
     console.log('TrafficStar API Service initialized');
   }
+  
+  /**
+   * Get base URL for API endpoints
+   */
+  public getBaseUrl(): string {
+    return this.BASE_URL_V1_1;
+  }
 
   /**
-   * Ensure we have a valid access token using OAuth 2.0
-   * Based on TrafficStars official documentation
+   * Get access token for API requests
+   * Handles refreshing if token is expired
    */
-  async ensureToken(): Promise<string> {
-    const now = new Date();
+  public async getAccessToken(): Promise<string> {
+    const now = Math.floor(Date.now() / 1000);
     
-    // If token exists and is still valid, return it
-    if (this.accessToken && this.tokenExpiry && this.tokenExpiry > now) {
+    // If token is still valid, return it
+    if (this.accessToken && this.tokenExpiry > now) {
       return this.accessToken;
     }
     
-    // Token expired or not exists, get a new one
-    console.log('Getting new TrafficStar API access token via OAuth 2.0');
-    
+    // Otherwise, get a new token
+    return this.refreshToken();
+  }
+  
+  /**
+   * Refresh the access token using OAUTH 2.0 with refresh_token grant type
+   */
+  public async refreshToken(): Promise<string> {
     try {
-      // Get the API key from environment (which is used as refresh_token in OAuth 2.0 flow)
+      // Get API key from environment
       const apiKey = process.env.TRAFFICSTAR_API_KEY;
       
       if (!apiKey) {
-        throw new Error('TrafficStar API key not set. Set TRAFFICSTAR_API_KEY environment variable.');
+        throw new Error('TrafficStar API key not set in environment variables');
       }
       
-      // Make token request according to TrafficStar OAuth 2.0 specification
-      const tokenUrl = `${this.BASE_URL_V1}/auth/token`;
+      // Use OAuth 2.0 with refresh_token grant type
+      const tokenUrl = `${this.BASE_URL}/v1/auth/token`;
       
-      // Prepare form data for token request
-      const formData = new URLSearchParams();
-      formData.append('grant_type', 'refresh_token');
-      formData.append('refresh_token', apiKey);
+      const params = new URLSearchParams();
+      params.append('grant_type', 'refresh_token');
+      params.append('refresh_token', apiKey);
       
-      // Request new access token
-      console.log('Requesting access token using API key as refresh_token');
-      const response = await axios.post(tokenUrl, formData.toString(), {
+      const response = await axios.post(tokenUrl, params.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
       
-      // Parse token response
       const tokenResponse: TokenResponse = response.data;
+      
+      if (!tokenResponse.access_token) {
+        throw new Error('No access token in response');
+      }
+      
+      // Store the token and calculate expiry time
       this.accessToken = tokenResponse.access_token;
+      this.tokenExpiry = Math.floor(Date.now() / 1000) + tokenResponse.expires_in - 60; // Expire 60 seconds early to be safe
       
-      // Set token expiry (subtract 5 minutes for safety)
-      const expiresIn = (tokenResponse.expires_in - 300) * 1000;
-      this.tokenExpiry = new Date(now.getTime() + expiresIn);
-      
-      console.log(`TrafficStar OAuth access token obtained. Expires in ${expiresIn / 60000} minutes`);
       return this.accessToken;
     } catch (error) {
-      console.error('Error obtaining TrafficStar API OAuth token:', error);
-      throw new Error('Failed to authenticate with TrafficStar API using OAuth 2.0');
+      console.error('Error refreshing token:', error);
+      throw new Error('Failed to refresh token');
     }
   }
-
+  
   /**
-   * Get headers with authorization using Bearer token per OAuth 2.0 spec
+   * Get authentication headers for API requests
    */
-  private async getAuthHeaders(): Promise<Record<string, string>> {
-    const token = await this.ensureToken();
+  public async getAuthHeaders(): Promise<{ Authorization: string }> {
+    const token = await this.getAccessToken();
+    
     return {
-      ...this.DEFAULT_HEADERS,
       'Authorization': `Bearer ${token}`
     };
   }
@@ -145,131 +130,90 @@ export class TrafficStarService {
   /**
    * Get spent value for campaign using Reports API
    * 
-   * Uses: GET /v1.1/advertiser/custom/report/by-day
+   * Uses: GET /v1.1/advertiser/campaign/report/by-day
    * 
    * Format based on TrafficStar documentation where we need to use
    * the exact date format YYYY-MM-DD for the current UTC date
-   * 
-   * The function tries multiple approaches:
-   * 1. First tries the report API with yesterday-to-today range (most likely to have data)
-   * 2. If that fails, tries with just today's date
-   * 3. If both report API calls fail, falls back to the direct campaign endpoint
+   * Both date_from and date_to should be the same date
    */
-  async getCampaignSpentValue(campaignId: number, dateFrom?: string, dateTo?: string): Promise<{ totalSpent: number }> {
+  async getCampaignSpentValue(campaignId: number): Promise<{ totalSpent: number }> {
     try {
-      // Get the current UTC date and yesterday in YYYY-MM-DD format
+      // Get the current UTC date in YYYY-MM-DD format using our helper
       const currentUTCDate = getTodayFormatted();
-      const yesterdayUTCDate = getYesterdayFormatted();
       
-      // Use provided dates or default to yesterday-to-today range
-      // This gives us better chance of getting data
-      const fromDate = dateFrom || yesterdayUTCDate;
-      const toDate = dateTo || currentUTCDate;
-      
-      console.log(`Getting spent value for campaign ${campaignId} from ${fromDate} to ${toDate}`);
+      console.log(`Getting spent value for campaign ${campaignId} for date ${currentUTCDate}`);
       
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
       
-      // First try: Use yesterday-to-today range to maximize chance of getting data
-      try {
-        // Per the TrafficStar API docs, the report API needs specific parameter format
-        const params = new URLSearchParams();
-        params.append('campaign_id', campaignId.toString());
-        params.append('date_from', fromDate);
-        params.append('date_to', toDate);
+      // Per the TrafficStar API docs, we need the correct parameters
+      // We use same date for both from and to as required, using current UTC date
+      const params = new URLSearchParams();
+      params.append('campaign_id', campaignId.toString());
+      params.append('date_from', currentUTCDate);
+      params.append('date_to', currentUTCDate);
+      params.append('group_by', 'day'); // Group by day
+      params.append('columns', 'amount'); // We need amount column
+      
+      console.log(`Report API request parameters: ${params.toString()}`);
+      
+      // Make API request to the campaign reports API with properly formatted URL
+      const baseUrl = `${this.BASE_URL_V1_1}/advertiser/campaign/report/by-day`;
+      const url = `${baseUrl}?${params.toString()}`;
+      
+      console.log(`Making direct request to: ${url}`);
+      
+      const response = await axios.get(url, { headers });
+      
+      // Log the raw response for debugging
+      console.log(`Report API raw response type:`, typeof response.data);
+      
+      // If response is successful and has data
+      if (response.data) {
+        // Use our helper to extract the amount values from the report data
+        const totalSpent = parseReportSpentValue(response.data);
         
-        console.log(`Report API request parameters: ${params.toString()}`);
-        
-        // Make API request to the reports API with properly formatted URL
-        const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
-        const url = `${baseUrl}?${params.toString()}`;
-        
-        console.log(`Making direct request to: ${url}`);
-        
-        const response = await axios.get(url, { headers });
-        
-        // Log the raw response for debugging
-        console.log(`Report API raw response structure:`, typeof response.data);
-        if (Array.isArray(response.data)) {
-          console.log(`Response is an array with ${response.data.length} items`);
-          if (response.data.length > 0) {
-            console.log(`First item keys: ${Object.keys(response.data[0])}`);
-          }
-        } else if (typeof response.data === 'object') {
-          console.log(`Response is an object with keys: ${Object.keys(response.data)}`);
-        }
-        
-        // If response is successful and has data
-        if (response.data && Array.isArray(response.data)) {
-          // Use our helper to extract the "amount" values from the report data
-          const totalSpent = parseReportSpentValue(response.data);
-          
-          console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
-          return { totalSpent };
-        }
-        
-        console.log(`No spent data returned from reports API for campaign ${campaignId}`);
-      } catch (reportError: any) {
-        console.error(`Error using reports API (first try) for campaign ${campaignId}:`, reportError);
-        
-        // Log detailed error info from the API
-        if (reportError.response) {
-          console.error(`Error response status: ${reportError.response.status}`);
-          console.error(`Error response data:`, reportError.response.data);
-        }
+        console.log(`Campaign ${campaignId} spent value from reports API: $${totalSpent.toFixed(4)}`);
+        return { totalSpent };
       }
       
-      // Second try: Use only today's date if yesterday-to-today didn't work
-      try {
-        const todayParams = new URLSearchParams();
-        todayParams.append('campaign_id', campaignId.toString());
-        todayParams.append('date_from', currentUTCDate);
-        todayParams.append('date_to', currentUTCDate);
-        
-        console.log(`Trying again with only today's date: ${currentUTCDate}`);
-        console.log(`New parameters: ${todayParams.toString()}`);
-        
-        const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
-        const todayUrl = `${baseUrl}?${todayParams.toString()}`;
-        
-        const todayResponse = await axios.get(todayUrl, { headers });
-        
-        if (todayResponse.data && Array.isArray(todayResponse.data)) {
-          const totalSpent = parseReportSpentValue(todayResponse.data);
-          console.log(`Campaign ${campaignId} spent value from today-only report: $${totalSpent.toFixed(4)}`);
-          return { totalSpent };
-        }
-        
-        console.log(`No spent data from today-only request for campaign ${campaignId}`);
-      } catch (todayError: any) {
-        console.error(`Error using reports API (today-only) for campaign ${campaignId}:`, todayError);
-        
-        if (todayError.response) {
-          console.error(`Error response status: ${todayError.response.status}`);
-          console.error(`Error response data:`, todayError.response.data);
-        }
-      }
-      
-      // If both report API approaches failed, try the direct campaign endpoint
-      console.log(`Both report API approaches failed, trying direct campaign endpoint`);
+      // If response is empty or not as expected, try direct campaign endpoint
+      console.log(`Falling back to campaign endpoint for spent value`);
       const campaign = await this.getCampaign(campaignId);
       
-      if (campaign && campaign.spent !== undefined) {
-        // Convert to number if it's a string
-        const spentValue = typeof campaign.spent === 'string' 
-          ? parseFloat(campaign.spent) 
-          : (campaign.spent || 0);
-          
+      if (campaign && (campaign.spent !== undefined || campaign.spent_today !== undefined)) {
+        // Parse spent value using our helper
+        const spentValue = parseReportSpentValue(campaign);
         console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
         return { totalSpent: spentValue };
       }
       
-      // If all approaches failed, return 0
-      console.log(`All approaches failed for campaign ${campaignId}, returning 0`);
+      // No spent data found
+      console.log(`No spent data found for campaign ${campaignId}`);
       return { totalSpent: 0 };
     } catch (error: any) {
-      console.error(`Unexpected error getting spent value for campaign ${campaignId}:`, error);
+      console.error(`Error getting spent value for campaign ${campaignId}:`, error);
+      
+      // Log more details about the error
+      if (error.response) {
+        console.error(`Error response status: ${error.response.status}`);
+        console.error(`Error response data:`, error.response.data);
+      }
+      
+      // Try direct method with campaign endpoint as fallback
+      try {
+        console.log(`Falling back to campaign endpoint for spent value`);
+        const campaign = await this.getCampaign(campaignId);
+        
+        if (campaign && (campaign.spent !== undefined || campaign.spent_today !== undefined)) {
+          // Parse spent value using our helper
+          const spentValue = parseReportSpentValue(campaign);
+          console.log(`Campaign ${campaignId} direct API spent value: $${spentValue.toFixed(4)}`);
+          return { totalSpent: spentValue };
+        }
+      } catch (fallbackError) {
+        console.error(`Fallback method also failed:`, fallbackError);
+      }
       
       // Don't throw, just return 0 as spend
       return { totalSpent: 0 };
@@ -469,35 +413,13 @@ export class TrafficStarService {
       
       // Optional: You can check response.data to confirm
       if (response.data && response.data.max_daily === maxDaily) {
-        console.log(`Confirmed budget update for campaign ${id}`);
+        console.log(`Confirmed daily budget update for campaign ${id}`);
       }
     } catch (error) {
-      console.error(`Error updating budget for campaign ${id}:`, error);
-      throw new Error(`Failed to update budget for campaign ${id}`);
-    }
-  }
-
-  /**
-   * Get all saved TrafficStar campaigns from our database
-   */
-  async getSavedCampaigns() {
-    try {
-      // Get all campaigns - we'll filter client-side
-      const campaignsResult = await db
-        .select()
-        .from(campaigns);
-      
-      // Filter to only include campaigns with trafficstarCampaignId
-      return campaignsResult.filter(campaign => 
-        campaign.trafficstarCampaignId !== null && 
-        campaign.trafficstarCampaignId !== undefined
-      );
-    } catch (error) {
-      console.error('Error getting saved TrafficStar campaigns:', error);
-      return [];
+      console.error(`Error updating daily budget for campaign ${id}:`, error);
+      throw new Error(`Failed to update daily budget for campaign ${id}`);
     }
   }
 }
 
-// Export a singleton instance
 export const trafficStarService = new TrafficStarService();

@@ -26,6 +26,20 @@ export function parseSpentValue(campaign: any): number {
       return campaign.spent;
     }
     
+    // Check for spent_today (from campaign details)
+    if (typeof campaign.spent_today === 'number') {
+      return campaign.spent_today;
+    }
+    
+    if (typeof campaign.spent_today === 'string') {
+      const cleanValue = campaign.spent_today.replace(/[^0-9.]/g, '');
+      const numValue = parseFloat(cleanValue);
+      
+      if (!isNaN(numValue)) {
+        return numValue;
+      }
+    }
+    
     // If spent is a string, try to parse it
     if (typeof campaign.spent === 'string') {
       // Remove any currency symbols and whitespace
@@ -190,6 +204,20 @@ export function parseReportSpentValue(reportData: any): number {
         return reportData.spent;
       } else if (typeof reportData.spent === 'string') {
         const spent = parseFloat(reportData.spent.replace(/[^0-9.]/g, ''));
+        if (!isNaN(spent)) {
+          return spent;
+        }
+      }
+    }
+    
+    // CASE 5: Check for spent_today property
+    if (reportData.spent_today !== undefined) {
+      console.log('Found spent_today property in response');
+      
+      if (typeof reportData.spent_today === 'number') {
+        return reportData.spent_today;
+      } else if (typeof reportData.spent_today === 'string') {
+        const spent = parseFloat(reportData.spent_today.replace(/[^0-9.]/g, ''));
         if (!isNaN(spent)) {
           return spent;
         }

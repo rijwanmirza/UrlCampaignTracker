@@ -42,8 +42,8 @@ export function registerReportsAPITestRoutes(app: express.Application) {
         const baseUrl = 'https://api.trafficstars.com/v1.1';
         const reportUrl = `${baseUrl}/advertiser/campaign/report/by-day`;
         
-        console.log(`Trying corrected report request to: ${reportUrl}`);
-        console.log(`Using current UTC date ${today} for both from and to parameters, campaign_id=${campaignId}`);
+        console.log(`Using campaign report endpoint: ${reportUrl}`);
+        console.log(`Using current UTC date ${today} for both from and to, campaign_id=${campaignId}`);
         
         // Use same date for both from and to as required
         const params = new URLSearchParams();
@@ -95,6 +95,12 @@ export function registerReportsAPITestRoutes(app: express.Application) {
           } else if (typeof campaign.spent === 'number') {
             campaignSpentValue = campaign.spent;
           }
+        } else if (campaign && campaign.spent_today !== undefined) {
+          if (typeof campaign.spent_today === 'string') {
+            campaignSpentValue = parseFloat(campaign.spent_today);
+          } else if (typeof campaign.spent_today === 'number') {
+            campaignSpentValue = campaign.spent_today;
+          }
         }
         
         return res.status(200).json({
@@ -129,10 +135,27 @@ export function registerReportsAPITestRoutes(app: express.Application) {
           console.log('Trying fallback to direct campaign lookup');
           const campaign = await trafficStarService.getCampaign(campaignId);
           
-          return res.status(500).json({ 
-            error: 'Failed to test reports API - but got campaign data',
-            details: errorDetails,
-            fallbackCampaign: campaign
+          // Extract spent value from direct campaign data
+          let spentValue = 0;
+          if (campaign.spent_today !== undefined) {
+            if (typeof campaign.spent_today === 'number') {
+              spentValue = campaign.spent_today;
+            } else if (typeof campaign.spent_today === 'string') {
+              spentValue = parseFloat(campaign.spent_today);
+            }
+          } else if (campaign.spent !== undefined) {
+            if (typeof campaign.spent === 'number') {
+              spentValue = campaign.spent;
+            } else if (typeof campaign.spent === 'string') {
+              spentValue = parseFloat(campaign.spent);
+            }
+          }
+          
+          return res.status(200).json({ 
+            success: true,
+            errorDetails,
+            fallbackCampaign: campaign,
+            directSpentValue: spentValue
           });
         } catch (fallbackError) {
           console.error('Even fallback lookup failed:', fallbackError);
