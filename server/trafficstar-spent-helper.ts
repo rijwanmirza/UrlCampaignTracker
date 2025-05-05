@@ -48,38 +48,159 @@ export function parseSpentValue(campaign: any): number {
 
 /**
  * Extract the total spent value from the TrafficStar Reports API response
- * This specifically handles the format returned by the advertiser/custom/report/by-day endpoint
+ * This handles both formats from the API:
+ * 1. advertiser/custom/report/by-day format (with amount field)
+ * 2. advertiser/campaign/report/by-day format (with data.rows.amount structure)
  * 
- * @param reportData Array of daily report objects from TrafficStar Reports API
+ * @param reportData Response data from TrafficStar Reports API
  * @returns The total amount spent across all days in the report
  */
-export function parseReportSpentValue(reportData: any[]): number {
+export function parseReportSpentValue(reportData: any): number {
   try {
-    // If report data is empty or not an array
-    if (!reportData || !Array.isArray(reportData) || reportData.length === 0) {
+    console.log('Parsing report data from TrafficStar API');
+    
+    // If report data is empty or null
+    if (!reportData) {
+      console.log('Report data is empty or null');
       return 0;
     }
     
-    // Extract and sum up the 'amount' value from each day's report
-    // This is specifically the format we expect from the TrafficStar reports API
-    let totalSpent = 0;
+    // CASE 1: If response is an array of day objects with amount field (original format)
+    if (Array.isArray(reportData)) {
+      console.log('Report data is an array, using original parser logic');
+      
+      if (reportData.length === 0) {
+        console.log('Report data array is empty');
+        return 0;
+      }
+      
+      // Extract and sum up the 'amount' value from each day's report
+      let totalSpent = 0;
+      
+      for (const day of reportData) {
+        // Check if this day's report has an 'amount' field
+        if (day && typeof day.amount === 'number') {
+          totalSpent += day.amount;
+          console.log(`Found report amount: ${day.amount} for day ${day.day || 'unknown'}`);
+        } else if (day && typeof day.amount === 'string') {
+          // Try to parse string amount
+          const amount = parseFloat(day.amount);
+          if (!isNaN(amount)) {
+            totalSpent += amount;
+            console.log(`Parsed report amount: ${amount} for day ${day.day || 'unknown'}`);
+          }
+        }
+      }
+      
+      return totalSpent;
+    }
     
-    for (const day of reportData) {
-      // Check if this day's report has an 'amount' field
-      if (day && typeof day.amount === 'number') {
-        totalSpent += day.amount;
-        console.log(`Found report amount: ${day.amount} for day ${day.day}`);
-      } else if (day && typeof day.amount === 'string') {
-        // Try to parse string amount
-        const amount = parseFloat(day.amount);
+    // CASE 2: If response has data.rows structure (new campaign/report/by-day format)
+    if (reportData.data && Array.isArray(reportData.data.rows)) {
+      console.log('Detected data.rows format from campaign/report/by-day endpoint');
+      
+      const rows = reportData.data.rows;
+      if (rows.length === 0) {
+        console.log('Data rows array is empty');
+        return 0;
+      }
+      
+      let totalSpent = 0;
+      
+      // Find the amount column index
+      let amountColumnIndex = -1;
+      if (reportData.data.columns && Array.isArray(reportData.data.columns)) {
+        amountColumnIndex = reportData.data.columns.findIndex((col: any) => 
+          col === 'amount' || col.name === 'amount' || col.key === 'amount');
+        
+        console.log(`Amount column found at index: ${amountColumnIndex}`);
+      }
+      
+      // Process each row
+      for (const row of rows) {
+        if (Array.isArray(row)) {
+          // If amount column index is known
+          if (amountColumnIndex >= 0 && amountColumnIndex < row.length) {
+            const value = row[amountColumnIndex];
+            if (typeof value === 'number') {
+              totalSpent += value;
+              console.log(`Found amount in row at index ${amountColumnIndex}: ${value}`);
+            } else if (typeof value === 'string') {
+              const amount = parseFloat(value);
+              if (!isNaN(amount)) {
+                totalSpent += amount;
+                console.log(`Parsed amount in row: ${amount}`);
+              }
+            }
+          } else {
+            // If we don't know the column index, try to find a number in the row
+            for (let i = 0; i < row.length; i++) {
+              const value = row[i];
+              if (typeof value === 'number') {
+                console.log(`Found possible amount value at index ${i}: ${value}`);
+                if (i === amountColumnIndex || amountColumnIndex === -1) {
+                  totalSpent += value;
+                }
+              } else if (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value)) {
+                const amount = parseFloat(value);
+                console.log(`Found possible string amount at index ${i}: ${amount}`);
+                if (i === amountColumnIndex || amountColumnIndex === -1) {
+                  totalSpent += amount;
+                }
+              }
+            }
+          }
+        } else if (row && typeof row === 'object') {
+          // If row is an object with direct properties
+          if (typeof row.amount === 'number') {
+            totalSpent += row.amount;
+            console.log(`Found amount in row object: ${row.amount}`);
+          } else if (typeof row.amount === 'string') {
+            const amount = parseFloat(row.amount);
+            if (!isNaN(amount)) {
+              totalSpent += amount;
+              console.log(`Parsed amount in row object: ${amount}`);
+            }
+          }
+        }
+      }
+      
+      return totalSpent;
+    }
+    
+    // CASE 3: If response has a direct amount property
+    if (reportData.amount !== undefined) {
+      console.log('Direct amount property found in response');
+      
+      if (typeof reportData.amount === 'number') {
+        return reportData.amount;
+      } else if (typeof reportData.amount === 'string') {
+        const amount = parseFloat(reportData.amount);
         if (!isNaN(amount)) {
-          totalSpent += amount;
-          console.log(`Parsed report amount: ${amount} for day ${day.day}`);
+          return amount;
         }
       }
     }
     
-    return totalSpent;
+    // CASE 4: If response has a spent property (fallback to direct campaign response)
+    if (reportData.spent !== undefined) {
+      console.log('Found spent property in response - using as fallback');
+      
+      if (typeof reportData.spent === 'number') {
+        return reportData.spent;
+      } else if (typeof reportData.spent === 'string') {
+        const spent = parseFloat(reportData.spent.replace(/[^0-9.]/g, ''));
+        if (!isNaN(spent)) {
+          return spent;
+        }
+      }
+    }
+    
+    // If we get here, we couldn't extract any spent value
+    console.log('Could not extract spent value from report data');
+    console.log('Report data structure:', Object.keys(reportData));
+    
+    return 0;
   } catch (error) {
     console.error('Error parsing report spent value:', error);
     return 0;

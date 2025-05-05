@@ -7,7 +7,7 @@
 
 import express, { Request, Response } from 'express';
 import axios from 'axios';
-import { getTodayFormatted, getYesterdayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
+import { getTodayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
 import { trafficStarService } from './trafficstar-service-new';
 
 // Define error detail interface
@@ -33,35 +33,32 @@ export function registerReportsAPITestRoutes(app: express.Application) {
       try {
         // Get the current date in YYYY-MM-DD format
         const today = getTodayFormatted();
-        const yesterday = getYesterdayFormatted();
         
-        // Generate a fresh token for this test
-        console.log('Generating a fresh token for reports API test');
-        const token = await trafficStarService.refreshToken();
+        // Get fresh auth headers for this test
+        console.log('Getting auth headers for reports API test');
+        const headers = await trafficStarService.getAuthHeaders();
         
-        // Reports API URL
-        const reportUrl = `${trafficStarService.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
+        // Reports API URL - use the correct path
+        const baseUrl = 'https://api.trafficstars.com/v1.1';
+        const reportUrl = `${baseUrl}/advertiser/campaign/report/by-day`;
         
-        console.log(`Sending report request to: ${reportUrl}`);
-        console.log(`Using date_from=${yesterday}, date_to=${today}, campaign_id=${campaignId}`);
+        console.log(`Trying corrected report request to: ${reportUrl}`);
+        console.log(`Using current UTC date ${today} for both from and to parameters, campaign_id=${campaignId}`);
         
-        console.log(`Using authorization token: ${token.substring(0, 15)}...`);
-        
-        // Try a wider date range - from yesterday to today
+        // Use same date for both from and to as required
         const params = new URLSearchParams();
         params.append('campaign_id', campaignId.toString());
-        params.append('date_from', yesterday);
+        params.append('date_from', today);
         params.append('date_to', today);
+        
+        // Add extra parameters required by the API
+        params.append('group_by', 'day'); // Group by day
+        params.append('columns', 'amount'); // We need amount column
         
         console.log(`Request parameters: ${params.toString()}`);
         
         // Make the API call with proper URL encoding for params
-        const reportResponse = await axios.get(`${reportUrl}?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
+        const reportResponse = await axios.get(`${reportUrl}?${params.toString()}`, { headers });
         
         // Trim the response for logging
         const responseDataString = JSON.stringify(reportResponse.data);
@@ -103,7 +100,6 @@ export function registerReportsAPITestRoutes(app: express.Application) {
         return res.status(200).json({
           success: true,
           date: today,
-          dateRange: { from: yesterday, to: today },
           rawResponse: reportResponse.data,
           extractedSpent: totalSpent,
           campaignDirectSpent: campaignSpentValue,
