@@ -128,13 +128,10 @@ class TrafficStarService {
   }
 
   /**
-   * Get spent value for campaign using Reports API
+   * Get spent value for campaign using direct campaign endpoint
    * 
-   * Uses: GET /v1.1/advertiser/campaign/report/by-day
-   * 
-   * Format based on TrafficStar documentation where we need to use
-   * the exact date format YYYY-MM-DD for the current UTC date
-   * Both date_from and date_to should be the same date
+   * This prioritizes getting the spent_today value directly from the campaign
+   * endpoint (/v1.1/campaigns/{id}) which is more reliable for today's spent values
    */
   async getCampaignSpentValue(campaignId: number): Promise<{ totalSpent: number }> {
     try {
@@ -143,8 +140,34 @@ class TrafficStarService {
       
       console.log(`Getting spent value for campaign ${campaignId} for date ${currentUTCDate}`);
       
+      // Get the campaign directly first - this is the most reliable source
+      console.log(`Getting campaign ${campaignId} details for spent value`);
+      const campaign = await this.getCampaign(campaignId);
+      
+      // Check if campaign has spent_today value - this is most accurate
+      if (campaign && campaign.spent_today !== undefined) {
+        let spentValue = 0;
+        
+        if (typeof campaign.spent_today === 'number') {
+          spentValue = campaign.spent_today;
+        } else if (typeof campaign.spent_today === 'string') {
+          // Remove any currency symbols and parse
+          const cleanValue = campaign.spent_today.replace(/[^0-9.]/g, '');
+          spentValue = parseFloat(cleanValue);
+        }
+        
+        if (!isNaN(spentValue)) {
+          console.log(`Campaign ${campaignId} direct spent_today value: $${spentValue.toFixed(4)}`);
+          return { totalSpent: spentValue };
+        }
+      }
+      
+      // If spent_today doesn't exist or is invalid, try the reports API
       // Get Auth Headers
       const headers = await this.getAuthHeaders();
+      
+      // Log the full campaign object for detailed debugging
+      console.log(`Full campaign object for debugging:`, JSON.stringify(campaign, null, 2).substring(0, 500));
       
       // Per the TrafficStar API docs, we need the correct parameters
       // We use same date for both from and to as required, using current UTC date
@@ -165,8 +188,10 @@ class TrafficStarService {
       
       const response = await axios.get(url, { headers });
       
-      // Log the raw response for debugging
-      console.log(`Report API raw response type:`, typeof response.data);
+      // Log the raw response for debugging (truncated for large responses)
+      const responseStr = JSON.stringify(response.data);
+      console.log(`Report API raw response (first 500 chars):`, 
+        responseStr.length > 500 ? responseStr.substring(0, 500) + '...' : responseStr);
       
       // If response is successful and has data
       if (response.data) {
