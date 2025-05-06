@@ -1099,6 +1099,52 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       }
     }
     
+    // Check if the Traffic Generator was just enabled
+    const isNewlyEnabled = campaign.lastTrafficSenderStatus === null || 
+                          campaign.lastTrafficSenderStatus === 'disabled';
+    
+    // Get the current campaign status before doing anything else
+    const currentStatus = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+    console.log(`💡 Current TrafficStar campaign status before processing: ${currentStatus}`);
+    
+    // If newly enabled or status is active, IMMEDIATELY PAUSE first
+    if (isNewlyEnabled || currentStatus === 'active') {
+      console.log(`⚠️ Traffic Generator newly enabled or campaign active - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId}`);
+      
+      try {
+        // IMMEDIATELY PAUSE the campaign
+        const pauseResult = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+        
+        if (pauseResult) {
+          console.log(`✅ Successfully paused campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup`);
+          
+          // Update the database to reflect this initial pause
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'initial_pause_on_enable',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+          
+          // Get the postPauseCheckMinutes from the campaign settings (default to 10 if not set)
+          const waitMinutes = campaign.postPauseCheckMinutes || 10;
+          console.log(`⏱️ Traffic Generator will wait ${waitMinutes} minutes before checking spent value`);
+          
+          // Start the pause check monitoring which will handle the wait period
+          startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
+          
+          return; // Exit early - the pause monitoring will handle the rest
+        } else {
+          console.error(`❌ Failed to pause campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup`);
+        }
+      } catch (pauseError) {
+        console.error(`❌ Error pausing campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup:`, pauseError);
+      }
+    }
+    
+    // If we get here, either the campaign was already paused or we're in the post-pause check period
+    
     // Get the current spent value for the campaign
     const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarCampaignId);
     
