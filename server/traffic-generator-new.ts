@@ -126,7 +126,7 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
     
     // Fallback: Try using the spent value service
     try {
-      const result = await trafficStarService.getCampaignSpentValue(Number(trafficstarCampaignId), formattedDate, formattedDate);
+      const result = await trafficStarService.getCampaignSpentValue(Number(trafficstarCampaignId));
       
       if (result && typeof result.totalSpent === 'number') {
         console.log(`Campaign ${trafficstarCampaignId} direct API spent value: $${result.totalSpent.toFixed(4)}`);
