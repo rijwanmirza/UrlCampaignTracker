@@ -48,7 +48,6 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
-import { pauseTrafficStarForEmptyCampaigns } from "./traffic-generator-new";
 import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns, debugProcessCampaign } from "./traffic-generator";
 import { registerReportsAPITestRoutes } from "./test-reports-api";
 
@@ -1019,37 +1018,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Make sure trafficGeneratorEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
       const originalTrafficGeneratorEnabled = req.body.trafficGeneratorEnabled;
-      
-      // Get existing campaign to check current status
-      const existingCampaign = await storage.getCampaign(id);
-      if (!existingCampaign) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-      
       if (req.body.trafficGeneratorEnabled !== undefined) {
         // Explicitly convert to boolean using strict comparison
         req.body.trafficGeneratorEnabled = req.body.trafficGeneratorEnabled === true;
-        
-        // CRITICAL FIX: If Traffic Generator is being disabled, immediately stop all monitoring
-        if (existingCampaign.trafficGeneratorEnabled === true && req.body.trafficGeneratorEnabled === false) {
-          console.log(`⛔ CRITICAL: Traffic Generator being DISABLED for campaign ${id} - stopping ALL monitoring`);
-          
-          // Import the stopAllMonitoring function from traffic-generator-new.ts
-          const { stopAllMonitoring } = await import('./traffic-generator-new');
-          
-          // Call the function to stop all monitoring activities
-          stopAllMonitoring(id);
-          
-          // Reset the Traffic Generator status in the database
-          await db.update(campaigns)
-            .set({
-              lastTrafficSenderStatus: 'disabled',
-              updatedAt: new Date()
-            })
-            .where(eq(campaigns.id, id));
-            
-          console.log(`✅ Successfully disabled and stopped all Traffic Generator monitoring for campaign ${id}`);
-        }
       }
       
       console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
@@ -1087,8 +1058,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if multiplier is being updated
       const { multiplier } = result.data;
+      const existingCampaign = await storage.getCampaign(id);
       
-      // existingCampaign is already retrieved above, no need to fetch again
+      if (!existingCampaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
       
       console.log('🔍 DEBUG: Campaign update requested: ID', id);
       
@@ -1158,45 +1132,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (trafficGeneratorStateChanged && req.body.trafficGeneratorEnabled === true) {
         console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
         
-        try {
-          // CRITICAL FIX: Instead of just calling processTrafficGenerator, FORCE PAUSE IMMEDIATELY
-          // This is to ensure the campaign is ALWAYS paused first thing after enabling Traffic Generator
-          const { pauseTrafficStarCampaign, stopAllMonitoring } = await import('./traffic-generator-new');
-          
-          // Get the TrafficStar campaign ID directly from the updated campaign
-          const campaign = await storage.getCampaign(id);
-          if (campaign && campaign.trafficstarCampaignId) {
-            console.log(`⛔ CRITICAL FIX: Traffic Generator just enabled - FIRST STOPPING ALL EXISTING TIMERS`);
-            
-            // CRITICAL NEW FIX: Stop all monitoring before starting the process
-            // This prevents conflicts between different timer types
-            await stopAllMonitoring(id);
-            
-            console.log(`⛔ CRITICAL: Traffic Generator just enabled - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId}`);
-            
-            // IMPORTANT: Only call processTrafficGenerator here - do NOT call any other functions
-            // This will handle pausing and proper wait period setup through startMinutelyPauseStatusCheck
-            await processTrafficGenerator(id);
-            console.log(`✅ Pause process initiated for campaign ${campaign.trafficstarCampaignId} - waiting period will begin`);
-            
-            // DO NOT call any functions to check spent values here - that will happen after the waiting period
-            await db.update(campaigns)
-              .set({
-                lastTrafficSenderStatus: 'initial_pause_on_enable',
-                lastTrafficSenderAction: new Date(),
-                updatedAt: new Date()
-              })
-              .where(eq(campaigns.id, id));
-            
-            console.log(`✅ Campaign ${campaign.trafficstarCampaignId} immediately paused after enabling Traffic Generator`);
-          }
-        } catch (pauseError) {
-          console.error(`❌ Critical error pausing campaign after enabling Traffic Generator:`, pauseError);
-        }
-        
-        // DO NOT run processTrafficGenerator here again - we already called it above
-        // REMOVED: processTrafficGenerator(id) - this was causing immediate checks after pausing
-        // This removal is critical to ensure we respect the 10-minute wait period
+        // Run the traffic generator check for this campaign immediately
+        // We run this in the background (no await) to avoid delaying the response
+        processTrafficGenerator(id).catch(err => {
+          console.error(`Error in immediate traffic generator check for campaign ${id}:`, err);
+        });
       }
       
       res.json(updatedCampaign);
@@ -1367,16 +1307,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // IMMEDIATE CHECK: After adding a URL, check if campaign needs to be resumed 
-      // This ensures immediate responsiveness to URL availability changes
-      console.log(`⚡ URL created - running immediate empty URL check for campaign ${campaignId}`);
-      try {
-        const result = await pauseTrafficStarForEmptyCampaigns(campaignId);
-        console.log(`✅ Immediate empty URL check completed for campaign ${campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
-      } catch (checkError) {
-        console.error(`⚠️ Error during immediate empty URL check: ${checkError}`);
-      }
-      
       // Normal case - URL created successfully without duplication
       res.status(201).json(url);
     } catch (error) {
@@ -1470,29 +1400,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid URL ID" });
       }
-      
-      // Get URL information before deleting to know which campaign it belongs to
-      const url = await storage.getUrl(id);
-      if (!url) {
-        return res.status(404).json({ message: "URL not found" });
-      }
-      
-      // Store campaign ID before URL gets deleted
-      const campaignId = url.campaignId;
 
       const success = await storage.deleteUrl(id);
       if (!success) {
         return res.status(404).json({ message: "URL not found" });
-      }
-      
-      // IMMEDIATE CHECK: After URL deletion, check if campaign should be paused 
-      // This ensures immediate responsiveness to URL availability changes
-      console.log(`⚡ URL deleted - running immediate empty URL check for campaign ${campaignId}`);
-      try {
-        const result = await pauseTrafficStarForEmptyCampaigns(campaignId);
-        console.log(`✅ Immediate empty URL check completed for campaign ${campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
-      } catch (checkError) {
-        console.error(`⚠️ Error during immediate empty URL check: ${checkError}`);
       }
 
       res.status(204).end();
@@ -1540,34 +1451,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No valid URLs found" });
       }
       
-      // IMMEDIATE CHECK: After bulk URL update, check affected campaigns
-      try {
-        // First, get all affected campaigns from these URLs
-        const urlsWithCampaigns = await db.select({ 
-          campaignId: urls.campaignId 
-        })
-        .from(urls)
-        .where(inArray(urls.id, urlIds));
-        
-        // Extract unique campaign IDs
-        const affectedCampaignIds = [...new Set(urlsWithCampaigns.map(u => u.campaignId))];
-        
-        console.log(`⚡ Bulk URL ${action} operation - running immediate empty URL check for ${affectedCampaignIds.length} affected campaigns`);
-        
-        // Check each affected campaign immediately
-        for (const campaignId of affectedCampaignIds) {
-          try {
-            const result = await pauseTrafficStarForEmptyCampaigns(campaignId);
-            console.log(`✅ Immediate empty URL check for campaign ${campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
-          } catch (checkError) {
-            console.error(`⚠️ Error during immediate empty URL check for campaign ${campaignId}: ${checkError}`);
-          }
-        }
-      } catch (checkError) {
-        console.error(`⚠️ Error identifying affected campaigns for empty URL check: ${checkError}`);
-        // Continue even if there's an error with the immediate check
-      }
-      
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to perform bulk action" });
@@ -1600,16 +1483,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedUrl = await storage.updateUrlStatus(id, status);
       if (!updatedUrl) {
         return res.status(404).json({ message: "Failed to update URL status" });
-      }
-      
-      // IMMEDIATE CHECK: When URL status changes, check if campaign should be paused/resumed
-      // This ensures immediate responsiveness to URL availability changes
-      console.log(`⚡ URL status changed - running immediate empty URL check for campaign ${url.campaignId}`);
-      try {
-        const result = await pauseTrafficStarForEmptyCampaigns(url.campaignId);
-        console.log(`✅ Immediate empty URL check completed for campaign ${url.campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
-      } catch (checkError) {
-        console.error(`⚠️ Error during immediate empty URL check: ${checkError}`);
       }
       
       return res.status(200).json({
