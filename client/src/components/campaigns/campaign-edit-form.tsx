@@ -120,9 +120,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         : (campaign.pricePerThousand || 0)
     );
     
-    // Set high spend wait minutes
-    form.setValue('highSpendWaitMinutes', campaign.highSpendWaitMinutes || 11);
-    console.log("Setting highSpendWaitMinutes to:", campaign.highSpendWaitMinutes || 11);
+    // Don't force highSpendWaitMinutes here, let the user control it
+    // This was causing the field to reset to 11
     
     // Traffic Sender code removed
   }, 100);
@@ -554,15 +553,21 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                               step="1"
                               {...field}
                               onChange={(e) => {
-                                const value = e.target.value === '' ? '' : e.target.value;
-                                const parsedValue = parseInt(value, 10);
-                                if (!isNaN(parsedValue)) {
-                                  field.onChange(parsedValue);
+                                // Just use the raw value from the input to allow proper editing
+                                const value = e.target.value;
+                                
+                                // Only parse and validate when submitting or onBlur
+                                if (value === '') {
+                                  // Empty field - set default
+                                  field.onChange(2);
                                 } else {
-                                  field.onChange(value);
+                                  // Update with the raw value
+                                  const parsedValue = parseInt(value, 10);
+                                  if (!isNaN(parsedValue)) {
+                                    field.onChange(parsedValue);
+                                  }
                                 }
                               }}
-                              value={field.value}
                             />
                           </FormControl>
                           <FormDescription>
@@ -588,16 +593,22 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                               min="1"
                               max="30"
                               step="1"
-                              value={field.value || 11}
+                              {...field}
                               onChange={(e) => {
-                                const value = e.target.value === '' ? '11' : e.target.value;
-                                const parsedValue = parseInt(value, 10);
-                                if (!isNaN(parsedValue)) {
-                                  console.log("Setting highSpendWaitMinutes to:", parsedValue);
-                                  field.onChange(parsedValue);
+                                // Just use the raw value from the input to allow proper editing
+                                const value = e.target.value;
+                                
+                                // Only parse and validate when submitting or onBlur
+                                // Just update the raw field value for now
+                                if (value === '') {
+                                  // Empty field - set default on blur
+                                  field.onChange(1);
                                 } else {
-                                  console.log("Invalid value, defaulting to 11");
-                                  field.onChange(11);
+                                  // Update with the raw value
+                                  const parsedValue = parseInt(value, 10);
+                                  if (!isNaN(parsedValue)) {
+                                    field.onChange(parsedValue);
+                                  }
                                 }
                               }}
                             />
