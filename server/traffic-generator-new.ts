@@ -389,16 +389,169 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // Handle campaign with $10 or more spent
       console.log(`🟢 HIGH SPEND ($${spentValue.toFixed(4)} >= $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent $${THRESHOLD.toFixed(2)} or more`);
       
-      // Mark this in the database
-      await db.update(campaigns)
-        .set({
-          lastTrafficSenderStatus: 'high_spend',
-          lastTrafficSenderAction: new Date(),
-          updatedAt: new Date()
-        })
-        .where(eq(campaigns.id, campaignId));
+      // First, get the campaign's current status
+      const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
       
-      console.log(`✅ Marked campaign ${campaignId} as 'high_spend' in database`);
+      // Get the campaign details to check URLs and pricePerThousand
+      const campaign = await db.query.campaigns.findFirst({
+        where: (campaign, { eq }) => eq(campaign.id, campaignId),
+        with: {
+          urls: true
+        }
+      }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+      
+      if (!campaign) {
+        console.error(`Campaign ${campaignId} not found - cannot process high spend handling`);
+        return;
+      }
+      
+      console.log(`Campaign ${campaignId} price per thousand: $${campaign.pricePerThousand}`);
+      
+      // Check if the campaign is already in the waiting period for high spend handling
+      if (campaign.lastTrafficSenderStatus === 'high_spend_waiting') {
+        // Check if the 11-minute waiting period has elapsed
+        if (campaign.lastTrafficSenderAction) {
+          const waitDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
+          const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+          
+          console.log(`Campaign ${campaignId} has been in high_spend_waiting state for ${waitMinutes} minutes`);
+          
+          if (waitMinutes >= 11) {
+            console.log(`11-minute wait period has elapsed for campaign ${campaignId} - proceeding with high spend handling`);
+            
+            // 1. Get updated spent value after waiting period
+            const updatedSpentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
+            
+            if (updatedSpentValue === null) {
+              console.error(`Failed to get updated spent value for campaign ${campaignId} after wait period`);
+              return;
+            }
+            
+            console.log(`Campaign ${campaignId} updated spent value after wait: $${updatedSpentValue.toFixed(4)}`);
+            
+            // 2. Calculate total remaining clicks across active URLs
+            let totalRemainingClicks = 0;
+            console.log(`Checking remaining clicks for ${campaign.urls.length} URLs in campaign ${trafficstarCampaignId}`);
+            
+            for (const url of campaign.urls) {
+              if (url.status === 'active') {
+                const remainingClicks = url.clickLimit - url.clicks;
+                const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
+                totalRemainingClicks += validRemaining;
+                console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
+              } else {
+                console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
+              }
+            }
+            
+            console.log(`Total remaining clicks across active URLs: ${totalRemainingClicks}`);
+            
+            // 3. Calculate the value of remaining clicks
+            const pricePerThousand = parseFloat(campaign.pricePerThousand);
+            const remainingClicksValue = (totalRemainingClicks / 1000) * pricePerThousand;
+            
+            console.log(`Calculated value of remaining clicks: $${remainingClicksValue.toFixed(4)}`);
+            
+            // 4. Calculate new budget (spent value + remaining clicks value)
+            const newBudget = updatedSpentValue + remainingClicksValue;
+            console.log(`New budget calculation: $${updatedSpentValue.toFixed(4)} (spent) + $${remainingClicksValue.toFixed(4)} (remaining) = $${newBudget.toFixed(4)}`);
+            
+            try {
+              // 5. Update the TrafficStar campaign budget
+              await trafficStarService.updateCampaignBudget(Number(trafficstarCampaignId), newBudget);
+              console.log(`✅ Updated campaign ${trafficstarCampaignId} budget to $${newBudget.toFixed(4)}`);
+              
+              // 6. Set end time to 23:59 UTC today
+              const today = new Date();
+              const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+              const endTimeStr = `${todayStr} 23:59:00`;
+              
+              // 7. Set the end time
+              await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
+              console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
+              
+              // 8. Activate the campaign
+              await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
+              console.log(`✅ Activated campaign ${trafficstarCampaignId} after budget update`);
+              
+              // 9. Update database status
+              await db.update(campaigns)
+                .set({
+                  lastTrafficSenderStatus: 'high_spend_budget_updated',
+                  lastTrafficSenderAction: new Date(),
+                  updatedAt: new Date()
+                })
+                .where(eq(campaigns.id, campaignId));
+              
+              console.log(`✅ Marked campaign ${campaignId} as 'high_spend_budget_updated' in database`);
+              
+              // 10. Start monitoring
+              startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+            } catch (error) {
+              console.error(`❌ Error updating campaign ${trafficstarCampaignId} for high spend handling:`, error);
+              
+              // Update database to record the failure
+              await db.update(campaigns)
+                .set({
+                  lastTrafficSenderStatus: 'high_spend_update_failed',
+                  lastTrafficSenderAction: new Date(),
+                  updatedAt: new Date()
+                })
+                .where(eq(campaigns.id, campaignId));
+            }
+          } else {
+            console.log(`Waiting period not elapsed yet (${waitMinutes}/11 minutes) for campaign ${campaignId}`);
+          }
+        }
+      } else {
+        // First time seeing this campaign with high spend
+        console.log(`First time detecting high spend for campaign ${trafficstarCampaignId} - initiating pause and wait period`);
+        
+        try {
+          // If the campaign is active, pause it first
+          if (currentStatus === 'active') {
+            // Set current date/time for end time
+            const now = new Date();
+            const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+            
+            // First pause the campaign
+            await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+            console.log(`✅ Paused campaign ${trafficstarCampaignId} to begin high spend handling`);
+            
+            // Then set its end time
+            await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
+            console.log(`✅ Set end time for campaign ${trafficstarCampaignId} to ${formattedDateTime}`);
+          } else {
+            console.log(`Campaign ${trafficstarCampaignId} is already paused - no need to pause it again`);
+          }
+          
+          // Mark as high_spend_waiting in the database and start the 11-minute timer
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'high_spend_waiting',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+          
+          console.log(`✅ Marked campaign ${campaignId} as 'high_spend_waiting' in database`);
+          console.log(`⏱️ Starting 11-minute wait period for campaign ${trafficstarCampaignId}`);
+          
+          // Start monitoring during the wait period
+          startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+        } catch (error) {
+          console.error(`❌ Error initiating high spend handling for campaign ${trafficstarCampaignId}:`, error);
+          
+          // Mark this in the database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'high_spend_initiation_failed',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+        }
+      }
     }
   } catch (error) {
     console.error(`Error handling campaign ${trafficstarCampaignId} by spent value:`, error);
