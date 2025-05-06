@@ -735,7 +735,17 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
     activeStatusChecks.delete(campaignId);
   }
   
+  // Clear any existing waiting timers
+  if (waitingTimers.has(campaignId)) {
+    clearTimeout(waitingTimers.get(campaignId));
+    waitingTimers.delete(campaignId);
+    console.log(`🔄 Cleared existing waiting timer for campaign ${campaignId}`);
+  }
+  
   console.log(`🔄 Starting ENFORCED WAITING PERIOD after pause for campaign ${trafficstarCampaignId}`);
+  
+  // IMPORTANT: This function ONLY sets up the waiting period timer
+  // No other operations are performed until the timer completes
   
   // Get campaign details to know the waiting time
   db.query.campaigns.findFirst({
@@ -761,6 +771,30 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
         updatedAt: new Date()
       })
       .where(eq(campaigns.id, campaignId));
+    
+    // CRITICAL: Keep the TrafficStar campaign paused - this ensures it doesn't accidentally get activated
+    try {
+      // Verify the campaign is actually paused
+      const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
+      if (currentStatus !== 'paused') {
+        console.log(`⚠️ CRITICAL: Campaign ${trafficstarCampaignId} is not paused (${currentStatus}) - will pause it again`);
+        
+        // Set current date/time for end time
+        const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+        
+        // Pause the campaign again
+        await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+        console.log(`✅ Successfully re-paused campaign ${trafficstarCampaignId} during waiting period start`);
+        
+        // Set end time
+        await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
+        console.log(`✅ Set end time to ${formattedDateTime} for campaign ${trafficstarCampaignId}`);
+      } else {
+        console.log(`✅ Campaign ${trafficstarCampaignId} is properly paused - waiting period will proceed`);
+      }
+    } catch (error) {
+      console.error(`❌ Error checking/pausing campaign ${trafficstarCampaignId} at start of waiting period:`, error);
+    }
     
     // Use exact timeout to respect the waiting period precisely
     // CRITICAL: Store the timeout in our Map so we can clear it if needed
@@ -828,7 +862,7 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
     
     // Store the timeout in our map so we can clear it if Traffic Generator is disabled mid-wait
     waitingTimers.set(campaignId, waitTimer);
-    console.log(`✅ Stored waiting timer for campaign ${campaignId} - will be reset if Traffic Generator is disabled`)
+    console.log(`✅ Stored waiting timer for campaign ${campaignId} - will be reset if Traffic Generator is disabled`);
   }).catch(error => {
     console.error(`Error starting wait period for campaign ${trafficstarCampaignId}:`, error);
   });
