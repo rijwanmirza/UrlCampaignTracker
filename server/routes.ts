@@ -1157,8 +1157,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (trafficGeneratorStateChanged && req.body.trafficGeneratorEnabled === true) {
         console.log(`🔍 DEBUG: Traffic Generator was just enabled for campaign ${id}, running immediate check...`);
         
-        // Run the traffic generator check for this campaign immediately
-        // We run this in the background (no await) to avoid delaying the response
+        try {
+          // CRITICAL FIX: Instead of just calling processTrafficGenerator, FORCE PAUSE IMMEDIATELY
+          // This is to ensure the campaign is ALWAYS paused first thing after enabling Traffic Generator
+          const { pauseTrafficStarCampaign } = await import('./traffic-generator-new');
+          
+          // Get the TrafficStar campaign ID directly from the updated campaign
+          const campaign = await storage.getCampaign(id);
+          if (campaign && campaign.trafficstarCampaignId) {
+            console.log(`⛔ CRITICAL: Traffic Generator just enabled - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId}`);
+            
+            // IMMEDIATELY pause the campaign
+            await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+            
+            // Mark the campaign as just enabled in the database
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'initial_pause_on_enable',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, id));
+            
+            console.log(`✅ Campaign ${campaign.trafficstarCampaignId} immediately paused after enabling Traffic Generator`);
+          }
+        } catch (pauseError) {
+          console.error(`❌ Critical error pausing campaign after enabling Traffic Generator:`, pauseError);
+        }
+        
+        // AFTER pausing, also run the regular process (which will handle the waiting period)
         processTrafficGenerator(id).catch(err => {
           console.error(`Error in immediate traffic generator check for campaign ${id}:`, err);
         });

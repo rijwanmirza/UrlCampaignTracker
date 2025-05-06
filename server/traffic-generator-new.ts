@@ -1184,14 +1184,13 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       }
     }
     
-    // IMPROVED DETECTION: Check if the Traffic Generator was JUST ENABLED
-    // Consider it "just enabled" if: 
-    // 1. lastTrafficSenderStatus is null (first time)
-    // 2. lastTrafficSenderStatus is 'disabled' (re-enabled after being disabled)
-    // 3. lastTrafficSenderStatus doesn't exist (legacy data)
-    const wasJustEnabled = campaign.lastTrafficSenderStatus === null || 
-                          campaign.lastTrafficSenderStatus === 'disabled' ||
-                          campaign.lastTrafficSenderStatus === undefined;
+    // CRITICAL FIX: FORCE IMMEDIATE PAUSE WHEN TRAFFIC GENERATOR IS ENABLED
+    // This is the main fix to ensure it ALWAYS pauses the campaign when Traffic Generator
+    // is enabled - no matter what state it was in before
+    
+    // Always consider it "just enabled" when trafficGeneratorEnabled is true, regardless of state
+    // This ensures we ALWAYS pause it first no matter what
+    const wasJustEnabled = true; // FORCE IMMEDIATE PAUSE NO MATTER WHAT
     
     // ALWAYS IMMEDIATELY PAUSE when just enabled, no questions asked
     if (wasJustEnabled) {
