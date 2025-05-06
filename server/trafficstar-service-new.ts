@@ -130,7 +130,7 @@ class TrafficStarService {
   /**
    * Get spent value for campaign using Reports API
    * 
-   * Uses: GET /v1.1/advertiser/campaign/report/by-day
+   * Uses: GET /v1.1/advertiser/custom/report/by-day
    * 
    * Format based on TrafficStar documentation where we need to use
    * the exact date format YYYY-MM-DD for the current UTC date
@@ -158,7 +158,8 @@ class TrafficStarService {
       console.log(`Report API request parameters: ${params.toString()}`);
       
       // Make API request to the campaign reports API with properly formatted URL
-      const baseUrl = `${this.BASE_URL_V1_1}/advertiser/campaign/report/by-day`;
+      // FIXED: Updated from /advertiser/campaign/report/by-day to /advertiser/custom/report/by-day
+      const baseUrl = `${this.BASE_URL_V1_1}/advertiser/custom/report/by-day`;
       const url = `${baseUrl}?${params.toString()}`;
       
       console.log(`Making direct request to: ${url}`);

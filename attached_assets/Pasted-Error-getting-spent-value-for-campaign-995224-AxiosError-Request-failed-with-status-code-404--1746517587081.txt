@@ -1,0 +1,492 @@
+Error getting spent value for campaign 995224: AxiosError: Request failed with status code 404
+    at settle (file:///home/runner/workspace/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///home/runner/workspace/node_modules/axios/lib/adapters/http.js:599:11)
+    at IncomingMessage.emit (node:events:530:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at Axios.request (file:///home/runner/workspace/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async TrafficStarService.getCampaignSpentValue (/home/runner/workspace/server/trafficstar-service-new.ts:166:24)
+    at async updateAllCampaignSpentValues (/home/runner/workspace/server/trafficstar-service-new.ts:482:42) {
+  code: 'ERR_BAD_REQUEST',
+  config: {
+    transitional: {
+      silentJSONParsing: true,
+      forcedJSONParsing: true,
+      clarifyTimeoutError: false
+    },
+    adapter: [ 'xhr', 'http', 'fetch' ],
+    transformRequest: [ [Function: transformRequest] ],
+    transformResponse: [ [Function: transformResponse] ],
+    timeout: 0,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: { FormData: [Function [FormData]], Blob: [class Blob] },
+    validateStatus: [Function: validateStatus],
+    headers: Object [AxiosHeaders] {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': undefined,
+      Authorization: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0amJBMjdWbHpxLWpvdGJnS0J4eDJYaDFNIn0.eyJleHAiOjE3NDY2MDM5NjYsImlhdCI6MTc0NjUxNzU2NiwianRpIjoiZmZlNDhiYjgtMjc0OC00NDkzLWFhZTctNjkxMjM5ZTc4ZjFmIiwiaXNzIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJjb3JlLWFwaSIsInNlc3Npb25fc3RhdGUiOiJhODI1MzkyZi1mNDU5LTRiODktOTM2YS1kNzI0NzA4NWUwNzMiLCJhY3IiOiIxIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiUmlqd2EgTWlyemEiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJyaWp3YW1pcnphQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJSaWp3YSIsImZhbWlseV9uYW1lIjoiTWlyemEiLCJlbWFpbCI6InJpandhbWlyemFAZ21haWwuY29tIn0.mRWY2vFQY1_K-p4H8DVTBNQvBwRBGRUE6XvBqf9spJh0hnw8HmKyl2fxszh_V07IRMMRN4CuMqGfeLu1VlUScgU4JNsCcY0PY1rmctYPJzdSZzXosrOHzXVJjiQNgU78bSV8iQX3_20o8ZuKVCKC6sot1VRrojGtXGkB2yyNna3oLU4VFoT7mxt1eM4C4VrWD1mPu_db4YJ4t-cJLOe9wj8N8ysH3_kq_z-dtDUwimouhJ1kala5ohjL2PvSq1HAbgHfKY4SqgP37g_sjr7uqo8s7WgSbTeDJXFS_8wxrbN2KdFLoMw7DJslCyXfDwQFc2mZbcPGLMqQDVDBlU9AOA',
+      'User-Agent': 'axios/1.8.4',
+      'Accept-Encoding': 'gzip, compress, deflate, br'
+    },
+    method: 'get',
+    url: 'https://api.trafficstars.com/v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount',
+    allowAbsoluteUrls: true,
+    data: undefined
+  },
+  request: <ref *1> ClientRequest {
+    _events: [Object: null prototype] {
+      abort: [Function (anonymous)],
+      aborted: [Function (anonymous)],
+      connect: [Function (anonymous)],
+      error: [Function (anonymous)],
+      socket: [Function (anonymous)],
+      timeout: [Function (anonymous)],
+      finish: [Function: requestOnFinish]
+    },
+    _eventsCount: 7,
+    _maxListeners: undefined,
+    outputData: [],
+    outputSize: 0,
+    writable: true,
+    destroyed: true,
+    _last: true,
+    chunkedEncoding: false,
+    shouldKeepAlive: true,
+    maxRequestsOnConnectionReached: false,
+    _defaultKeepAlive: true,
+    useChunkedEncodingByDefault: false,
+    sendDate: false,
+    _removedConnection: false,
+    _removedContLen: false,
+    _removedTE: false,
+    strictContentLength: false,
+    _contentLength: 0,
+    _hasBody: true,
+    _trailer: '',
+    finished: true,
+    _headerSent: true,
+    _closed: true,
+    socket: TLSSocket {
+      _tlsOptions: [Object],
+      _secureEstablished: true,
+      _securePending: false,
+      _newSessionPending: false,
+      _controlReleased: true,
+      secureConnecting: false,
+      _SNICallback: null,
+      servername: 'api.trafficstars.com',
+      alpnProtocol: false,
+      authorized: true,
+      authorizationError: null,
+      encrypted: true,
+      _events: [Object: null prototype],
+      _eventsCount: 9,
+      connecting: false,
+      _hadError: false,
+      _parent: null,
+      _host: 'api.trafficstars.com',
+      _closeAfterHandlingError: false,
+      _readableState: [ReadableState],
+      _writableState: [WritableState],
+      allowHalfOpen: false,
+      _maxListeners: undefined,
+      _sockname: null,
+      _pendingData: null,
+      _pendingEncoding: '',
+      server: undefined,
+      _server: null,
+      ssl: [TLSWrap],
+      _requestCert: true,
+      _rejectUnauthorized: true,
+      timeout: 5000,
+      parser: null,
+      _httpMessage: null,
+      autoSelectFamilyAttemptedAddresses: [Array],
+      [Symbol(alpncallback)]: null,
+      [Symbol(res)]: [TLSWrap],
+      [Symbol(verified)]: true,
+      [Symbol(pendingSession)]: null,
+      [Symbol(async_id_symbol)]: -1,
+      [Symbol(kHandle)]: [TLSWrap],
+      [Symbol(lastWriteQueueSize)]: 0,
+      [Symbol(timeout)]: Timeout {
+        _idleTimeout: 5000,
+        _idlePrev: [TimersList],
+        _idleNext: [Timeout],
+        _idleStart: 5143,
+        _onTimeout: [Function: bound ],
+        _timerArgs: undefined,
+        _repeat: null,
+        _destroyed: false,
+        [Symbol(refed)]: false,
+        [Symbol(kHasPrimitive)]: false,
+        [Symbol(asyncId)]: 8027,
+        [Symbol(triggerId)]: 8025
+      },
+      [Symbol(kBuffer)]: null,
+      [Symbol(kBufferCb)]: null,
+      [Symbol(kBufferGen)]: null,
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false,
+      [Symbol(kSetNoDelay)]: false,
+      [Symbol(kSetKeepAlive)]: true,
+      [Symbol(kSetKeepAliveInitialDelay)]: 1,
+      [Symbol(kBytesRead)]: 0,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(connect-options)]: [Object]
+    },
+    _header: 'GET /v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount HTTP/1.1\r\n' +
+      'Accept: application/json, text/plain, */*\r\n' +
+      'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0amJBMjdWbHpxLWpvdGJnS0J4eDJYaDFNIn0.eyJleHAiOjE3NDY2MDM5NjYsImlhdCI6MTc0NjUxNzU2NiwianRpIjoiZmZlNDhiYjgtMjc0OC00NDkzLWFhZTctNjkxMjM5ZTc4ZjFmIiwiaXNzIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJjb3JlLWFwaSIsInNlc3Npb25fc3RhdGUiOiJhODI1MzkyZi1mNDU5LTRiODktOTM2YS1kNzI0NzA4NWUwNzMiLCJhY3IiOiIxIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiUmlqd2EgTWlyemEiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJyaWp3YW1pcnphQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJSaWp3YSIsImZhbWlseV9uYW1lIjoiTWlyemEiLCJlbWFpbCI6InJpandhbWlyemFAZ21haWwuY29tIn0.mRWY2vFQY1_K-p4H8DVTBNQvBwRBGRUE6XvBqf9spJh0hnw8HmKyl2fxszh_V07IRMMRN4CuMqGfeLu1VlUScgU4JNsCcY0PY1rmctYPJzdSZzXosrOHzXVJjiQNgU78bSV8iQX3_20o8ZuKVCKC6sot1VRrojGtXGkB2yyNna3oLU4VFoT7mxt1eM4C4VrWD1mPu_db4YJ4t-cJLOe9wj8N8ysH3_kq_z-dtDUwimouhJ1kala5ohjL2PvSq1HAbgHfKY4SqgP37g_sjr7uqo8s7WgSbTeDJXFS_8wxrbN2KdFLoMw7DJslCyXfDwQFc2mZbcPGLMqQDVDBlU9AOA\r\n' +
+      'User-Agent: axios/1.8.4\r\n' +
+      'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+      'Host: api.trafficstars.com\r\n' +
+      'Connection: keep-alive\r\n' +
+      '\r\n',
+    _keepAliveTimeout: 0,
+    _onPendingData: [Function: nop],
+    agent: Agent {
+      _events: [Object: null prototype],
+      _eventsCount: 2,
+      _maxListeners: undefined,
+      defaultPort: 443,
+      protocol: 'https:',
+      options: [Object: null prototype],
+      requests: [Object: null prototype] {},
+      sockets: [Object: null prototype],
+      freeSockets: [Object: null prototype],
+      keepAliveMsecs: 1000,
+      keepAlive: true,
+      maxSockets: Infinity,
+      maxFreeSockets: 256,
+      scheduling: 'lifo',
+      maxTotalSockets: Infinity,
+      totalSocketCount: 2,
+      maxCachedSessions: 100,
+      _sessionCache: [Object],
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false
+    },
+    socketPath: undefined,
+    method: 'GET',
+    maxHeaderSize: undefined,
+    insecureHTTPParser: undefined,
+    joinDuplicateHeaders: undefined,
+    path: '/v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount',
+    _ended: true,
+    res: IncomingMessage {
+      _events: [Object],
+      _readableState: [ReadableState],
+      _maxListeners: undefined,
+      socket: null,
+      httpVersionMajor: 1,
+      httpVersionMinor: 1,
+      httpVersion: '1.1',
+      complete: true,
+      rawHeaders: [Array],
+      rawTrailers: [],
+      joinDuplicateHeaders: undefined,
+      aborted: false,
+      upgrade: false,
+      url: '',
+      method: null,
+      statusCode: 404,
+      statusMessage: 'Not Found',
+      client: [TLSSocket],
+      _consuming: false,
+      _dumped: false,
+      req: [Circular *1],
+      _eventsCount: 4,
+      responseUrl: 'https://api.trafficstars.com/v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount',
+      redirects: [],
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false,
+      [Symbol(kHeaders)]: [Object],
+      [Symbol(kHeadersCount)]: 30,
+      [Symbol(kTrailers)]: null,
+      [Symbol(kTrailersCount)]: 0
+    },
+    aborted: false,
+    timeoutCb: null,
+    upgradeOrConnect: false,
+    parser: null,
+    maxHeadersCount: null,
+    reusedSocket: true,
+    host: 'api.trafficstars.com',
+    protocol: 'https:',
+    _redirectable: Writable {
+      _events: [Object],
+      _writableState: [WritableState],
+      _maxListeners: undefined,
+      _options: [Object],
+      _ended: true,
+      _ending: true,
+      _redirectCount: 0,
+      _redirects: [],
+      _requestBodyLength: 0,
+      _requestBodyBuffers: [],
+      _eventsCount: 3,
+      _onNativeResponse: [Function (anonymous)],
+      _currentRequest: [Circular *1],
+      _currentUrl: 'https://api.trafficstars.com/v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount',
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false
+    },
+    [Symbol(shapeMode)]: false,
+    [Symbol(kCapture)]: false,
+    [Symbol(kBytesWritten)]: 0,
+    [Symbol(kNeedDrain)]: false,
+    [Symbol(corked)]: 0,
+    [Symbol(kOutHeaders)]: [Object: null prototype] {
+      accept: [Array],
+      authorization: [Array],
+      'user-agent': [Array],
+      'accept-encoding': [Array],
+      host: [Array]
+    },
+    [Symbol(errored)]: null,
+    [Symbol(kHighWaterMark)]: 16384,
+    [Symbol(kRejectNonStandardBodyWrites)]: false,
+    [Symbol(kUniqueHeaders)]: null
+  },
+  response: {
+    status: 404,
+    statusText: 'Not Found',
+    headers: Object [AxiosHeaders] {
+      date: 'Tue, 06 May 2025 07:46:07 GMT',
+      'content-type': 'text/plain; charset=utf-8',
+      'content-length': '19',
+      connection: 'keep-alive',
+      'cache-control': 'no-cache, no-store, must-revalidate',
+      expires: '0',
+      pragma: 'no-cache',
+      vary: '*',
+      'x-content-type-options': 'nosniff',
+      'cf-cache-status': 'DYNAMIC',
+      'report-to': '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=FMgIlhGjeZ7RhzUgM3wafUsrhfB3%2B6MaN5HXtG1ujhU5l3dO7pbMWb05RtzAmezd5np%2BwS7u%2F0kShZyCWUMFq5LDBm4xFrL8L8SwNimbSV9KFjy1jEM9wL9L0Qok88ppWXy%2BN1id"}],"group":"cf-nel","max_age":604800}',
+      nel: '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
+      server: 'cloudflare',
+      'cf-ray': '93b6dcaababe680e-SEA',
+      'server-timing': 'cfL4;desc="?proto=TCP&rtt=6971&min_rtt=5973&rtt_var=2833&sent=9&recv=9&lost=0&retrans=0&sent_bytes=6004&recv_bytes=3004&delivery_rate=477808&cwnd=250&unsent_bytes=0&cid=239d7e9ccc53fa4a&ts=853&x=0"'
+    },
+    config: {
+      transitional: [Object],
+      adapter: [Array],
+      transformRequest: [Array],
+      transformResponse: [Array],
+      timeout: 0,
+      xsrfCookieName: 'XSRF-TOKEN',
+      xsrfHeaderName: 'X-XSRF-TOKEN',
+      maxContentLength: -1,
+      maxBodyLength: -1,
+      env: [Object],
+      validateStatus: [Function: validateStatus],
+      headers: [Object [AxiosHeaders]],
+      method: 'get',
+      url: 'https://api.trafficstars.com/v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount',
+      allowAbsoluteUrls: true,
+      data: undefined
+    },
+    request: <ref *1> ClientRequest {
+      _events: [Object: null prototype],
+      _eventsCount: 7,
+      _maxListeners: undefined,
+      outputData: [],
+      outputSize: 0,
+      writable: true,
+      destroyed: true,
+      _last: true,
+      chunkedEncoding: false,
+      shouldKeepAlive: true,
+      maxRequestsOnConnectionReached: false,
+      _defaultKeepAlive: true,
+      useChunkedEncodingByDefault: false,
+      sendDate: false,
+      _removedConnection: false,
+      _removedContLen: false,
+      _removedTE: false,
+      strictContentLength: false,
+      _contentLength: 0,
+      _hasBody: true,
+      _trailer: '',
+      finished: true,
+      _headerSent: true,
+      _closed: true,
+      socket: [TLSSocket],
+      _header: 'GET /v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount HTTP/1.1\r\n' +
+        'Accept: application/json, text/plain, */*\r\n' +
+        'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6Y2YyOTMwb0RpSmJxUWs4VzR0amJBMjdWbHpxLWpvdGJnS0J4eDJYaDFNIn0.eyJleHAiOjE3NDY2MDM5NjYsImlhdCI6MTc0NjUxNzU2NiwianRpIjoiZmZlNDhiYjgtMjc0OC00NDkzLWFhZTctNjkxMjM5ZTc4ZjFmIiwiaXNzIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJjb3JlLWFwaSIsInNlc3Npb25fc3RhdGUiOiJhODI1MzkyZi1mNDU5LTRiODktOTM2YS1kNzI0NzA4NWUwNzMiLCJhY3IiOiIxIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiUmlqd2EgTWlyemEiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJyaWp3YW1pcnphQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJSaWp3YSIsImZhbWlseV9uYW1lIjoiTWlyemEiLCJlbWFpbCI6InJpandhbWlyemFAZ21haWwuY29tIn0.mRWY2vFQY1_K-p4H8DVTBNQvBwRBGRUE6XvBqf9spJh0hnw8HmKyl2fxszh_V07IRMMRN4CuMqGfeLu1VlUScgU4JNsCcY0PY1rmctYPJzdSZzXosrOHzXVJjiQNgU78bSV8iQX3_20o8ZuKVCKC6sot1VRrojGtXGkB2yyNna3oLU4VFoT7mxt1eM4C4VrWD1mPu_db4YJ4t-cJLOe9wj8N8ysH3_kq_z-dtDUwimouhJ1kala5ohjL2PvSq1HAbgHfKY4SqgP37g_sjr7uqo8s7WgSbTeDJXFS_8wxrbN2KdFLoMw7DJslCyXfDwQFc2mZbcPGLMqQDVDBlU9AOA\r\n' +
+        'User-Agent: axios/1.8.4\r\n' +
+        'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+        'Host: api.trafficstars.com\r\n' +
+        'Connection: keep-alive\r\n' +
+        '\r\n',
+      _keepAliveTimeout: 0,
+      _onPendingData: [Function: nop],
+      agent: [Agent],
+      socketPath: undefined,
+      method: 'GET',
+      maxHeaderSize: undefined,
+      insecureHTTPParser: undefined,
+      joinDuplicateHeaders: undefined,
+      path: '/v1.1/advertiser/campaign/report/by-day?campaign_id=995224&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount',
+      _ended: true,
+      res: [IncomingMessage],
+      aborted: false,
+      timeoutCb: null,
+      upgradeOrConnect: false,
+      parser: null,
+      maxHeadersCount: null,
+      reusedSocket: true,
+      host: 'api.trafficstars.com',
+      protocol: 'https:',
+      _redirectable: [Writable],
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(kNeedDrain)]: false,
+      [Symbol(corked)]: 0,
+      [Symbol(kOutHeaders)]: [Object: null prototype],
+      [Symbol(errored)]: null,
+      [Symbol(kHighWaterMark)]: 16384,
+      [Symbol(kRejectNonStandardBodyWrites)]: false,
+      [Symbol(kUniqueHeaders)]: null
+    },
+    data: '404 page not found\n'
+  },
+  status: 404
+}
+Error response status: 404
+Error response data: 404 page not found
+
+Falling back to campaign endpoint for spent value
+Getting campaign 995224 details
+Parsing report data from TrafficStar API
+Found spent_today property in response
+Campaign 995224 direct API spent value: $68.2300
+Campaign 9 spent value updated to: $68.2300
+Finished scheduled update of TrafficStar campaign spent values
+<= '* CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 UIDPLUS COMPRESS=DEFLATE ENABLE MOVE CONDSTORE ESEARCH UTF8=ACCEPT LIST-EXTENDED LIST-STATUS LITERAL- SPECIAL-USE APPENDLIMIT=35651584'
+<= 'A1 OK compaignwalabhai@gmail.com authenticated (Success)'
+=> 'A2 NAMESPACE'
+Campaign 995224 spent value from campaign object helper: $68.2300
+Campaign 9 spent value: $68.2300
+TRAFFIC-GENERATOR: Handling campaign 995224 by spent value - current spent: $68.2300
+🟢 HIGH SPEND ($68.2300 >= $10.00): Campaign 995224 has spent $10.00 or more
+✅ Marked campaign 9 as 'high_spend' in database
+Finished running Traffic Generator for all enabled campaigns
+<= '* NAMESPACE (("" "/")) NIL NIL'
+<= 'A2 OK Success'
+=> 'A3 LIST "" ""'
+<= '* LIST (\\Noselect) "/" "/"'
+<= 'A3 OK Success'
+7:46:08 AM [gmail-reader] IMAP connection established
+7:46:08 AM [gmail-reader] Auto-delete enabled: emails will be deleted 2 minutes after processing
+7:46:08 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+7:46:08 AM [gmail-reader] Current IMAP connection state: authenticated
+7:46:08 AM [gmail-reader] Scanning for processed emails older than 2025-05-06T07:44:08.285Z (2 minutes ago)
+7:46:08 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+=> 'A4 SELECT "INBOX" (CONDSTORE)'
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 10 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14622] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 9946466]'
+<= 'A4 OK [READ-WRITE] INBOX selected. (Success)'
+7:46:08 AM [gmail-reader] Searching for ALL messages in inbox - found in mailbox: 10
+=> 'A5 UID SEARCH ALL'
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997 14363 14530'
+<= 'A5 OK SEARCH completed (Success)'
+7:46:08 AM [gmail-reader] Found 10 emails in mailbox
+=> 'A6 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997,14363,14530 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+7:46:08 AM [gmail-reader] Processing email (ID: 11452)
+7:46:08 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+7:46:08 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+7:46:09 AM [gmail-reader] Processing email (ID: 11762)
+7:46:09 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+7:46:09 AM [gmail-reader] Processing email (ID: 12778)
+7:46:09 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+7:46:09 AM [gmail-reader] Processing email (ID: 12808)
+7:46:09 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+7:46:09 AM [gmail-reader] Processing email (ID: 13039)
+7:46:09 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+7:46:09 AM [gmail-reader] Processing email (ID: 13513)
+7:46:09 AM [gmail-reader] Processing email (ID: 13798)
+7:46:09 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+7:46:09 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) BODY[] {73275}'
+7:46:09 AM [gmail-reader] Processing email (ID: 13997)
+7:46:09 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) )'
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) BODY[] {58240}'
+7:46:09 AM [gmail-reader] Processing email (ID: 14363)
+7:46:09 AM [gmail-reader] Email ID: 14363
+            From: "Matt Palmer" <matt@mail.replit.com>
+            Subject: 🔥 What's new in Replit: auth, new tutorials, and more!
+            Date: 2025-05-02T18:02:49.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "Matt Palmer" <matt@mail.replit.com>
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) )'
+<= 'A6 OK Success'
+=> 'IDLE IDLE'
+7:46:09 AM [gmail-reader] Processing email (ID: 14530)
+7:46:09 AM [gmail-reader] Email ID: 14530
+            From: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+            Subject: Important: Confirm your $20.00 payment to Cursor
+            Date: 2025-05-04T19:50:21.000Z
+7:46:09 AM [gmail-reader] Skipping email from non-whitelisted sender: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+7:46:09 AM [gmail-reader] Finished processing batch of 10 emails
+7:46:09 AM [gmail-reader] Initial email scan complete. Future scans will only process new emails.
+<= '+ idling'
