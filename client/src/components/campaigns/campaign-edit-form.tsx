@@ -51,6 +51,7 @@ const campaignEditSchema = z.object({
   // Traffic Generator fields
   trafficGeneratorEnabled: z.boolean().default(false),
   postPauseCheckMinutes: z.number().int().min(1).max(30).default(2), // Minutes to wait after pause (1-30)
+  highSpendWaitMinutes: z.number().int().min(1).max(30).default(11), // Minutes to wait after pausing a high-spend campaign before budget updates (1-30)
   // Traffic Sender fields removed
 });
 
@@ -88,6 +89,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       // Traffic Generator settings
       trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
       postPauseCheckMinutes: campaign.postPauseCheckMinutes || 2, // Default to 2 minutes
+      highSpendWaitMinutes: campaign.highSpendWaitMinutes || 11, // Default to 11 minutes
       // Traffic Sender settings removed
     },
   });
@@ -101,6 +103,10 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     multiplier: typeof campaign.multiplier === 'string' ? parseFloat(campaign.multiplier) : (campaign.multiplier || 1),
     pricePerThousand: typeof campaign.pricePerThousand === 'string' ? parseFloat(campaign.pricePerThousand) : (campaign.pricePerThousand || 0),
     trafficstarCampaignId: campaign.trafficstarCampaignId || "",
+    // Traffic Generator settings
+    trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
+    postPauseCheckMinutes: campaign.postPauseCheckMinutes || 2,
+    highSpendWaitMinutes: campaign.highSpendWaitMinutes || 11,
     // Traffic Sender references removed
     // Auto-management has been removed
   });
@@ -113,6 +119,10 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
         ? parseFloat(campaign.pricePerThousand) 
         : (campaign.pricePerThousand || 0)
     );
+    
+    // Set high spend wait minutes
+    form.setValue('highSpendWaitMinutes', campaign.highSpendWaitMinutes || 11);
+    console.log("Setting highSpendWaitMinutes to:", campaign.highSpendWaitMinutes || 11);
     
     // Traffic Sender code removed
   }, 100);
