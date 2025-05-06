@@ -1311,6 +1311,26 @@ export async function runTrafficGeneratorForAllCampaigns() {
     // Process each campaign
     for (const campaign of enabledCampaigns) {
       try {
+        // CRITICAL FIX: Skip campaigns that were just paused by the "just enabled" functionality
+        // This prevents the 5-minute interval from immediately stepping on the "just enabled" pause
+        if (campaign.lastTrafficSenderStatus === 'initial_pause_on_enable' || 
+            campaign.lastTrafficSenderStatus === 'waiting_after_pause') {
+              
+          // Check if we're still within the wait period
+          if (campaign.lastTrafficSenderAction) {
+            const waitDuration = Date.now() - new Date(campaign.lastTrafficSenderAction).getTime();
+            const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+            const requiredWaitMinutes = campaign.postPauseCheckMinutes || 10; // Default to 10 minutes
+            
+            if (waitMinutes < requiredWaitMinutes) {
+              console.log(`⚠️ CRITICAL: Campaign ${campaign.id} was just paused ${waitMinutes} minutes ago after enabling Traffic Generator - skipping scheduled check until ${requiredWaitMinutes} minute wait period is complete`);
+              continue; // Skip this campaign - let it remain paused for the full wait period
+            } else {
+              console.log(`✅ Campaign ${campaign.id} has completed its ${requiredWaitMinutes} minute wait period after enabling Traffic Generator - will now process normally`);
+            }
+          }
+        }
+          
         await processTrafficGenerator(campaign.id);
       } catch (error) {
         console.error(`Error processing campaign ${campaign.id}:`, error);
@@ -1391,10 +1411,31 @@ export async function pauseTrafficStarForEmptyCampaigns(specificCampaignId?: num
       if (hasActiveUrls) {
         console.log(`Campaign ${campaign.id} has ${activeUrls.length} active URLs - no need to pause`);
         
-        // If it was previously paused due to no URLs, update its status and stop monitoring
-        if (campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
-            campaign.lastTrafficSenderStatus === 'paused_no_active_urls') {
-          console.log(`⚡ IMMEDIATE ACTION: Campaign ${campaign.id} now has active URLs but was previously paused - updating status`);
+        // CRITICAL FIX: If campaign has Traffic Generator enabled, do NOT auto-resume
+        // We ONLY want to auto-resume campaigns that were paused due to no active URLs
+        // but we want to KEEP campaigns paused if Traffic Generator just enabled them
+        
+        // Check if this is a campaign that was paused specifically due to no active URLs
+        // (not due to Traffic Generator being enabled)
+        if ((campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
+            campaign.lastTrafficSenderStatus === 'paused_no_active_urls') &&
+            campaign.lastTrafficSenderStatus !== 'initial_pause_on_enable' &&
+            campaign.lastTrafficSenderStatus !== 'waiting_after_pause') {
+            
+          // CRITICAL NEW SAFETY CHECK: Check recent pause time to prevent immediate auto-resume
+          // Only allow auto-resume if it's been paused for at least the required wait period
+          if (campaign.lastTrafficSenderAction) {
+            const waitDuration = Date.now() - new Date(campaign.lastTrafficSenderAction).getTime();
+            const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+            const requiredWaitMinutes = campaign.postPauseCheckMinutes || 10; // Default to 10 minutes
+            
+            if (waitMinutes < requiredWaitMinutes) {
+              console.log(`⚠️ CRITICAL SAFETY CHECK: Campaign ${campaign.id} was only paused ${waitMinutes} minutes ago, not updating status until ${requiredWaitMinutes} minutes have passed`);
+              continue; // Skip this campaign - don't update its status yet
+            }
+          }
+            
+          console.log(`⚡ IMMEDIATE ACTION: Campaign ${campaign.id} now has active URLs but was previously paused due to no URLs - updating status`);
           
           // Stop the empty URL status check
           if (emptyUrlStatusChecks.has(campaign.id)) {
@@ -1413,6 +1454,20 @@ export async function pauseTrafficStarForEmptyCampaigns(specificCampaignId?: num
             .where(eq(campaigns.id, campaign.id));
             
           totalResumed++;
+        } else if (campaign.lastTrafficSenderStatus === 'initial_pause_on_enable' || 
+                   campaign.lastTrafficSenderStatus === 'waiting_after_pause') {
+          // DO NOT update status for campaigns that are waiting after enabling Traffic Generator
+          console.log(`⚠️ CRITICAL: Campaign ${campaign.id} has active URLs but Traffic Generator is in wait period - keeping campaign paused`);
+          
+          // Track that we skipped auto-resume due to Traffic Generator wait period
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'waiting_after_pause', // Ensure this status is set
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+            
+          // Do NOT increment totalResumed as we're keeping it paused
         }
         continue;
       }
