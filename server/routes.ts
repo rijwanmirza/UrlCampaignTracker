@@ -1018,9 +1018,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Make sure trafficGeneratorEnabled is always a proper boolean
       // This ensures consistent behavior regardless of what the client sends
       const originalTrafficGeneratorEnabled = req.body.trafficGeneratorEnabled;
+      
+      // Get existing campaign to check current status
+      const existingCampaign = await storage.getCampaign(id);
+      if (!existingCampaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
       if (req.body.trafficGeneratorEnabled !== undefined) {
         // Explicitly convert to boolean using strict comparison
         req.body.trafficGeneratorEnabled = req.body.trafficGeneratorEnabled === true;
+        
+        // CRITICAL FIX: If Traffic Generator is being disabled, immediately stop all monitoring
+        if (existingCampaign.trafficGeneratorEnabled === true && req.body.trafficGeneratorEnabled === false) {
+          console.log(`⛔ CRITICAL: Traffic Generator being DISABLED for campaign ${id} - stopping ALL monitoring`);
+          
+          // Import the stopAllMonitoring function from traffic-generator-new.ts
+          const { stopAllMonitoring } = await import('./traffic-generator-new');
+          
+          // Call the function to stop all monitoring activities
+          stopAllMonitoring(id);
+          
+          // Reset the Traffic Generator status in the database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'disabled',
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, id));
+            
+          console.log(`✅ Successfully disabled and stopped all Traffic Generator monitoring for campaign ${id}`);
+        }
       }
       
       console.log('🔍 DEBUG: Traffic Generator enabled value (after normalization):', req.body.trafficGeneratorEnabled, 'type:', typeof req.body.trafficGeneratorEnabled);
@@ -1058,11 +1086,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if multiplier is being updated
       const { multiplier } = result.data;
-      const existingCampaign = await storage.getCampaign(id);
       
-      if (!existingCampaign) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
+      // existingCampaign is already retrieved above, no need to fetch again
       
       console.log('🔍 DEBUG: Campaign update requested: ID', id);
       
