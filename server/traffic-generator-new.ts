@@ -12,6 +12,7 @@ import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { parseSpentValue } from './trafficstar-spent-helper';
 import axios from 'axios';
+import urlBudgetLogger from './url-budget-logger';
 
 // Extended URL type with active status
 interface UrlWithActiveStatus extends Url {
@@ -442,6 +443,15 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                 const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
                 totalRemainingClicks += validRemaining;
                 console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
+                
+                // Calculate individual URL price based on remaining clicks
+                if (validRemaining > 0) {
+                  const urlPrice = (validRemaining / 1000) * parseFloat(campaign.pricePerThousand);
+                  console.log(`💰 URL ${url.id} price for ${validRemaining} remaining clicks: $${urlPrice.toFixed(2)}`);
+                  
+                  // Log this URL's budget calculation to the URL budget log file
+                  await urlBudgetLogger.logUrlBudget(url.id, urlPrice);
+                }
               } else {
                 console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
               }
