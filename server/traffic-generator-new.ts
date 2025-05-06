@@ -199,6 +199,71 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
   try {
     console.log(`TRAFFIC-GENERATOR: Handling campaign ${trafficstarCampaignId} by spent value - current spent: $${spentValue.toFixed(4)}`);
     
+    // Get database status to make sure waiting period has actually completed
+    const campaignStatus = await db.query.campaigns.findFirst({
+      where: (c, { eq }) => eq(c.id, campaignId),
+      columns: { 
+        lastTrafficSenderStatus: true, 
+        lastTrafficSenderAction: true,
+        postPauseCheckMinutes: true,
+        trafficGeneratorEnabled: true
+      }
+    });
+    
+    if (!campaignStatus) {
+      console.error(`Campaign ${campaignId} not found during check`);
+      return;
+    }
+    
+    // CRITICAL SAFETY CHECK: Make sure Traffic Generator is still enabled
+    if (!campaignStatus.trafficGeneratorEnabled) {
+      console.log(`🚫 Traffic Generator is now disabled for campaign ${campaignId} - skipping handling`);
+      return;
+    }
+    
+    // Extra safety check - if we're supposed to be waiting, do not proceed with handling
+    if (campaignStatus.lastTrafficSenderStatus === 'waiting_after_pause' || 
+        campaignStatus.lastTrafficSenderStatus === 'initial_pause_on_enable') {
+      
+      // Check how much time has actually passed
+      if (campaignStatus.lastTrafficSenderAction) {
+        const waitDuration = Date.now() - campaignStatus.lastTrafficSenderAction.getTime();
+        const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+        const requiredWaitMinutes = campaignStatus.postPauseCheckMinutes || 10; // Default to 10 minutes
+        
+        if (waitMinutes < requiredWaitMinutes) {
+          console.log(`⚠️ CRITICAL SAFETY CHECK: Wait period of ${requiredWaitMinutes} minutes has NOT completed yet (only ${waitMinutes} minutes passed) - aborting spend check!`);
+          
+          // Important: Make sure campaign stays paused during wait period
+          try {
+            // Verify the campaign is actually paused
+            const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
+            if (currentStatus !== 'paused') {
+              console.log(`⚠️ CRITICAL: Campaign ${trafficstarCampaignId} is not paused (${currentStatus}) during wait period - will pause it again`);
+              
+              // Set current date/time for end time
+              const now = new Date();
+              const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+              
+              // Pause the campaign again
+              await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+              console.log(`✅ Successfully re-paused campaign ${trafficstarCampaignId} during wait period`);
+              
+              // Set end time
+              await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
+              console.log(`✅ Re-enforced end time to ${formattedDateTime} for campaign ${trafficstarCampaignId}`);
+            }
+          } catch (error) {
+            console.error(`Error checking/ensuring campaign stays paused during wait period:`, error);
+          }
+          
+          return; // EXIT EARLY - DO NOT PROCESS FURTHER
+        }
+        
+        console.log(`✅ Verified that the full ${requiredWaitMinutes} minute wait period has completed`);
+      }
+    }
+    
     if (spentValue < THRESHOLD) {
       // Handle campaign with less than $10 spent
       console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
