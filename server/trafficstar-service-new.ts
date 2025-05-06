@@ -427,6 +427,32 @@ class TrafficStarService {
    * 
    * @param intervalMinutes How often to check spent values (default: 30 minutes)
    */
+  /**
+   * Get all the saved TrafficStar campaigns from the API
+   */
+  public async getSavedCampaigns(): Promise<any[]> {
+    try {
+      console.log('Fetching saved TrafficStar campaigns');
+      
+      // Get Auth Headers
+      const headers = await this.getAuthHeaders();
+      
+      // Make API request to get all campaigns
+      const url = `${this.BASE_URL_V1_1}/campaigns`;
+      const response = await axios.get(url, { headers });
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        console.log('Response is not an array of campaigns:', response.data);
+        return [];
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching saved TrafficStar campaigns:', error);
+      throw new Error('Failed to fetch saved TrafficStar campaigns');
+    }
+  }
+  
   public scheduleSpentValueUpdates(intervalMinutes: number = 30): void {
     try {
       console.log(`Scheduling TrafficStar spent value updates every ${intervalMinutes} minutes`);
