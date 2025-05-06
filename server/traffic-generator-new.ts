@@ -414,6 +414,37 @@ const pauseStatusChecks = new Map<number, NodeJS.Timeout>();
 const emptyUrlStatusChecks = new Map<number, NodeJS.Timeout>();
 
 /**
+ * Stop all monitoring intervals for a campaign
+ * This is critical to ensure we don't continue monitoring
+ * when Traffic Generator is disabled
+ * @param campaignId The campaign ID to stop monitoring for
+ */
+export function stopAllMonitoring(campaignId: number): void {
+  console.log(`🛑 Stopping ALL Traffic Generator monitoring for campaign ${campaignId}`);
+  
+  // Stop active status checks
+  if (activeStatusChecks.has(campaignId)) {
+    clearInterval(activeStatusChecks.get(campaignId));
+    activeStatusChecks.delete(campaignId);
+    console.log(`✅ Stopped active status monitoring for campaign ${campaignId}`);
+  }
+  
+  // Stop pause status checks
+  if (pauseStatusChecks.has(campaignId)) {
+    clearInterval(pauseStatusChecks.get(campaignId));
+    pauseStatusChecks.delete(campaignId);
+    console.log(`✅ Stopped pause status monitoring for campaign ${campaignId}`);
+  }
+  
+  // Stop empty URL status checks
+  if (emptyUrlStatusChecks.has(campaignId)) {
+    clearInterval(emptyUrlStatusChecks.get(campaignId));
+    emptyUrlStatusChecks.delete(campaignId);
+    console.log(`✅ Stopped empty URL monitoring for campaign ${campaignId}`);
+  }
+}
+
+/**
  * Start minute-by-minute check for campaign status
  * This ensures the campaign stays active after reactivation
  * @param campaignId The campaign ID in our system
