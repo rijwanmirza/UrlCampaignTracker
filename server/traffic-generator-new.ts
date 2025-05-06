@@ -492,21 +492,19 @@ const waitingTimers = new Map<number, NodeJS.Timeout>();
  * @param campaignId The campaign ID to stop monitoring for
  */
 /**
- * Stop all monitoring for a campaign
- * This IMMEDIATELY stops ALL monitoring intervals for a campaign when Traffic Generator is disabled
- * @param campaignId The campaign ID
+ * Stop all monitoring for a specific campaign and clean up global timers
+ * This function is called when Traffic Generator is disabled for a campaign
+ * @param campaignId The campaign ID to stop monitoring
+ * @returns Promise that resolves when all monitoring is stopped
  */
 export async function stopAllMonitoring(campaignId: number): Promise<void> {
   console.log(`🛑 Stopping ALL Traffic Generator monitoring for campaign ${campaignId}`);
   
-  // Immediately force cancel any running timers - the Global Active Timer
-  if (globalActiveTimer) {
-    clearInterval(globalActiveTimer);
-    globalActiveTimer = null;
-    console.log(`✅ Stopped global active timer - will restart after cleanup`);
-  }
+  // CRITICAL FIX: Call our new function to stop ALL global timers
+  // This ensures we properly clean up everything, preventing continued operation
+  stopAllGlobalTimers();
   
-  // Stop active status checks
+  // Stop active status checks specific to this campaign
   if (activeStatusChecks.has(campaignId)) {
     clearInterval(activeStatusChecks.get(campaignId));
     activeStatusChecks.delete(campaignId);
@@ -548,13 +546,8 @@ export async function stopAllMonitoring(campaignId: number): Promise<void> {
     console.error(`❌ Failed to update campaign ${campaignId} status to 'disabled' in database:`, dbError);
   }
   
-  // Restart the global active timer after 500ms delay to ensure no race conditions
-  setTimeout(() => {
-    if (!globalActiveTimer) {
-      globalActiveTimer = setInterval(runTrafficGeneratorForAllCampaigns, 5 * 60 * 1000);
-      console.log(`✅ Restarted global active timer after cleanup`);
-    }
-  }, 500);
+  // REMOVED: We don't restart the global timer because Traffic Generator is disabled
+  // This is the key fix - when disabled, we don't want anything to restart
 }
 
 /**
