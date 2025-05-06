@@ -111,6 +111,9 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     // Auto-management has been removed
   });
   
+  // DEBUGGING - Log all fields for debugging the issue
+  console.log("Debug - highSpendWaitMinutes in campaign:", campaign.highSpendWaitMinutes);
+  
   // CRITICAL FIX: Force the form values to be set properly
   setTimeout(() => {
     // Set price per thousand
@@ -221,6 +224,28 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
   const onSubmit = (values: CampaignEditValues) => {
     // Log form values being sent to server
     console.log("Submitting form values:", values);
+    
+    // Log form highSpendWaitMinutes value specifically
+    console.log("BEFORE SUBMIT - highSpendWaitMinutes value:", values.highSpendWaitMinutes);
+    
+    // Make sure highSpendWaitMinutes is included and is a valid number
+    if (values.highSpendWaitMinutes === undefined) {
+      values.highSpendWaitMinutes = campaign.highSpendWaitMinutes || 11;
+      console.log("Setting default highSpendWaitMinutes value:", values.highSpendWaitMinutes);
+    }
+    
+    // Ensure it's a number between 1-30
+    const waitMinutes = Number(values.highSpendWaitMinutes);
+    if (isNaN(waitMinutes) || waitMinutes < 1) {
+      values.highSpendWaitMinutes = 1;
+    } else if (waitMinutes > 30) {
+      values.highSpendWaitMinutes = 30;
+    } else {
+      values.highSpendWaitMinutes = waitMinutes;
+    }
+    
+    console.log("AFTER VALIDATION - highSpendWaitMinutes value:", values.highSpendWaitMinutes);
+    
     updateCampaignMutation.mutate(values);
   };
   
@@ -595,19 +620,25 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                               step="1"
                               {...field}
                               onChange={(e) => {
-                                // Just use the raw value from the input to allow proper editing
+                                // Get raw value
                                 const value = e.target.value;
+                                console.log("High Spend Wait Minutes input change:", value);
                                 
-                                // Only parse and validate when submitting or onBlur
-                                // Just update the raw field value for now
                                 if (value === '') {
-                                  // Empty field - set default on blur
-                                  field.onChange(1);
+                                  // Don't update the field for empty value - allow user to type
+                                  console.log("Empty high spend wait minutes - keeping current value");
+                                  return;
                                 } else {
-                                  // Update with the raw value
+                                  // Parse to integer
                                   const parsedValue = parseInt(value, 10);
                                   if (!isNaN(parsedValue)) {
-                                    field.onChange(parsedValue);
+                                    // Ensure it's within range before updating
+                                    let finalValue = parsedValue;
+                                    if (finalValue < 1) finalValue = 1;
+                                    if (finalValue > 30) finalValue = 30;
+                                    
+                                    console.log("Setting highSpendWaitMinutes to:", finalValue);
+                                    field.onChange(finalValue);
                                   }
                                 }
                               }}
