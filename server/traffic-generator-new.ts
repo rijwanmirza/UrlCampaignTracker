@@ -1033,10 +1033,15 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     // Get the campaign details with URLs
     const campaign = await db.query.campaigns.findFirst({
       where: (campaign, { eq }) => eq(campaign.id, campaignId),
-      with: {
-        urls: true
+      columns: {
+        id: true,
+        trafficGeneratorEnabled: true,
+        trafficstarCampaignId: true,
+        postPauseCheckMinutes: true,
+        lastTrafficSenderStatus: true,
+        lastTrafficSenderAction: true
       }
-    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    });
     
     if (!campaign) {
       console.error(`Campaign ${campaignId} not found`);
@@ -1099,51 +1104,78 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       }
     }
     
-    // Check if the Traffic Generator was just enabled
-    const isNewlyEnabled = campaign.lastTrafficSenderStatus === null || 
-                          campaign.lastTrafficSenderStatus === 'disabled';
+    // Check if the Traffic Generator was JUST ENABLED
+    // Important: specifically detect the transition from disabled to enabled
+    const wasJustEnabled = campaign.lastTrafficSenderStatus === null;
     
-    // Get the current campaign status before doing anything else
-    const currentStatus = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
-    console.log(`💡 Current TrafficStar campaign status before processing: ${currentStatus}`);
-    
-    // If newly enabled or status is active, IMMEDIATELY PAUSE first
-    if (isNewlyEnabled || currentStatus === 'active') {
-      console.log(`⚠️ Traffic Generator newly enabled or campaign active - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId}`);
+    // ALWAYS IMMEDIATELY PAUSE when just enabled, no questions asked
+    if (wasJustEnabled) {
+      console.log(`⛔ CRITICAL: Traffic Generator just enabled - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId} first`);
       
       try {
-        // IMMEDIATELY PAUSE the campaign
-        const pauseResult = await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+        // Set current date/time for end time
+        const now = new Date();
+        const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
         
-        if (pauseResult) {
-          console.log(`✅ Successfully paused campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup`);
+        // IMMEDIATELY PAUSE the campaign
+        await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+        console.log(`➡️ Step 1/2: Successfully paused campaign ${campaign.trafficstarCampaignId}`);
+        
+        // Then set its end time
+        await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedDateTime);
+        console.log(`➡️ Step 2/2: Successfully set end time for campaign ${campaign.trafficstarCampaignId} to ${formattedDateTime}`);
+        
+        // Get the postPauseCheckMinutes from the campaign settings (default to 10 if not set)
+        const waitMinutes = campaign.postPauseCheckMinutes || 10;
+        
+        // Update the database to reflect this initial pause
+        await db.update(campaigns)
+          .set({
+            lastTrafficSenderStatus: 'initial_pause_on_enable',
+            lastTrafficSenderAction: now,
+            updatedAt: now
+          })
+          .where(eq(campaigns.id, campaignId));
           
-          // Update the database to reflect this initial pause
-          await db.update(campaigns)
-            .set({
-              lastTrafficSenderStatus: 'initial_pause_on_enable',
-              lastTrafficSenderAction: new Date(),
-              updatedAt: new Date()
-            })
-            .where(eq(campaigns.id, campaignId));
-          
-          // Get the postPauseCheckMinutes from the campaign settings (default to 10 if not set)
-          const waitMinutes = campaign.postPauseCheckMinutes || 10;
-          console.log(`⏱️ Traffic Generator will wait ${waitMinutes} minutes before checking spent value`);
-          
-          // Start the pause check monitoring which will handle the wait period
-          startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
-          
-          return; // Exit early - the pause monitoring will handle the rest
-        } else {
-          console.error(`❌ Failed to pause campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup`);
-        }
+        console.log(`✅ Traffic Generator has paused campaign ${campaign.trafficstarCampaignId} and will wait ${waitMinutes} minutes before checking spent value`);
+        
+        // Start the pause check monitoring which will handle the wait period
+        startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
+        
+        return; // Exit early - the pause monitoring will handle the rest
       } catch (pauseError) {
-        console.error(`❌ Error pausing campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup:`, pauseError);
+        console.error(`❌ Critical error pausing campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup:`, pauseError);
       }
     }
     
-    // If we get here, either the campaign was already paused or we're in the post-pause check period
+    // If campaign wasn't just enabled, check if we're in the waiting period after initial pause
+    if (campaign.lastTrafficSenderStatus === 'initial_pause_on_enable' && campaign.lastTrafficSenderAction) {
+      const waitDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
+      const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+      const requiredWaitMinutes = campaign.postPauseCheckMinutes || 10; // Default to 10 minutes
+      
+      if (waitMinutes < requiredWaitMinutes) {
+        console.log(`⏳ Campaign ${campaignId} is in waiting period (${waitMinutes}/${requiredWaitMinutes} minutes) after initial pause - pausing monitoring will continue`);
+        return; // Still in waiting period, do not proceed yet
+      }
+      
+      console.log(`⏰ Waiting period of ${requiredWaitMinutes} minutes complete - now proceeding to check spent value`);
+    }
+    
+    // If we get here, we're past the waiting period and ready to perform regular checks
+    
+    // First, get the full campaign data with URLs
+    const fullCampaign = await db.query.campaigns.findFirst({
+      where: (campaign, { eq }) => eq(campaign.id, campaignId),
+      with: {
+        urls: true
+      }
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    
+    if (!fullCampaign) {
+      console.error(`Campaign ${campaignId} not found during full data fetch`);
+      return;
+    }
     
     // Get the current spent value for the campaign
     const spentValue = await getTrafficStarCampaignSpentValue(campaignId, campaign.trafficstarCampaignId);
