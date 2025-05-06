@@ -2853,14 +2853,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // BACKGROUND API CALL - Process API call after response is sent
       // This way API delays won't affect the user experience
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
           if (action === 'pause') {
             trafficStarService.pauseCampaign(campaignId)
               .catch(error => console.error(`Background API call to pause campaign ${campaignId} failed:`, error));
           } else if (action === 'activate') {
-            trafficStarService.activateCampaign(campaignId)
-              .catch(error => console.error(`Background API call to activate campaign ${campaignId} failed:`, error));
+            try {
+              // First activate the campaign
+              await trafficStarService.activateCampaign(campaignId)
+                .catch(error => console.error(`Background API call to activate campaign ${campaignId} failed:`, error));
+              
+              // Then try to track URL budgets if this campaign has Traffic Generator enabled
+              try {
+                // Get our internal campaign ID from the TrafficStar ID
+                const campaign = await db.query.campaigns.findFirst({
+                  where: (campaign, { eq }) => eq(campaign.trafficstarCampaignId, campaignId.toString())
+                });
+                
+                if (campaign && campaign.trafficGeneratorEnabled) {
+                  console.log(`Background: Tracking URL budgets for campaign ${campaign.id} after activation`);
+                  
+                  // Import trackCampaignUrlBudgetsOnActivation from routes-integration
+                  const { trackCampaignUrlBudgetsOnActivation } = await import('./routes-integration');
+                  await trackCampaignUrlBudgetsOnActivation(campaign.id);
+                  
+                  console.log(`Background: URL budget tracking completed for campaign ${campaign.id}`);
+                } else {
+                  console.log(`Background: Campaign with TrafficStar ID ${campaignId} either not found or Traffic Generator not enabled`);
+                }
+              } catch (trackerError) {
+                console.error(`Background: Error tracking URL budgets for TrafficStar campaign ${campaignId}:`, trackerError);
+              }
+            } catch (activateError) {
+              console.error(`Background: Error in campaign activation process:`, activateError);
+            }
           }
         } catch (apiError) {
           console.error(`Error in background API operation for campaign ${campaignId}:`, apiError);
