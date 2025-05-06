@@ -6,8 +6,10 @@
  */
 
 import { urlBudgetTracker } from './url-budget-tracker';
-import { trafficGenerator } from './traffic-generator-new';
 import express from 'express';
+import { db } from './db';
+import { eq } from 'drizzle-orm';
+import { campaigns } from '@shared/schema';
 
 /**
  * Initialize URL budget tracker integration with routes
@@ -59,8 +61,18 @@ export function initUrlBudgetTrackerRoutes(app: express.Application) {
  */
 export async function trackCampaignUrlBudgetsOnActivation(campaignId: number) {
   try {
-    // Check if traffic generator is enabled for this campaign
-    const isEnabled = await trafficGeneratorConfig.isCampaignEnabled(campaignId);
+    // Get the campaign from DB to check if traffic generator is enabled
+    const [campaign] = await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId));
+    
+    if (!campaign) {
+      console.log(`Campaign ${campaignId} not found, skipping URL budget tracking`);
+      return;
+    }
+    
+    const isEnabled = campaign.trafficGeneratorEnabled === true;
     
     if (isEnabled) {
       console.log(`Campaign ${campaignId} is being activated with Traffic Generator enabled. Tracking URL budgets...`);
