@@ -1,0 +1,494 @@
+ontinue
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997 14363 14530'
+<= 'A26 OK SEARCH completed (Success)'
+8:50:57 AM [gmail-reader] Found 10 emails in mailbox
+=> 'A27 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997,14363,14530 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+Getting spent value for campaign 1000866 for date 2025-05-06
+Report API request parameters: campaign_id=1000866&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount
+Making direct request to: https://api.trafficstars.com/v1.1/advertiser/custom/report/by-day?campaign_id=1000866&date_from=2025-05-06&date_to=2025-05-06&group_by=day&columns=amount
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+8:50:57 AM [gmail-reader] Processing email (ID: 11452)
+8:50:57 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+8:50:57 AM [gmail-reader] Processing email (ID: 11762)
+8:50:57 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+8:50:57 AM [gmail-reader] Processing email (ID: 12778)
+8:50:57 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+8:50:57 AM [gmail-reader] Processing email (ID: 12808)
+8:50:57 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+8:50:57 AM [gmail-reader] Processing email (ID: 13039)
+8:50:57 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+8:50:57 AM [gmail-reader] Processing email (ID: 13513)
+8:50:57 AM [gmail-reader] Processing email (ID: 13798)
+8:50:57 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+8:50:57 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) BODY[] {73275}'
+8:50:57 AM [gmail-reader] Processing email (ID: 13997)
+8:50:57 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) )'
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) BODY[] {58240}'
+8:50:57 AM [gmail-reader] Processing email (ID: 14363)
+8:50:57 AM [gmail-reader] Email ID: 14363
+            From: "Matt Palmer" <matt@mail.replit.com>
+            Subject: 🔥 What's new in Replit: auth, new tutorials, and more!
+            Date: 2025-05-02T18:02:49.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Matt Palmer" <matt@mail.replit.com>
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) )'
+<= 'A27 OK Success'
+=> 'IDLE IDLE'
+8:50:57 AM [gmail-reader] Processing email (ID: 14530)
+8:50:57 AM [gmail-reader] Email ID: 14530
+            From: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+            Subject: Important: Confirm your $20.00 payment to Cursor
+            Date: 2025-05-04T19:50:21.000Z
+8:50:57 AM [gmail-reader] Skipping email from non-whitelisted sender: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+8:50:57 AM [gmail-reader] Finished processing batch of 10 emails
+Report API raw response type: object
+Parsing report data from TrafficStar API
+Report data is an array, using original parser logic
+Report data array is empty
+Campaign 1000866 spent value from reports API: $0.0000
+Campaign 1000866 direct API spent value: $0.0000
+Campaign 9 spent value: $0.0000
+TRAFFIC-GENERATOR: Handling campaign 1000866 by spent value - current spent: $0.0000
+🔵 LOW SPEND ($0.0000 < $10.00): Campaign 1000866 has spent less than $10.00
+🔍 DEBUG: Checking remaining clicks for 16 URLs in campaign 1000866
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 283
+🔍 URL ID: 287, status: active, clickLimit: 14999, clicks: 0
+✅ Adding 14999 remaining clicks from URL ID: 287
+🔍 URL ID: 384, status: active, clickLimit: 1000, clicks: 0
+✅ Adding 1000 remaining clicks from URL ID: 384
+📊 Campaign 1000866 has 115999 total remaining clicks across all active URLs
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+<= '+ idling'
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is paused, active=false
+📊 Campaign 1000866 current status: paused
+✅ Campaign 1000866 has 115999 remaining clicks (>= 15000) - will attempt auto-reactivation
+Setting campaign 1000866 end time to: 2025-05-06 23:59:00
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+✅ Set campaign 1000866 end time to 2025-05-06 23:59:00
+Activating campaign 1000866
+Successfully activated campaign 1000866
+✅ AUTO-REACTIVATED low spend campaign 1000866 - it has 115999 remaining clicks
+✅ Marked campaign 9 as 'auto_reactivated_low_spend' in database
+🔄 Starting minute-by-minute ACTIVE status check for campaign 1000866
+Finished running Traffic Generator for all enabled campaigns
+⏱️ Running minute check for campaign 1000866 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+⚠️ Campaign 1000866 was found active but should be paused - will attempt to pause again
+Campaign 1000866 has 115999 remaining clicks but should be paused - re-pausing campaign
+Pausing campaign 1000866
+Successfully paused campaign 1000866
+Setting campaign 1000866 end time to: 2025-05-06 08:51:39
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+✅ RE-PAUSED campaign 1000866 during pause monitoring - it was found active
+✅ Marked campaign 9 as 're_paused_during_monitoring' in database
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 6412860,
+        "nice": 180,
+        "sys": 1497350,
+        "idle": 19986380,
+        "irq": 671650
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 6531020,
+        "nice": 0,
+        "sys": 1533680,
+        "idle": 19750410,
+        "irq": 696320
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 9340570,
+        "nice": 150,
+        "sys": 1931150,
+        "idle": 15842210,
+        "irq": 730560
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 9374170,
+        "nice": 0,
+        "sys": 1922780,
+        "idle": 15825180,
+        "irq": 711230
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 9096090,
+        "nice": 0,
+        "sys": 2027190,
+        "idle": 15812560,
+        "irq": 746970
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 9044770,
+        "nice": 0,
+        "sys": 1993030,
+        "idle": 15895770,
+        "irq": 735430
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 9314550,
+        "nice": 10,
+        "sys": 1923200,
+        "idle": 15934840,
+        "irq": 744750
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 9292390,
+        "nice": 0,
+        "sys": 1934860,
+        "idle": 15904660,
+        "irq": 724400
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 17137823744
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.71,
+  "currentLoad": 41.59151544550526,
+  "currentLoadUser": 32.21176107423985,
+  "currentLoadSystem": 6.599342932110335,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 58.40848455449474,
+  "currentLoadIrq": 2.7804114391550723,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 188630,
+  "rawCurrentLoadUser": 146090,
+  "rawCurrentLoadSystem": 29930,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 264900,
+  "rawCurrentLoadIrq": 12610,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 32.37410071942446,
+      "loadUser": 24.232321459905247,
+      "loadSystem": 5.597473240919459,
+      "loadNice": 0,
+      "loadIdle": 67.62589928057554,
+      "loadIrq": 2.5443060185997544,
+      "rawLoad": 18450,
+      "rawLoadUser": 13810,
+      "rawLoadSystem": 3190,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38540,
+      "rawLoadIrq": 1450,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 33.82480485689506,
+      "loadUser": 25.91500433651344,
+      "loadSystem": 5.377276669557675,
+      "loadNice": 0,
+      "loadIdle": 66.17519514310494,
+      "loadIrq": 2.5325238508239374,
+      "rawLoad": 19500,
+      "rawLoadUser": 14940,
+      "rawLoadSystem": 3100,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38150,
+      "rawLoadIrq": 1460,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 45.37234042553192,
+      "loadUser": 35.42553191489362,
+      "loadSystem": 7.109929078014185,
+      "loadNice": 0,
+      "loadIdle": 54.62765957446809,
+      "loadIrq": 2.8368794326241136,
+      "rawLoad": 25590,
+      "rawLoadUser": 19980,
+      "rawLoadSystem": 4010,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30810,
+      "rawLoadIrq": 1600,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.866584202155856,
+      "loadUser": 35.28892030394062,
+      "loadSystem": 6.820993108323026,
+      "loadNice": 0,
+      "loadIdle": 55.133415797844144,
+      "loadIrq": 2.7566707898922074,
+      "rawLoad": 25390,
+      "rawLoadUser": 19970,
+      "rawLoadSystem": 3860,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31200,
+      "rawLoadIrq": 1560,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.46626204926812,
+      "loadUser": 34.00571224562656,
+      "loadSystem": 7.515173152445555,
+      "loadNice": 0,
+      "loadIdle": 55.533737950731876,
+      "loadIrq": 2.9453766511960016,
+      "rawLoad": 24910,
+      "rawLoadUser": 19050,
+      "rawLoadSystem": 4210,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31110,
+      "rawLoadIrq": 1650,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.55994358251058,
+      "loadUser": 33.0394922425952,
+      "loadSystem": 6.611424541607898,
+      "loadNice": 0,
+      "loadIdle": 57.44005641748943,
+      "loadIrq": 2.909026798307475,
+      "rawLoad": 24140,
+      "rawLoadUser": 18740,
+      "rawLoadSystem": 3750,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32580,
+      "rawLoadIrq": 1650,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 45.2135231316726,
+      "loadUser": 35.569395017793596,
+      "loadSystem": 6.743772241992882,
+      "loadNice": 0,
+      "loadIdle": 54.786476868327405,
+      "loadIrq": 2.900355871886121,
+      "rawLoad": 25410,
+      "rawLoadUser": 19990,
+      "rawLoadSystem": 3790,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30790,
+      "rawLoadIrq": 1630,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.31179775280899,
+      "loadUser": 34.42766853932584,
+      "loadSystem": 7.057584269662922,
+      "loadNice": 0,
+      "loadIdle": 55.68820224719101,
+      "loadIrq": 2.826544943820225,
+      "rawLoad": 25240,
+      "rawLoadUser": 19610,
+      "rawLoadSystem": 4020,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31720,
+      "rawLoadIrq": 1610,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 5.71, 5.31, 4.75 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [5.71,5.31,4.75]
+Using 1-minute load average: 5.71
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.71,"currentLoad":41.59151544550526,"currentLoadUser":32.21176107423985,"currentLoadSystem":6.599342932110335,"currentLoadNice":0,"currentLoadIdle":58.40848455449474,"currentLoadIrq":2.7804114391550723,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":188630,"rawCurrentLoadUser":146090,"rawCurrentLoadSystem":29930,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":264900,"rawCurrentLoadIrq":12610,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":32.37410071942446,"loadUser":24.232321459905247,"loadSystem":5.597473240919459,"loadNice":0,"loadIdle":67.62589928057554,"loadIrq":2.5443060185997544,"rawLoad":18450,"rawLoadUser":13810,"rawLoadSystem":3190,"rawLoadNice":0,"rawLoadIdle":38540,"rawLoadIrq":1450,"rawLoadSteal":0,"rawLoadGuest":0},{"load":33.82480485689506,"loadUser":25.91500433651344,"loadSystem":5.377276669557675,"loadNice":0,"loadIdle":66.17519514310494,"loadIrq":2.5325238508239374,"rawLoad":19500,"rawLoadUser":14940,"rawLoadSystem":3100,"rawLoadNice":0,"rawLoadIdle":38150,"rawLoadIrq":1460,"rawLoadSteal":0,"rawLoadGuest":0},{"load":45.37234042553192,"loadUser":35.42553191489362,"loadSystem":7.109929078014185,"loadNice":0,"loadIdle":54.62765957446809,"loadIrq":2.8368794326241136,"rawLoad":25590,"rawLoadUser":19980,"rawLoadSystem":4010,"rawLoadNice":0,"rawLoadIdle":30810,"rawLoadIrq":1600,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.866584202155856,"loadUser":35.28892030394062,"loadSystem":6.820993108323026,"loadNice":0,"loadIdle":55.133415797844144,"loadIrq":2.7566707898922074,"rawLoad":25390,"rawLoadUser":19970,"rawLoadSystem":3860,"rawLoadNice":0,"rawLoadIdle":31200,"rawLoadIrq":1560,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.46626204926812,"loadUser":34.00571224562656,"loadSystem":7.515173152445555,"loadNice":0,"loadIdle":55.533737950731876,"loadIrq":2.9453766511960016,"rawLoad":24910,"rawLoadUser":19050,"rawLoadSystem":4210,"rawLoadNice":0,"rawLoadIdle":31110,"rawLoadIrq":1650,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.55994358251058,"loadUser":33.0394922425952,"loadSystem":6.611424541607898,"loadNice":0,"loadIdle":57.44005641748943,"loadIrq":2.909026798307475,"rawLoad":24140,"rawLoadUser":18740,"rawLoadSystem":3750,"rawLoadNice":0,"rawLoadIdle":32580,"rawLoadIrq":1650,"rawLoadSteal":0,"rawLoadGuest":0},{"load":45.2135231316726,"loadUser":35.569395017793596,"loadSystem":6.743772241992882,"loadNice":0,"loadIdle":54.786476868327405,"loadIrq":2.900355871886121,"rawLoad":25410,"rawLoadUser":19990,"rawLoadSystem":3790,"rawLoadNice":0,"rawLoadIdle":30790,"rawLoadIrq":1630,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.31179775280899,"loadUser":34.42766853932584,"loadSystem":7.057584269662922,"loadNice":0,"loadIdle":55.68820224719101,"loadIrq":2.826544943820225,"rawLoad":25240,"rawLoadUser":19610,"rawLoadSystem":4020,"rawLoadNice":0,"rawLoadIdle":31720,"rawLoadIrq":1610,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 71.375
+Final system load calculation (before fallbacks): 71
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 71
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 0 campaigns:
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+8:51:56 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+8:51:56 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+8:51:56 AM [gmail-reader] Current IMAP connection state: authenticated
+8:51:56 AM [gmail-reader] Scanning for processed emails older than 2025-05-06T08:49:56.525Z (2 minutes ago)
+8:51:56 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+⏱️ Running minute check for campaign 1000866 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is paused, active=false
+⚠️ Campaign 1000866 was found paused but should be active - will attempt to reactivate
+🔍 PAUSE DETECTED: Checking remaining clicks for 16 URLs in campaign 1000866
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 283
+🔍 URL ID: 287, status: active, clickLimit: 14999, clicks: 0
+✅ Adding 14999 remaining clicks from URL ID: 287
+🔍 URL ID: 384, status: active, clickLimit: 1000, clicks: 0
+✅ Adding 1000 remaining clicks from URL ID: 384
+✅ Campaign 1000866 has 115999 remaining clicks (>= 15000) - will attempt reactivation during monitoring
+Setting campaign 1000866 end time to: 2025-05-06 23:59:00
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+Activating campaign 1000866
+Successfully activated campaign 1000866
+✅ REACTIVATED campaign 1000866 during monitoring - it has 115999 remaining clicks
+✅ Marked campaign 9 as 'reactivated_during_monitoring' in database
+⏱️ Running minute 

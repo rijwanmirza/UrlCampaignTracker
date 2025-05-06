@@ -989,6 +989,23 @@ export async function pauseTrafficStarForEmptyCampaigns() {
     for (const campaign of campaignsWithTrafficStar) {
       if (!campaign.trafficstarCampaignId) continue;
       
+      // Skip campaigns that are in a wait period after enabling
+      if (campaign.lastTrafficSenderStatus === 'auto_reactivated_low_spend' || 
+          campaign.lastTrafficSenderStatus === 'reactivated_during_monitoring') {
+          
+        // Check if we're within the wait period
+        if (campaign.lastTrafficSenderAction) {
+          const waitDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
+          const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+          const requiredWaitMinutes = campaign.postPauseCheckMinutes || 10; // Default to 10 minutes if not set
+          
+          if (waitMinutes < requiredWaitMinutes) {
+            console.log(`Campaign ${campaign.id} was recently activated (${waitMinutes}/${requiredWaitMinutes} minutes ago) - skipping empty URL check`);
+            continue;
+          }
+        }
+      }
+      
       // Get all active URLs for this campaign
       const activeUrls = await db.select()
         .from(urls)
@@ -1018,9 +1035,13 @@ export async function pauseTrafficStarForEmptyCampaigns() {
             
             // First pause the campaign
             await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+            console.log(`Successfully paused campaign ${campaign.trafficstarCampaignId}`);
             
             // Then set its end time
             await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedDateTime);
+            console.log(`Setting campaign ${campaign.trafficstarCampaignId} end time to: ${formattedDateTime}`);
+            console.log(`Successfully updated end time for campaign ${campaign.trafficstarCampaignId}`);
+            console.log(`Confirmed end time update for campaign ${campaign.trafficstarCampaignId}`);
             
             console.log(`✅ PAUSED TrafficStar campaign ${campaign.trafficstarCampaignId} due to no active URLs`);
             
@@ -1033,8 +1054,8 @@ export async function pauseTrafficStarForEmptyCampaigns() {
               })
               .where(eq(campaigns.id, campaign.id));
             
-            // Start pause status monitoring
-            startMinutelyPauseStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+            // Start pause status monitoring for this specific scenario
+            startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
           } catch (error) {
             console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
           }
@@ -1050,17 +1071,24 @@ export async function pauseTrafficStarForEmptyCampaigns() {
             })
             .where(eq(campaigns.id, campaign.id));
           
-          // Ensure we're monitoring the paused status
-          startMinutelyPauseStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          // Ensure we're monitoring for empty URL scenario specifically
+          startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
         } else {
           console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} has status: ${currentStatus || 'unknown'} - will monitor`);
         }
       } else {
         // If there are active URLs, and the campaign was previously marked as paused due to no active URLs,
-        // we should update its status
+        // we should update its status and STOP the empty URL check monitoring
         if (campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
             campaign.lastTrafficSenderStatus === 'paused_no_active_urls') {
-          console.log(`Campaign ${campaign.id} now has ${activeUrls.length} active URLs - updating status`);
+          console.log(`Campaign ${campaign.id} now has ${activeUrls.length} active URLs - updating status and stopping empty URL monitoring`);
+          
+          // Stop the empty URL status check since we now have active URLs
+          if (emptyUrlStatusChecks.has(campaign.id)) {
+            clearInterval(emptyUrlStatusChecks.get(campaign.id));
+            emptyUrlStatusChecks.delete(campaign.id);
+            console.log(`✅ Stopped empty URL monitoring for campaign ${campaign.id} as it now has active URLs`);
+          }
           
           await db.update(campaigns)
             .set({
