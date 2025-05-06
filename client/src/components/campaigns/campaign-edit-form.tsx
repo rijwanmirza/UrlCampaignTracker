@@ -50,8 +50,8 @@ const campaignEditSchema = z.object({
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
   // Traffic Generator fields
   trafficGeneratorEnabled: z.boolean().default(false),
-  postPauseCheckMinutes: z.number().int().min(1).max(30).default(2), // Minutes to wait after pause (1-30)
-  highSpendWaitMinutes: z.number().int().min(1).max(30).default(11), // Minutes to wait after pausing a high-spend campaign before budget updates (1-30)
+  postPauseCheckMinutes: z.number().int().min(1, "Minutes must be at least 1").max(30, "Minutes can't exceed 30").default(2), 
+  highSpendWaitMinutes: z.number().int().min(1, "Minutes must be at least 1").max(30, "Minutes can't exceed 30").default(11),
   // Traffic Sender fields removed
 });
 
@@ -588,17 +588,18 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                               min="1"
                               max="30"
                               step="1"
-                              {...field}
+                              value={field.value || 11}
                               onChange={(e) => {
-                                const value = e.target.value === '' ? '' : e.target.value;
+                                const value = e.target.value === '' ? '11' : e.target.value;
                                 const parsedValue = parseInt(value, 10);
                                 if (!isNaN(parsedValue)) {
+                                  console.log("Setting highSpendWaitMinutes to:", parsedValue);
                                   field.onChange(parsedValue);
                                 } else {
-                                  field.onChange(value);
+                                  console.log("Invalid value, defaulting to 11");
+                                  field.onChange(11);
                                 }
                               }}
-                              value={field.value}
                             />
                           </FormControl>
                           <FormDescription>
