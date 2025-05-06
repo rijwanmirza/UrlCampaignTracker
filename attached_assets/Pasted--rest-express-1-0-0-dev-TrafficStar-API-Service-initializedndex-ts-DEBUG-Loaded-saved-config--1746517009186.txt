@@ -1,0 +1,1334 @@
+> rest-express@1.0.0 dev
+TrafficStar API Service initializedndex.ts
+🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+7:33:25 AM [gmail-reader] Loaded 34 previously processed email IDs
+TrafficStar Reports API test routes registered
+Server monitoring initialized - collecting stats every minute
+🔄 Running fix for missing URL click logs...
+7:33:25 AM [express] serving on port 5000
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+✅ Fixed 0 URLs with missing click logs
+⏭️ Skipped 3 URLs with existing log files
+🔄 Auto-fix for missing URL click logs completed: Fixed 0 URLs with missing click logs
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+🔍 DEBUG: Updating Gmail config with autoDeleteMinutes: undefined
+🔍 DEBUG: Updated Gmail config autoDeleteMinutes is now: 2
+🔍 DEBUG: Saved config with autoDeleteMinutes: 2
+7:33:26 AM [gmail-reader] SMTP connection verified successfully
+7:33:26 AM [gmail-reader] Gmail credentials verified successfully, starting reader...
+7:33:26 AM [gmail-reader] 📧 Starting Gmail reader with auto-delete enabled: 2 minutes
+7:33:26 AM [gmail-reader] Gmail reader started successfully and monitoring emails from help@donot-reply.in
+🔍 DEBUG: Found TrafficStar API key in environment variables, ensuring it is saved in database
+[connection] Connected to host
+<= '* OK Gimap ready for requests from 34.83.51.165 hl12mb69038093pjb'
+=> 'A0 CAPABILITY'
+<= '* CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 XYZZY SASL-IR AUTH=XOAUTH2 AUTH=PLAIN AUTH=PLAIN-CLIENTTOKEN AUTH=OAUTHBEARER'
+<= 'A0 OK Thats all she wrote! hl12mb69038093pjb'
+=> 'A1 LOGIN "compaignwalabhai@gmail.com" "hciuemplthdkwfho"'
+🔍 DEBUG: TrafficStar API key already saved in database
+Error scheduling TrafficStar spent value updates: TypeError: trafficStarService.scheduleSpentValueUpdates is not a function
+    at initializeTrafficStar (/home/runner/workspace/server/init-trafficstar.ts:52:32)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Server.<anonymous> (/home/runner/workspace/server/index.ts:156:9)
+7:33:26 AM [express] TrafficStar API initialized successfully
+Initializing Traffic Generator scheduler
+Running initial traffic generator check on startup
+Running Traffic Generator for all enabled campaigns
+Traffic Generator scheduler initialized successfully
+7:33:26 AM [express] Traffic Generator scheduler initialized successfully
+Processing 1 campaigns with traffic generator enabled
+Processing Traffic Generator for campaign 9
+Processing Traffic Generator for campaign 9 with TrafficStar ID 995224
+Fetching spent value for campaign 995224 on 2025-05-06
+Getting campaign 995224 details
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+<= '* CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 UIDPLUS COMPRESS=DEFLATE ENABLE MOVE CONDSTORE ESEARCH UTF8=ACCEPT LIST-EXTENDED LIST-STATUS LITERAL- SPECIAL-USE APPENDLIMIT=35651584'
+<= 'A1 OK compaignwalabhai@gmail.com authenticated (Success)'
+=> 'A2 NAMESPACE'
+<= '* NAMESPACE (("" "/")) NIL NIL'
+<= 'A2 OK Success'
+=> 'A3 LIST "" ""'
+<= '* LIST (\\Noselect) "/" "/"'
+<= 'A3 OK Success'
+7:33:30 AM [gmail-reader] IMAP connection established
+7:33:30 AM [gmail-reader] Auto-delete enabled: emails will be deleted 2 minutes after processing
+7:33:30 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+7:33:30 AM [gmail-reader] Current IMAP connection state: authenticated
+7:33:30 AM [gmail-reader] Scanning for processed emails older than 2025-05-06T07:31:30.350Z (2 minutes ago)
+7:33:30 AM [gmail-reader] Email ID 14588 processed at 2025-05-06T07:31:27.547Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14589 processed at 2025-05-06T07:31:27.550Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14598 processed at 2025-05-06T07:31:27.628Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14595 processed at 2025-05-06T07:31:27.630Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14599 processed at 2025-05-06T07:31:27.631Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14590 processed at 2025-05-06T07:31:27.641Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14593 processed at 2025-05-06T07:31:27.642Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14604 processed at 2025-05-06T07:31:27.643Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14596 processed at 2025-05-06T07:31:27.644Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14600 processed at 2025-05-06T07:31:27.645Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14591 processed at 2025-05-06T07:31:27.647Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14594 processed at 2025-05-06T07:31:27.648Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14597 processed at 2025-05-06T07:31:27.650Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14601 processed at 2025-05-06T07:31:27.651Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14603 processed at 2025-05-06T07:31:27.652Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14605 processed at 2025-05-06T07:31:27.657Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14602 processed at 2025-05-06T07:31:27.662Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14607 processed at 2025-05-06T07:31:27.663Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14606 processed at 2025-05-06T07:31:27.664Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14610 processed at 2025-05-06T07:31:27.665Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14592 processed at 2025-05-06T07:31:27.666Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14608 processed at 2025-05-06T07:31:27.667Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14613 processed at 2025-05-06T07:31:27.669Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14614 processed at 2025-05-06T07:31:27.670Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14609 processed at 2025-05-06T07:31:27.671Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14615 processed at 2025-05-06T07:31:27.673Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14616 processed at 2025-05-06T07:31:27.677Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14612 processed at 2025-05-06T07:31:27.681Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14618 processed at 2025-05-06T07:31:27.684Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14621 processed at 2025-05-06T07:31:27.685Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14619 processed at 2025-05-06T07:31:27.686Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14617 processed at 2025-05-06T07:31:27.687Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14611 processed at 2025-05-06T07:31:27.689Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] Email ID 14620 processed at 2025-05-06T07:31:27.690Z with status "success" is older than 2 minutes, marking for deletion
+7:33:30 AM [gmail-reader] [Email Auto-Delete] Found 34 emails that qualify for deletion (older than 2 minutes)
+7:33:30 AM [gmail-reader] Saved 0 processed email IDs to log file
+7:33:30 AM [gmail-reader] [Email Auto-Delete] Removed 34 emails from tracking system
+=> 'A4 SELECT "INBOX" (CONDSTORE)'
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 44 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14622] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 9946291]'
+<= 'A4 OK [READ-WRITE] INBOX selected. (Success)'
+7:33:30 AM [gmail-reader] Searching for ALL messages in inbox - found in mailbox: 44
+=> 'A5 SELECT "INBOX" (CONDSTORE)'
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 44 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14622] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 9946291]'
+<= 'A5 OK [READ-WRITE] INBOX selected. (Success)'
+=> 'A6 UID SEARCH ALL'
+7:33:30 AM [gmail-reader] [Email Auto-Delete] Deleting 34 processed emails as per settings
+Campaign 995224 spent value from campaign object helper: $63.0300
+Campaign 9 spent value: $63.0300
+TRAFFIC-GENERATOR: Handling campaign 995224 by spent value - current spent: $63.0300
+🟢 HIGH SPEND ($63.0300 >= $10.00): Campaign 995224 has spent $10.00 or more
+✅ Marked campaign 9 as 'high_spend' in database
+Finished running Traffic Generator for all enabled campaigns
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997 14363 14530 14588 14589 14590 14591 14592 14593 14594 14595 14596 14597 14598 14599 14600 14601 14602 14603 14604 14605 14606 14607 14608 14609 14610 14611 14612 14613 14614 14615 14616 14617 14618 14619 14620 14621'
+<= 'A6 OK SEARCH completed (Success)'
+7:33:31 AM [gmail-reader] Found 44 emails in mailbox
+=> 'A7 UID STORE 14588,14589,14598,14595,14599,14590,14593,14604,14596,14600,14591,14594,14597,14601,14603,14605,14602,14607,14606,14610,14592,14608,14613,14614,14609,14615,14616,14612,14618,14621,14619,14617,14611,14620 +FLAGS.SILENT (\\Deleted)'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 11 EXPUNGE'
+<= '* 10 EXISTS'
+<= 'A7 OK Success'
+7:33:31 AM [gmail-reader] [Email Auto-Delete] Successfully marked 34 emails for deletion
+=> 'A8 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997,14363,14530,14588,14589,14590,14591,14592,14593,14594,14595,14596,14597,14598,14599,14600,14601,14602,14603,14604,14605,14606,14607,14608,14609,14610,14611,14612,14613,14614,14615,14616,14617,14618,14619,14620,14621 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+7:33:31 AM [gmail-reader] Processing email (ID: 11452)
+7:33:31 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+7:33:31 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+7:33:32 AM [gmail-reader] Processing email (ID: 11762)
+7:33:32 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+7:33:32 AM [gmail-reader] Processing email (ID: 12778)
+7:33:32 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+7:33:32 AM [gmail-reader] Processing email (ID: 12808)
+7:33:32 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+7:33:32 AM [gmail-reader] Processing email (ID: 13039)
+7:33:32 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+7:33:32 AM [gmail-reader] Processing email (ID: 13513)
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+7:33:32 AM [gmail-reader] Processing email (ID: 13798)
+7:33:32 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+7:33:32 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) BODY[] {73275}'
+7:33:32 AM [gmail-reader] Processing email (ID: 13997)
+7:33:32 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) )'
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) BODY[] {58240}'
+7:33:32 AM [gmail-reader] Processing email (ID: 14363)
+7:33:32 AM [gmail-reader] Email ID: 14363
+            From: "Matt Palmer" <matt@mail.replit.com>
+            Subject: 🔥 What's new in Replit: auth, new tutorials, and more!
+            Date: 2025-05-02T18:02:49.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "Matt Palmer" <matt@mail.replit.com>
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) )'
+<= 'A8 OK Success'
+=> 'A9 EXPUNGE'
+7:33:32 AM [gmail-reader] Processing email (ID: 14530)
+7:33:32 AM [gmail-reader] Email ID: 14530
+            From: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+            Subject: Important: Confirm your $20.00 payment to Cursor
+            Date: 2025-05-04T19:50:21.000Z
+7:33:32 AM [gmail-reader] Skipping email from non-whitelisted sender: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+7:33:32 AM [gmail-reader] Finished processing batch of 10 emails
+7:33:32 AM [gmail-reader] Initial email scan complete. Future scans will only process new emails.
+<= 'A9 OK Success'
+7:33:32 AM [gmail-reader] [Email Auto-Delete] ✅ Successfully deleted 34 emails in bulk operation
+=> 'IDLE IDLE'
+7:33:32 AM [gmail-reader] [Email Auto-Delete] Bulk deletion of 34 emails completed successfully
+<= '+ idling'
+🔓 DEVELOPMENT MODE: Authentication bypassed
+Error fetching saved TrafficStar campaigns: TypeError: trafficStarService.getSavedCampaigns is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2741:50)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at requireAuth (/home/runner/workspace/server/auth/middleware.ts:16:14)
+    at <anonymous> (/home/runner/workspace/server/index.ts:86:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at <anonymous> (/home/runner/workspace/server/index.ts:66:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at <anonymous> (/home/runner/workspace/server/index.ts:36:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at cookieParser (/home/runner/workspace/node_modules/cookie-parser/index.js:71:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at urlencodedParser (/home/runner/workspace/node_modules/body-parser/lib/types/urlencoded.js:94:7)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at jsonParser (/home/runner/workspace/node_modules/body-parser/lib/types/json.js:113:7)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at compression (/home/runner/workspace/node_modules/compression/index.js:243:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+7:33:36 AM [express] GET /api/trafficstar/saved-campaigns 500 in 11ms :: {"message":"Failed to fetch…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+7:33:36 AM [express] GET /api/campaigns 200 in 166ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+7:33:38 AM [express] GET /api/campaigns/9 200 in 38ms :: {"id":9,"name":"Test Click Count Fix","redi…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+Error fetching saved TrafficStar campaigns: TypeError: trafficStarService.getSavedCampaigns is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2741:50)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at requireAuth (/home/runner/workspace/server/auth/middleware.ts:16:14)
+    at <anonymous> (/home/runner/workspace/server/index.ts:86:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at <anonymous> (/home/runner/workspace/server/index.ts:66:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at <anonymous> (/home/runner/workspace/server/index.ts:36:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at cookieParser (/home/runner/workspace/node_modules/cookie-parser/index.js:71:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at urlencodedParser (/home/runner/workspace/node_modules/body-parser/lib/types/urlencoded.js:94:7)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at jsonParser (/home/runner/workspace/node_modules/body-parser/lib/types/json.js:113:7)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at compression (/home/runner/workspace/node_modules/compression/index.js:243:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+7:33:39 AM [express] GET /api/trafficstar/saved-campaigns 500 in 2ms :: {"message":"Failed to fetch …
+Budget update time migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'budget_update_time' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+TrafficStar fields migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'trafficstar_campaign_id' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+Budget update time migration check result: false
+TrafficStar fields migration check result: false
+Original URL records table result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { exists: true } ],
+  fields: [
+    Field {
+      name: 'exists',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 16,
+      dataTypeSize: 1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBool] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+7:33:39 AM [express] GET /api/system/check-migrations 304 in 135ms :: {"budgetUpdateTimeMigrationNee…
+Budget update time migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'budget_update_time' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+TrafficStar fields migration check result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { column_name: 'trafficstar_campaign_id' } ],
+  fields: [
+    Field {
+      name: 'column_name',
+      tableID: 13275,
+      columnID: 4,
+      dataTypeID: 19,
+      dataTypeSize: 64,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: noParse] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+Budget update time migration check result: false
+TrafficStar fields migration check result: false
+Original URL records table result: Result {
+  command: 'SELECT',
+  rowCount: 1,
+  oid: null,
+  rows: [ { exists: true } ],
+  fields: [
+    Field {
+      name: 'exists',
+      tableID: 0,
+      columnID: 0,
+      dataTypeID: 16,
+      dataTypeSize: 1,
+      dataTypeModifier: -1,
+      format: 'text'
+    }
+  ],
+  _parsers: [ [Function: parseBool] ],
+  _types: { getTypeParser: [Function: getTypeParser] },
+  RowCtor: null,
+  rowAsArray: false
+}
+7:33:39 AM [express] GET /api/system/check-migrations 304 in 64ms :: {"budgetUpdateTimeMigrationNeed…
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 5365130,
+        "nice": 0,
+        "sys": 1264690,
+        "idle": 16932230,
+        "irq": 564790
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 5466230,
+        "nice": 0,
+        "sys": 1298360,
+        "idle": 16706760,
+        "irq": 586670
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7927640,
+        "nice": 150,
+        "sys": 1643480,
+        "idle": 13308750,
+        "irq": 611010
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7950180,
+        "nice": 0,
+        "sys": 1636760,
+        "idle": 13280070,
+        "irq": 595420
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7715980,
+        "nice": 0,
+        "sys": 1727280,
+        "idle": 13275930,
+        "irq": 623390
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7672020,
+        "nice": 0,
+        "sys": 1699510,
+        "idle": 13334540,
+        "irq": 613790
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7908560,
+        "nice": 10,
+        "sys": 1638430,
+        "idle": 13385550,
+        "irq": 622000
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7893720,
+        "nice": 0,
+        "sys": 1649300,
+        "idle": 13347270,
+        "irq": 604880
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 24862543872
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.53,
+  "currentLoad": 39.86190341944663,
+  "currentLoadUser": 30.658896002572195,
+  "currentLoadSystem": 6.649605899779741,
+  "currentLoadNice": 0.0000847231279948302,
+  "currentLoadIdle": 60.138096580553366,
+  "currentLoadIrq": 2.5533167939666965,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 75279380,
+  "rawCurrentLoadUser": 57899460,
+  "rawCurrentLoadSystem": 12557810,
+  "rawCurrentLoadNice": 160,
+  "rawCurrentLoadIdle": 113571060,
+  "rawCurrentLoadIrq": 4821950,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 29.819943266503195,
+      "loadUser": 22.237184811604006,
+      "loadSystem": 5.241838549930286,
+      "loadNice": 0,
+      "loadIdle": 70.1800567334968,
+      "loadIrq": 2.340919904968906,
+      "rawLoad": 7194610,
+      "rawLoadUser": 5365130,
+      "rawLoadSystem": 1264690,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 16932230,
+      "rawLoadIrq": 564790,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.556379951467328,
+      "loadUser": 22.721030242721554,
+      "loadSystem": 5.396786601723667,
+      "loadNice": 0,
+      "loadIdle": 69.44362004853268,
+      "loadIrq": 2.4385631070221074,
+      "rawLoad": 7351260,
+      "rawLoadUser": 5466230,
+      "rawLoadSystem": 1298360,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 16706760,
+      "rawLoadIrq": 586670,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.3454145456434,
+      "loadUser": 33.74753416411889,
+      "loadSystem": 6.996205358473152,
+      "loadNice": 0.0006385418768533679,
+      "loadIdle": 56.6545854543566,
+      "loadIrq": 2.6010364811745084,
+      "rawLoad": 10182280,
+      "rawLoadUser": 7927640,
+      "rawLoadSystem": 1643480,
+      "rawLoadNice": 150,
+      "rawLoadIdle": 13308740,
+      "rawLoadIrq": 611010,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.39859230207285,
+      "loadUser": 33.88473993731252,
+      "loadSystem": 6.97609198028166,
+      "loadNice": 0,
+      "loadIdle": 56.60140769792715,
+      "loadIrq": 2.5377603844786685,
+      "rawLoad": 10182360,
+      "rawLoadUser": 7950180,
+      "rawLoadSystem": 1636760,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 13280060,
+      "rawLoadIrq": 595420,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.12571409232145,
+      "loadUser": 33.05540049788862,
+      "loadSystem": 7.399699347586834,
+      "loadNice": 0,
+      "loadIdle": 56.87428590767855,
+      "loadIrq": 2.6706142468459984,
+      "rawLoad": 10066650,
+      "rawLoadUser": 7715980,
+      "rawLoadSystem": 1727280,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 13275920,
+      "rawLoadIrq": 623390,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.81895345855421,
+      "loadUser": 32.89908258454382,
+      "loadSystem": 7.287822482639261,
+      "loadNice": 0,
+      "loadIdle": 57.18104654144579,
+      "loadIrq": 2.6320483913711317,
+      "rawLoad": 9985320,
+      "rawLoadUser": 7672020,
+      "rawLoadSystem": 1699510,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 13334540,
+      "rawLoadIrq": 613790,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.17212597990622,
+      "loadUser": 33.57550876582231,
+      "loadSystem": 6.955895994616751,
+      "loadNice": 0.00004245464252129631,
+      "loadIdle": 56.82787402009378,
+      "loadIrq": 2.6406787648246306,
+      "rawLoad": 10169000,
+      "rawLoadUser": 7908560,
+      "rawLoadSystem": 1638430,
+      "rawLoadNice": 10,
+      "rawLoadIdle": 13385550,
+      "rawLoadIrq": 622000,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.191448792006526,
+      "loadUser": 33.59721746947031,
+      "loadSystem": 7.019743640817938,
+      "loadNice": 0,
+      "loadIdle": 56.808551207993474,
+      "loadIrq": 2.5744876817182774,
+      "rawLoad": 10147900,
+      "rawLoadUser": 7893720,
+      "rawLoadSystem": 1649300,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 13347260,
+      "rawLoadIrq": 604880,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 3.29, 3.91, 4.25 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [3.29,3.91,4.25]
+Using 1-minute load average: 3.29
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.53,"currentLoad":39.86190341944663,"currentLoadUser":30.658896002572195,"currentLoadSystem":6.649605899779741,"currentLoadNice":0.0000847231279948302,"currentLoadIdle":60.138096580553366,"currentLoadIrq":2.5533167939666965,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":75279380,"rawCurrentLoadUser":57899460,"rawCurrentLoadSystem":12557810,"rawCurrentLoadNice":160,"rawCurrentLoadIdle":113571060,"rawCurrentLoadIrq":4821950,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":29.819943266503195,"loadUser":22.237184811604006,"loadSystem":5.241838549930286,"loadNice":0,"loadIdle":70.1800567334968,"loadIrq":2.340919904968906,"rawLoad":7194610,"rawLoadUser":5365130,"rawLoadSystem":1264690,"rawLoadNice":0,"rawLoadIdle":16932230,"rawLoadIrq":564790,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.556379951467328,"loadUser":22.721030242721554,"loadSystem":5.396786601723667,"loadNice":0,"loadIdle":69.44362004853268,"loadIrq":2.4385631070221074,"rawLoad":7351260,"rawLoadUser":5466230,"rawLoadSystem":1298360,"rawLoadNice":0,"rawLoadIdle":16706760,"rawLoadIrq":586670,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.3454145456434,"loadUser":33.74753416411889,"loadSystem":6.996205358473152,"loadNice":0.0006385418768533679,"loadIdle":56.6545854543566,"loadIrq":2.6010364811745084,"rawLoad":10182280,"rawLoadUser":7927640,"rawLoadSystem":1643480,"rawLoadNice":150,"rawLoadIdle":13308740,"rawLoadIrq":611010,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.39859230207285,"loadUser":33.88473993731252,"loadSystem":6.97609198028166,"loadNice":0,"loadIdle":56.60140769792715,"loadIrq":2.5377603844786685,"rawLoad":10182360,"rawLoadUser":7950180,"rawLoadSystem":1636760,"rawLoadNice":0,"rawLoadIdle":13280060,"rawLoadIrq":595420,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.12571409232145,"loadUser":33.05540049788862,"loadSystem":7.399699347586834,"loadNice":0,"loadIdle":56.87428590767855,"loadIrq":2.6706142468459984,"rawLoad":10066650,"rawLoadUser":7715980,"rawLoadSystem":1727280,"rawLoadNice":0,"rawLoadIdle":13275920,"rawLoadIrq":623390,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.81895345855421,"loadUser":32.89908258454382,"loadSystem":7.287822482639261,"loadNice":0,"loadIdle":57.18104654144579,"loadIrq":2.6320483913711317,"rawLoad":9985320,"rawLoadUser":7672020,"rawLoadSystem":1699510,"rawLoadNice":0,"rawLoadIdle":13334540,"rawLoadIrq":613790,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.17212597990622,"loadUser":33.57550876582231,"loadSystem":6.955895994616751,"loadNice":0.00004245464252129631,"loadIdle":56.82787402009378,"loadIrq":2.6406787648246306,"rawLoad":10169000,"rawLoadUser":7908560,"rawLoadSystem":1638430,"rawLoadNice":10,"rawLoadIdle":13385550,"rawLoadIrq":622000,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.191448792006526,"loadUser":33.59721746947031,"loadSystem":7.019743640817938,"loadNice":0,"loadIdle":56.808551207993474,"loadIrq":2.5744876817182774,"rawLoad":10147900,"rawLoadUser":7893720,"rawLoadSystem":1649300,"rawLoadNice":0,"rawLoadIdle":13347260,"rawLoadIrq":604880,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 41.125
+Final system load calculation (before fallbacks): 41
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 41
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 5378420,
+        "nice": 0,
+        "sys": 1267580,
+        "idle": 16972300,
+        "irq": 566200
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 5479230,
+        "nice": 0,
+        "sys": 1301260,
+        "idle": 16746900,
+        "irq": 588150
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7946690,
+        "nice": 150,
+        "sys": 1646900,
+        "idle": 13341780,
+        "irq": 612600
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7968010,
+        "nice": 0,
+        "sys": 1640320,
+        "idle": 13314150,
+        "irq": 596980
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7734620,
+        "nice": 0,
+        "sys": 1731110,
+        "idle": 13308750,
+        "irq": 625010
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7691030,
+        "nice": 0,
+        "sys": 1703150,
+        "idle": 13367160,
+        "irq": 615340
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7927680,
+        "nice": 10,
+        "sys": 1641920,
+        "idle": 13418590,
+        "irq": 623590
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7912200,
+        "nice": 0,
+        "sys": 1652760,
+        "idle": 13380560,
+        "irq": 606460
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 24414355456
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.54,
+  "currentLoad": 38.93762716314074,
+  "currentLoadUser": 30.280688704631476,
+  "currentLoadSystem": 5.9485002953466495,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 61.06237283685926,
+  "currentLoadIrq": 2.7084381631626155,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 177980,
+  "rawCurrentLoadUser": 138410,
+  "rawCurrentLoadSystem": 27190,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 279110,
+  "rawCurrentLoadIrq": 12380,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 30.506416926812346,
+      "loadUser": 23.04890738813736,
+      "loadSystem": 5.012140131807145,
+      "loadNice": 0,
+      "loadIdle": 69.49358307318765,
+      "loadIrq": 2.445369406867846,
+      "rawLoad": 17590,
+      "rawLoadUser": 13290,
+      "rawLoadSystem": 2890,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40070,
+      "rawLoadIrq": 1410,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.21557719054242,
+      "loadUser": 22.600834492350486,
+      "loadSystem": 5.0417246175243395,
+      "loadNice": 0,
+      "loadIdle": 69.78442280945758,
+      "loadIrq": 2.5730180806675937,
+      "rawLoad": 17380,
+      "rawLoadUser": 13000,
+      "rawLoadSystem": 2900,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40140,
+      "rawLoadIrq": 1480,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.136602451838876,
+      "loadUser": 33.36252189141856,
+      "loadSystem": 5.989492119089317,
+      "loadNice": 0,
+      "loadIdle": 57.863397548161124,
+      "loadIrq": 2.7845884413309983,
+      "rawLoad": 24060,
+      "rawLoadUser": 19050,
+      "rawLoadSystem": 3420,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33040,
+      "rawLoadIrq": 1590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.23492286115007,
+      "loadUser": 31.25876577840112,
+      "loadSystem": 6.241234221598877,
+      "loadNice": 0,
+      "loadIdle": 59.76507713884993,
+      "loadIrq": 2.73492286115007,
+      "rawLoad": 22950,
+      "rawLoadUser": 17830,
+      "rawLoadSystem": 3560,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34090,
+      "rawLoadIrq": 1560,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.322557976106815,
+      "loadUser": 32.74771609276177,
+      "loadSystem": 6.728742094167252,
+      "loadNice": 0,
+      "loadIdle": 57.677442023893185,
+      "loadIrq": 2.8460997891777935,
+      "rawLoad": 24090,
+      "rawLoadUser": 18640,
+      "rawLoadSystem": 3830,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32830,
+      "rawLoadIrq": 1620,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.59813413131491,
+      "loadUser": 33.46241858827671,
+      "loadSystem": 6.407322654462242,
+      "loadNice": 0,
+      "loadIdle": 57.401865868685086,
+      "loadIrq": 2.728392888575955,
+      "rawLoad": 24200,
+      "rawLoadUser": 19010,
+      "rawLoadSystem": 3640,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32610,
+      "rawLoadIrq": 1550,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.275428171967846,
+      "loadUser": 33.39741349178609,
+      "loadSystem": 6.099265990912269,
+      "loadNice": 0,
+      "loadIdle": 57.724571828032154,
+      "loadIrq": 2.778748689269486,
+      "rawLoad": 24190,
+      "rawLoadUser": 19110,
+      "rawLoadSystem": 3490,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33030,
+      "rawLoadIrq": 1590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 41.39387539598733,
+      "loadUser": 32.52375923970433,
+      "loadSystem": 6.089405139035551,
+      "loadNice": 0,
+      "loadIdle": 58.60612460401268,
+      "loadIrq": 2.780711017247448,
+      "rawLoad": 23520,
+      "rawLoadUser": 18480,
+      "rawLoadSystem": 3460,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33300,
+      "rawLoadIrq": 1580,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 4.3, 4.06, 4.28 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [4.3,4.06,4.28]
+Using 1-minute load average: 4.3
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.54,"currentLoad":38.93762716314074,"currentLoadUser":30.280688704631476,"currentLoadSystem":5.9485002953466495,"currentLoadNice":0,"currentLoadIdle":61.06237283685926,"currentLoadIrq":2.7084381631626155,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":177980,"rawCurrentLoadUser":138410,"rawCurrentLoadSystem":27190,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":279110,"rawCurrentLoadIrq":12380,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":30.506416926812346,"loadUser":23.04890738813736,"loadSystem":5.012140131807145,"loadNice":0,"loadIdle":69.49358307318765,"loadIrq":2.445369406867846,"rawLoad":17590,"rawLoadUser":13290,"rawLoadSystem":2890,"rawLoadNice":0,"rawLoadIdle":40070,"rawLoadIrq":1410,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.21557719054242,"loadUser":22.600834492350486,"loadSystem":5.0417246175243395,"loadNice":0,"loadIdle":69.78442280945758,"loadIrq":2.5730180806675937,"rawLoad":17380,"rawLoadUser":13000,"rawLoadSystem":2900,"rawLoadNice":0,"rawLoadIdle":40140,"rawLoadIrq":1480,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.136602451838876,"loadUser":33.36252189141856,"loadSystem":5.989492119089317,"loadNice":0,"loadIdle":57.863397548161124,"loadIrq":2.7845884413309983,"rawLoad":24060,"rawLoadUser":19050,"rawLoadSystem":3420,"rawLoadNice":0,"rawLoadIdle":33040,"rawLoadIrq":1590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.23492286115007,"loadUser":31.25876577840112,"loadSystem":6.241234221598877,"loadNice":0,"loadIdle":59.76507713884993,"loadIrq":2.73492286115007,"rawLoad":22950,"rawLoadUser":17830,"rawLoadSystem":3560,"rawLoadNice":0,"rawLoadIdle":34090,"rawLoadIrq":1560,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.322557976106815,"loadUser":32.74771609276177,"loadSystem":6.728742094167252,"loadNice":0,"loadIdle":57.677442023893185,"loadIrq":2.8460997891777935,"rawLoad":24090,"rawLoadUser":18640,"rawLoadSystem":3830,"rawLoadNice":0,"rawLoadIdle":32830,"rawLoadIrq":1620,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.59813413131491,"loadUser":33.46241858827671,"loadSystem":6.407322654462242,"loadNice":0,"loadIdle":57.401865868685086,"loadIrq":2.728392888575955,"rawLoad":24200,"rawLoadUser":19010,"rawLoadSystem":3640,"rawLoadNice":0,"rawLoadIdle":32610,"rawLoadIrq":1550,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.275428171967846,"loadUser":33.39741349178609,"loadSystem":6.099265990912269,"loadNice":0,"loadIdle":57.724571828032154,"loadIrq":2.778748689269486,"rawLoad":24190,"rawLoadUser":19110,"rawLoadSystem":3490,"rawLoadNice":0,"rawLoadIdle":33030,"rawLoadIrq":1590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":41.39387539598733,"loadUser":32.52375923970433,"loadSystem":6.089405139035551,"loadNice":0,"loadIdle":58.60612460401268,"loadIrq":2.780711017247448,"rawLoad":23520,"rawLoadUser":18480,"rawLoadSystem":3460,"rawLoadNice":0,"rawLoadIdle":33300,"rawLoadIrq":1580,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 53.75
+Final system load calculation (before fallbacks): 54
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 54
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 0 campaigns:
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+7:35:30 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+7:35:30 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+7:35:30 AM [gmail-reader] Current IMAP connection state: authenticated
+7:35:30 AM [gmail-reader] Scanning for processed emails older than 2025-05-06T07:33:30.360Z (2 minutes ago)
+7:35:30 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 5390630,
+        "nice": 0,
+        "sys": 1269970,
+        "idle": 17014220,
+        "irq": 567450
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 5491070,
+        "nice": 0,
+        "sys": 1303780,
+        "idle": 16789190,
+        "irq": 589420
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7959460,
+        "nice": 150,
+        "sys": 1649820,
+        "idle": 13381580,
+        "irq": 614100
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7980820,
+        "nice": 0,
+        "sys": 1643160,
+        "idle": 13353750,
+        "irq": 598440
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7746880,
+        "nice": 0,
+        "sys": 1734450,
+        "idle": 13348250,
+        "irq": 626580
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7704720,
+        "nice": 0,
+        "sys": 1706130,
+        "idle": 13406030,
+        "irq": 616860
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7940530,
+        "nice": 10,
+        "sys": 1644840,
+        "idle": 13458270,
+        "irq": 625130
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7925160,
+        "nice": 0,
+        "sys": 1655770,
+        "idle": 13419960,
+        "irq": 607960
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 24319254528
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.52,
+  "currentLoad": 29.741794310722103,
+  "currentLoadUser": 22.185995623632383,
+  "currentLoadSystem": 5.0153172866520785,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 70.2582056892779,
+  "currentLoadIrq": 2.540481400437637,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 135920,
+  "rawCurrentLoadUser": 101390,
+  "rawCurrentLoadSystem": 22920,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 321080,
+  "rawCurrentLoadIrq": 11610,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 27.436385667301366,
+      "loadUser": 21.135537476198717,
+      "loadSystem": 4.137095378223991,
+      "loadNice": 0,
+      "loadIdle": 72.56361433269863,
+      "loadIrq": 2.163752812878657,
+      "rawLoad": 15850,
+      "rawLoadUser": 12210,
+      "rawLoadSystem": 2390,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 41920,
+      "rawLoadIrq": 1250,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 26.98549723756906,
+      "loadUser": 20.441988950276244,
+      "loadSystem": 4.350828729281768,
+      "loadNice": 0,
+      "loadIdle": 73.01450276243095,
+      "loadIrq": 2.19267955801105,
+      "rawLoad": 15630,
+      "rawLoadUser": 11840,
+      "rawLoadSystem": 2520,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 42290,
+      "rawLoadIrq": 1270,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.15093015093015,
+      "loadUser": 22.393822393822393,
+      "loadSystem": 5.124605124605124,
+      "loadNice": 0,
+      "loadIdle": 69.84906984906985,
+      "loadIrq": 2.6325026325026326,
+      "rawLoad": 17180,
+      "rawLoadUser": 12760,
+      "rawLoadSystem": 2920,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39800,
+      "rawLoadIrq": 1500,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.171045670957504,
+      "loadUser": 22.588608710985717,
+      "loadSystem": 5.007935108446482,
+      "loadNice": 0,
+      "loadIdle": 69.82895432904249,
+      "loadIrq": 2.574501851525304,
+      "rawLoad": 17110,
+      "rawLoadUser": 12810,
+      "rawLoadSystem": 2840,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39600,
+      "rawLoadIrq": 1460,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.29821775189695,
+      "loadUser": 21.634021528145404,
+      "loadSystem": 5.893770954649726,
+      "loadNice": 0,
+      "loadIdle": 69.70178224810304,
+      "loadIrq": 2.7704252691018176,
+      "rawLoad": 17170,
+      "rawLoadUser": 12260,
+      "rawLoadSystem": 3340,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39500,
+      "rawLoadIrq": 1570,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 31.873138251270372,
+      "loadUser": 23.988084808130367,
+      "loadSystem": 5.2216576134571575,
+      "loadNice": 0,
+      "loadIdle": 68.12686174872962,
+      "loadIrq": 2.6633958296828455,
+      "rawLoad": 18190,
+      "rawLoadUser": 13690,
+      "rawLoadSystem": 2980,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38880,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.380634976319943,
+      "loadUser": 22.557446062094368,
+      "loadSystem": 5.1219084371162955,
+      "loadNice": 0,
+      "loadIdle": 69.61936502368006,
+      "loadIrq": 2.7012804771092793,
+      "rawLoad": 17320,
+      "rawLoadUser": 12860,
+      "rawLoadSystem": 2920,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39690,
+      "rawLoadIrq": 1540,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.719184104097064,
+      "loadUser": 22.788816599261473,
+      "loadSystem": 5.292772991032179,
+      "loadNice": 0,
+      "loadIdle": 69.28081589590293,
+      "loadIrq": 2.6375945138034114,
+      "rawLoad": 17470,
+      "rawLoadUser": 12960,
+      "rawLoadSystem": 3010,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39400,
+      "rawLoadIrq": 1500,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 3.18, 3.81, 4.18 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [3.18,3.81,4.18]
+Using 1-minute load average: 3.18
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.52,"currentLoad":29.741794310722103,"currentLoadUser":22.185995623632383,"currentLoadSystem":5.0153172866520785,"currentLoadNice":0,"currentLoadIdle":70.2582056892779,"currentLoadIrq":2.540481400437637,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":135920,"rawCurrentLoadUser":101390,"rawCurrentLoadSystem":22920,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":321080,"rawCurrentLoadIrq":11610,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":27.436385667301366,"loadUser":21.135537476198717,"loadSystem":4.137095378223991,"loadNice":0,"loadIdle":72.56361433269863,"loadIrq":2.163752812878657,"rawLoad":15850,"rawLoadUser":12210,"rawLoadSystem":2390,"rawLoadNice":0,"rawLoadIdle":41920,"rawLoadIrq":1250,"rawLoadSteal":0,"rawLoadGuest":0},{"load":26.98549723756906,"loadUser":20.441988950276244,"loadSystem":4.350828729281768,"loadNice":0,"loadIdle":73.01450276243095,"loadIrq":2.19267955801105,"rawLoad":15630,"rawLoadUser":11840,"rawLoadSystem":2520,"rawLoadNice":0,"rawLoadIdle":42290,"rawLoadIrq":1270,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.15093015093015,"loadUser":22.393822393822393,"loadSystem":5.124605124605124,"loadNice":0,"loadIdle":69.84906984906985,"loadIrq":2.6325026325026326,"rawLoad":17180,"rawLoadUser":12760,"rawLoadSystem":2920,"rawLoadNice":0,"rawLoadIdle":39800,"rawLoadIrq":1500,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.171045670957504,"loadUser":22.588608710985717,"loadSystem":5.007935108446482,"loadNice":0,"loadIdle":69.82895432904249,"loadIrq":2.574501851525304,"rawLoad":17110,"rawLoadUser":12810,"rawLoadSystem":2840,"rawLoadNice":0,"rawLoadIdle":39600,"rawLoadIrq":1460,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.29821775189695,"loadUser":21.634021528145404,"loadSystem":5.893770954649726,"loadNice":0,"loadIdle":69.70178224810304,"loadIrq":2.7704252691018176,"rawLoad":17170,"rawLoadUser":12260,"rawLoadSystem":3340,"rawLoadNice":0,"rawLoadIdle":39500,"rawLoadIrq":1570,"rawLoadSteal":0,"rawLoadGuest":0},{"load":31.873138251270372,"loadUser":23.988084808130367,"loadSystem":5.2216576134571575,"loadNice":0,"loadIdle":68.12686174872962,"loadIrq":2.6633958296828455,"rawLoad":18190,"rawLoadUser":13690,"rawLoadSystem":2980,"rawLoadNice":0,"rawLoadIdle":38880,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.380634976319943,"loadUser":22.557446062094368,"loadSystem":5.1219084371162955,"loadNice":0,"loadIdle":69.61936502368006,"loadIrq":2.7012804771092793,"rawLoad":17320,"rawLoadUser":12860,"rawLoadSystem":2920,"rawLoadNice":0,"rawLoadIdle":39690,"rawLoadIrq":1540,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.719184104097064,"loadUser":22.788816599261473,"loadSystem":5.292772991032179,"loadNice":0,"loadIdle":69.28081589590293,"loadIrq":2.6375945138034114,"rawLoad":17470,"rawLoadUser":12960,"rawLoadSystem":3010,"rawLoadNice":0,"rawLoadIdle":39400,"rawLoadIrq":1500,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 39.75
+Final system load calculation (before fallbacks): 40
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 40
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4

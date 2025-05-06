@@ -420,6 +420,80 @@ class TrafficStarService {
       throw new Error(`Failed to update daily budget for campaign ${id}`);
     }
   }
+  
+  /**
+   * Schedule regular updates of spent values for all TrafficStar campaigns
+   * This function runs on a schedule to keep the spent values up to date
+   * 
+   * @param intervalMinutes How often to check spent values (default: 30 minutes)
+   */
+  public scheduleSpentValueUpdates(intervalMinutes: number = 30): void {
+    try {
+      console.log(`Scheduling TrafficStar spent value updates every ${intervalMinutes} minutes`);
+      
+      // Convert minutes to milliseconds
+      const interval = intervalMinutes * 60 * 1000;
+      
+      // Create a function to update all campaign spent values
+      const updateAllCampaignSpentValues = async () => {
+        try {
+          console.log('Running scheduled update of TrafficStar campaign spent values');
+          
+          // Get all campaigns with TrafficStar IDs
+          const campaignsResult = await db.select()
+            .from(campaigns)
+            .where(sql`trafficstar_campaign_id is not null`);
+          
+          // Update spent values for each campaign
+          for (const campaign of campaignsResult) {
+            if (campaign.trafficstarCampaignId) {
+              try {
+                const trafficStarId = parseInt(campaign.trafficstarCampaignId);
+                if (!isNaN(trafficStarId)) {
+                  console.log(`Updating spent value for campaign ${campaign.id} (TrafficStar ID: ${trafficStarId})`);
+                  
+                  // Get spent value from TrafficStar
+                  const { totalSpent } = await this.getCampaignSpentValue(trafficStarId);
+                  
+                  // Update campaign in database
+                  await db.update(campaigns)
+                    .set({ 
+                      dailySpent: totalSpent.toString(),
+                      lastSpentCheck: new Date()
+                    })
+                    .where(eq(campaigns.id, campaign.id));
+                    
+                  console.log(`Campaign ${campaign.id} spent value updated to: $${totalSpent.toFixed(4)}`);
+                }
+              } catch (campaignError) {
+                console.error(`Error updating spent value for campaign ${campaign.id}:`, campaignError);
+              }
+            }
+          }
+          
+          console.log('Finished scheduled update of TrafficStar campaign spent values');
+        } catch (error) {
+          console.error('Error in scheduled spent value update:', error);
+        }
+      };
+      
+      // Run an initial update
+      updateAllCampaignSpentValues().catch(error => {
+        console.error('Error in initial spent value update:', error);
+      });
+      
+      // Set up the interval
+      const intervalId = setInterval(updateAllCampaignSpentValues, interval);
+      
+      console.log('TrafficStar spent value updates scheduled successfully');
+      
+      // Return the interval ID in case we need to clear it later
+      return intervalId;
+    } catch (error) {
+      console.error('Error scheduling TrafficStar spent value updates:', error);
+      throw error;
+    }
+  }
 }
 
 export const trafficStarService = new TrafficStarService();
