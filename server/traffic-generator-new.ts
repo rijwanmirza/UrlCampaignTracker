@@ -1544,6 +1544,7 @@ export function initializeTrafficGeneratorScheduler() {
 /**
  * Stop all global timers used by the Traffic Generator
  * This ensures complete cleanup when Traffic Generator is disabled
+ * or when a campaign's Traffic Generator setting is disabled
  */
 function stopAllGlobalTimers() {
   console.log('⚠️ Stopping all Traffic Generator global timers');
@@ -1567,6 +1568,22 @@ function stopAllGlobalTimers() {
     clearTimeout(globalInitialEmptyUrlTimer);
     globalInitialEmptyUrlTimer = null;
     console.log('✅ Cleared global initial empty URL timer');
+  }
+  
+  // CRITICAL FIX: Also clear all campaign-specific waiting timers
+  // This ensures we don't accidentally reactivate campaigns after disabling Traffic Generator
+  if (waitingTimers.size > 0) {
+    console.log(`⚠️ Clearing ${waitingTimers.size} waiting period timers`);
+    
+    // Manually iterate through the waiting timers map to avoid TypeScript issues
+    waitingTimers.forEach((timer, campaignId) => {
+      clearTimeout(timer);
+      console.log(`✅ Cleared waiting timer for campaign ${campaignId}`);
+    });
+    
+    // Clear the entire map
+    waitingTimers.clear();
+    console.log('✅ Cleared all waiting timers');
   }
 }
 
