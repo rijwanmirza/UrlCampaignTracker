@@ -1291,7 +1291,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`URL created in campaign ${campaignId} with TrafficStar campaign ID ${campaign.trafficstarCampaignId}`);
           console.log(`Scheduling budget update for this URL in 10 minutes`);
           
-          // Add to the pending URL budgets tracking
+          // Track using both the existing system and the new URL budget tracker
+          // 1. Using the TrafficStar service for backward compatibility
           await trafficStarService.trackNewUrlForBudgetUpdate(
             url.id,
             campaignId,
@@ -1299,6 +1300,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             calculatedClickLimit,
             campaign.pricePerThousand || 1000
           );
+          
+          // 2. Using the new URL budget tracker - only if Traffic Generator is enabled
+          if (campaign.trafficGeneratorEnabled) {
+            try {
+              // Import the trackNewUrlBudgetOnAdd function from routes-integration
+              const { trackNewUrlBudgetOnAdd } = await import('./routes-integration');
+              await trackNewUrlBudgetOnAdd(url.id);
+              console.log(`Enhanced URL budget tracking enabled for URL ID ${url.id}`);
+            } catch (trackerError) {
+              console.error(`Error with enhanced URL budget tracking for URL ${url.id}:`, trackerError);
+            }
+          }
           
           console.log(`URL budget tracking scheduled for URL ID ${url.id}`);
         } catch (error) {
