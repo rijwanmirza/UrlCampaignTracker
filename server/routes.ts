@@ -1167,10 +1167,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (campaign && campaign.trafficstarCampaignId) {
             console.log(`⛔ CRITICAL: Traffic Generator just enabled - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId}`);
             
-            // IMMEDIATELY pause the campaign
-            await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+            // IMPORTANT: Only call processTrafficGenerator here - do NOT call any other functions
+            // This will handle pausing and proper wait period setup through startMinutelyPauseStatusCheck
+            await processTrafficGenerator(id);
+            console.log(`✅ Pause process initiated for campaign ${campaign.trafficstarCampaignId} - waiting period will begin`);
             
-            // Mark the campaign as just enabled in the database
+            // DO NOT call any functions to check spent values here - that will happen after the waiting period
             await db.update(campaigns)
               .set({
                 lastTrafficSenderStatus: 'initial_pause_on_enable',
@@ -1185,10 +1187,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`❌ Critical error pausing campaign after enabling Traffic Generator:`, pauseError);
         }
         
-        // AFTER pausing, also run the regular process (which will handle the waiting period)
-        processTrafficGenerator(id).catch(err => {
-          console.error(`Error in immediate traffic generator check for campaign ${id}:`, err);
-        });
+        // DO NOT run processTrafficGenerator here again - we already called it above
+        // REMOVED: processTrafficGenerator(id) - this was causing immediate checks after pausing
+        // This removal is critical to ensure we respect the 10-minute wait period
       }
       
       res.json(updatedCampaign);
