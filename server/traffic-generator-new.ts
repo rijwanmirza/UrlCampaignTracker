@@ -1076,17 +1076,23 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     
     if (!campaign) {
       console.error(`Campaign ${campaignId} not found`);
+      // Clear any running monitoring intervals for safety
+      stopAllMonitoring(campaignId);
       return;
     }
     
-    // Skip if traffic generator is not enabled
+    // Skip if traffic generator is not enabled and we're not in force mode
     if (!campaign.trafficGeneratorEnabled && !forceMode) {
-      console.log(`Traffic Generator not enabled for campaign ${campaignId} - skipping`);
+      console.log(`Traffic Generator not enabled for campaign ${campaignId} - stopping all monitoring`);
+      // CRITICAL FIX: Always stop all monitoring when traffic generator is disabled
+      stopAllMonitoring(campaignId);
       return;
     }
     
     if (!campaign.trafficstarCampaignId) {
-      console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping`);
+      console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping and stopping all monitoring`);
+      // Stop all monitoring since we can't do anything without a TrafficStar campaign ID
+      stopAllMonitoring(campaignId);
       return;
     }
     
@@ -1097,6 +1103,9 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       console.log(`💪 FORCE MODE: Forcing activation of campaign ${campaign.trafficstarCampaignId}`);
       
       try {
+        // First, clean up any existing monitoring
+        stopAllMonitoring(campaignId);
+        
         // Set end time to 23:59 UTC today
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -1120,6 +1129,9 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       console.log(`💪 FORCE MODE: Forcing pause of campaign ${campaign.trafficstarCampaignId}`);
       
       try {
+        // First, clean up any existing monitoring
+        stopAllMonitoring(campaignId);
+        
         // Pause the campaign
         await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
         
@@ -1135,9 +1147,14 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       }
     }
     
-    // Check if the Traffic Generator was JUST ENABLED
-    // Important: specifically detect the transition from disabled to enabled
-    const wasJustEnabled = campaign.lastTrafficSenderStatus === null;
+    // IMPROVED DETECTION: Check if the Traffic Generator was JUST ENABLED
+    // Consider it "just enabled" if: 
+    // 1. lastTrafficSenderStatus is null (first time)
+    // 2. lastTrafficSenderStatus is 'disabled' (re-enabled after being disabled)
+    // 3. lastTrafficSenderStatus doesn't exist (legacy data)
+    const wasJustEnabled = campaign.lastTrafficSenderStatus === null || 
+                          campaign.lastTrafficSenderStatus === 'disabled' ||
+                          campaign.lastTrafficSenderStatus === undefined;
     
     // ALWAYS IMMEDIATELY PAUSE when just enabled, no questions asked
     if (wasJustEnabled) {
