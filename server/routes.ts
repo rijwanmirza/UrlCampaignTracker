@@ -1361,6 +1361,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // IMMEDIATE CHECK: After adding a URL, check if campaign needs to be resumed 
+      // This ensures immediate responsiveness to URL availability changes
+      console.log(`⚡ URL created - running immediate empty URL check for campaign ${campaignId}`);
+      try {
+        const result = await pauseTrafficStarForEmptyCampaigns(campaignId);
+        console.log(`✅ Immediate empty URL check completed for campaign ${campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
+      } catch (checkError) {
+        console.error(`⚠️ Error during immediate empty URL check: ${checkError}`);
+      }
+      
       // Normal case - URL created successfully without duplication
       res.status(201).json(url);
     } catch (error) {
@@ -1454,10 +1464,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid URL ID" });
       }
+      
+      // Get URL information before deleting to know which campaign it belongs to
+      const url = await storage.getUrl(id);
+      if (!url) {
+        return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // Store campaign ID before URL gets deleted
+      const campaignId = url.campaignId;
 
       const success = await storage.deleteUrl(id);
       if (!success) {
         return res.status(404).json({ message: "URL not found" });
+      }
+      
+      // IMMEDIATE CHECK: After URL deletion, check if campaign should be paused 
+      // This ensures immediate responsiveness to URL availability changes
+      console.log(`⚡ URL deleted - running immediate empty URL check for campaign ${campaignId}`);
+      try {
+        const result = await pauseTrafficStarForEmptyCampaigns(campaignId);
+        console.log(`✅ Immediate empty URL check completed for campaign ${campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
+      } catch (checkError) {
+        console.error(`⚠️ Error during immediate empty URL check: ${checkError}`);
       }
 
       res.status(204).end();
@@ -1503,6 +1532,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = await storage.bulkUpdateUrls(urlIds, action);
       if (!success) {
         return res.status(404).json({ message: "No valid URLs found" });
+      }
+      
+      // IMMEDIATE CHECK: After bulk URL update, check affected campaigns
+      try {
+        // First, get all affected campaigns from these URLs
+        const urlsWithCampaigns = await db.select({ 
+          campaignId: urls.campaignId 
+        })
+        .from(urls)
+        .where(inArray(urls.id, urlIds));
+        
+        // Extract unique campaign IDs
+        const affectedCampaignIds = [...new Set(urlsWithCampaigns.map(u => u.campaignId))];
+        
+        console.log(`⚡ Bulk URL ${action} operation - running immediate empty URL check for ${affectedCampaignIds.length} affected campaigns`);
+        
+        // Check each affected campaign immediately
+        for (const campaignId of affectedCampaignIds) {
+          try {
+            const result = await pauseTrafficStarForEmptyCampaigns(campaignId);
+            console.log(`✅ Immediate empty URL check for campaign ${campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
+          } catch (checkError) {
+            console.error(`⚠️ Error during immediate empty URL check for campaign ${campaignId}: ${checkError}`);
+          }
+        }
+      } catch (checkError) {
+        console.error(`⚠️ Error identifying affected campaigns for empty URL check: ${checkError}`);
+        // Continue even if there's an error with the immediate check
       }
       
       res.status(204).end();
