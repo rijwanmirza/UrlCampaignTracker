@@ -5156,5 +5156,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test route for the empty URL check function
+  app.get("/api/trafficstar/test-empty-url-check", async (req: Request, res: Response) => {
+    try {
+      console.log('Manually running the empty URL check function for testing');
+      // Import the function and run it
+      const { pauseTrafficStarForEmptyCampaigns } = await import('./traffic-generator-new');
+      await pauseTrafficStarForEmptyCampaigns();
+      res.json({ 
+        success: true, 
+        message: 'Empty URL check completed. Check server logs for details.' 
+      });
+    } catch (error) {
+      console.error("Error in empty URL check test:", error);
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
+  
   return server;
 }
