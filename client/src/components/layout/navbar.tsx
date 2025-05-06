@@ -179,6 +179,20 @@ export default function Navbar() {
           </div>
         </Link>
         
+        <Link 
+          href="/url-budget-logs" 
+          className="block py-3 border-b"
+          onClick={() => setMenuOpen(false)}
+        >
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 8c-2.68 0-4.83.58-6.04 1.5C4.73 10.42 4 11.53 4 12.5s.73 2.08 1.96 3c1.21.92 3.36 1.5 6.04 1.5 2.68 0 4.83-.58 6.04-1.5 1.23-.92 1.96-2.03 1.96-3s-.73-2.08-1.96-3C16.83 8.58 14.68 8 12 8z" stroke="currentColor" strokeWidth="2" />
+              <path d="M4 12.5v5c0 .97.73 2.08 1.96 3 1.21.92 3.36 1.5 6.04 1.5 2.68 0 4.83-.58 6.04-1.5 1.23-.92 1.96-2.03 1.96-3v-5" stroke="currentColor" strokeWidth="2" />
+            </svg>
+            <span className="font-medium">URL Budget Logs</span>
+          </div>
+        </Link>
+        
         <div className="block py-3 border-b text-gray-400 cursor-not-allowed">
           <div className="flex items-center">
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

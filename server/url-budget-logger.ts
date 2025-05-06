@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { promises as fsPromises } from 'fs';
 import { FileHandle } from 'fs/promises';
 
 /**
@@ -10,15 +11,13 @@ export class UrlBudgetLogger {
   private static instance: UrlBudgetLogger;
   private logFilePath: string;
   private fileHandle: FileHandle | null = null;
-  
+
   private constructor() {
-    // Set log file path in project root directory
-    this.logFilePath = path.join(process.cwd(), 'Active_Url_Budget_Logs');
-    
-    // Ensure log file exists
+    // Set the log file path to the root directory
+    this.logFilePath = path.join('.', 'Active_Url_Budget_Logs');
     this.ensureLogFileExists();
   }
-  
+
   /**
    * Get singleton instance of the logger
    */
@@ -28,21 +27,21 @@ export class UrlBudgetLogger {
     }
     return UrlBudgetLogger.instance;
   }
-  
+
   /**
    * Ensure the log file exists, create if not
    */
   private ensureLogFileExists(): void {
-    try {
-      if (!fs.existsSync(this.logFilePath)) {
+    if (!fs.existsSync(this.logFilePath)) {
+      try {
         fs.writeFileSync(this.logFilePath, '');
         console.log(`Created URL budget log file at ${this.logFilePath}`);
+      } catch (error) {
+        console.error(`Failed to create URL budget log file: ${error}`);
       }
-    } catch (error) {
-      console.error('Error creating URL budget log file:', error);
     }
   }
-  
+
   /**
    * Log a URL budget calculation
    * @param urlId URL ID
@@ -50,60 +49,48 @@ export class UrlBudgetLogger {
    */
   public async logUrlBudget(urlId: number, price: number): Promise<void> {
     try {
-      // Format the current UTC date and time (HH:MM:SS)
+      // Format date and time
       const now = new Date();
-      const day = now.getUTCDate().toString().padStart(2, '0');
-      const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
-      const year = now.getUTCFullYear();
-      const hours = now.getUTCHours().toString().padStart(2, '0');
-      const minutes = now.getUTCMinutes().toString().padStart(2, '0');
-      const seconds = now.getUTCSeconds().toString().padStart(2, '0');
+      const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const time = now.toISOString().split('T')[1].substring(0, 8); // HH:MM:SS
       
-      const dateTimeFormatted = `${day}-${month}-${year}::${hours}:${minutes}:${seconds}`;
-      
-      // Format the price with $ sign
-      const priceFormatted = `$${price.toFixed(2)}`;
-      
-      // Create log entry in format: UrlId|Price|Date::Time
-      const logEntry = `${urlId}|${priceFormatted}|${dateTimeFormatted}\n`;
-      
+      // Format the log entry: UrlId|Price|Date::Time
+      const logEntry = `${urlId}|${price.toFixed(4)}|${date}::${time}\n`;
+
       // Append to log file
-      fs.appendFileSync(this.logFilePath, logEntry);
-      
-      console.log(`Logged URL budget calculation: ${logEntry.trim()}`);
+      await fsPromises.appendFile(this.logFilePath, logEntry);
+      console.log(`Logged URL budget for URL ID ${urlId}: $${price.toFixed(4)} at ${date}::${time}`);
     } catch (error) {
-      console.error('Error logging URL budget calculation:', error);
+      console.error(`Failed to log URL budget: ${error}`);
     }
   }
-  
+
   /**
    * Get all URL budget logs
    * @returns Array of log entries
    */
   public async getUrlBudgetLogs(): Promise<Array<{urlId: number, price: string, dateTime: string}>> {
     try {
-      // Read log file
-      const logContent = fs.readFileSync(this.logFilePath, 'utf-8');
+      // Read the log file
+      const fileContent = await fsPromises.readFile(this.logFilePath, 'utf-8');
+      const lines = fileContent.split('\n').filter(line => line.trim() !== '');
       
-      // Parse log entries
-      const logs = logContent.split('\n')
-        .filter(line => line.trim() !== '')
-        .map(line => {
-          const [urlId, price, dateTime] = line.split('|');
-          return {
-            urlId: parseInt(urlId),
-            price,
-            dateTime
-          };
-        });
-      
-      return logs;
+      // Parse each line
+      return lines.map(line => {
+        const [urlId, price, dateTime] = line.split('|');
+        return {
+          urlId: parseInt(urlId, 10),
+          price: price,
+          dateTime: dateTime
+        };
+      });
     } catch (error) {
-      console.error('Error reading URL budget logs:', error);
+      console.error(`Failed to get URL budget logs: ${error}`);
       return [];
     }
   }
 }
 
-// Export default instance
-export default UrlBudgetLogger.getInstance();
+// Export a singleton instance
+const urlBudgetLogger = UrlBudgetLogger.getInstance();
+export default urlBudgetLogger;

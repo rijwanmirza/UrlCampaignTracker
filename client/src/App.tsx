@@ -102,6 +102,9 @@ function Router() {
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
           </Route>
+          <Route path="/url-budget-logs">
+            <UrlBudgetLogsPage />
+          </Route>
           <Route path="/api-tester">
             <ApiTesterPage />
           </Route>
@@ -167,6 +170,9 @@ function Router() {
           </Route>
           <Route path="/detailed-url-record/:urlId">
             <DetailedUrlRecordPage />
+          </Route>
+          <Route path="/url-budget-logs">
+            <UrlBudgetLogsPage />
           </Route>
           <Route path="/api-tester">
             <ApiTesterPage />
