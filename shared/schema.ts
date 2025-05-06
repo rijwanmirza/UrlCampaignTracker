@@ -43,6 +43,7 @@ export const campaigns = pgTable("campaigns", {
   // Traffic Generator feature
   trafficGeneratorEnabled: boolean("traffic_generator_enabled").default(false), // Enable/disable traffic generator
   postPauseCheckMinutes: integer("post_pause_check_minutes").default(2), // Minutes to wait after pause before checking spent value
+  highSpendWaitMinutes: integer("high_spend_wait_minutes").default(11), // Minutes to wait after pause for high-spend campaigns ($10+)
   // DEPRECATED: Traffic Sender feature has been removed
   // Keeping these fields in the schema for backward compatibility but they are no longer used
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
