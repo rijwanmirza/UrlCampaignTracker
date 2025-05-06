@@ -1161,11 +1161,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // CRITICAL FIX: Instead of just calling processTrafficGenerator, FORCE PAUSE IMMEDIATELY
           // This is to ensure the campaign is ALWAYS paused first thing after enabling Traffic Generator
-          const { pauseTrafficStarCampaign } = await import('./traffic-generator-new');
+          const { pauseTrafficStarCampaign, stopAllMonitoring } = await import('./traffic-generator-new');
           
           // Get the TrafficStar campaign ID directly from the updated campaign
           const campaign = await storage.getCampaign(id);
           if (campaign && campaign.trafficstarCampaignId) {
+            console.log(`⛔ CRITICAL FIX: Traffic Generator just enabled - FIRST STOPPING ALL EXISTING TIMERS`);
+            
+            // CRITICAL NEW FIX: Stop all monitoring before starting the process
+            // This prevents conflicts between different timer types
+            await stopAllMonitoring(id);
+            
             console.log(`⛔ CRITICAL: Traffic Generator just enabled - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId}`);
             
             // IMPORTANT: Only call processTrafficGenerator here - do NOT call any other functions
