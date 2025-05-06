@@ -16,7 +16,8 @@ import { campaigns, urls } from '@shared/schema';
 
 interface UrlBudgetEntry {
   urlId: number;
-  remainingClicks: number;
+  clickCount: number;      // This can be either remaining clicks or required clicks based on context
+  isRemainingCount: boolean; // Flag to indicate if clickCount is remaining clicks or full required clicks
   budgetValue: number;
   timestamp: string;
   processed: boolean;
@@ -78,10 +79,13 @@ export class UrlBudgetTracker {
    * @param entry URL budget entry to log
    */
   private logUrlBudget(entry: UrlBudgetEntry): void {
-    const logLine = `${entry.urlId}|${entry.remainingClicks}|$${entry.budgetValue.toFixed(2)}|${entry.timestamp}`;
+    // Format is: urlId|clickCount|$budgetValue|timestamp
+    // Where clickCount is either remaining clicks or required clicks based on isRemainingCount flag
+    const clickCountType = entry.isRemainingCount ? "remaining" : "required";
+    const logLine = `${entry.urlId}|${entry.clickCount}|$${entry.budgetValue.toFixed(2)}|${entry.timestamp}`;
     
     fs.appendFileSync(this.logFilePath, logLine + '\n');
-    console.log(`📝 Logged URL budget: ${logLine}`);
+    console.log(`📝 Logged URL budget: ${logLine} (${clickCountType} clicks)`);
   }
   
   /**
@@ -98,14 +102,29 @@ export class UrlBudgetTracker {
    * @param url URL object
    * @param campaign Campaign object with price information
    * @param scheduleUpdate Whether to schedule a budget update
+   * @param useFullClicks Whether to use full required clicks (true for new URLs) or remaining clicks (false for initial URLs in high-spend campaigns)
    */
-  public trackUrlBudget(url: Url, campaign: Campaign, scheduleUpdate: boolean = true): void {
-    // Calculate remaining clicks
-    const remainingClicks = this.getRemainingClicks(url);
+  public trackUrlBudget(url: Url, campaign: Campaign, scheduleUpdate: boolean = true, useFullClicks: boolean = false): void {
+    // Determine which click count to use based on the useFullClicks parameter
+    // - For newly added URLs (useFullClicks=true), use the full clickLimit
+    // - For initial URLs in high-spend campaigns (useFullClicks=false), use the remaining clicks
     
-    // If no remaining clicks, don't track
-    if (remainingClicks <= 0) {
-      console.log(`URL ${url.id} has no remaining clicks, skipping budget tracking`);
+    let clickCount: number;
+    const isRemainingCount: boolean = !useFullClicks;
+    
+    if (useFullClicks) {
+      // Use the full required clicks (clickLimit)
+      clickCount = url.clickLimit;
+      console.log(`Using full required clicks (${clickCount}) for URL ${url.id}`);
+    } else {
+      // Use remaining clicks
+      clickCount = this.getRemainingClicks(url);
+      console.log(`Using remaining clicks (${clickCount}) for URL ${url.id}`);
+    }
+    
+    // If no clicks to count, don't track
+    if (clickCount <= 0) {
+      console.log(`URL ${url.id} has no clicks to count, skipping budget tracking`);
       return;
     }
     
@@ -115,7 +134,7 @@ export class UrlBudgetTracker {
       : campaign.pricePerThousand || 0;
     
     // Calculate budget value
-    const budgetValue = this.calculateBudgetValue(remainingClicks, pricePerThousand);
+    const budgetValue = this.calculateBudgetValue(clickCount, pricePerThousand);
     
     // Create UTC timestamp
     const timestamp = this.formatUtcDateTime();
@@ -123,7 +142,8 @@ export class UrlBudgetTracker {
     // Create entry
     const entry: UrlBudgetEntry = {
       urlId: url.id,
-      remainingClicks,
+      clickCount,
+      isRemainingCount,
       budgetValue,
       timestamp,
       processed: false,
@@ -287,10 +307,11 @@ export class UrlBudgetTracker {
       // Only schedule one update for the entire campaign, not per URL
       const shouldScheduleUpdate = activeUrls.length > 0;
       
-      // Track budget for each URL
+      // Track budget for each URL - for initial tracking, use remaining clicks
       for (const url of activeUrls) {
         // Don't schedule individual updates, we'll do one for the campaign
-        this.trackUrlBudget(url, campaign, false);
+        // Use remaining clicks (useFullClicks=false) for initial campaign tracking
+        this.trackUrlBudget(url, campaign, false, false);
       }
       
       // Now schedule a single update for the campaign if needed
@@ -346,8 +367,10 @@ export class UrlBudgetTracker {
         return;
       }
       
-      // Track the URL budget and schedule an update
-      this.trackUrlBudget(url, campaign, true);
+      // For newly added URLs, we use the FULL required clicks (useFullClicks=true)
+      // This is especially important for campaigns that already have $10+ spent
+      console.log(`Tracking new URL ${urlId} with FULL required clicks for budget calculation`);
+      this.trackUrlBudget(url, campaign, true, true);
       
     } catch (error) {
       console.error(`Error tracking new URL budget:`, error);
