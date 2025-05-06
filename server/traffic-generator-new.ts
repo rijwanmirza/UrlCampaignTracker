@@ -422,12 +422,12 @@ const emptyUrlStatusChecks = new Map<number, NodeJS.Timeout>();
  * when Traffic Generator is disabled
  * @param campaignId The campaign ID to stop monitoring for
  */
-export /**
+/**
  * Stop all monitoring for a campaign
  * This IMMEDIATELY stops ALL monitoring intervals for a campaign when Traffic Generator is disabled
  * @param campaignId The campaign ID
  */
-async function stopAllMonitoring(campaignId: number): Promise<void> {
+export async function stopAllMonitoring(campaignId: number): Promise<void> {
   console.log(`🛑 Stopping ALL Traffic Generator monitoring for campaign ${campaignId}`);
   
   // Immediately force cancel any running timers - the Global Active Timer
@@ -1114,22 +1114,22 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     if (!campaign) {
       console.error(`Campaign ${campaignId} not found`);
       // Clear any running monitoring intervals for safety
-      stopAllMonitoring(campaignId);
+      await stopAllMonitoring(campaignId);
       return;
     }
     
     // Skip if traffic generator is not enabled and we're not in force mode
     if (!campaign.trafficGeneratorEnabled && !forceMode) {
-      console.log(`Traffic Generator not enabled for campaign ${campaignId} - stopping all monitoring`);
-      // CRITICAL FIX: Always stop all monitoring when traffic generator is disabled
-      stopAllMonitoring(campaignId);
+      console.log(`⚠️ Traffic Generator not enabled for campaign ${campaignId} - IMMEDIATELY stopping ALL monitoring`);
+      // CRITICAL FIX: Always stop all monitoring when Traffic Generator is disabled
+      await stopAllMonitoring(campaignId);
       return;
     }
     
     if (!campaign.trafficstarCampaignId) {
       console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping and stopping all monitoring`);
       // Stop all monitoring since we can't do anything without a TrafficStar campaign ID
-      stopAllMonitoring(campaignId);
+      await stopAllMonitoring(campaignId);
       return;
     }
     
@@ -1141,7 +1141,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       
       try {
         // First, clean up any existing monitoring
-        stopAllMonitoring(campaignId);
+        await stopAllMonitoring(campaignId);
         
         // Set end time to 23:59 UTC today
         const today = new Date();
@@ -1167,7 +1167,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       
       try {
         // First, clean up any existing monitoring
-        stopAllMonitoring(campaignId);
+        await stopAllMonitoring(campaignId);
         
         // Pause the campaign
         await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
@@ -1478,7 +1478,12 @@ export function initializeTrafficGeneratorScheduler() {
   }, 10 * 1000);
   
   // Set up a periodic job to run the traffic generator every 5 minutes
-  setInterval(() => {
+  // Use the global timer so we can control it properly when disabling Traffic Generator
+  if (globalActiveTimer) {
+    clearInterval(globalActiveTimer);
+  }
+  
+  globalActiveTimer = setInterval(() => {
     console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
   }, 5 * 60 * 1000); // 5 minutes
