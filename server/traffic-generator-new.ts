@@ -409,15 +409,18 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       
       // Check if the campaign is already in the waiting period for high spend handling
       if (campaign.lastTrafficSenderStatus === 'high_spend_waiting') {
-        // Check if the 11-minute waiting period has elapsed
+        // Get high spend wait minutes from campaign (default to 11 if not set)
+        const highSpendWaitMinutes = campaign.highSpendWaitMinutes || 11;
+        
+        // Check if the configured waiting period has elapsed
         if (campaign.lastTrafficSenderAction) {
           const waitDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
           const waitMinutes = Math.floor(waitDuration / (60 * 1000));
           
-          console.log(`Campaign ${campaignId} has been in high_spend_waiting state for ${waitMinutes} minutes`);
+          console.log(`Campaign ${campaignId} has been in high_spend_waiting state for ${waitMinutes} minutes (configured wait: ${highSpendWaitMinutes} minutes)`);
           
-          if (waitMinutes >= 11) {
-            console.log(`11-minute wait period has elapsed for campaign ${campaignId} - proceeding with high spend handling`);
+          if (waitMinutes >= highSpendWaitMinutes) {
+            console.log(`${highSpendWaitMinutes}-minute wait period has elapsed for campaign ${campaignId} - proceeding with high spend handling`);
             
             // 1. Get updated spent value after waiting period
             const updatedSpentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
@@ -500,7 +503,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                 .where(eq(campaigns.id, campaignId));
             }
           } else {
-            console.log(`Waiting period not elapsed yet (${waitMinutes}/11 minutes) for campaign ${campaignId}`);
+            console.log(`Waiting period not elapsed yet (${waitMinutes}/${highSpendWaitMinutes} minutes) for campaign ${campaignId}`);
           }
         }
       } else {
@@ -525,7 +528,10 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
             console.log(`Campaign ${trafficstarCampaignId} is already paused - no need to pause it again`);
           }
           
-          // Mark as high_spend_waiting in the database and start the 11-minute timer
+          // Get high spend wait minutes from campaign (default to 11 if not set)
+          const highSpendWaitMinutes = campaign.highSpendWaitMinutes || 11;
+          
+          // Mark as high_spend_waiting in the database and start the configurable timer
           await db.update(campaigns)
             .set({
               lastTrafficSenderStatus: 'high_spend_waiting',
@@ -535,7 +541,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
             .where(eq(campaigns.id, campaignId));
           
           console.log(`✅ Marked campaign ${campaignId} as 'high_spend_waiting' in database`);
-          console.log(`⏱️ Starting 11-minute wait period for campaign ${trafficstarCampaignId}`);
+          console.log(`⏱️ Starting ${highSpendWaitMinutes}-minute wait period for campaign ${trafficstarCampaignId}`);
           
           // Start monitoring during the wait period
           startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
