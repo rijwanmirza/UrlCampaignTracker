@@ -99,6 +99,7 @@ export const updateCampaignSchema = z.object({
   // Traffic Generator feature
   trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
   postPauseCheckMinutes: z.number().int().min(1).max(30).optional(), // Minutes to wait after pause before checking spent value (1-30)
+  highSpendWaitMinutes: z.number().int().min(1).max(30).optional(), // Minutes to wait after pause for high-spend campaigns ($10+)
   // DEPRECATED: Traffic Sender fields - no longer in use
   trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED

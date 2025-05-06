@@ -563,6 +563,42 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                       )}
                     />
                   )}
+                  
+                  {/* High Spend Wait Interval - only show when Traffic Generator is enabled */}
+                  {form.watch("trafficGeneratorEnabled") && (
+                    <FormField
+                      control={form.control}
+                      name="highSpendWaitMinutes"
+                      render={({ field }) => (
+                        <FormItem className="mt-3 pt-3 border-t border-gray-100">
+                          <FormLabel>More than $10 Interval (minutes)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="30"
+                              step="1"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? '' : e.target.value;
+                                const parsedValue = parseInt(value, 10);
+                                if (!isNaN(parsedValue)) {
+                                  field.onChange(parsedValue);
+                                } else {
+                                  field.onChange(value);
+                                }
+                              }}
+                              value={field.value}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Time to wait after pausing a high-spend campaign ($10+) before recalculating budget (1-30 minutes).
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </div>
               
