@@ -965,6 +965,119 @@ export async function runTrafficGeneratorForAllCampaigns() {
 }
 
 /**
+ * Check for campaigns with no active URLs and pause their TrafficStar campaigns
+ * This function is separate from other Traffic Generator functionality
+ * It only handles the specific case of no active URLs in a campaign
+ */
+export async function pauseTrafficStarForEmptyCampaigns() {
+  try {
+    console.log('Checking for campaigns with no active URLs to pause TrafficStar campaigns');
+    
+    // Get all campaigns with TrafficStar campaign IDs
+    const campaignsWithTrafficStar = await db.select()
+      .from(campaigns)
+      .where(sql`trafficstar_campaign_id is not null AND traffic_generator_enabled = true`);
+    
+    if (!campaignsWithTrafficStar || campaignsWithTrafficStar.length === 0) {
+      console.log('No campaigns with TrafficStar integration found');
+      return;
+    }
+    
+    console.log(`Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
+    
+    // Process each campaign
+    for (const campaign of campaignsWithTrafficStar) {
+      if (!campaign.trafficstarCampaignId) continue;
+      
+      // Get all active URLs for this campaign
+      const activeUrls = await db.select()
+        .from(urls)
+        .where(
+          and(
+            eq(urls.campaignId, campaign.id),
+            eq(urls.status, 'active')
+          )
+        );
+      
+      console.log(`Campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId}) has ${activeUrls.length} active URLs`);
+      
+      // If there are no active URLs, pause the TrafficStar campaign
+      if (activeUrls.length === 0) {
+        console.log(`Campaign ${campaign.id} has NO active URLs - will pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        
+        // Check the current status of the TrafficStar campaign
+        const currentStatus = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+        
+        if (currentStatus === 'active') {
+          console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE but has no active URLs - pausing it`);
+          
+          try {
+            // Set current date/time for end time
+            const now = new Date();
+            const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+            
+            // First pause the campaign
+            await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+            
+            // Then set its end time
+            await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedDateTime);
+            
+            console.log(`✅ PAUSED TrafficStar campaign ${campaign.trafficstarCampaignId} due to no active URLs`);
+            
+            // Mark as auto-paused in the database
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'auto_paused_no_active_urls',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaign.id));
+            
+            // Start pause status monitoring
+            startMinutelyPauseStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          } catch (error) {
+            console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
+          }
+        } else if (currentStatus === 'paused') {
+          console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already PAUSED with no active URLs - continuing monitoring`);
+          
+          // Update status in database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'paused_no_active_urls',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+          
+          // Ensure we're monitoring the paused status
+          startMinutelyPauseStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+        } else {
+          console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} has status: ${currentStatus || 'unknown'} - will monitor`);
+        }
+      } else {
+        // If there are active URLs, and the campaign was previously marked as paused due to no active URLs,
+        // we should update its status
+        if (campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
+            campaign.lastTrafficSenderStatus === 'paused_no_active_urls') {
+          console.log(`Campaign ${campaign.id} now has ${activeUrls.length} active URLs - updating status`);
+          
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'active_urls_available',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in pauseTrafficStarForEmptyCampaigns:', error);
+  }
+}
+
+/**
  * Initialize Traffic Generator scheduler
  * This function sets up a periodic job to run the traffic generator
  */
@@ -975,11 +1088,23 @@ export function initializeTrafficGeneratorScheduler() {
   console.log('Running initial traffic generator check on startup');
   runTrafficGeneratorForAllCampaigns();
   
+  // Also run the empty URL check on startup (after 10 seconds to allow other initializations)
+  setTimeout(() => {
+    console.log('Running initial empty URL check');
+    pauseTrafficStarForEmptyCampaigns();
+  }, 10 * 1000);
+  
   // Set up a periodic job to run the traffic generator every 5 minutes
   setInterval(() => {
     console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
   }, 5 * 60 * 1000); // 5 minutes
+  
+  // Set up a periodic job to check for empty campaigns every 3 minutes
+  setInterval(() => {
+    console.log('Running scheduled empty URL check');
+    pauseTrafficStarForEmptyCampaigns();
+  }, 3 * 60 * 1000); // 3 minutes
   
   console.log('Traffic Generator scheduler initialized successfully');
 }
