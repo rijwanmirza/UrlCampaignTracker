@@ -1,0 +1,423 @@
+=================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 1 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 1 campaigns:
+   - Campaign #1 (dwdxaxaaza): 1 URLs with incorrect multipliers
+✅ Fixed 1 URL click values with incorrect multipliers
+🧹 Invalidating caches for 1 affected campaigns
+🧹 Invalidating campaign cache for ID: 1
+🔄 Force refreshing campaign data for ID: 1
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+🔄 Force refreshing URLs for campaign ID: 1
+✅ Automatic multiplier check fixed 1 URL click limits
+9:57:54 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+9:57:54 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+9:57:54 AM [gmail-reader] Current IMAP connection state: authenticated
+9:57:54 AM [gmail-reader] Scanning for processed emails older than 2025-05-06T09:55:54.466Z (2 minutes ago)
+9:57:54 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 DEBUG: Campaign update request received: {
+  "name": "Test Click Count Fix",
+  "redirectMethod": "direct",
+  "customPath": "clicktest",
+  "multiplier": 1,
+  "pricePerThousand": 1,
+  "trafficstarCampaignId": "1000866",
+  "budgetUpdateTime": "00:00:00",
+  "trafficGeneratorEnabled": false,
+  "postPauseCheckMinutes": 10
+}
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+⛔ CRITICAL: Traffic Generator being DISABLED for campaign 9 - stopping ALL monitoring
+🛑 Stopping ALL Traffic Generator monitoring for campaign 9
+✅ Successfully disabled and stopped all Traffic Generator monitoring for campaign 9
+🔍 DEBUG: Traffic Generator enabled value (after normalization): false type: boolean
+🔍 DEBUG: Traffic Sender enabled value (after normalization): undefined type: undefined
+🔍 DEBUG: Campaign update request TYPE: number
+🔍 DEBUG: Campaign update request VALUE: 1
+🔍 DEBUG: Campaign update requested: ID 9
+  - Current multiplier: 1 (type: number)
+  - Requested multiplier: 1 (type: number)
+🔍 DEBUG: Received pricePerThousand: 1 type: number
+🔍 DEBUG: Setting pricePerThousand to: 1.0000
+🔍 DEBUG: Setting trafficstarCampaignId to: 1000866
+🔍 DEBUG: Setting budgetUpdateTime to: 00:00:00
+🔍 DEBUG: Setting trafficGeneratorEnabled to: false (original value: false )
+🔍 DEBUG: Setting postPauseCheckMinutes to: 10
+🔍 DEBUG: No multiplier change detected, skipping URL updates
+9:58:20 AM [express] PUT /api/campaigns/9 200 in 151ms :: {"id":9,"name":"Test Click Count Fix","red…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+9:58:21 AM [express] GET /api/campaigns/9 200 in 37ms :: {"id":9,"name":"Test Click Count Fix","redi…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+9:58:21 AM [express] GET /api/campaigns 200 in 196ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+⏱️ Running minute check for campaign 1000866 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+✅ Campaign 1000866 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 16 URLs in campaign 1000866
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 283
+🔍 URL ID: 287, status: active, clickLimit: 14999, clicks: 0
+✅ Adding 14999 remaining clicks from URL ID: 287
+🔍 URL ID: 384, status: active, clickLimit: 1000, clicks: 0
+✅ Adding 1000 remaining clicks from URL ID: 384
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7348780,
+        "nice": 180,
+        "sys": 1706950,
+        "idle": 22579630,
+        "irq": 766350
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 7481510,
+        "nice": 0,
+        "sys": 1748360,
+        "idle": 22322810,
+        "irq": 794380
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 10668020,
+        "nice": 150,
+        "sys": 2200480,
+        "idle": 17924810,
+        "irq": 834700
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 10724710,
+        "nice": 0,
+        "sys": 2187870,
+        "idle": 17897080,
+        "irq": 811580
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 10377460,
+        "nice": 0,
+        "sys": 2316850,
+        "idle": 17900020,
+        "irq": 854350
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 10319280,
+        "nice": 0,
+        "sys": 2279640,
+        "idle": 18000360,
+        "irq": 841300
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 10637230,
+        "nice": 10,
+        "sys": 2188870,
+        "idle": 18023210,
+        "irq": 850400
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 10608640,
+        "nice": 0,
+        "sys": 2199870,
+        "idle": 18007170,
+        "irq": 827690
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 23837806592
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.75,
+  "currentLoad": 28.389719381064776,
+  "currentLoadUser": 20.06294256490952,
+  "currentLoadSystem": 6.040737826733106,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 71.61028061893522,
+  "currentLoadIrq": 2.2860389894221522,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 129900,
+  "rawCurrentLoadUser": 91800,
+  "rawCurrentLoadSystem": 27640,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 327660,
+  "rawCurrentLoadIrq": 10460,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 24.122427805637212,
+      "loadUser": 17.672488327857515,
+      "loadSystem": 4.3575998616634966,
+      "loadNice": 0,
+      "loadIdle": 75.87757219436278,
+      "loadIrq": 2.0923396161162024,
+      "rawLoad": 13950,
+      "rawLoadUser": 10220,
+      "rawLoadSystem": 2520,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 43880,
+      "rawLoadIrq": 1210,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 24.220499569336777,
+      "loadUser": 17.6916451335056,
+      "loadSystem": 4.513350559862188,
+      "loadNice": 0,
+      "loadIdle": 75.77950043066322,
+      "loadIrq": 2.0155038759689923,
+      "rawLoad": 14060,
+      "rawLoadUser": 10270,
+      "rawLoadSystem": 2620,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 43990,
+      "rawLoadIrq": 1170,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 28.473923696184812,
+      "loadUser": 20.021001050052504,
+      "loadSystem": 6.090304515225761,
+      "loadNice": 0,
+      "loadIdle": 71.52607630381519,
+      "loadIrq": 2.3626181309065455,
+      "rawLoad": 16270,
+      "rawLoadUser": 11440,
+      "rawLoadSystem": 3480,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40870,
+      "rawLoadIrq": 1350,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.4635761589404,
+      "loadUser": 21.55803415824329,
+      "loadSystem": 6.709654932032066,
+      "loadNice": 0,
+      "loadIdle": 69.5364238410596,
+      "loadIrq": 2.1958870686650402,
+      "rawLoad": 17480,
+      "rawLoadUser": 12370,
+      "rawLoadSystem": 3850,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39900,
+      "rawLoadIrq": 1260,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.94733121244256,
+      "loadUser": 21.10286320254507,
+      "loadSystem": 7.387769529869212,
+      "loadNice": 0,
+      "loadIdle": 69.05266878755744,
+      "loadIrq": 2.4566984800282783,
+      "rawLoad": 17510,
+      "rawLoadUser": 11940,
+      "rawLoadSystem": 4180,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39070,
+      "rawLoadIrq": 1390,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.01932197435447,
+      "loadUser": 20.28807307219392,
+      "loadSystem": 7.377481117161426,
+      "loadNice": 0,
+      "loadIdle": 69.98067802564553,
+      "loadIrq": 2.3537677849991216,
+      "rawLoad": 17090,
+      "rawLoadUser": 11550,
+      "rawLoadSystem": 4200,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39840,
+      "rawLoadIrq": 1340,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 28.870513722730472,
+      "loadUser": 20.39057002111189,
+      "loadSystem": 6.01688951442646,
+      "loadNice": 0,
+      "loadIdle": 71.12948627726952,
+      "loadIrq": 2.4630541871921183,
+      "rawLoad": 16410,
+      "rawLoadUser": 11590,
+      "rawLoadSystem": 3420,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40430,
+      "rawLoadIrq": 1400,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 30.153142052455557,
+      "loadUser": 21.86234817813765,
+      "loadSystem": 5.932054215807076,
+      "loadNice": 0,
+      "loadIdle": 69.84685794754445,
+      "loadIrq": 2.358739658510826,
+      "rawLoad": 17130,
+      "rawLoadUser": 12420,
+      "rawLoadSystem": 3370,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39680,
+      "rawLoadIrq": 1340,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 2.69, 5.17, 5.98 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [2.69,5.17,5.98]
+Using 1-minute load average: 2.69
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.75,"currentLoad":28.389719381064776,"currentLoadUser":20.06294256490952,"currentLoadSystem":6.040737826733106,"currentLoadNice":0,"currentLoadIdle":71.61028061893522,"currentLoadIrq":2.2860389894221522,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":129900,"rawCurrentLoadUser":91800,"rawCurrentLoadSystem":27640,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":327660,"rawCurrentLoadIrq":10460,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":24.122427805637212,"loadUser":17.672488327857515,"loadSystem":4.3575998616634966,"loadNice":0,"loadIdle":75.87757219436278,"loadIrq":2.0923396161162024,"rawLoad":13950,"rawLoadUser":10220,"rawLoadSystem":2520,"rawLoadNice":0,"rawLoadIdle":43880,"rawLoadIrq":1210,"rawLoadSteal":0,"rawLoadGuest":0},{"load":24.220499569336777,"loadUser":17.6916451335056,"loadSystem":4.513350559862188,"loadNice":0,"loadIdle":75.77950043066322,"loadIrq":2.0155038759689923,"rawLoad":14060,"rawLoadUser":10270,"rawLoadSystem":2620,"rawLoadNice":0,"rawLoadIdle":43990,"rawLoadIrq":1170,"rawLoadSteal":0,"rawLoadGuest":0},{"load":28.473923696184812,"loadUser":20.021001050052504,"loadSystem":6.090304515225761,"loadNice":0,"loadIdle":71.52607630381519,"loadIrq":2.3626181309065455,"rawLoad":16270,"rawLoadUser":11440,"rawLoadSystem":3480,"rawLoadNice":0,"rawLoadIdle":40870,"rawLoadIrq":1350,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.4635761589404,"loadUser":21.55803415824329,"loadSystem":6.709654932032066,"loadNice":0,"loadIdle":69.5364238410596,"loadIrq":2.1958870686650402,"rawLoad":17480,"rawLoadUser":12370,"rawLoadSystem":3850,"rawLoadNice":0,"rawLoadIdle":39900,"rawLoadIrq":1260,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.94733121244256,"loadUser":21.10286320254507,"loadSystem":7.387769529869212,"loadNice":0,"loadIdle":69.05266878755744,"loadIrq":2.4566984800282783,"rawLoad":17510,"rawLoadUser":11940,"rawLoadSystem":4180,"rawLoadNice":0,"rawLoadIdle":39070,"rawLoadIrq":1390,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.01932197435447,"loadUser":20.28807307219392,"loadSystem":7.377481117161426,"loadNice":0,"loadIdle":69.98067802564553,"loadIrq":2.3537677849991216,"rawLoad":17090,"rawLoadUser":11550,"rawLoadSystem":4200,"rawLoadNice":0,"rawLoadIdle":39840,"rawLoadIrq":1340,"rawLoadSteal":0,"rawLoadGuest":0},{"load":28.870513722730472,"loadUser":20.39057002111189,"loadSystem":6.01688951442646,"loadNice":0,"loadIdle":71.12948627726952,"loadIrq":2.4630541871921183,"rawLoad":16410,"rawLoadUser":11590,"rawLoadSystem":3420,"rawLoadNice":0,"rawLoadIdle":40430,"rawLoadIrq":1400,"rawLoadSteal":0,"rawLoadGuest":0},{"load":30.153142052455557,"loadUser":21.86234817813765,"loadSystem":5.932054215807076,"loadNice":0,"loadIdle":69.84685794754445,"loadIrq":2.358739658510826,"rawLoad":17130,"rawLoadUser":12420,"rawLoadSystem":3370,"rawLoadNice":0,"rawLoadIdle":39680,"rawLoadIrq":1340,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 33.625
+Final system load calculation (before fallbacks): 34
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 34
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+Running scheduled empty URL check
+Checking for campaigns with no active URLs to pause TrafficStar campaigns
+No campaigns with TrafficStar integration found
+⏱️ Running minute check for campaign 1000866 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is paused, active=false
+⚠️ Campaign 1000866 was found paused but should be active - will attempt to reactivate
+🔍 PAUSE DETECTED: Checking remaining clicks for 16 URLs in campaign 1000866
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 283
+🔍 URL ID: 287, status: active, clickLimit: 14999, clicks: 0
+✅ Adding 14999 remaining clicks from URL ID: 287
+🔍 URL ID: 384, status: active, clickLimit: 1000, clicks: 0
+✅ Adding 1000 remaining clicks from URL ID: 384
+✅ Campaign 1000866 has 115999 remaining clicks (>= 15000) - will attempt reactivation during monitoring
+Setting campaign 1000866 end time to: 2025-05-06 23:59:00
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+Activating campaign 1000866
+Successfully activated campaign 1000866
+✅ REACTIVATED campaign 1000866 during monitoring - it has 115999 remaining clicks
+✅ Marked campaign 9 as 'reactivated_during_monitoring' in database

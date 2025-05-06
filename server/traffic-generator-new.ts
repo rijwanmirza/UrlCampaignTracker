@@ -13,6 +13,9 @@ import { eq, and, sql } from 'drizzle-orm';
 import { parseSpentValue } from './trafficstar-spent-helper';
 import axios from 'axios';
 
+// Track global active timer to ensure proper cleanup on disable
+let globalActiveTimer: NodeJS.Timeout | null = null;
+
 // Extended URL type with active status
 interface UrlWithActiveStatus extends Url {
   isActive: boolean;
@@ -419,8 +422,20 @@ const emptyUrlStatusChecks = new Map<number, NodeJS.Timeout>();
  * when Traffic Generator is disabled
  * @param campaignId The campaign ID to stop monitoring for
  */
-export function stopAllMonitoring(campaignId: number): void {
+export /**
+ * Stop all monitoring for a campaign
+ * This IMMEDIATELY stops ALL monitoring intervals for a campaign when Traffic Generator is disabled
+ * @param campaignId The campaign ID
+ */
+async function stopAllMonitoring(campaignId: number): Promise<void> {
   console.log(`🛑 Stopping ALL Traffic Generator monitoring for campaign ${campaignId}`);
+  
+  // Immediately force cancel any running timers - the Global Active Timer
+  if (globalActiveTimer) {
+    clearInterval(globalActiveTimer);
+    globalActiveTimer = null;
+    console.log(`✅ Stopped global active timer - will restart after cleanup`);
+  }
   
   // Stop active status checks
   if (activeStatusChecks.has(campaignId)) {
@@ -442,6 +457,28 @@ export function stopAllMonitoring(campaignId: number): void {
     emptyUrlStatusChecks.delete(campaignId);
     console.log(`✅ Stopped empty URL monitoring for campaign ${campaignId}`);
   }
+  
+  // Update the campaign status in database to mark it as disabled
+  try {
+    await db.update(campaigns)
+      .set({
+        lastTrafficSenderStatus: 'disabled',
+        lastTrafficSenderAction: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    console.log(`✅ Updated campaign ${campaignId} status to 'disabled' in database`);
+  } catch (dbError) {
+    console.error(`❌ Failed to update campaign ${campaignId} status to 'disabled' in database:`, dbError);
+  }
+  
+  // Restart the global active timer after 500ms delay to ensure no race conditions
+  setTimeout(() => {
+    if (!globalActiveTimer) {
+      globalActiveTimer = setInterval(runTrafficGeneratorForAllCampaigns, 5 * 60 * 1000);
+      console.log(`✅ Restarted global active timer after cleanup`);
+    }
+  }, 500);
 }
 
 /**
