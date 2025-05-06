@@ -415,6 +415,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
 const activeStatusChecks = new Map<number, NodeJS.Timeout>();
 const pauseStatusChecks = new Map<number, NodeJS.Timeout>();
 const emptyUrlStatusChecks = new Map<number, NodeJS.Timeout>();
+// New map to track wait period timeouts
+const waitingTimers = new Map<number, NodeJS.Timeout>();
 
 /**
  * Stop all monitoring intervals for a campaign
@@ -456,6 +458,13 @@ export async function stopAllMonitoring(campaignId: number): Promise<void> {
     clearInterval(emptyUrlStatusChecks.get(campaignId));
     emptyUrlStatusChecks.delete(campaignId);
     console.log(`✅ Stopped empty URL monitoring for campaign ${campaignId}`);
+  }
+  
+  // CRITICAL: Stop any waiting timers - this is what ensures we reset the 10-minute waiting period
+  if (waitingTimers.has(campaignId)) {
+    clearTimeout(waitingTimers.get(campaignId));
+    waitingTimers.delete(campaignId);
+    console.log(`🔄 RESET: Cleared post-pause waiting period for campaign ${campaignId}`);
   }
   
   // Update the campaign status in database to mark it as disabled
@@ -754,8 +763,12 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
       .where(eq(campaigns.id, campaignId));
     
     // Use exact timeout to respect the waiting period precisely
-    setTimeout(async () => {
+    // CRITICAL: Store the timeout in our Map so we can clear it if needed
+    const waitTimer = setTimeout(async () => {
       console.log(`⏰ ${waitMinutes} minute waiting period COMPLETE - starting monitoring now`);
+      
+      // Remove from the map as it's completed naturally
+      waitingTimers.delete(campaignId);
       
       // Update status in database to reflect the waiting period is complete
       await db.update(campaigns)
@@ -812,6 +825,10 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
       pauseStatusChecks.set(campaignId, interval);
       
     }, waitMinutes * 60 * 1000); // Wait EXACTLY the specified number of minutes
+    
+    // Store the timeout in our map so we can clear it if Traffic Generator is disabled mid-wait
+    waitingTimers.set(campaignId, waitTimer);
+    console.log(`✅ Stored waiting timer for campaign ${campaignId} - will be reset if Traffic Generator is disabled`)
   }).catch(error => {
     console.error(`Error starting wait period for campaign ${trafficstarCampaignId}:`, error);
   });
