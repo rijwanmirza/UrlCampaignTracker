@@ -13,8 +13,10 @@ import { eq, and, sql } from 'drizzle-orm';
 import { parseSpentValue } from './trafficstar-spent-helper';
 import axios from 'axios';
 
-// Track global active timer to ensure proper cleanup on disable
+// Track global timers to ensure proper cleanup on disable
 let globalActiveTimer: NodeJS.Timeout | null = null;
+let globalEmptyUrlTimer: NodeJS.Timeout | null = null;
+let globalInitialEmptyUrlTimer: NodeJS.Timeout | null = null;
 
 // Extended URL type with active status
 interface UrlWithActiveStatus extends Url {
@@ -1518,34 +1520,61 @@ export async function pauseTrafficStarForEmptyCampaigns(specificCampaignId?: num
 export function initializeTrafficGeneratorScheduler() {
   console.log('Initializing Traffic Generator scheduler');
   
+  // First, clean up any existing timers to ensure a fresh start
+  stopAllGlobalTimers();
+  
   // Run the traffic generator on startup
   console.log('Running initial traffic generator check on startup');
   runTrafficGeneratorForAllCampaigns();
   
   // Also run the empty URL check on startup (after 10 seconds to allow other initializations)
-  setTimeout(() => {
+  globalInitialEmptyUrlTimer = setTimeout(() => {
     console.log('Running initial empty URL check');
     pauseTrafficStarForEmptyCampaigns();
   }, 10 * 1000);
   
   // Set up a periodic job to run the traffic generator every 5 minutes
-  // Use the global timer so we can control it properly when disabling Traffic Generator
-  if (globalActiveTimer) {
-    clearInterval(globalActiveTimer);
-  }
-  
   globalActiveTimer = setInterval(() => {
     console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
   }, 5 * 60 * 1000); // 5 minutes
   
   // Set up a periodic job to check for empty campaigns every 3 minutes
-  setInterval(() => {
+  globalEmptyUrlTimer = setInterval(() => {
     console.log('Running scheduled empty URL check');
     pauseTrafficStarForEmptyCampaigns();
   }, 3 * 60 * 1000); // 3 minutes
   
   console.log('Traffic Generator scheduler initialized successfully');
+}
+
+/**
+ * Stop all global timers used by the Traffic Generator
+ * This ensures complete cleanup when Traffic Generator is disabled
+ */
+function stopAllGlobalTimers() {
+  console.log('⚠️ Stopping all Traffic Generator global timers');
+  
+  // Clear the main traffic generator timer
+  if (globalActiveTimer) {
+    clearInterval(globalActiveTimer);
+    globalActiveTimer = null;
+    console.log('✅ Cleared global active timer');
+  }
+  
+  // Clear the empty URL check timer
+  if (globalEmptyUrlTimer) {
+    clearInterval(globalEmptyUrlTimer);
+    globalEmptyUrlTimer = null;
+    console.log('✅ Cleared global empty URL timer');
+  }
+  
+  // Clear the initial empty URL check timer
+  if (globalInitialEmptyUrlTimer) {
+    clearTimeout(globalInitialEmptyUrlTimer);
+    globalInitialEmptyUrlTimer = null;
+    console.log('✅ Cleared global initial empty URL timer');
+  }
 }
 
 /**
