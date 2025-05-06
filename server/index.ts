@@ -10,7 +10,6 @@ import { trafficStarService } from "./trafficstar-service-new";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
-import { initUrlBudgetTrackerRoutes } from "./routes-integration";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -116,10 +115,6 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    
-    // Initialize URL Budget Tracker routes
-    initUrlBudgetTrackerRoutes(app);
-    log('URL Budget Tracker routes initialized', 'startup');
     
     // Auto-configure and start Gmail reader with provided credentials
     try {
