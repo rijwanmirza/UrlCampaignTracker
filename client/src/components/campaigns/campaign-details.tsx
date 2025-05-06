@@ -110,7 +110,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
               </CardTitle>
               <CardDescription className="flex items-center gap-2">
                 <span>Created on {formatDate(campaign.createdAt)}</span>
-                <Badge variant="secondary" className="text-xs">ID: {campaign.id}</Badge>
+                <span><Badge variant="secondary" className="text-xs">ID: {campaign.id}</Badge></span>
               </CardDescription>
             </div>
             
@@ -197,7 +197,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                 <div className="mt-2 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
                   <span className="text-sm font-medium text-slate-700">TrafficStar Spent:</span>
                   <div className="flex items-center gap-2">
-                    <p className="text-slate-900 font-semibold">
+                    <div className="text-slate-900 font-semibold">
                       ${typeof campaign.dailySpent === 'string' 
                         ? parseFloat(campaign.dailySpent || '0').toFixed(4) 
                         : (Number(campaign.dailySpent || 0)).toFixed(4)}
@@ -206,7 +206,7 @@ export default function CampaignDetails({ campaign }: CampaignDetailsProps) {
                           ? `on ${new Date(campaign.dailySpentDate).toLocaleDateString()}` 
                           : 'today'}
                       </span>
-                    </p>
+                    </div>
                     {campaign.lastSpentCheck && (
                       <span className="text-xs text-slate-500">
                         (last checked: {new Date(campaign.lastSpentCheck).toLocaleTimeString()})

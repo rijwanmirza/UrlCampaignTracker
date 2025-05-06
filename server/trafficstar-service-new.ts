@@ -453,7 +453,7 @@ class TrafficStarService {
     }
   }
   
-  public scheduleSpentValueUpdates(intervalMinutes: number = 30): void {
+  public scheduleSpentValueUpdates(intervalMinutes: number = 30): NodeJS.Timeout {
     try {
       console.log(`Scheduling TrafficStar spent value updates every ${intervalMinutes} minutes`);
       
