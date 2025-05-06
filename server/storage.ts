@@ -522,6 +522,17 @@ export class DatabaseStorage implements IStorage {
       console.log('🔍 DEBUG: Setting postPauseCheckMinutes to:', updateData.postPauseCheckMinutes);
     }
     
+    // Handle highSpendWaitMinutes field (1-30 minute range)
+    if (updateCampaign.highSpendWaitMinutes !== undefined) {
+      // Ensure value is within valid range (1-30)
+      let minutes = updateCampaign.highSpendWaitMinutes;
+      if (minutes < 1) minutes = 1;
+      if (minutes > 30) minutes = 30;
+      
+      updateData.highSpendWaitMinutes = minutes;
+      console.log('🔍 DEBUG: Setting highSpendWaitMinutes to:', updateData.highSpendWaitMinutes);
+    }
+    
     // Handle Traffic Sender fields
     if (updateCampaign.trafficSenderEnabled !== undefined) {
       // CRITICAL FIX: Make sure we explicitly set this as a boolean to prevent any type conversion issues
