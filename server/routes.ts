@@ -48,6 +48,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
+import { pauseTrafficStarForEmptyCampaigns } from "./traffic-generator-new";
 import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns, debugProcessCampaign } from "./traffic-generator";
 import { registerReportsAPITestRoutes } from "./test-reports-api";
 
@@ -1536,6 +1537,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedUrl = await storage.updateUrlStatus(id, status);
       if (!updatedUrl) {
         return res.status(404).json({ message: "Failed to update URL status" });
+      }
+      
+      // IMMEDIATE CHECK: When URL status changes, check if campaign should be paused/resumed
+      // This ensures immediate responsiveness to URL availability changes
+      console.log(`⚡ URL status changed - running immediate empty URL check for campaign ${url.campaignId}`);
+      try {
+        const result = await pauseTrafficStarForEmptyCampaigns(url.campaignId);
+        console.log(`✅ Immediate empty URL check completed for campaign ${url.campaignId} - checked: ${result.checked}, paused: ${result.paused}, resumed: ${result.resumed}`);
+      } catch (checkError) {
+        console.error(`⚠️ Error during immediate empty URL check: ${checkError}`);
       }
       
       return res.status(200).json({

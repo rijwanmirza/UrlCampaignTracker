@@ -1216,26 +1216,51 @@ export async function runTrafficGeneratorForAllCampaigns() {
  * Check for campaigns with no active URLs and pause their TrafficStar campaigns
  * This function is separate from other Traffic Generator functionality
  * It only handles the specific case of no active URLs in a campaign
+ * 
+ * @param specificCampaignId Optional - if provided, only checks that specific campaign
+ * @returns Object with results of the check
  */
-export async function pauseTrafficStarForEmptyCampaigns() {
+export async function pauseTrafficStarForEmptyCampaigns(specificCampaignId?: number) {
   try {
-    console.log('Checking for campaigns with no active URLs to pause TrafficStar campaigns');
+    if (specificCampaignId) {
+      console.log(`⚡ IMMEDIATE CHECK: Checking campaign ${specificCampaignId} for active URLs status`);
+    } else {
+      console.log('Checking for campaigns with no active URLs to pause TrafficStar campaigns');
+    }
     
-    // Get all campaigns with TrafficStar campaign IDs
-    const campaignsWithTrafficStar = await db.select()
-      .from(campaigns)
-      .where(sql`trafficstar_campaign_id is not null AND traffic_generator_enabled = true`);
+    // Get campaigns with TrafficStar campaign IDs (either all or just the specified one)
+    const campaignsWithTrafficStar = specificCampaignId 
+      ? await db.select()
+          .from(campaigns)
+          .where(
+            and(
+              eq(campaigns.id, specificCampaignId),
+              sql`trafficstar_campaign_id is not null AND traffic_generator_enabled = true`
+            )
+          )
+      : await db.select()
+          .from(campaigns)
+          .where(sql`trafficstar_campaign_id is not null AND traffic_generator_enabled = true`);
     
     if (!campaignsWithTrafficStar || campaignsWithTrafficStar.length === 0) {
-      console.log('No campaigns with TrafficStar integration found');
-      return;
+      if (specificCampaignId) {
+        console.log(`Campaign ${specificCampaignId} not found or doesn't have TrafficStar integration enabled`);
+      } else {
+        console.log('No campaigns with TrafficStar integration found');
+      }
+      return { checked: 0, paused: 0, resumed: 0 };
     }
     
     console.log(`Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
     
+    let totalChecked = 0;
+    let totalPaused = 0;
+    let totalResumed = 0;
+    
     // Process each campaign
     for (const campaign of campaignsWithTrafficStar) {
       if (!campaign.trafficstarCampaignId) continue;
+      totalChecked++;
       
       console.log(`Checking active URLs for campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId})`);
       
@@ -1258,7 +1283,7 @@ export async function pauseTrafficStarForEmptyCampaigns() {
         // If it was previously paused due to no URLs, update its status and stop monitoring
         if (campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
             campaign.lastTrafficSenderStatus === 'paused_no_active_urls') {
-          console.log(`Campaign ${campaign.id} now has active URLs but was previously paused - updating status`);
+          console.log(`⚡ IMMEDIATE ACTION: Campaign ${campaign.id} now has active URLs but was previously paused - updating status`);
           
           // Stop the empty URL status check
           if (emptyUrlStatusChecks.has(campaign.id)) {
@@ -1275,6 +1300,8 @@ export async function pauseTrafficStarForEmptyCampaigns() {
               updatedAt: new Date()
             })
             .where(eq(campaigns.id, campaign.id));
+            
+          totalResumed++;
         }
         continue;
       }
@@ -1332,6 +1359,8 @@ export async function pauseTrafficStarForEmptyCampaigns() {
           
           // Start empty URL monitoring
           startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          
+          totalPaused++;
         } catch (error) {
           console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
         }
@@ -1353,8 +1382,16 @@ export async function pauseTrafficStarForEmptyCampaigns() {
         console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} has status: ${currentStatus || 'unknown'} - monitoring`);
       }
     }
+    
+    // Return summary of what was done
+    return {
+      checked: totalChecked,
+      paused: totalPaused,
+      resumed: totalResumed
+    };
   } catch (error) {
     console.error('Error in pauseTrafficStarForEmptyCampaigns:', error);
+    return { checked: 0, paused: 0, resumed: 0, error: String(error) };
   }
 }
 
