@@ -43,6 +43,52 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
     // Return the campaign status (active or paused)
     console.log(`TRAFFIC-GENERATOR: TrafficStar campaign ${trafficstarCampaignId} REAL status is ${status.status}, active=${status.active}`);
     
+    // Get campaign from our database to check Traffic Generator status
+    try {
+      // Look up by trafficstarCampaignId
+      const campaign = await db.query.campaigns.findFirst({
+        where: (c, { eq }) => eq(c.trafficstarCampaignId, trafficstarCampaignId),
+      });
+      
+      // EMERGENCY FIX: If Traffic Generator is enabled and in initial state, FORCE campaign to be treated as PAUSED
+      if (campaign && campaign.trafficGeneratorEnabled && 
+          (campaign.lastTrafficSenderStatus === 'initial_pause_on_enable' || 
+           campaign.lastTrafficSenderStatus === 'waiting_after_pause')) {
+        
+        // Check if we're still within the wait period
+        if (campaign.lastTrafficSenderAction) {
+          const waitDuration = Date.now() - new Date(campaign.lastTrafficSenderAction).getTime();
+          const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+          const requiredWaitMinutes = campaign.postPauseCheckMinutes || 10; // Default to 10 minutes
+          
+          if (waitMinutes < requiredWaitMinutes) {
+            console.log(`⛔⛔⛔ EMERGENCY STATUS OVERRIDE: Campaign ${trafficstarCampaignId} is in wait period (${waitMinutes}/${requiredWaitMinutes} minutes passed)`);
+            console.log(`⛔⛔⛔ FORCING status to be 'paused' regardless of TrafficStar reported status`);
+            
+            // FORCE IT TO BE PAUSED in TrafficStar
+            try {
+              console.log(`⛔⛔⛔ EMERGENCY RE-PAUSE: Forcing campaign ${trafficstarCampaignId} to be paused again`);
+              await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+              
+              // Set current date/time for end time to ensure it stays paused
+              const now = new Date();
+              const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+              await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
+              
+              console.log(`✅ EMERGENCY PAUSE ENFORCED: Campaign ${trafficstarCampaignId} has been forced to pause state`);
+            } catch (pauseError) {
+              console.error(`❌ Failed to force campaign ${trafficstarCampaignId} to paused state:`, pauseError);
+            }
+            
+            // Always return 'paused' status during wait period
+            return 'paused';
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error checking campaign Traffic Generator status:`, error);
+    }
+    
     // Convert status object to string status for compatibility with existing code
     return status.active ? 'active' : 'paused';
   } catch (error) {
