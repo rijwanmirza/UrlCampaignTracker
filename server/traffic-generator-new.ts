@@ -302,12 +302,56 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
         const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
         console.log(`📊 Campaign ${trafficstarCampaignId} current status: ${currentStatus}`);
         
-        // Handle based on remaining clicks and current status
+        // CRITICAL CHECK: If the campaign was just enabled with Traffic Generator
+        // NEVER auto-activate until the FULL wait period has passed
+        if (campaignStatus.lastTrafficSenderStatus === 'initial_pause_on_enable' || 
+            campaignStatus.lastTrafficSenderStatus === 'waiting_after_pause') {
+            
+          console.log(`⛔⛔⛔ EMERGENCY BLOCK: Campaign ${trafficstarCampaignId} has Traffic Generator just enabled - BLOCKING auto-reactivation`);
+          console.log(`⛔⛔⛔ Auto-reactivation is NOT allowed until the full wait period has completed`);
+          
+          // Emergency override: Force it to stay paused
+          try {
+            if (currentStatus !== 'paused') {
+              console.log(`⛔⛔⛔ CRITICAL EMERGENCY: Campaign ${trafficstarCampaignId} is not paused during wait period - FORCING PAUSE NOW`);
+              
+              // Set current date/time for end time
+              const now = new Date();
+              const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+              
+              // Pause the campaign again with maximum force
+              await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
+              console.log(`✅ EMERGENCY RE-PAUSE: Successfully forced campaign ${trafficstarCampaignId} to stay paused during wait period`);
+              
+              // Set end time to now to ensure it stays paused
+              await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
+              console.log(`✅ EMERGENCY END TIME: Re-enforced end time to ${formattedDateTime} for campaign ${trafficstarCampaignId}`);
+            }
+          } catch (error) {
+            console.error(`Error in emergency stay-paused operation:`, error);
+          }
+            
+          return; // EXIT IMMEDIATELY - NO AUTO-ACTIVATION ALLOWED
+        }
+            
+        // Only proceed with normal activation rules if not in wait period
         if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD && currentStatus !== 'active') {
           // Case 1: High remaining clicks (≥15,000) but not active - ACTIVATE CAMPAIGN
           console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) - will attempt auto-reactivation`);
           
           try {
+            // EXTRA SAFETY CHECK: NEVER activate if campaign was recently paused by Traffic Generator
+            if (campaignStatus.lastTrafficSenderAction) {
+              const waitDuration = Date.now() - campaignStatus.lastTrafficSenderAction.getTime();
+              const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+              const requiredWaitMinutes = campaignStatus.postPauseCheckMinutes || 10; // Default to 10 minutes
+              
+              if (waitMinutes < requiredWaitMinutes) {
+                console.log(`⛔ SAFETY BLOCK: Campaign ${trafficstarCampaignId} was paused only ${waitMinutes} minutes ago, and requires ${requiredWaitMinutes} minutes wait - BLOCKING activation`);
+                return; // EXIT EARLY - DO NOT ACTIVATE
+              }
+            }
+            
             // Set end time to 23:59 UTC today
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
