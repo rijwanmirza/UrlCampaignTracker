@@ -48,6 +48,7 @@ import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
 import { redirectLogsManager } from "./redirect-logs-manager";
+import urlBudgetLogger from "./url-budget-logger";
 import { processTrafficGenerator, runTrafficGeneratorForAllCampaigns, debugProcessCampaign } from "./traffic-generator";
 import { registerReportsAPITestRoutes } from "./test-reports-api";
 
@@ -5170,6 +5171,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in empty URL check test:", error);
       res.status(500).json({ success: false, error: String(error) });
+    }
+  });
+  
+  // API endpoint to get URL budget logs
+  app.get("/api/url-budget-logs", async (_req: Request, res: Response) => {
+    try {
+      console.log('Fetching URL budget logs');
+      const logs = await urlBudgetLogger.getUrlBudgetLogs();
+      
+      // Get URL details for each log entry to enhance the response
+      const enhancedLogs = await Promise.all(logs.map(async (log) => {
+        try {
+          const url = await storage.getUrl(log.urlId);
+          return {
+            ...log,
+            urlName: url ? url.name : 'Unknown URL',
+            campaignId: url ? url.campaignId : null
+          };
+        } catch (error) {
+          console.error(`Error fetching URL details for ID ${log.urlId}:`, error);
+          return {
+            ...log,
+            urlName: 'Unknown URL',
+            campaignId: null
+          };
+        }
+      }));
+      
+      res.json({
+        success: true,
+        logs: enhancedLogs.reverse() // Return newest logs first
+      });
+    } catch (error) {
+      console.error("Error fetching URL budget logs:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to fetch URL budget logs" 
+      });
     }
   });
   
