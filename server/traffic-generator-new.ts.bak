@@ -13,6 +13,9 @@ import { eq, and, sql } from 'drizzle-orm';
 import { parseSpentValue } from './trafficstar-spent-helper';
 import axios from 'axios';
 
+// Track global active timer to ensure proper cleanup on disable
+let globalActiveTimer: NodeJS.Timeout | null = null;
+
 // Extended URL type with active status
 interface UrlWithActiveStatus extends Url {
   isActive: boolean;
@@ -414,6 +417,71 @@ const pauseStatusChecks = new Map<number, NodeJS.Timeout>();
 const emptyUrlStatusChecks = new Map<number, NodeJS.Timeout>();
 
 /**
+ * Stop all monitoring intervals for a campaign
+ * This is critical to ensure we don't continue monitoring
+ * when Traffic Generator is disabled
+ * @param campaignId The campaign ID to stop monitoring for
+ */
+/**
+ * Stop all monitoring for a campaign
+ * This IMMEDIATELY stops ALL monitoring intervals for a campaign when Traffic Generator is disabled
+ * @param campaignId The campaign ID
+ */
+export async function stopAllMonitoring(campaignId: number): Promise<void> {
+  console.log(`🛑 Stopping ALL Traffic Generator monitoring for campaign ${campaignId}`);
+  
+  // Immediately force cancel any running timers - the Global Active Timer
+  if (globalActiveTimer) {
+    clearInterval(globalActiveTimer);
+    globalActiveTimer = null;
+    console.log(`✅ Stopped global active timer - will restart after cleanup`);
+  }
+  
+  // Stop active status checks
+  if (activeStatusChecks.has(campaignId)) {
+    clearInterval(activeStatusChecks.get(campaignId));
+    activeStatusChecks.delete(campaignId);
+    console.log(`✅ Stopped active status monitoring for campaign ${campaignId}`);
+  }
+  
+  // Stop pause status checks
+  if (pauseStatusChecks.has(campaignId)) {
+    clearInterval(pauseStatusChecks.get(campaignId));
+    pauseStatusChecks.delete(campaignId);
+    console.log(`✅ Stopped pause status monitoring for campaign ${campaignId}`);
+  }
+  
+  // Stop empty URL status checks
+  if (emptyUrlStatusChecks.has(campaignId)) {
+    clearInterval(emptyUrlStatusChecks.get(campaignId));
+    emptyUrlStatusChecks.delete(campaignId);
+    console.log(`✅ Stopped empty URL monitoring for campaign ${campaignId}`);
+  }
+  
+  // Update the campaign status in database to mark it as disabled
+  try {
+    await db.update(campaigns)
+      .set({
+        lastTrafficSenderStatus: 'disabled',
+        lastTrafficSenderAction: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    console.log(`✅ Updated campaign ${campaignId} status to 'disabled' in database`);
+  } catch (dbError) {
+    console.error(`❌ Failed to update campaign ${campaignId} status to 'disabled' in database:`, dbError);
+  }
+  
+  // Restart the global active timer after 500ms delay to ensure no race conditions
+  setTimeout(() => {
+    if (!globalActiveTimer) {
+      globalActiveTimer = setInterval(runTrafficGeneratorForAllCampaigns, 5 * 60 * 1000);
+      console.log(`✅ Restarted global active timer after cleanup`);
+    }
+  }, 500);
+}
+
+/**
  * Start minute-by-minute check for campaign status
  * This ensures the campaign stays active after reactivation
  * @param campaignId The campaign ID in our system
@@ -639,8 +707,9 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
 }
 
 /**
- * Start minute-by-minute check for campaign PAUSE status
+ * Start check for campaign PAUSE status with a proper waiting period
  * This ensures the campaign stays paused when it should be paused
+ * and respects the configured waiting period exactly
  * @param campaignId The campaign ID in our system
  * @param trafficstarCampaignId The TrafficStar campaign ID
  */
@@ -657,197 +726,95 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
     activeStatusChecks.delete(campaignId);
   }
   
-  console.log(`🔄 Starting minute-by-minute PAUSE status check for campaign ${trafficstarCampaignId}`);
+  console.log(`🔄 Starting ENFORCED WAITING PERIOD after pause for campaign ${trafficstarCampaignId}`);
   
-  // Set up a new interval that runs every minute
-  const interval = setInterval(async () => {
-    try {
-      // FIRST, check if Traffic Generator is still enabled for this campaign
-      const campaignSettings = await db.query.campaigns.findFirst({
-        where: (c, { eq }) => eq(c.id, campaignId),
-        columns: { trafficGeneratorEnabled: true }
-      });
+  // Get campaign details to know the waiting time
+  db.query.campaigns.findFirst({
+    where: (c, { eq }) => eq(c.id, campaignId),
+    columns: { postPauseCheckMinutes: true, lastTrafficSenderAction: true }
+  }).then(async (campaignSettings) => {
+    const waitMinutes = campaignSettings?.postPauseCheckMinutes || 10; // Default to 10 minutes
+    console.log(`⚠️ CRITICAL: Will wait EXACTLY ${waitMinutes} minutes before any status checks`);
+    
+    // Calculate the exact timestamp when the waiting period will be complete
+    const now = new Date();
+    const waitEndTime = new Date(now.getTime() + (waitMinutes * 60 * 1000));
+    const waitEndTimeFormatted = waitEndTime.toLocaleTimeString();
+    
+    console.log(`⏱️ Current time: ${now.toLocaleTimeString()}`);
+    console.log(`⏱️ Will resume checks at: ${waitEndTimeFormatted} (in ${waitMinutes} minutes)`);
+    
+    // Mark as waiting in the database
+    await db.update(campaigns)
+      .set({
+        lastTrafficSenderStatus: 'waiting_after_pause',
+        lastTrafficSenderAction: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    
+    // Use exact timeout to respect the waiting period precisely
+    setTimeout(async () => {
+      console.log(`⏰ ${waitMinutes} minute waiting period COMPLETE - starting monitoring now`);
       
-      // If campaign doesn't exist or Traffic Generator is disabled, stop monitoring
-      if (!campaignSettings) {
-        console.log(`❌ Campaign ${campaignId} not found - stopping pause monitoring`);
-        if (pauseStatusChecks.has(campaignId)) {
-          clearInterval(pauseStatusChecks.get(campaignId));
-          pauseStatusChecks.delete(campaignId);
-        }
-        return;
-      }
+      // Update status in database to reflect the waiting period is complete
+      await db.update(campaigns)
+        .set({
+          lastTrafficSenderStatus: 'wait_complete_checking_spent',
+          lastTrafficSenderAction: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(campaigns.id, campaignId));
       
-      if (!campaignSettings.trafficGeneratorEnabled) {
-        console.log(`⚠️ Traffic Generator disabled for campaign ${campaignId} - stopping pause monitoring`);
-        if (pauseStatusChecks.has(campaignId)) {
-          clearInterval(pauseStatusChecks.get(campaignId));
-          pauseStatusChecks.delete(campaignId);
-        }
-        return;
-      }
+      // Get spent value after waiting period
+      const spentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
       
-      console.log(`⏱️ Running minute check for campaign ${trafficstarCampaignId} pause status`);
-      
-      // Get the current status
-      const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
-      
-      if (status === 'paused') {
-        console.log(`⏹️ Campaign ${trafficstarCampaignId} is still paused as expected - monitoring will continue`);
+      if (spentValue !== null) {
+        console.log(`Campaign ${trafficstarCampaignId} spent value after ${waitMinutes} minute wait: $${spentValue.toFixed(4)}`);
         
-        // Check current spent value and remaining clicks periodically
-        const campaign = await db.query.campaigns.findFirst({
-          where: (campaign, { eq }) => eq(campaign.id, campaignId),
-          with: { urls: true }
-        }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
-        
-        // Get current pause duration if we've auto-paused the campaign
-        if (campaign && campaign.lastTrafficSenderAction && 
-            (campaign.lastTrafficSenderStatus === 'auto_paused_low_clicks' || 
-             campaign.lastTrafficSenderStatus === 'auto_paused_low_clicks_during_monitoring')) {
-          
-          const pauseDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
-          const pauseMinutes = Math.floor(pauseDuration / (60 * 1000));
-          
-          // Check if we're past the wait period for low clicks (postPauseCheckMinutes or default 2 minutes)
-          const postPauseMinutes = campaign.postPauseCheckMinutes || 2;
-          
-          console.log(`⏱️ Campaign ${trafficstarCampaignId} has been paused for ${pauseMinutes} minutes (check after ${postPauseMinutes} minutes)`);
-          
-          if (pauseMinutes >= postPauseMinutes) {
-            console.log(`⏱️ ${pauseMinutes} minutes elapsed (>= ${postPauseMinutes}) since pausing - checking spent value and remaining clicks`);
-            
-            // Get spent value to determine next actions
-            const spentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
-            
-            if (spentValue !== null) {
-              // Calculate total remaining clicks
-              let totalRemainingClicks = 0;
-              console.log(`🔍 PAUSE MONITORING: Checking remaining clicks for ${campaign.urls.length} URLs in campaign ${trafficstarCampaignId}`);
-              for (const url of campaign.urls) {
-                console.log(`🔍 URL ID: ${url.id}, status: ${url.status}, clickLimit: ${url.clickLimit}, clicks: ${url.clicks}`);
-                if (url.status === 'active') {
-                  const remainingClicks = url.clickLimit - url.clicks;
-                  const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
-                  totalRemainingClicks += validRemaining;
-                  console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
-                } else {
-                  console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
-                }
-              }
-              
-              // Check if clicks have been replenished
-              const REMAINING_CLICKS_THRESHOLD = 15000;
-              if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD) {
-                console.log(`✅ Campaign ${trafficstarCampaignId} now has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) - will attempt reactivation after pause period`);
-                
-                try {
-                  // Set end time to 23:59 UTC today
-                  const today = new Date();
-                  const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-                  const endTimeStr = `${todayStr} 23:59:00`;
-                  
-                  // First set the end time, then activate
-                  await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
-                  
-                  // Attempt to reactivate the campaign
-                  await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
-                  
-                  console.log(`✅ REACTIVATED campaign ${trafficstarCampaignId} after pause period - it now has ${totalRemainingClicks} remaining clicks`);
-                  
-                  // Mark as reactivated after pause in the database
-                  await db.update(campaigns)
-                    .set({
-                      lastTrafficSenderStatus: 'reactivated_after_pause',
-                      lastTrafficSenderAction: new Date(),
-                      updatedAt: new Date()
-                    })
-                    .where(eq(campaigns.id, campaignId));
-                  
-                  console.log(`✅ Marked campaign ${campaignId} as 'reactivated_after_pause' in database`);
-                  
-                  // Stop pause monitoring and start active monitoring
-                  clearInterval(interval);
-                  pauseStatusChecks.delete(campaignId);
-                  startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
-                } catch (error) {
-                  console.error(`❌ Error reactivating campaign ${trafficstarCampaignId} after pause:`, error);
-                }
-              } else {
-                console.log(`⏹️ Campaign ${trafficstarCampaignId} still has only ${totalRemainingClicks} remaining clicks (< ${REMAINING_CLICKS_THRESHOLD}) - continuing pause monitoring`);
-                
-                // Update the status in the database to reflect we checked after the pause period
-                await db.update(campaigns)
-                  .set({
-                    lastTrafficSenderStatus: 'checked_after_pause_still_low_clicks',
-                    lastTrafficSenderAction: new Date(),
-                    updatedAt: new Date()
-                  })
-                  .where(eq(campaigns.id, campaignId));
-                
-                console.log(`✅ Marked campaign ${campaignId} as 'checked_after_pause_still_low_clicks' in database`);
-              }
-            }
-          }
-        }
-      } else if (status === 'active') {
-        console.log(`⚠️ Campaign ${trafficstarCampaignId} was found active but should be paused - will attempt to pause again`);
-        
-        try {
-          // Get the campaign details to check URLs and remaining clicks
-          const campaign = await db.query.campaigns.findFirst({
-            where: (campaign, { eq }) => eq(campaign.id, campaignId),
-            with: { urls: true }
-          }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
-          
-          if (campaign && campaign.urls && campaign.urls.length > 0) {
-            // Calculate total remaining clicks
-            let totalRemainingClicks = 0;
-            for (const url of campaign.urls) {
-              if (url.status === 'active') {
-                const remainingClicks = url.clickLimit - url.clicks;
-                totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
-              }
-            }
-            
-            console.log(`Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks but should be paused - re-pausing campaign`);
-            
-            // Set current date/time for end time
-            const now = new Date();
-            const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
-            
-            // First pause the campaign
-            await trafficStarService.pauseCampaign(Number(trafficstarCampaignId));
-            
-            // Then set its end time
-            await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), formattedDateTime);
-            
-            console.log(`✅ RE-PAUSED campaign ${trafficstarCampaignId} during pause monitoring - it was found active`);
-            
-            // Mark as re-paused during monitoring in the database
-            await db.update(campaigns)
-              .set({
-                lastTrafficSenderStatus: 're_paused_during_monitoring',
-                lastTrafficSenderAction: new Date(),
-                updatedAt: new Date()
-              })
-              .where(eq(campaigns.id, campaignId));
-            
-            console.log(`✅ Marked campaign ${campaignId} as 're_paused_during_monitoring' in database`);
-          }
-        } catch (error) {
-          console.error(`❌ Error re-pausing campaign ${trafficstarCampaignId} during pause monitoring:`, error);
-        }
+        // Handle campaign based on spent value
+        await handleCampaignBySpentValue(campaignId, trafficstarCampaignId, spentValue);
       } else {
-        console.log(`⚠️ Campaign ${trafficstarCampaignId} has unknown status during pause monitoring: ${status}`);
+        console.error(`Failed to get spent value for campaign ${trafficstarCampaignId} after waiting period`);
       }
-    } catch (error) {
-      console.error(`❌ Error checking campaign ${trafficstarCampaignId} status during pause monitoring:`, error);
-    }
-  }, 60 * 1000); // Check every minute
-  
-  // Store the interval so we can clear it later if needed
-  pauseStatusChecks.set(campaignId, interval);
+      
+      // Only NOW set up minute-by-minute checks
+      const interval = setInterval(async () => {
+        try {
+          // Check if Traffic Generator is still enabled
+          const campaignSettings = await db.query.campaigns.findFirst({
+            where: (c, { eq }) => eq(c.id, campaignId),
+            columns: { trafficGeneratorEnabled: true }
+          });
+          
+          // If campaign doesn't exist or Traffic Generator is disabled, stop monitoring
+          if (!campaignSettings || !campaignSettings.trafficGeneratorEnabled) {
+            console.log(`Traffic Generator disabled for campaign ${campaignId} - stopping pause monitoring`);
+            if (pauseStatusChecks.has(campaignId)) {
+              clearInterval(pauseStatusChecks.get(campaignId));
+              pauseStatusChecks.delete(campaignId);
+            }
+            return;
+          }
+          
+          // Regular status check
+          const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
+          console.log(`Regular check for campaign ${trafficstarCampaignId}: status=${status}`);
+          
+          // Store interval for future reference
+          pauseStatusChecks.set(campaignId, interval);
+        } catch (error) {
+          console.error(`Error in pause monitoring for campaign ${trafficstarCampaignId}:`, error);
+        }
+      }, 60 * 1000);
+      
+      // Store the interval so we can clear it if needed
+      pauseStatusChecks.set(campaignId, interval);
+      
+    }, waitMinutes * 60 * 1000); // Wait EXACTLY the specified number of minutes
+  }).catch(error => {
+    console.error(`Error starting wait period for campaign ${trafficstarCampaignId}:`, error);
+  });
 }
 
 /**
@@ -1033,24 +1000,35 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     // Get the campaign details with URLs
     const campaign = await db.query.campaigns.findFirst({
       where: (campaign, { eq }) => eq(campaign.id, campaignId),
-      with: {
-        urls: true
+      columns: {
+        id: true,
+        trafficGeneratorEnabled: true,
+        trafficstarCampaignId: true,
+        postPauseCheckMinutes: true,
+        lastTrafficSenderStatus: true,
+        lastTrafficSenderAction: true
       }
-    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    });
     
     if (!campaign) {
       console.error(`Campaign ${campaignId} not found`);
+      // Clear any running monitoring intervals for safety
+      await stopAllMonitoring(campaignId);
       return;
     }
     
-    // Skip if traffic generator is not enabled
+    // Skip if traffic generator is not enabled and we're not in force mode
     if (!campaign.trafficGeneratorEnabled && !forceMode) {
-      console.log(`Traffic Generator not enabled for campaign ${campaignId} - skipping`);
+      console.log(`⚠️ Traffic Generator not enabled for campaign ${campaignId} - IMMEDIATELY stopping ALL monitoring`);
+      // CRITICAL FIX: Always stop all monitoring when Traffic Generator is disabled
+      await stopAllMonitoring(campaignId);
       return;
     }
     
     if (!campaign.trafficstarCampaignId) {
-      console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping`);
+      console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping and stopping all monitoring`);
+      // Stop all monitoring since we can't do anything without a TrafficStar campaign ID
+      await stopAllMonitoring(campaignId);
       return;
     }
     
@@ -1061,6 +1039,9 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       console.log(`💪 FORCE MODE: Forcing activation of campaign ${campaign.trafficstarCampaignId}`);
       
       try {
+        // First, clean up any existing monitoring
+        await stopAllMonitoring(campaignId);
+        
         // Set end time to 23:59 UTC today
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -1084,6 +1065,9 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       console.log(`💪 FORCE MODE: Forcing pause of campaign ${campaign.trafficstarCampaignId}`);
       
       try {
+        // First, clean up any existing monitoring
+        await stopAllMonitoring(campaignId);
+        
         // Pause the campaign
         await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
         
@@ -1097,6 +1081,83 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         console.error(`❌ FORCE MODE: Error pausing campaign ${campaign.trafficstarCampaignId}:`, error);
         return;
       }
+    }
+    
+    // CRITICAL FIX: FORCE IMMEDIATE PAUSE WHEN TRAFFIC GENERATOR IS ENABLED
+    // This is the main fix to ensure it ALWAYS pauses the campaign when Traffic Generator
+    // is enabled - no matter what state it was in before
+    
+    // Always consider it "just enabled" when trafficGeneratorEnabled is true, regardless of state
+    // This ensures we ALWAYS pause it first no matter what
+    const wasJustEnabled = true; // FORCE IMMEDIATE PAUSE NO MATTER WHAT
+    
+    // ALWAYS IMMEDIATELY PAUSE when just enabled, no questions asked
+    if (wasJustEnabled) {
+      console.log(`⛔ CRITICAL: Traffic Generator just enabled - IMMEDIATELY PAUSING campaign ${campaign.trafficstarCampaignId} first`);
+      
+      try {
+        // Set current date/time for end time
+        const now = new Date();
+        const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+        
+        // IMMEDIATELY PAUSE the campaign
+        await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+        console.log(`➡️ Step 1/2: Successfully paused campaign ${campaign.trafficstarCampaignId}`);
+        
+        // Then set its end time
+        await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedDateTime);
+        console.log(`➡️ Step 2/2: Successfully set end time for campaign ${campaign.trafficstarCampaignId} to ${formattedDateTime}`);
+        
+        // Get the postPauseCheckMinutes from the campaign settings (default to 10 if not set)
+        const waitMinutes = campaign.postPauseCheckMinutes || 10;
+        
+        // Update the database to reflect this initial pause
+        await db.update(campaigns)
+          .set({
+            lastTrafficSenderStatus: 'initial_pause_on_enable',
+            lastTrafficSenderAction: now,
+            updatedAt: now
+          })
+          .where(eq(campaigns.id, campaignId));
+          
+        console.log(`✅ Traffic Generator has paused campaign ${campaign.trafficstarCampaignId} and will wait ${waitMinutes} minutes before checking spent value`);
+        
+        // Start the pause check monitoring which will handle the wait period
+        startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
+        
+        return; // Exit early - the pause monitoring will handle the rest
+      } catch (pauseError) {
+        console.error(`❌ Critical error pausing campaign ${campaign.trafficstarCampaignId} at Traffic Generator startup:`, pauseError);
+      }
+    }
+    
+    // If campaign wasn't just enabled, check if we're in the waiting period after initial pause
+    if (campaign.lastTrafficSenderStatus === 'initial_pause_on_enable' && campaign.lastTrafficSenderAction) {
+      const waitDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
+      const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+      const requiredWaitMinutes = campaign.postPauseCheckMinutes || 10; // Default to 10 minutes
+      
+      if (waitMinutes < requiredWaitMinutes) {
+        console.log(`⏳ Campaign ${campaignId} is in waiting period (${waitMinutes}/${requiredWaitMinutes} minutes) after initial pause - pausing monitoring will continue`);
+        return; // Still in waiting period, do not proceed yet
+      }
+      
+      console.log(`⏰ Waiting period of ${requiredWaitMinutes} minutes complete - now proceeding to check spent value`);
+    }
+    
+    // If we get here, we're past the waiting period and ready to perform regular checks
+    
+    // First, get the full campaign data with URLs
+    const fullCampaign = await db.query.campaigns.findFirst({
+      where: (campaign, { eq }) => eq(campaign.id, campaignId),
+      with: {
+        urls: true
+      }
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    
+    if (!fullCampaign) {
+      console.error(`Campaign ${campaignId} not found during full data fetch`);
+      return;
     }
     
     // Get the current spent value for the campaign
@@ -1315,7 +1376,12 @@ export function initializeTrafficGeneratorScheduler() {
   }, 10 * 1000);
   
   // Set up a periodic job to run the traffic generator every 5 minutes
-  setInterval(() => {
+  // Use the global timer so we can control it properly when disabling Traffic Generator
+  if (globalActiveTimer) {
+    clearInterval(globalActiveTimer);
+  }
+  
+  globalActiveTimer = setInterval(() => {
     console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
   }, 5 * 60 * 1000); // 5 minutes

@@ -1,0 +1,71 @@
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+⛔ CRITICAL: Traffic Generator being DISABLED for campaign 9 - stopping ALL monitoring
+🛑 Stopping ALL Traffic Generator monitoring for campaign 9
+✅ Stopped global active timer - will restart after cleanup
+✅ Updated campaign 9 status to 'disabled' in database
+✅ Successfully disabled and stopped all Traffic Generator monitoring for campaign 9
+🔍 DEBUG: Traffic Generator enabled value (after normalization): false type: boolean
+🔍 DEBUG: Traffic Sender enabled value (after normalization): undefined type: undefined
+🔍 DEBUG: Campaign update request TYPE: number
+🔍 DEBUG: Campaign update request VALUE: 1
+🔍 DEBUG: Campaign update requested: ID 9
+  - Current multiplier: 1 (type: number)
+  - Requested multiplier: 1 (type: number)
+🔍 DEBUG: Received pricePerThousand: 1 type: number
+🔍 DEBUG: Setting pricePerThousand to: 1.0000
+🔍 DEBUG: Setting trafficstarCampaignId to: 1000866
+🔍 DEBUG: Setting budgetUpdateTime to: 00:00:00
+🔍 DEBUG: Setting trafficGeneratorEnabled to: false (original value: false )
+🔍 DEBUG: Setting postPauseCheckMinutes to: 10
+🔍 DEBUG: No multiplier change detected, skipping URL updates
+10:11:40 AM [express] PUT /api/campaigns/9 200 in 215ms :: {"id":9,"name":"Test Click Count Fix","red…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 8
+🔍 Cache miss - fetching fresh URLs for campaign ID: 6
+🔍 Cache miss - fetching fresh URLs for campaign ID: 4
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+10:11:40 AM [express] GET /api/campaigns/9 200 in 41ms :: {"id":9,"name":"Test Click Count Fix","redi…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+✅ Restarted global active timer after cleanup
+10:11:40 AM [express] GET /api/campaigns 200 in 146ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+⏱️ Running minute check for campaign 1000866 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+✅ Campaign 1000866 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 16 URLs in campaign 1000866
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 283
+🔍 URL ID: 287, status: active, clickLimit: 14999, clicks: 0
+✅ Adding 14999 remaining clicks from URL ID: 287
+🔍 URL ID: 384, status: active, clickLimit: 1000, clicks: 0
+✅ Adding 1000 remaining clicks from URL ID: 384
+OS module CPU info: {
