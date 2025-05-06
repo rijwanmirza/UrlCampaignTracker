@@ -79,13 +79,13 @@ export class UrlBudgetTracker {
    * @param entry URL budget entry to log
    */
   private logUrlBudget(entry: UrlBudgetEntry): void {
-    // Format is: urlId|clickCount|$budgetValue|timestamp
+    // Format is: urlId|clickCount|$budgetValue|timestamp|campaignId|clickType
     // Where clickCount is either remaining clicks or required clicks based on isRemainingCount flag
     const clickCountType = entry.isRemainingCount ? "remaining" : "required";
-    const logLine = `${entry.urlId}|${entry.clickCount}|$${entry.budgetValue.toFixed(2)}|${entry.timestamp}`;
+    const logLine = `${entry.urlId}|${entry.clickCount}|$${entry.budgetValue.toFixed(2)}|${entry.timestamp}|${entry.campaignId}|${clickCountType}`;
     
     fs.appendFileSync(this.logFilePath, logLine + '\n');
-    console.log(`📝 Logged URL budget: ${logLine} (${clickCountType} clicks)`);
+    console.log(`📝 Logged URL budget: ${logLine}`);
   }
   
   /**
@@ -214,7 +214,14 @@ export class UrlBudgetTracker {
       
       // Calculate total budget to add
       const totalBudget = entries.reduce((sum, entry) => sum + entry.budgetValue, 0);
-      console.log(`Total budget to add: $${totalBudget.toFixed(2)}`);
+      
+      // Create a summary of all URLs being processed in this batch
+      const urlSummary = entries.map(entry => {
+        const clickType = entry.isRemainingCount ? "remaining" : "required";
+        return `URL ${entry.urlId}: ${entry.clickCount} ${clickType} clicks = $${entry.budgetValue.toFixed(2)}`;
+      }).join('\n  ');
+      
+      console.log(`URLs being processed in this batch:\n  ${urlSummary}\nTotal budget to add: $${totalBudget.toFixed(2)}`);
       
       // Get current campaign info from TrafficStar
       if (!campaign.trafficstarCampaignId) {
@@ -254,6 +261,20 @@ export class UrlBudgetTracker {
         console.log(`✅ Activated TrafficStar campaign ${tsId}`);
       }
       
+      // Log all processed URLs with their batch information
+      const batchLogPath = path.join('url_budget_logs', `batch_updates_${today.toISOString().split('T')[0]}.log`);
+      const batchLogEntry = `BATCH UPDATE ${this.formatUtcDateTime()}:\n` +
+        `Campaign ID: ${campaign.id} (TrafficStar ID: ${tsId})\n` +
+        `Budget Before: $${currentBudget.toFixed(2)}\n` +
+        `Budget Added: $${totalBudget.toFixed(2)}\n` +
+        `Budget After: $${newBudget.toFixed(2)}\n` +
+        `URLs Processed:\n${urlSummary}\n` +
+        `End Time Set: ${endTime}\n` +
+        `---------------------------------------------\n`;
+      
+      fs.appendFileSync(batchLogPath, batchLogEntry);
+      console.log(`📝 Batch update logged to ${batchLogPath}`);
+      
       // Mark all entries as processed
       entries.forEach(entry => {
         entry.processed = true;
@@ -262,7 +283,8 @@ export class UrlBudgetTracker {
       // Clear pending updates for this campaign
       this.pendingUpdates.delete(campaign.id);
       
-      console.log(`✅ Successfully processed budget update for campaign ${campaign.id}`);
+      console.log(`✅ Successfully processed budget update for campaign ${campaign.id} with ${entries.length} URLs` +
+        ` (Total budget added: $${totalBudget.toFixed(2)})`);
     } catch (error) {
       console.error(`Error processing budget update for campaign ${campaign.id}:`, error);
     }
