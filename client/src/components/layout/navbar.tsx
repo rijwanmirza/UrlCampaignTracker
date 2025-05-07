@@ -109,6 +109,19 @@ export default function Navbar() {
         </Link>
         
         <Link 
+          href="/url-budget" 
+          className="block py-3 border-b"
+          onClick={() => setMenuOpen(false)}
+        >
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="font-medium">URL Budget</span>
+          </div>
+        </Link>
+        
+        <Link 
           href="/redirect-test" 
           className="block py-3 border-b"
           onClick={() => setMenuOpen(false)}
