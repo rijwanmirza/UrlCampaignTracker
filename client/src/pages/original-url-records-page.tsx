@@ -151,20 +151,24 @@ export default function OriginalUrlRecordsPage() {
       });
       
       // When searching, ignore campaign filter to allow searching across all records
+      // and set status to 'all' to search all records
       if (searchQuery) {
         searchParams.append("search", searchQuery);
-        // Set status to 'all' to ensure we search across all records
+        // Override status filter to search across all records during search
         searchParams.append("status", "all");
-      } else if (campaignFilter) {
-        // Only apply campaign filter when not searching
-        const campaignId = parseInt(campaignFilter, 10);
-        console.log(`Setting campaign filter to ${campaignId} (${typeof campaignId})`);
-        searchParams.append("campaignId", campaignId.toString());
-      }
-      
-      // Add status filter if it's not "all"
-      if (statusFilter && statusFilter !== "all") {
-        searchParams.append("status", statusFilter);
+        console.log("Search mode: Searching across ALL records regardless of status or campaign");
+      } else {
+        // Only apply filters when not searching
+        if (campaignFilter) {
+          const campaignId = parseInt(campaignFilter, 10);
+          console.log(`Setting campaign filter to ${campaignId} (${typeof campaignId})`);
+          searchParams.append("campaignId", campaignId.toString());
+        }
+        
+        // Add status filter if it's not "all"
+        if (statusFilter && statusFilter !== "all") {
+          searchParams.append("status", statusFilter);
+        }
       }
       
       const res = await fetch(`/api/original-url-records?${searchParams.toString()}`);
