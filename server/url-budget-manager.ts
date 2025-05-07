@@ -135,7 +135,7 @@ export class UrlBudgetManager {
       
       try {
         // Get campaign details
-        const campaignDetails = await trafficStarService.getCampaignDetails(Number(trafficstarCampaignId));
+        const campaignDetails = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
         
         if (!campaignDetails) {
           throw new Error(`Failed to get campaign details for ${trafficstarCampaignId}`);
@@ -169,8 +169,8 @@ export class UrlBudgetManager {
         console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
         
         // Make sure campaign is active
-        const currentStatus = await trafficStarService.getCampaignStatus(Number(trafficstarCampaignId));
-        if (currentStatus !== 'active') {
+        const statusResult = await trafficStarService.getCampaignStatus(Number(trafficstarCampaignId));
+        if (!statusResult.active || statusResult.status !== 'enabled') {
           // Activate the campaign if it's not already active
           await trafficStarService.activateCampaign(Number(trafficstarCampaignId));
           console.log(`✅ Activated campaign ${trafficstarCampaignId} after budget update`);
