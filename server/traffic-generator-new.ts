@@ -517,7 +517,10 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
               
               console.log(`✅ Marked campaign ${campaignId} as 'high_spend_budget_updated' in database`);
               
-              // 10. Start monitoring
+              // 10. Check for new URLs added after budget calculation
+              await handleNewUrlsAfterBudgetCalc(campaignId, trafficstarCampaignId);
+              
+              // 11. Start monitoring
               startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
             } catch (error) {
               console.error(`❌ Error updating campaign ${trafficstarCampaignId} for high spend handling:`, error);
@@ -590,6 +593,135 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
     }
   } catch (error) {
     console.error(`Error handling campaign ${trafficstarCampaignId} by spent value:`, error);
+  }
+}
+
+/**
+ * Handle URLs that were added after the initial high-spend budget calculation
+ * These need special handling with a 9-minute delay and batch update approach
+ * @param campaignId The campaign ID in our system
+ * @param trafficstarCampaignId The TrafficStar campaign ID
+ */
+async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampaignId: string) {
+  try {
+    console.log(`Checking for URLs added after high-spend budget calculation for campaign ${campaignId}`);
+    
+    // Get the campaign with its budget calculation timestamp
+    const campaign = await db.query.campaigns.findFirst({
+      where: (c, { eq }) => eq(c.id, campaignId),
+      with: { urls: true }
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    
+    if (!campaign || !campaign.highSpendBudgetCalcTime) {
+      console.log(`Campaign ${campaignId} doesn't have a high-spend budget calculation timestamp - skipping new URL check`);
+      return;
+    }
+    
+    const calcTime = campaign.highSpendBudgetCalcTime;
+    console.log(`Campaign ${campaignId} budget calculation time: ${calcTime.toISOString()}`);
+    
+    // Find URLs added after budget calculation time
+    const newUrls = campaign.urls.filter(url => {
+      // For each URL, check if it was created after the budget calculation
+      return url.status === 'active' && url.createdAt > calcTime;
+    });
+    
+    if (newUrls.length === 0) {
+      console.log(`No new URLs found added after budget calculation for campaign ${campaignId}`);
+      return;
+    }
+    
+    console.log(`Found ${newUrls.length} URLs added after high-spend budget calculation for campaign ${campaignId}`);
+    
+    // Check if the 9-minute waiting period has elapsed since the newest URL was added
+    const newestUrl = [...newUrls].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    const waitDuration = Date.now() - newestUrl.createdAt.getTime();
+    const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+    
+    console.log(`Newest URL (ID: ${newestUrl.id}) was added ${waitMinutes} minutes ago`);
+    
+    // Apply 9-minute delay before updating budget for newly added URLs
+    const DELAY_MINUTES = 9;
+    
+    if (waitMinutes < DELAY_MINUTES) {
+      console.log(`Waiting period not elapsed yet (${waitMinutes}/${DELAY_MINUTES} minutes) - will check again later`);
+      
+      // Mark these URLs as pending in the database
+      for (const url of newUrls) {
+        await db.update(urls)
+          .set({
+            pendingBudgetUpdate: true,
+            updatedAt: new Date()
+          })
+          .where(eq(urls.id, url.id));
+      }
+      
+      return;
+    }
+    
+    console.log(`${DELAY_MINUTES}-minute wait period has elapsed - processing ${newUrls.length} new URLs`);
+    
+    // Get the current campaign budget from TrafficStar
+    const updatedSpentValue = await getTrafficStarCampaignSpentValue(campaignId, trafficstarCampaignId);
+    
+    if (updatedSpentValue === null) {
+      console.error(`Failed to get current spent value for campaign ${campaignId}`);
+      return;
+    }
+    
+    // Calculate additional budget needed for new URLs
+    let additionalBudget = 0;
+    let totalNewClicks = 0;
+    
+    console.log(`Processing new URLs for campaign ${campaignId} with current spent value: $${updatedSpentValue.toFixed(4)}`);
+    
+    for (const url of newUrls) {
+      // For newly added URLs, use total click limit instead of remaining clicks
+      const totalClicks = url.clickLimit;
+      totalNewClicks += totalClicks;
+      
+      // Calculate budget based on price per thousand
+      const urlBudget = (totalClicks / 1000) * parseFloat(campaign.pricePerThousand);
+      additionalBudget += urlBudget;
+      
+      console.log(`URL ID ${url.id}: ${totalClicks} clicks = $${urlBudget.toFixed(4)} additional budget`);
+      
+      // Log this URL's budget calculation to the URL budget log file
+      await urlBudgetLogger.logUrlBudget(url.id, urlBudget);
+      
+      // Update the URL to mark it as processed
+      await db.update(urls)
+        .set({
+          pendingBudgetUpdate: false,
+          budgetCalculated: true,
+          updatedAt: new Date()
+        })
+        .where(eq(urls.id, url.id));
+    }
+    
+    // Calculate new total campaign budget
+    const newTotalBudget = updatedSpentValue + additionalBudget;
+    
+    console.log(`New budget calculation for batch update: $${updatedSpentValue.toFixed(4)} (current) + $${additionalBudget.toFixed(4)} (additional) = $${newTotalBudget.toFixed(4)}`);
+    
+    // Update the TrafficStar campaign budget with the new total
+    await trafficStarService.updateCampaignBudget(Number(trafficstarCampaignId), newTotalBudget);
+    
+    console.log(`✅ Updated campaign ${trafficstarCampaignId} budget to $${newTotalBudget.toFixed(4)} after processing ${newUrls.length} new URLs`);
+    
+    // Update campaign status to reflect the batch update
+    await db.update(campaigns)
+      .set({
+        lastTrafficSenderStatus: 'batch_updated_new_urls',
+        lastTrafficSenderAction: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    
+    console.log(`✅ Marked campaign ${campaignId} as 'batch_updated_new_urls' in database`);
+    
+  } catch (error) {
+    console.error(`Error handling new URLs for campaign ${campaignId}:`, error);
   }
 }
 

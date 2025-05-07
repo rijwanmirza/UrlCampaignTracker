@@ -5212,5 +5212,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Clear all URL budget logs - mainly for testing and manual cleanup
+  app.post("/api/url-budget-logs/clear", async (_req: Request, res: Response) => {
+    try {
+      console.log('Clearing all URL budget logs');
+      await urlBudgetLogger.clearLogs();
+      
+      res.json({
+        success: true,
+        message: "All URL budget logs cleared successfully"
+      });
+    } catch (error) {
+      console.error("Error clearing URL budget logs:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to clear URL budget logs" 
+      });
+    }
+  });
+  
   return server;
 }

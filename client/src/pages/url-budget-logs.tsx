@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -16,8 +16,10 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Trash2 } from "lucide-react";
 import { Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 // Type for URL budget log data
 interface UrlBudgetLog {
@@ -30,12 +32,44 @@ interface UrlBudgetLog {
 
 export default function UrlBudgetLogs() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch URL budget logs
-  const { data, isLoading, isError, error } = useQuery<{ success: boolean; logs: UrlBudgetLog[] }>({
+  const { data, isLoading, isError, error, refetch } = useQuery<{ success: boolean; logs: UrlBudgetLog[] }>({
     queryKey: ["/api/url-budget-logs"],
     retry: 1
   });
+
+  // Clear logs mutation
+  const clearLogsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/url-budget-logs/clear', 'POST');
+    },
+    onSuccess: () => {
+      // Invalidate the logs query to refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/url-budget-logs"] });
+      toast({
+        title: "Success",
+        description: "URL budget logs cleared successfully",
+        variant: "default"
+      });
+    },
+    onError: (error) => {
+      console.error("Error clearing URL budget logs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear URL budget logs",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handler for clearing logs
+  const handleClearLogs = () => {
+    if (confirm("Are you sure you want to clear all URL budget logs? This action cannot be undone.")) {
+      clearLogsMutation.mutate();
+    }
+  };
 
   // Error handling
   if (isError) {
@@ -62,6 +96,26 @@ export default function UrlBudgetLogs() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">URL Budget Logs</h1>
+        {data?.logs && data.logs.length > 0 && (
+          <Button 
+            variant="destructive" 
+            onClick={handleClearLogs}
+            disabled={clearLogsMutation.isPending}
+            className="flex items-center gap-2"
+          >
+            {clearLogsMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Clearing...
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4" />
+                Clear Logs
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <Card>
