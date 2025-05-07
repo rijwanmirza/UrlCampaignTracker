@@ -142,6 +142,119 @@ export class YouTubeApiService {
   }
   
   /**
+   * Validate a single URL against YouTube API conditions
+   * Used for immediate validation when adding URLs to campaigns
+   * @returns Object with validation result and reason if failed
+   */
+  async validateSingleUrl(
+    targetUrl: string, 
+    campaign: any
+  ): Promise<{ isValid: boolean; reason: string; validationDetails?: any }> {
+    try {
+      // Extract video ID from URL
+      const videoId = this.extractVideoId(targetUrl);
+      
+      if (!videoId) {
+        return { 
+          isValid: false, 
+          reason: 'Invalid YouTube URL - could not extract video ID'
+        };
+      }
+      
+      // Get video info from YouTube API
+      const videos = await this.getVideosInfo([videoId]);
+      
+      if (!videos || videos.length === 0) {
+        return { 
+          isValid: false, 
+          reason: 'Video not found or has been deleted'
+        };
+      }
+      
+      const video = videos[0];
+      
+      // Track validation details for YouTube URL record
+      const validationDetails = {
+        countryRestricted: false,
+        privateVideo: false,
+        deletedVideo: false,
+        ageRestricted: false,
+        madeForKids: false,
+        exceededDuration: false
+      };
+      
+      // Check if video is restricted in India
+      if (campaign.youtubeCheckCountryRestriction && video.contentDetails?.regionRestriction?.blocked) {
+        const blockedRegions = video.contentDetails.regionRestriction.blocked;
+        if (Array.isArray(blockedRegions) && blockedRegions.includes('IN')) {
+          validationDetails.countryRestricted = true;
+          return { 
+            isValid: false, 
+            reason: 'Video is restricted in India', 
+            validationDetails 
+          };
+        }
+      }
+      
+      // Check if video is private
+      if (campaign.youtubeCheckPrivate && video.status?.privacyStatus === 'private') {
+        validationDetails.privateVideo = true;
+        return { 
+          isValid: false, 
+          reason: 'Video is private', 
+          validationDetails 
+        };
+      }
+      
+      // Check if video is age-restricted
+      if (campaign.youtubeCheckAgeRestricted && 
+          (video.contentDetails?.contentRating?.ytRating === 'ytAgeRestricted' || 
+           video.contentDetails?.contentRating?.mpaaRating === 'mpaaUnrated')) {
+        validationDetails.ageRestricted = true;
+        return { 
+          isValid: false, 
+          reason: 'Video is age restricted', 
+          validationDetails 
+        };
+      }
+      
+      // Check if video is made for kids
+      if (campaign.youtubeCheckMadeForKids && video.status?.madeForKids === true) {
+        validationDetails.madeForKids = true;
+        return { 
+          isValid: false, 
+          reason: 'Video is made for kids', 
+          validationDetails 
+        };
+      }
+      
+      // Check for video duration exceeding max limit
+      if (campaign.youtubeCheckDuration && video.contentDetails?.duration) {
+        const durationMinutes = this.parseDurationToMinutes(video.contentDetails.duration);
+        const maxDurationMinutes = campaign.youtubeMaxDurationMinutes || 30; // Default to 30 minutes
+        
+        if (durationMinutes > maxDurationMinutes) {
+          validationDetails.exceededDuration = true;
+          return { 
+            isValid: false, 
+            reason: `Video exceeds maximum duration (${Math.floor(durationMinutes)} minutes)`, 
+            validationDetails 
+          };
+        }
+      }
+      
+      // All checks passed
+      return { isValid: true, reason: 'Video passed all checks' };
+    } catch (error) {
+      logger.error('Error validating YouTube URL:', error);
+      return { 
+        isValid: false, 
+        reason: `YouTube API error: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
    * Process all campaigns with YouTube API enabled
    */
   async processEnabledCampaigns(): Promise<void> {
@@ -329,6 +442,49 @@ export class YouTubeApiService {
     }
   }
   
+  /**
+   * Save a direct rejected URL to youtube_url_records
+   * Used for immediate validation when adding URLs to campaigns
+   */
+  async saveDirectRejectedUrl(
+    urlData: any,
+    campaignId: number,
+    reason: string,
+    videoId: string,
+    flags: {
+      countryRestricted?: boolean;
+      privateVideo?: boolean;
+      deletedVideo?: boolean;
+      ageRestricted?: boolean;
+      madeForKids?: boolean;
+      exceededDuration?: boolean;
+    }
+  ): Promise<void> {
+    try {
+      // Insert record into youtube_url_records
+      await db.insert(youtubeUrlRecords).values({
+        urlId: 0, // No URL ID since it wasn't created
+        campaignId: campaignId,
+        name: urlData.name,
+        targetUrl: urlData.targetUrl,
+        youtubeVideoId: videoId,
+        deletionReason: `[Direct Rejected] ${reason}`,
+        countryRestricted: flags.countryRestricted || false,
+        privateVideo: flags.privateVideo || false,
+        deletedVideo: flags.deletedVideo || false,
+        ageRestricted: flags.ageRestricted || false,
+        madeForKids: flags.madeForKids || false,
+        exceededDuration: flags.exceededDuration || false,
+        deletedAt: new Date(),
+        createdAt: new Date()
+      });
+      
+      logger.info(`Direct rejected URL recorded: ${urlData.name} - ${reason}`);
+    } catch (error) {
+      logger.error('Error recording direct rejected URL:', error);
+    }
+  }
+
   /**
    * Delete URL and record the reason
    */
