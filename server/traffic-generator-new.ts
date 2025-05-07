@@ -606,6 +606,99 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
 }
 
 /**
+ * Check for URLs added after high-spend budget calculation and immediately update the budget
+ * This is different from handleNewUrlsAfterBudgetCalc - this is called directly from the high spend handler
+ * when detecting that the campaign is already in high_spend_budget_updated state
+ * @param campaignId The campaign ID in our system 
+ * @param trafficstarCampaignId The TrafficStar campaign ID
+ */
+async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, trafficstarCampaignId: string) {
+  try {
+    console.log(`🔍 Checking for new URLs added after budget calculation for campaign ${campaignId}`);
+    
+    // Get the campaign with its budget calculation timestamp
+    const campaign = await db.query.campaigns.findFirst({
+      where: (c, { eq }) => eq(c.id, campaignId),
+      with: { urls: true }
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    
+    if (!campaign || !campaign.highSpendBudgetCalcTime) {
+      console.log(`Campaign ${campaignId} doesn't have a high-spend budget calculation timestamp - skipping new URL check`);
+      return;
+    }
+    
+    const calcTime = campaign.highSpendBudgetCalcTime;
+    console.log(`Campaign ${campaignId} budget calculation time: ${calcTime.toISOString()}`);
+    
+    // Find URLs added after budget calculation time
+    const newUrls = campaign.urls.filter(url => {
+      // For each URL, check if it was created after the budget calculation
+      return url.status === 'active' && url.createdAt > calcTime;
+    });
+    
+    if (newUrls.length === 0) {
+      console.log(`No new URLs found added after budget calculation for campaign ${campaignId}`);
+      return;
+    }
+    
+    console.log(`⚠️ Found ${newUrls.length} new URLs added after budget calculation`);
+    
+    // Get the current budget from TrafficStar
+    const campaignData = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
+    if (!campaignData || !campaignData.max_daily) {
+      console.log(`Could not get current budget for campaign ${trafficstarCampaignId}`);
+      return;
+    }
+    
+    const currentBudget = parseFloat(campaignData.max_daily.toString());
+    console.log(`Current TrafficStar budget for campaign ${trafficstarCampaignId}: $${currentBudget.toFixed(4)}`);
+    
+    // Calculate new URLs budget
+    let newUrlsClicksTotal = 0;
+    let newUrlsBudget = 0;
+    
+    for (const url of newUrls) {
+      // For newly added URLs, use full clickLimit instead of remaining clicks
+      newUrlsClicksTotal += url.clickLimit;
+      
+      // Calculate individual URL budget (price)
+      const urlBudget = (url.clickLimit / 1000) * parseFloat(campaign.pricePerThousand);
+      console.log(`New URL ${url.id} budget: $${urlBudget.toFixed(4)} (${url.clickLimit} clicks)`);
+      
+      // Log this URL's budget calculation
+      await urlBudgetLogger.logUrlBudget(campaign.id, url.id, url.name || 'Unknown', urlBudget);
+      
+      // Add to total new URLs budget
+      newUrlsBudget += urlBudget;
+    }
+    
+    // Calculate updated budget (current budget + new URLs budget)
+    const updatedBudget = currentBudget + newUrlsBudget;
+    
+    console.log(`Updating budget for campaign ${trafficstarCampaignId} from $${currentBudget.toFixed(4)} to $${updatedBudget.toFixed(4)} (+ $${newUrlsBudget.toFixed(4)} for new URLs)`);
+    
+    // Update the TrafficStar campaign budget
+    await trafficStarService.updateCampaignBudget(Number(trafficstarCampaignId), updatedBudget);
+    
+    console.log(`✅ Successfully updated budget for campaign ${trafficstarCampaignId} to include new URLs`);
+    
+    // Update database with latest calculation time
+    await db.update(campaigns)
+      .set({
+        highSpendBudgetCalcTime: new Date(),
+        lastTrafficSenderAction: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    
+    console.log(`✅ Updated highSpendBudgetCalcTime for campaign ${campaignId}`);
+    
+  } catch (error) {
+    console.error(`Error checking for new URLs after budget calculation for campaign ${campaignId}:`, error);
+  }
+}
+
+/**
  * Handle URLs that were added after the initial high-spend budget calculation
  * These need special handling with a 9-minute delay and batch update approach
  * @param campaignId The campaign ID in our system
