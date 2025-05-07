@@ -721,17 +721,19 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
     console.log(`✅ Successfully updated budget for campaign ${trafficstarCampaignId} to include new URLs`);
     
     // Update database with latest calculation time
+    // We keep the status as 'high_spend_budget_updated' so that any new URLs added
+    // after this will still go through the same checkForNewUrlsAfterBudgetCalculation flow
     await db.update(campaigns)
       .set({
         highSpendBudgetCalcTime: new Date(),
-        lastTrafficSenderAction: new Date(),
-        lastTrafficSenderStatus: 'batch_updated_new_urls',
+        lastTrafficSenderAction: new Date(), 
+        lastTrafficSenderStatus: 'high_spend_budget_updated', // Keep the high spend state to maintain the flow
         updatedAt: new Date()
       })
       .where(eq(campaigns.id, campaignId));
     
     console.log(`✅ Updated highSpendBudgetCalcTime for campaign ${campaignId}`);
-    console.log(`✅ Marked campaign ${campaignId} as 'batch_updated_new_urls' in database`);
+    console.log(`✅ Maintained 'high_spend_budget_updated' status for new URL budget updates`);
     
   } catch (error) {
     console.error(`Error checking for new URLs after budget calculation for campaign ${campaignId}:`, error);
