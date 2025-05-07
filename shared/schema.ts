@@ -62,6 +62,8 @@ export const campaigns = pgTable("campaigns", {
   youtubeCheckDeleted: boolean("youtube_check_deleted").default(true), // Check if video is deleted
   youtubeCheckAgeRestricted: boolean("youtube_check_age_restricted").default(true), // Check if video is age restricted
   youtubeCheckMadeForKids: boolean("youtube_check_made_for_kids").default(true), // Check if video is made for kids
+  youtubeCheckDuration: boolean("youtube_check_duration").default(false), // Check if video duration exceeds max limit
+  youtubeMaxDurationMinutes: integer("youtube_max_duration_minutes").default(30), // Maximum video duration in minutes
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -127,6 +129,8 @@ export const updateCampaignSchema = z.object({
   youtubeCheckDeleted: z.boolean().optional(),
   youtubeCheckAgeRestricted: z.boolean().optional(),
   youtubeCheckMadeForKids: z.boolean().optional(),
+  youtubeCheckDuration: z.boolean().optional(),
+  youtubeMaxDurationMinutes: z.number().int().min(1).max(180).optional(), // 1 min to 3 hours
 });
 
 // URL schema
