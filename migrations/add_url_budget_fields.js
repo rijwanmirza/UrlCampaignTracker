@@ -6,7 +6,8 @@
  * - budgetCalculated column (boolean) to track URLs that have had budget calculated
  */
 
-const { Pool } = require('pg');
+import pg from 'pg';
+const { Pool } = pg;
 
 // Initialize the PostgreSQL client with the database URL from environment
 const pool = new Pool({
