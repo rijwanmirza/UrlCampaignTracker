@@ -52,7 +52,14 @@ const campaignEditSchema = z.object({
   trafficGeneratorEnabled: z.boolean().default(false),
   postPauseCheckMinutes: z.number().int().min(1, "Minutes must be at least 1").max(30, "Minutes can't exceed 30").default(2), 
   highSpendWaitMinutes: z.number().int().min(1, "Minutes must be at least 1").max(30, "Minutes can't exceed 30").default(11),
-  // Traffic Sender fields removed
+  // YouTube API fields
+  youtubeApiEnabled: z.boolean().default(false),
+  youtubeApiIntervalMinutes: z.number().int().min(15, "Minutes must be at least 15").max(1440, "Minutes can't exceed 1440").default(60),
+  youtubeCheckCountryRestriction: z.boolean().default(true),
+  youtubeCheckPrivate: z.boolean().default(true),
+  youtubeCheckDeleted: z.boolean().default(true),
+  youtubeCheckAgeRestricted: z.boolean().default(true),
+  youtubeCheckMadeForKids: z.boolean().default(true),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -90,7 +97,14 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
       postPauseCheckMinutes: campaign.postPauseCheckMinutes || 2, // Default to 2 minutes
       highSpendWaitMinutes: campaign.highSpendWaitMinutes || 11, // Default to 11 minutes
-      // Traffic Sender settings removed
+      // YouTube API settings
+      youtubeApiEnabled: campaign.youtubeApiEnabled || false,
+      youtubeApiIntervalMinutes: campaign.youtubeApiIntervalMinutes || 60, // Default to 60 minutes
+      youtubeCheckCountryRestriction: campaign.youtubeCheckCountryRestriction !== false, // Default to true
+      youtubeCheckPrivate: campaign.youtubeCheckPrivate !== false, // Default to true
+      youtubeCheckDeleted: campaign.youtubeCheckDeleted !== false, // Default to true
+      youtubeCheckAgeRestricted: campaign.youtubeCheckAgeRestricted !== false, // Default to true
+      youtubeCheckMadeForKids: campaign.youtubeCheckMadeForKids !== false, // Default to true
     },
   });
   
