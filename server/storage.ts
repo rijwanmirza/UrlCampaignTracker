@@ -134,7 +134,17 @@ export interface IStorage {
   }>;
   
   // System operations
-  fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number, originalUrlRecordsDeleted: number }>;
+  fullSystemCleanup(): Promise<{ 
+    campaignsDeleted: number, 
+    urlsDeleted: number, 
+    originalUrlRecordsDeleted: number,
+    youtubeUrlRecordsDeleted: number,
+    trafficstarCampaignsDeleted: number,
+    urlBudgetLogsDeleted: number,
+    urlClickRecordsDeleted: number,
+    urlClickLogsDeleted: number,
+    campaignClickRecordsDeleted: number
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
