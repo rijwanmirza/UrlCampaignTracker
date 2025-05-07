@@ -118,6 +118,20 @@ export class UrlBudgetLogger {
    * @returns boolean indicating if the URL was logged (true) or skipped because it was already logged (false)
    */
   public async logUrlBudget(campaignId: number, urlId: number, urlName: string, price: number): Promise<boolean> {
+    // First, check if this campaign has TrafficStar integration
+    const hasTrafficStar = await this.hasCampaignTrafficStarIntegration(campaignId);
+    if (!hasTrafficStar) {
+      console.log(`⚠️ Skipping URL budget log for URL ID ${urlId} - Campaign ${campaignId} has no TrafficStar integration`);
+      return false;
+    }
+    
+    // Check if the URL is active and belongs to this campaign
+    const isValidUrl = await this.isUrlActiveForCampaign(urlId, campaignId);
+    if (!isValidUrl) {
+      console.log(`⚠️ Skipping URL budget log for URL ID ${urlId} - URL is not active for campaign ${campaignId}`);
+      return false;
+    }
+    
     // Initialize tracking for this campaign if needed
     this.initCampaignTracking(campaignId);
     
@@ -164,6 +178,30 @@ export class UrlBudgetLogger {
       return true;
     } catch (error) {
       console.error(`❌ Failed to log URL budget for campaign ${campaignId}: ${error}`);
+      return false;
+    }
+  }
+  
+  /**
+   * Check if a URL is active and belongs to the specified campaign
+   * @param urlId URL ID to check
+   * @param campaignId Campaign ID to check
+   * @returns true if the URL is active and belongs to the campaign, false otherwise
+   */
+  private async isUrlActiveForCampaign(urlId: number, campaignId: number): Promise<boolean> {
+    try {
+      const url = await db.query.urls.findFirst({
+        where: (url, { eq, and }) => 
+          and(
+            eq(url.id, urlId),
+            eq(url.campaignId, campaignId),
+            eq(url.status, 'active')
+          )
+      });
+      
+      return !!url;
+    } catch (error) {
+      console.error(`❌ Failed to check if URL ${urlId} is active for campaign ${campaignId}: ${error}`);
       return false;
     }
   }
