@@ -10,6 +10,7 @@ import { db } from './db';
 import { campaigns } from '../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { getTodayFormatted, getYesterdayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
+import urlBudgetManager from './url-budget-manager';
 
 // Interfaces for API responses and data
 interface TokenResponse {
@@ -519,6 +520,89 @@ class TrafficStarService {
     } catch (error) {
       console.error('Error scheduling TrafficStar spent value updates:', error);
       throw error;
+    }
+  }
+  
+  /**
+   * Track a new URL for budget update after the initial budget calculation
+   * This method is used when new URLs are added to a campaign after it has gone over $10 spent
+   * It schedules a budget update to be processed after a waiting period
+   * 
+   * @param urlId The ID of the URL in our database
+   * @param campaignId The campaign ID in our database
+   * @param trafficstarCampaignId The campaign ID in TrafficStar
+   * @param clickLimit The total number of clicks required for this URL
+   * @param pricePerThousand The price per thousand clicks for this campaign
+   * @returns A boolean indicating whether the URL was successfully tracked
+   */
+  async trackNewUrlForBudgetUpdate(
+    urlId: number, 
+    campaignId: number, 
+    trafficstarCampaignId: string,
+    clickLimit: number, 
+    pricePerThousand: number
+  ): Promise<boolean> {
+    try {
+      console.log(`🔄 Tracking URL ID ${urlId} for budget update in campaign ${campaignId} (TrafficStar ID: ${trafficstarCampaignId})`);
+      console.log(`📊 URL requires ${clickLimit} clicks at $${pricePerThousand.toFixed(4)} per thousand clicks`);
+      
+      // Calculate the budget for this URL
+      // Budget = (clickLimit / 1000) * pricePerThousand
+      const urlBudget = (clickLimit / 1000) * pricePerThousand;
+      console.log(`💰 Calculated URL budget: $${urlBudget.toFixed(4)}`);
+      
+      // Use the URL budget manager to track this URL for a future budget update
+      const tracked = await urlBudgetManager.trackNewUrlForBudgetUpdate(
+        campaignId,
+        trafficstarCampaignId,
+        urlId,
+        clickLimit,
+        pricePerThousand
+      );
+      
+      if (tracked) {
+        console.log(`✅ Successfully scheduled URL ID ${urlId} for budget update`);
+        return true;
+      } else {
+        console.log(`⚠️ URL ID ${urlId} is already being tracked for budget update`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`❌ Error tracking URL ID ${urlId} for budget update:`, error);
+      return false;
+    }
+  }
+  
+  /**
+   * Process all pending URL budget updates immediately
+   * This is primarily used for testing the budget update system
+   * In normal operation, updates are processed automatically after the waiting period
+   * 
+   * @returns A boolean indicating whether processing was successful
+   */
+  async processPendingUrlBudgets(): Promise<boolean> {
+    try {
+      console.log(`🔄 Processing all pending URL budget updates immediately...`);
+      
+      // Get all campaigns with pending updates from the URL budget manager
+      const campaigns = await db.query.campaigns.findMany();
+      let processedCount = 0;
+      
+      for (const campaign of campaigns) {
+        if (campaign.id && urlBudgetManager.hasPendingUpdates(campaign.id)) {
+          console.log(`🔄 Processing pending URL budget updates for campaign ${campaign.id}`);
+          
+          // Force immediate processing of the pending URLs
+          await urlBudgetManager.processImmediately(campaign.id);
+          processedCount++;
+        }
+      }
+      
+      console.log(`✅ Processed pending URL budget updates for ${processedCount} campaigns`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Error processing pending URL budget updates:`, error);
+      return false;
     }
   }
 }
