@@ -61,6 +61,8 @@ const campaignEditSchema = z.object({
   youtubeCheckDeleted: z.boolean().default(true),
   youtubeCheckAgeRestricted: z.boolean().default(true),
   youtubeCheckMadeForKids: z.boolean().default(true),
+  youtubeCheckDuration: z.boolean().default(false),
+  youtubeMaxDurationMinutes: z.number().int().min(1, "Duration must be at least 1 minute").max(360, "Duration can't exceed 360 minutes").default(30),
 });
 
 type CampaignEditValues = z.infer<typeof campaignEditSchema>;
@@ -106,6 +108,8 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       youtubeCheckDeleted: campaign.youtubeCheckDeleted !== false, // Default to true
       youtubeCheckAgeRestricted: campaign.youtubeCheckAgeRestricted !== false, // Default to true
       youtubeCheckMadeForKids: campaign.youtubeCheckMadeForKids !== false, // Default to true
+      youtubeCheckDuration: campaign.youtubeCheckDuration || false, // Default to false
+      youtubeMaxDurationMinutes: campaign.youtubeMaxDurationMinutes || 30 // Default to 30 minutes
     },
   });
   
@@ -929,6 +933,65 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                           </FormItem>
                         )}
                       />
+                      
+                      <FormField
+                        control={form.control}
+                        name="youtubeCheckDuration"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              Remove videos exceeding maximum duration
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      {form.watch("youtubeCheckDuration") && (
+                        <FormField
+                          control={form.control}
+                          name="youtubeMaxDurationMinutes"
+                          render={({ field }) => (
+                            <FormItem className="ml-6 mt-2">
+                              <FormLabel className="text-sm">Maximum Video Duration (minutes)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="360"
+                                  step="1"
+                                  className="w-28"
+                                  {...field}
+                                  onChange={(e) => {
+                                    // Just use the raw value from the input to allow proper editing
+                                    const value = e.target.value;
+                                    
+                                    // Only parse and validate when submitting or onBlur
+                                    if (value === '') {
+                                      // Empty field - set default
+                                      field.onChange(30);
+                                    } else {
+                                      // Update with the raw value
+                                      const parsedValue = parseInt(value, 10);
+                                      if (!isNaN(parsedValue)) {
+                                        field.onChange(parsedValue);
+                                      }
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs">
+                                Videos longer than this will be removed (1-360 min). Default: 30 min.
+                              </FormDescription>
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
                     <FormDescription className="mt-2">
                       When a URL is removed due to these conditions, it will be recorded in YouTube URL Records.
