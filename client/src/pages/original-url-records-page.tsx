@@ -150,12 +150,13 @@ export default function OriginalUrlRecordsPage() {
         limit: pageSize.toString()
       });
       
+      // When searching, ignore campaign filter to allow searching across all records
       if (searchQuery) {
         searchParams.append("search", searchQuery);
-      }
-      
-      if (campaignFilter) {
-        // Make sure to convert to a number
+        // Set status to 'all' to ensure we search across all records
+        searchParams.append("status", "all");
+      } else if (campaignFilter) {
+        // Only apply campaign filter when not searching
         const campaignId = parseInt(campaignFilter, 10);
         console.log(`Setting campaign filter to ${campaignId} (${typeof campaignId})`);
         searchParams.append("campaignId", campaignId.toString());
