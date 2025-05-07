@@ -119,6 +119,9 @@ export const urls = pgTable("urls", {
   originalClickLimit: integer("original_click_limit").default(0).notNull(), // The original click limit entered by user
   clicks: integer("clicks").default(0).notNull(),
   status: text("status").default('active').notNull(), // Using text for now as pgEnum causes issues with drizzle-kit
+  // URL Budget fields for newly added URLs after high spend detection
+  pendingBudgetUpdate: boolean("pending_budget_update").default(false), // True if URL is waiting for budget update
+  budgetCalculated: boolean("budget_calculated").default(false), // True if budget has been calculated for this URL
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -147,6 +150,9 @@ export const updateUrlSchema = createInsertSchema(urls).omit({
   originalClickLimit: z.number().int().min(1).optional(),
   clicks: z.number().int().min(0).optional(),
   status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected']).optional(),
+  // URL budget tracking fields
+  pendingBudgetUpdate: z.boolean().optional(),
+  budgetCalculated: z.boolean().optional(),
 });
 
 // Schema for bulk actions
