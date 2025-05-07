@@ -50,7 +50,7 @@ export default function YoutubeUrlRecordsPage() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [campaignId, setCampaignId] = useState<string>("");
+  const [campaignId, setCampaignId] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [limit] = useState(50);
 
@@ -64,7 +64,7 @@ export default function YoutubeUrlRecordsPage() {
     queryFn: async () => {
       let url = `/api/youtube-url-records?page=${page}&limit=${limit}`;
       if (search) url += `&search=${encodeURIComponent(search)}`;
-      if (campaignId) url += `&campaignId=${campaignId}`;
+      if (campaignId && campaignId !== 'all') url += `&campaignId=${campaignId}`;
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -220,7 +220,7 @@ export default function YoutubeUrlRecordsPage() {
                 <SelectValue placeholder="Filter by campaign" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Campaigns</SelectItem>
+                <SelectItem value="all">All Campaigns</SelectItem>
                 {campaignsData?.map((campaign: any) => (
                   <SelectItem key={campaign.id} value={campaign.id.toString()}>
                     {campaign.name}
