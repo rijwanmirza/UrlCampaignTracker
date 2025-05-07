@@ -20,7 +20,11 @@ import {
   UrlClickRecord,
   InsertUrlClickRecord,
   urlClickRecords,
-  TimeRangeFilter
+  TimeRangeFilter,
+  GmailCampaignAssignment,
+  InsertGmailCampaignAssignment,
+  UpdateGmailCampaignAssignment,
+  gmailCampaignAssignments
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or, gte, lte } from "drizzle-orm";
