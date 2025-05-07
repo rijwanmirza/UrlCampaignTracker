@@ -55,9 +55,21 @@ export default function SystemSettings() {
       
       if (response.ok) {
         const data = await response.json();
+        const result = data.result;
+        const deletedItems = [
+          `${result.campaignsDeleted} campaigns`,
+          `${result.urlsDeleted} URLs`,
+          `${result.originalUrlRecordsDeleted} original URL records`,
+          `${result.youtubeUrlRecordsDeleted || 0} YouTube URL records`,
+          `${result.trafficstarCampaignsDeleted || 0} TrafficStar campaigns`,
+          `${result.urlBudgetLogsDeleted || 0} URL budget logs`,
+          `${result.urlClickRecordsDeleted || 0} URL click records`,
+          `${result.campaignClickRecordsDeleted || 0} campaign click records`
+        ].join(', ');
+        
         toast({
           title: "System Cleanup Complete",
-          description: `Deleted ${data.result.campaignsDeleted} campaigns and ${data.result.urlsDeleted} URLs.`,
+          description: `Successfully deleted: ${deletedItems}`,
         });
         
         // Close the dialog and clear the input
