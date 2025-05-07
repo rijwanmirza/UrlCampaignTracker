@@ -1834,7 +1834,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Full system cleanup - deletes all campaigns and URLs
-  async fullSystemCleanup(): Promise<{ campaignsDeleted: number, urlsDeleted: number, originalUrlRecordsDeleted: number }> {
+  async fullSystemCleanup(): Promise<{ 
+    campaignsDeleted: number, 
+    urlsDeleted: number, 
+    originalUrlRecordsDeleted: number,
+    youtubeUrlRecordsDeleted: number,
+    trafficstarCampaignsDeleted: number,
+    urlBudgetLogsDeleted: number,
+    urlClickRecordsDeleted: number,
+    campaignClickRecordsDeleted: number
+  }> {
     try {
       // First, count how many items we'll delete
       const allCampaigns = await this.getCampaigns();
@@ -1844,27 +1853,121 @@ export class DatabaseStorage implements IStorage {
         totalUrls += campaign.urls.length;
       }
       
-      // Count original URL records too
+      // Count original URL records
       const originalRecordsResult = await db.select({ count: sql`count(*)` }).from(originalUrlRecords);
       const originalRecordsCount = Number(originalRecordsResult[0]?.count || 0);
       
-      console.log(`🧹 SYSTEM RESET: Starting complete database cleanup - Found ${allCampaigns.length} campaigns, ${totalUrls} URLs, and ${originalRecordsCount} original URL records to delete`);
+      // Count YouTube URL records (if exists)
+      let youtubeUrlRecordsCount = 0;
+      try {
+        const youtubeRecordsResult = await db.execute(sql`SELECT COUNT(*) FROM youtube_url_records`);
+        youtubeUrlRecordsCount = Number(youtubeRecordsResult.rows?.[0]?.count || 0);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No youtube_url_records table found or unable to count records`);
+      }
+      
+      // Count TrafficStar campaigns (if exists)
+      let trafficstarCampaignsCount = 0;
+      try {
+        const trafficstarResult = await db.execute(sql`SELECT COUNT(*) FROM trafficstar_campaigns`);
+        trafficstarCampaignsCount = Number(trafficstarResult.rows?.[0]?.count || 0);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No trafficstar_campaigns table found or unable to count records`);
+      }
+      
+      // Count URL budget logs (if exists)
+      let urlBudgetLogsCount = 0;
+      try {
+        const urlBudgetLogsResult = await db.execute(sql`SELECT COUNT(*) FROM url_budget_logs`);
+        urlBudgetLogsCount = Number(urlBudgetLogsResult.rows?.[0]?.count || 0);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No url_budget_logs table found or unable to count records`);
+      }
+      
+      // Count URL click records
+      let urlClickRecordsCount = 0;
+      try {
+        const urlClickRecordsResult = await db.execute(sql`SELECT COUNT(*) FROM url_click_records`);
+        urlClickRecordsCount = Number(urlClickRecordsResult.rows?.[0]?.count || 0);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No url_click_records table found or unable to count records`);
+      }
+      
+      // Count campaign click records
+      let campaignClickRecordsCount = 0;
+      try {
+        const campaignClickRecordsResult = await db.execute(sql`SELECT COUNT(*) FROM campaign_click_records`);
+        campaignClickRecordsCount = Number(campaignClickRecordsResult.rows?.[0]?.count || 0);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No campaign_click_records table found or unable to count records`);
+      }
+      
+      console.log(`🧹 SYSTEM RESET: Starting complete database cleanup - Found:
+        - ${allCampaigns.length} campaigns
+        - ${totalUrls} URLs
+        - ${originalRecordsCount} original URL records
+        - ${youtubeUrlRecordsCount} YouTube URL records
+        - ${trafficstarCampaignsCount} TrafficStar campaigns
+        - ${urlBudgetLogsCount} URL budget logs
+        - ${urlClickRecordsCount} URL click records
+        - ${campaignClickRecordsCount} campaign click records
+      `);
       
       // Delete in proper order to respect foreign key constraints
       
-      // 1. Delete all URLs first (to handle foreign key constraints)
+      // 1. First delete child records linked to URLs
+      try {
+        await db.execute(sql`DELETE FROM url_click_records`);
+        console.log(`✅ SYSTEM RESET: Deleted all URL click records (${urlClickRecordsCount} records)`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No url_click_records table found or nothing to delete`);
+      }
+      
+      // 2. Delete campaign click records
+      try {
+        await db.execute(sql`DELETE FROM campaign_click_records`);
+        console.log(`✅ SYSTEM RESET: Deleted all campaign click records (${campaignClickRecordsCount} records)`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No campaign_click_records table found or nothing to delete`);
+      }
+      
+      // 3. Delete URL budget logs
+      try {
+        await db.execute(sql`DELETE FROM url_budget_logs`);
+        console.log(`✅ SYSTEM RESET: Deleted all URL budget logs (${urlBudgetLogsCount} records)`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No url_budget_logs table found or nothing to delete`);
+      }
+      
+      // 4. Delete YouTube URL records
+      try {
+        await db.execute(sql`DELETE FROM youtube_url_records`);
+        console.log(`✅ SYSTEM RESET: Deleted all YouTube URL records (${youtubeUrlRecordsCount} records)`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No youtube_url_records table found or nothing to delete`);
+      }
+      
+      // 5. Delete all URLs (to handle foreign key constraints)
       await db.delete(urls);
       console.log(`✅ SYSTEM RESET: Deleted all URLs (${totalUrls} records)`);
       
-      // 2. Delete all original URL records
+      // 6. Delete all original URL records
       await db.delete(originalUrlRecords);
       console.log(`✅ SYSTEM RESET: Deleted all original URL records (${originalRecordsCount} records)`);
       
-      // 3. Delete all campaigns
+      // 7. Delete TrafficStar campaigns
+      try {
+        await db.execute(sql`DELETE FROM trafficstar_campaigns`);
+        console.log(`✅ SYSTEM RESET: Deleted all TrafficStar campaigns (${trafficstarCampaignsCount} records)`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No trafficstar_campaigns table found or nothing to delete`);
+      }
+      
+      // 8. Delete all campaigns
       await db.delete(campaigns);
       console.log(`✅ SYSTEM RESET: Deleted all campaigns (${allCampaigns.length} records)`);
       
-      // 4. Also delete protection settings if they exist
+      // 9. Also delete protection settings if they exist
       try {
         await db.execute(sql`DELETE FROM protection_settings`);
         console.log(`✅ SYSTEM RESET: Deleted all protection settings`);
@@ -1872,7 +1975,7 @@ export class DatabaseStorage implements IStorage {
         console.log(`ℹ️ SYSTEM RESET: No protection_settings table found or nothing to delete`);
       }
       
-      // 5. Delete pending budget updates if they exist
+      // 10. Delete pending budget updates if they exist
       try {
         await db.execute(sql`DELETE FROM pending_url_budget_updates`);
         console.log(`✅ SYSTEM RESET: Deleted all pending URL budget updates`);
@@ -1880,7 +1983,7 @@ export class DatabaseStorage implements IStorage {
         console.log(`ℹ️ SYSTEM RESET: No pending_url_budget_updates table found or nothing to delete`);
       }
       
-      // 6. Delete sessions table data if it exists
+      // 11. Delete sessions table data if it exists
       try {
         await db.execute(sql`DELETE FROM sessions`);
         console.log(`✅ SYSTEM RESET: Deleted all session data`);
@@ -1888,7 +1991,20 @@ export class DatabaseStorage implements IStorage {
         console.log(`ℹ️ SYSTEM RESET: No sessions table found or nothing to delete`);
       }
       
-      // 7. CRITICAL FIX: Reset all ID sequences to start from 1 again
+      // 12. Clear file-based logs
+      try {
+        // Clear redirect logs
+        await redirectLogsManager.clearAllLogs();
+        console.log(`✅ SYSTEM RESET: Cleared all redirect logs`);
+        
+        // Clear URL click logs
+        await urlClickLogsManager.clearAllLogs();
+        console.log(`✅ SYSTEM RESET: Cleared all URL click logs`);
+      } catch (error) {
+        console.error(`⚠️ SYSTEM RESET: Error clearing file-based logs:`, error);
+      }
+      
+      // 13. CRITICAL FIX: Reset all ID sequences to start from 1 again
       console.log(`🔄 SYSTEM RESET: Resetting all database sequences to start from 1...`);
       try {
         // Reset URLs sequence
@@ -1903,13 +2019,36 @@ export class DatabaseStorage implements IStorage {
         await db.execute(sql`ALTER SEQUENCE original_url_records_id_seq RESTART WITH 1`);
         console.log(`✅ SYSTEM RESET: Reset original URL records sequence to start from ID 1`);
         
-        // Reset TrafficStar campaigns sequence if it exists
+        // Reset YouTube URL records sequence
+        try {
+          await db.execute(sql`ALTER SEQUENCE youtube_url_records_id_seq RESTART WITH 1`);
+          console.log(`✅ SYSTEM RESET: Reset YouTube URL records sequence to start from ID 1`);
+        } catch (error) {
+          console.log(`ℹ️ SYSTEM RESET: No YouTube URL records sequence found to reset`);
+        }
+        
+        // Reset TrafficStar campaigns sequence
         try {
           await db.execute(sql`ALTER SEQUENCE trafficstar_campaigns_id_seq RESTART WITH 1`);
           console.log(`✅ SYSTEM RESET: Reset TrafficStar campaigns sequence to start from ID 1`);
         } catch (error) {
-          // Ignore error if table doesn't exist
           console.log(`ℹ️ SYSTEM RESET: No TrafficStar campaigns sequence found to reset`);
+        }
+        
+        // Reset URL click records sequence
+        try {
+          await db.execute(sql`ALTER SEQUENCE url_click_records_id_seq RESTART WITH 1`);
+          console.log(`✅ SYSTEM RESET: Reset URL click records sequence to start from ID 1`);
+        } catch (error) {
+          console.log(`ℹ️ SYSTEM RESET: No URL click records sequence found to reset`);
+        }
+        
+        // Reset campaign click records sequence
+        try {
+          await db.execute(sql`ALTER SEQUENCE campaign_click_records_id_seq RESTART WITH 1`);
+          console.log(`✅ SYSTEM RESET: Reset campaign click records sequence to start from ID 1`);
+        } catch (error) {
+          console.log(`ℹ️ SYSTEM RESET: No campaign click records sequence found to reset`);
         }
       } catch (error) {
         console.error(`❌ SYSTEM RESET: Error resetting sequences:`, error);
@@ -1932,12 +2071,17 @@ export class DatabaseStorage implements IStorage {
         console.log(`✅ SYSTEM RESET: Reset click update timer`);
       }
       
-      console.log(`✅ SYSTEM RESET COMPLETED: Successfully deleted ${allCampaigns.length} campaigns, ${totalUrls} URLs, and ${originalRecordsCount} original URL records`);
+      console.log(`✅ SYSTEM RESET COMPLETED: Successfully reset all system data`);
       
       return {
         campaignsDeleted: allCampaigns.length,
         urlsDeleted: totalUrls,
-        originalUrlRecordsDeleted: originalRecordsCount
+        originalUrlRecordsDeleted: originalRecordsCount,
+        youtubeUrlRecordsDeleted: youtubeUrlRecordsCount,
+        trafficstarCampaignsDeleted: trafficstarCampaignsCount,
+        urlBudgetLogsDeleted: urlBudgetLogsCount,
+        urlClickRecordsDeleted: urlClickRecordsCount,
+        campaignClickRecordsDeleted: campaignClickRecordsCount
       };
     } catch (error) {
       console.error("Error during full system cleanup:", error);

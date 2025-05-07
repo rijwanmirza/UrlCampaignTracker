@@ -328,21 +328,62 @@ export default function GmailSettingsPage() {
   
   // Full system cleanup mutation
   const fullSystemCleanupMutation = useMutation<
-    { message: string, campaignsDeleted: number, urlsDeleted: number },
-    Error,
+    { 
+      message: string, 
+      result: {
+        campaignsDeleted: number, 
+        urlsDeleted: number, 
+        originalUrlRecordsDeleted: number,
+        youtubeUrlRecordsDeleted: number,
+        trafficstarCampaignsDeleted: number,
+        urlBudgetLogsDeleted: number,
+        urlClickRecordsDeleted: number,
+        campaignClickRecordsDeleted: number,
+        emailLogsCleared: boolean,
+        emailLogsRemoved: number
+      }
+    }, 
+    Error, 
     { confirmText: string }
   >({
     mutationFn: (params) => {
-      return apiRequest<{ message: string, campaignsDeleted: number, urlsDeleted: number }>(
+      return apiRequest<{ 
+        message: string, 
+        result: {
+          campaignsDeleted: number, 
+          urlsDeleted: number, 
+          originalUrlRecordsDeleted: number,
+          youtubeUrlRecordsDeleted: number,
+          trafficstarCampaignsDeleted: number,
+          urlBudgetLogsDeleted: number,
+          urlClickRecordsDeleted: number,
+          campaignClickRecordsDeleted: number,
+          emailLogsCleared: boolean,
+          emailLogsRemoved: number
+        }
+      }>(
         'POST', 
         '/api/system/full-cleanup', 
         params
       );
     },
     onSuccess: (data) => {
+      const result = data.result;
+      const deletedItems = [
+        `${result.campaignsDeleted} campaigns`,
+        `${result.urlsDeleted} URLs`,
+        `${result.originalUrlRecordsDeleted} original URL records`,
+        `${result.youtubeUrlRecordsDeleted} YouTube URL records`,
+        `${result.trafficstarCampaignsDeleted} TrafficStar campaigns`,
+        `${result.urlBudgetLogsDeleted} URL budget logs`,
+        `${result.urlClickRecordsDeleted} URL click records`,
+        `${result.campaignClickRecordsDeleted} campaign click records`,
+        `${result.emailLogsRemoved} email logs`
+      ].join(', ');
+      
       toast({
         title: "System Cleanup Complete",
-        description: `Successfully deleted ${data.campaignsDeleted} campaigns and ${data.urlsDeleted} URLs.`,
+        description: `Successfully deleted: ${deletedItems}`,
       });
       setFullCleanupDialogOpen(false);
       

@@ -2719,7 +2719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear email processing logs
       const emailLogsResult = gmailReader.clearAllEmailLogs();
       
-      // Clear database (delete all campaigns and URLs)
+      // Clear database (delete all data from all tables)
       const dbResult = await storage.fullSystemCleanup();
       
       res.json({ 
@@ -2728,6 +2728,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           campaignsDeleted: dbResult.campaignsDeleted,
           urlsDeleted: dbResult.urlsDeleted,
           originalUrlRecordsDeleted: dbResult.originalUrlRecordsDeleted,
+          youtubeUrlRecordsDeleted: dbResult.youtubeUrlRecordsDeleted || 0,
+          trafficstarCampaignsDeleted: dbResult.trafficstarCampaignsDeleted || 0,
+          urlBudgetLogsDeleted: dbResult.urlBudgetLogsDeleted || 0,
+          urlClickRecordsDeleted: dbResult.urlClickRecordsDeleted || 0,
+          campaignClickRecordsDeleted: dbResult.campaignClickRecordsDeleted || 0,
           emailLogsCleared: emailLogsResult.success,
           emailLogsRemoved: emailLogsResult.entriesRemoved
         }
