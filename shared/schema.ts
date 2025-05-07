@@ -513,3 +513,33 @@ export const youtubeUrlRecordsRelations = relations(youtubeUrlRecords, ({ one })
     references: [campaigns.id],
   }),
 }));
+
+// System Settings table for storing application settings
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Unique setting name
+  value: text("value").notNull(), // Setting value as string
+  description: text("description"), // Optional description
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().optional(),
+  value: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type UpdateSystemSetting = z.infer<typeof updateSystemSettingSchema>;

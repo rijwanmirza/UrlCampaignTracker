@@ -1,6 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { validateApiKey, requireAuth } from './middleware';
 import { log } from '../vite';
+import { saveApiKeyToDatabase } from './key-manager';
 
 // Register authentication routes
 export function registerAuthRoutes(app: Express) {
