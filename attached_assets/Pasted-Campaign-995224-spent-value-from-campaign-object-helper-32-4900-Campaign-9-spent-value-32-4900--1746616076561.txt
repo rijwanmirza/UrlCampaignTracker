@@ -1,0 +1,3061 @@
+Campaign 995224 spent value from campaign object helper: $32.4900
+Campaign 9 spent value: $32.4900
+TRAFFIC-GENERATOR: Handling campaign 995224 by spent value - current spent: $32.4900
+🟢 HIGH SPEND ($32.4900 >= $10.00): Campaign 995224 has spent $10.00 or more
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 10 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14691] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 10219429]'
+<= 'A16 OK [READ-WRITE] INBOX selected. (Success)'
+10:55:28 AM [gmail-reader] Searching for ALL messages in inbox - found in mailbox: 10
+=> 'A17 UID SEARCH ALL'
+⏱️ Running minute check for campaign 995224 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997 14363 14530'
+<= 'A17 OK SEARCH completed (Success)'
+10:55:28 AM [gmail-reader] Found 10 emails in mailbox
+=> 'A18 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997,14363,14530 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+10:55:28 AM [gmail-reader] Processing email (ID: 11452)
+10:55:28 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+10:55:28 AM [gmail-reader] Processing email (ID: 11762)
+10:55:28 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+10:55:28 AM [gmail-reader] Processing email (ID: 12778)
+10:55:28 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+10:55:28 AM [gmail-reader] Processing email (ID: 12808)
+10:55:28 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+10:55:28 AM [gmail-reader] Processing email (ID: 13039)
+10:55:28 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+10:55:28 AM [gmail-reader] Processing email (ID: 13513)
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+10:55:28 AM [gmail-reader] Processing email (ID: 13798)
+10:55:28 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+10:55:28 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) BODY[] {73275}'
+10:55:28 AM [gmail-reader] Processing email (ID: 13997)
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is paused, active=false
+10:55:28 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) )'
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) BODY[] {58240}'
+10:55:28 AM [gmail-reader] Processing email (ID: 14363)
+Campaign 9 price per thousand: $1.0000
+Campaign 9 has been in high_spend_waiting state for 5 minutes (configured wait: 1 minutes)
+1-minute wait period has elapsed for campaign 9 - proceeding with high spend handling
+Fetching spent value for campaign 995224 on 2025-05-07
+Getting campaign 995224 details
+10:55:28 AM [gmail-reader] Email ID: 14363
+            From: "Matt Palmer" <matt@mail.replit.com>
+            Subject: 🔥 What's new in Replit: auth, new tutorials, and more!
+            Date: 2025-05-02T18:02:49.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Matt Palmer" <matt@mail.replit.com>
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) )'
+<= 'A18 OK Success'
+=> 'IDLE IDLE'
+10:55:28 AM [gmail-reader] Processing email (ID: 14530)
+10:55:28 AM [gmail-reader] Email ID: 14530
+            From: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+            Subject: Important: Confirm your $20.00 payment to Cursor
+            Date: 2025-05-04T19:50:21.000Z
+10:55:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+10:55:28 AM [gmail-reader] Finished processing batch of 10 emails
+<= '+ idling'
+Campaign 995224 spent value from campaign object helper: $32.4900
+Campaign 9 updated spent value after wait: $32.4900
+Checking remaining clicks for 19 URLs in campaign 995224
+❌ Skipping URL ID: 105 with status: deleted
+❌ Skipping URL ID: 86 with status: deleted
+❌ Skipping URL ID: 87 with status: deleted
+❌ Skipping URL ID: 92 with status: deleted
+❌ Skipping URL ID: 104 with status: deleted
+❌ Skipping URL ID: 121 with status: deleted
+❌ Skipping URL ID: 201 with status: deleted
+❌ Skipping URL ID: 197 with status: deleted
+❌ Skipping URL ID: 198 with status: deleted
+❌ Skipping URL ID: 199 with status: deleted
+❌ Skipping URL ID: 200 with status: deleted
+❌ Skipping URL ID: 280 with status: deleted
+❌ Skipping URL ID: 281 with status: deleted
+❌ Skipping URL ID: 283 with status: paused
+❌ Skipping URL ID: 287 with status: paused
+✅ Adding 100000 remaining clicks from URL ID: 458
+💰 URL 458 price for 100000 remaining clicks: $100.00
+Created URL budget log file for campaign 9 at url_budget_logs/campaign_9_url_budget_logs
+📝 Logged URL budget for URL ID 458 in campaign 9: $100.0000 at 2025-05-07::10:55:29
+✅ Adding 10000 remaining clicks from URL ID: 488
+💰 URL 488 price for 10000 remaining clicks: $10.00
+📝 Logged URL budget for URL ID 488 in campaign 9: $10.0000 at 2025-05-07::10:55:29
+❌ Skipping URL ID: 384 with status: paused
+❌ Skipping URL ID: 453 with status: paused
+Total remaining clicks across active URLs: 110000
+Calculated value of remaining clicks: $110.0000
+New budget calculation: $32.4900 (spent) + $110.0000 (remaining) = $142.4900
+Updating daily budget for campaign 995224 to: $142.49
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is paused, active=false
+⏹️ Campaign 995224 is still paused as expected - monitoring will continue
+Successfully updated daily budget for campaign 995224
+Confirmed daily budget update for campaign 995224
+✅ Updated campaign 995224 budget to $142.4900
+Setting campaign 995224 end time to: 2025-05-07 23:59:00
+Successfully updated end time for campaign 995224
+Confirmed end time update for campaign 995224
+✅ Set campaign 995224 end time to 2025-05-07 23:59:00
+Activating campaign 995224
+Successfully activated campaign 995224
+✅ Activated campaign 995224 after budget update
+✅ Marked campaign 9 as 'high_spend_budget_updated' in database
+Checking for URLs added after high-spend budget calculation for campaign 9
+Campaign 9 budget calculation time: 2025-05-07T10:55:30.192Z
+No new URLs found added after budget calculation for campaign 9
+🔄 Starting minute-by-minute ACTIVE status check for campaign 995224
+Finished running Traffic Generator for all enabled campaigns
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔓 DEVELOPMENT MODE: Authentication bypassed
+Fetching URL budget logs for all campaigns with TrafficStar integration
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+10:55:57 AM [express] GET /api/url-budget-logs 200 in 93ms :: {"success":true,"logs":[{"urlId":488,"c…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+10:55:57 AM [express] GET /api/campaigns 200 in 163ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔓 DEVELOPMENT MODE: Authentication bypassed
+10:56:02 AM [express] GET /api/url-budget-logs/all 400 in 1ms :: {"success":false,"error":"Invalid ca…
+Fetching URL budget logs for campaign 9
+10:56:03 AM [express] GET /api/url-budget-logs/9 200 in 18ms :: {"success":true,"campaignId":9,"logs"…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+Fetching URL budget logs for all campaigns with TrafficStar integration
+10:56:04 AM [express] GET /api/url-budget-logs 304 in 18ms :: {"success":true,"logs":[{"urlId":488,"c…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 DEBUG: Received URL creation request: {
+  "name": "xswxcscs",
+  "targetUrl": "https://www.youtube.com/watch?v=Gfcnrruuxo0",
+  "clickLimit": 5000
+}
+🔍 DEBUG: Campaign multiplier: 1.00
+🔍 DEBUG: Original click limit (user input): 5000
+🔍 DEBUG: Creating Original URL Record for name: xswxcscs
+✅ Created Original URL Record with click limit: 5000
+🔍 DEBUG: Calculated click limit after multiplier: 5000
+🔍 DEBUG: Calculation: 5000 × 1 = 5000
+🔍 DEBUG: Final URL data to be saved: {
+  "name": "xswxcscs",
+  "targetUrl": "https://www.youtube.com/watch?v=Gfcnrruuxo0",
+  "clickLimit": 5000,
+  "campaignId": 9,
+  "originalClickLimit": 5000
+}
+🔍 DEBUG: Storage - Creating URL
+  - Name: xswxcscs
+  - Target URL: https://www.youtube.com/watch?v=Gfcnrruuxo0
+  - Campaign ID: 9
+  - Click limit (after multiplier): 5000
+  - Original click limit (user input): 5000
+🧹 Invalidating campaign cache for ID: 9
+URL created in campaign 9 with TrafficStar campaign ID 995224
+Scheduling budget update for this URL in 10 minutes
+🔄 Tracking URL ID 492 for budget update in campaign 9 (TrafficStar ID: 995224)
+❌ Error tracking URL ID 492 for budget update: TypeError: pricePerThousand.toFixed is not a function
+    at TrafficStarService.trackNewUrlForBudgetUpdate (/home/runner/workspace/server/trafficstar-service-new.ts:547:80)
+    at <anonymous> (/home/runner/workspace/server/routes.ts:1300:36)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+URL budget tracking scheduled for URL ID 492
+10:56:21 AM [express] POST /api/campaigns/9/urls 201 in 218ms :: {"id":492,"campaignId":9,"name":"xsw…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+10:56:21 AM [express] GET /api/campaigns/9 200 in 36ms :: {"id":9,"name":"Test Click Count Fix","redi…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+10:56:22 AM [express] GET /api/campaigns 200 in 145ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2392280,
+        "nice": 0,
+        "sys": 617240,
+        "idle": 10545920,
+        "irq": 279740
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2450750,
+        "nice": 0,
+        "sys": 634990,
+        "idle": 10488360,
+        "irq": 287870
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3498660,
+        "nice": 0,
+        "sys": 832880,
+        "idle": 9007110,
+        "irq": 300710
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3534200,
+        "nice": 0,
+        "sys": 827000,
+        "idle": 8982620,
+        "irq": 293990
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3393380,
+        "nice": 0,
+        "sys": 882530,
+        "idle": 8968590,
+        "irq": 309650
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3394720,
+        "nice": 0,
+        "sys": 882770,
+        "idle": 8993290,
+        "irq": 304660
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3486850,
+        "nice": 0,
+        "sys": 829110,
+        "idle": 8997010,
+        "irq": 301380
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3509640,
+        "nice": 0,
+        "sys": 858000,
+        "idle": 8942070,
+        "irq": 300820
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 24055590912
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 0 campaigns:
+Load average data: {
+  "avgLoad": 0.53,
+  "currentLoad": 37.2658929042469,
+  "currentLoadUser": 28.532489228875406,
+  "currentLoadSystem": 6.095577244350655,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 62.7341070957531,
+  "currentLoadIrq": 2.637826431020839,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 169530,
+  "rawCurrentLoadUser": 129800,
+  "rawCurrentLoadSystem": 27730,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 285390,
+  "rawCurrentLoadIrq": 12000,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 29.519847460565092,
+      "loadUser": 22.118218062055817,
+      "loadSystem": 5.009533714681921,
+      "loadNice": 0,
+      "loadIdle": 70.48015253943491,
+      "loadIrq": 2.3920956838273533,
+      "rawLoad": 17030,
+      "rawLoadUser": 12760,
+      "rawLoadSystem": 2890,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40660,
+      "rawLoadIrq": 1380,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 31.07756376887038,
+      "loadUser": 23.199722366822837,
+      "loadSystem": 5.379142807565504,
+      "loadNice": 0,
+      "loadIdle": 68.92243623112962,
+      "loadIrq": 2.4986985944820406,
+      "rawLoad": 17910,
+      "rawLoadUser": 13370,
+      "rawLoadSystem": 3100,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39720,
+      "rawLoadIrq": 1440,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.551316021904256,
+      "loadUser": 30.789613142554316,
+      "loadSystem": 6.059000176647236,
+      "loadNice": 0,
+      "loadIdle": 60.448683978095744,
+      "loadIrq": 2.7027027027027026,
+      "rawLoad": 22390,
+      "rawLoadUser": 17430,
+      "rawLoadSystem": 3430,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34220,
+      "rawLoadIrq": 1530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.98220640569395,
+      "loadUser": 30.676156583629894,
+      "loadSystem": 6.619217081850534,
+      "loadNice": 0,
+      "loadIdle": 60.01779359430605,
+      "loadIrq": 2.6868327402135233,
+      "rawLoad": 22470,
+      "rawLoadUser": 17240,
+      "rawLoadSystem": 3720,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33730,
+      "rawLoadIrq": 1510,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 38.23011963406052,
+      "loadUser": 28.95847994370162,
+      "loadSystem": 6.474313863476425,
+      "loadNice": 0,
+      "loadIdle": 61.76988036593948,
+      "loadIrq": 2.7973258268824774,
+      "rawLoad": 21730,
+      "rawLoadUser": 16460,
+      "rawLoadSystem": 3680,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 35110,
+      "rawLoadIrq": 1590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.94279661016949,
+      "loadUser": 31.83262711864407,
+      "loadSystem": 6.4442090395480225,
+      "loadNice": 0,
+      "loadIdle": 59.057203389830505,
+      "loadIrq": 2.6659604519774014,
+      "rawLoad": 23190,
+      "rawLoadUser": 18030,
+      "rawLoadSystem": 3650,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33450,
+      "rawLoadIrq": 1510,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.593998234774936,
+      "loadUser": 30.679611650485437,
+      "loadSystem": 6.248896734333628,
+      "loadNice": 0,
+      "loadIdle": 60.40600176522507,
+      "loadIrq": 2.6654898499558692,
+      "rawLoad": 22430,
+      "rawLoadUser": 17380,
+      "rawLoadSystem": 3540,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34220,
+      "rawLoadIrq": 1510,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.49876456053653,
+      "loadUser": 30.23296858453936,
+      "loadSystem": 6.565478291563713,
+      "loadNice": 0,
+      "loadIdle": 60.501235439463464,
+      "loadIrq": 2.700317684433463,
+      "rawLoad": 22380,
+      "rawLoadUser": 17130,
+      "rawLoadSystem": 3720,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34280,
+      "rawLoadIrq": 1530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 4.18, 4.27, 4.27 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [4.18,4.27,4.27]
+Using 1-minute load average: 4.18
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.53,"currentLoad":37.2658929042469,"currentLoadUser":28.532489228875406,"currentLoadSystem":6.095577244350655,"currentLoadNice":0,"currentLoadIdle":62.7341070957531,"currentLoadIrq":2.637826431020839,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":169530,"rawCurrentLoadUser":129800,"rawCurrentLoadSystem":27730,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":285390,"rawCurrentLoadIrq":12000,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":29.519847460565092,"loadUser":22.118218062055817,"loadSystem":5.009533714681921,"loadNice":0,"loadIdle":70.48015253943491,"loadIrq":2.3920956838273533,"rawLoad":17030,"rawLoadUser":12760,"rawLoadSystem":2890,"rawLoadNice":0,"rawLoadIdle":40660,"rawLoadIrq":1380,"rawLoadSteal":0,"rawLoadGuest":0},{"load":31.07756376887038,"loadUser":23.199722366822837,"loadSystem":5.379142807565504,"loadNice":0,"loadIdle":68.92243623112962,"loadIrq":2.4986985944820406,"rawLoad":17910,"rawLoadUser":13370,"rawLoadSystem":3100,"rawLoadNice":0,"rawLoadIdle":39720,"rawLoadIrq":1440,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.551316021904256,"loadUser":30.789613142554316,"loadSystem":6.059000176647236,"loadNice":0,"loadIdle":60.448683978095744,"loadIrq":2.7027027027027026,"rawLoad":22390,"rawLoadUser":17430,"rawLoadSystem":3430,"rawLoadNice":0,"rawLoadIdle":34220,"rawLoadIrq":1530,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.98220640569395,"loadUser":30.676156583629894,"loadSystem":6.619217081850534,"loadNice":0,"loadIdle":60.01779359430605,"loadIrq":2.6868327402135233,"rawLoad":22470,"rawLoadUser":17240,"rawLoadSystem":3720,"rawLoadNice":0,"rawLoadIdle":33730,"rawLoadIrq":1510,"rawLoadSteal":0,"rawLoadGuest":0},{"load":38.23011963406052,"loadUser":28.95847994370162,"loadSystem":6.474313863476425,"loadNice":0,"loadIdle":61.76988036593948,"loadIrq":2.7973258268824774,"rawLoad":21730,"rawLoadUser":16460,"rawLoadSystem":3680,"rawLoadNice":0,"rawLoadIdle":35110,"rawLoadIrq":1590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.94279661016949,"loadUser":31.83262711864407,"loadSystem":6.4442090395480225,"loadNice":0,"loadIdle":59.057203389830505,"loadIrq":2.6659604519774014,"rawLoad":23190,"rawLoadUser":18030,"rawLoadSystem":3650,"rawLoadNice":0,"rawLoadIdle":33450,"rawLoadIrq":1510,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.593998234774936,"loadUser":30.679611650485437,"loadSystem":6.248896734333628,"loadNice":0,"loadIdle":60.40600176522507,"loadIrq":2.6654898499558692,"rawLoad":22430,"rawLoadUser":17380,"rawLoadSystem":3540,"rawLoadNice":0,"rawLoadIdle":34220,"rawLoadIrq":1510,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.49876456053653,"loadUser":30.23296858453936,"loadSystem":6.565478291563713,"loadNice":0,"loadIdle":60.501235439463464,"loadIrq":2.700317684433463,"rawLoad":22380,"rawLoadUser":17130,"rawLoadSystem":3720,"rawLoadNice":0,"rawLoadIdle":34280,"rawLoadIrq":1530,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 52.25
+Final system load calculation (before fallbacks): 52
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 52
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+10:56:27 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+10:56:27 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+10:56:27 AM [gmail-reader] Current IMAP connection state: authenticated
+10:56:27 AM [gmail-reader] Scanning for processed emails older than 2025-05-07T10:54:27.849Z (2 minutes ago)
+10:56:27 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+⏱️ Running minute check for campaign 995224 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+✅ Campaign 995224 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 20 URLs in campaign 995224
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: paused, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 283 with status: paused
+🔍 URL ID: 287, status: paused, clickLimit: 14999, clicks: 0
+❌ Skipping URL ID: 287 with status: paused
+🔍 URL ID: 458, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 458
+🔍 URL ID: 488, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 488
+🔍 URL ID: 384, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 384 with status: paused
+🔍 URL ID: 453, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 453 with status: paused
+🔍 URL ID: 492, status: active, clickLimit: 5000, clicks: 0
+✅ Adding 5000 remaining clicks from URL ID: 492
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2405690,
+        "nice": 0,
+        "sys": 620360,
+        "idle": 10585690,
+        "irq": 281140
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2464100,
+        "nice": 0,
+        "sys": 638190,
+        "idle": 10528060,
+        "irq": 289270
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3515570,
+        "nice": 0,
+        "sys": 836770,
+        "idle": 9041350,
+        "irq": 302250
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3551040,
+        "nice": 0,
+        "sys": 830670,
+        "idle": 9016740,
+        "irq": 295510
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3410540,
+        "nice": 0,
+        "sys": 886730,
+        "idle": 9002690,
+        "irq": 311200
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3410710,
+        "nice": 0,
+        "sys": 886800,
+        "idle": 9028710,
+        "irq": 306260
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3503340,
+        "nice": 0,
+        "sys": 832990,
+        "idle": 9032050,
+        "irq": 302950
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3526790,
+        "nice": 0,
+        "sys": 861960,
+        "idle": 8976390,
+        "irq": 302350
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 23803318272
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.52,
+  "currentLoad": 37.144861452122065,
+  "currentLoadUser": 27.917835847071203,
+  "currentLoadSystem": 6.5700631357418455,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 62.85513854787794,
+  "currentLoadIrq": 2.6569624693090144,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 169440,
+  "rawCurrentLoadUser": 127350,
+  "rawCurrentLoadSystem": 29970,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 286720,
+  "rawCurrentLoadIrq": 12120,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 31.086466816842833,
+      "loadUser": 23.25420204470629,
+      "loadSystem": 5.406342055103102,
+      "loadNice": 0,
+      "loadIdle": 68.91353318315716,
+      "loadIrq": 2.425922717033443,
+      "rawLoad": 17940,
+      "rawLoadUser": 13420,
+      "rawLoadSystem": 3120,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39770,
+      "rawLoadIrq": 1400,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 31.148109608047175,
+      "loadUser": 23.17030870620881,
+      "loadSystem": 5.549774540409296,
+      "loadNice": 0,
+      "loadIdle": 68.85189039195284,
+      "loadIrq": 2.428026361429067,
+      "rawLoad": 17960,
+      "rawLoadUser": 13360,
+      "rawLoadSystem": 3200,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39700,
+      "rawLoadIrq": 1400,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.494610355186424,
+      "loadUser": 29.899275490369327,
+      "loadSystem": 6.874006008128644,
+      "loadNice": 0,
+      "loadIdle": 60.50538964481357,
+      "loadIrq": 2.721328856688461,
+      "rawLoad": 22350,
+      "rawLoadUser": 16920,
+      "rawLoadSystem": 3890,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34240,
+      "rawLoadIrq": 1540,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.24501424501424,
+      "loadUser": 30.003561253561255,
+      "loadSystem": 6.534900284900284,
+      "loadNice": 0,
+      "loadIdle": 60.75498575498576,
+      "loadIrq": 2.7065527065527064,
+      "rawLoad": 22040,
+      "rawLoadUser": 16850,
+      "rawLoadSystem": 3670,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34120,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.19985974754558,
+      "loadUser": 30.08415147265077,
+      "loadSystem": 7.380785413744741,
+      "loadNice": 0,
+      "loadIdle": 59.80014025245441,
+      "loadIrq": 2.73492286115007,
+      "rawLoad": 22930,
+      "rawLoadUser": 17160,
+      "rawLoadSystem": 4210,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34110,
+      "rawLoadIrq": 1560,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 37.91411042944785,
+      "loadUser": 28.028045574057842,
+      "loadSystem": 7.081507449605609,
+      "loadNice": 0,
+      "loadIdle": 62.08588957055214,
+      "loadIrq": 2.8045574057844,
+      "rawLoad": 21630,
+      "rawLoadUser": 15990,
+      "rawLoadSystem": 4040,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 35420,
+      "rawLoadIrq": 1600,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 38.515529040182486,
+      "loadUser": 28.95244779785927,
+      "loadSystem": 6.808211967011757,
+      "loadNice": 0,
+      "loadIdle": 61.484470959817514,
+      "loadIrq": 2.754869275311458,
+      "rawLoad": 21950,
+      "rawLoadUser": 16500,
+      "rawLoadSystem": 3880,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 35040,
+      "rawLoadIrq": 1570,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.747191011235955,
+      "loadUser": 30.10884831460674,
+      "loadSystem": 6.952247191011236,
+      "loadNice": 0,
+      "loadIdle": 60.25280898876404,
+      "loadIrq": 2.6860955056179776,
+      "rawLoad": 22640,
+      "rawLoadUser": 17150,
+      "rawLoadSystem": 3960,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34320,
+      "rawLoadIrq": 1530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 3.25, 4.02, 4.18 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [3.25,4.02,4.18]
+Using 1-minute load average: 3.25
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.52,"currentLoad":37.144861452122065,"currentLoadUser":27.917835847071203,"currentLoadSystem":6.5700631357418455,"currentLoadNice":0,"currentLoadIdle":62.85513854787794,"currentLoadIrq":2.6569624693090144,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":169440,"rawCurrentLoadUser":127350,"rawCurrentLoadSystem":29970,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":286720,"rawCurrentLoadIrq":12120,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":31.086466816842833,"loadUser":23.25420204470629,"loadSystem":5.406342055103102,"loadNice":0,"loadIdle":68.91353318315716,"loadIrq":2.425922717033443,"rawLoad":17940,"rawLoadUser":13420,"rawLoadSystem":3120,"rawLoadNice":0,"rawLoadIdle":39770,"rawLoadIrq":1400,"rawLoadSteal":0,"rawLoadGuest":0},{"load":31.148109608047175,"loadUser":23.17030870620881,"loadSystem":5.549774540409296,"loadNice":0,"loadIdle":68.85189039195284,"loadIrq":2.428026361429067,"rawLoad":17960,"rawLoadUser":13360,"rawLoadSystem":3200,"rawLoadNice":0,"rawLoadIdle":39700,"rawLoadIrq":1400,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.494610355186424,"loadUser":29.899275490369327,"loadSystem":6.874006008128644,"loadNice":0,"loadIdle":60.50538964481357,"loadIrq":2.721328856688461,"rawLoad":22350,"rawLoadUser":16920,"rawLoadSystem":3890,"rawLoadNice":0,"rawLoadIdle":34240,"rawLoadIrq":1540,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.24501424501424,"loadUser":30.003561253561255,"loadSystem":6.534900284900284,"loadNice":0,"loadIdle":60.75498575498576,"loadIrq":2.7065527065527064,"rawLoad":22040,"rawLoadUser":16850,"rawLoadSystem":3670,"rawLoadNice":0,"rawLoadIdle":34120,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.19985974754558,"loadUser":30.08415147265077,"loadSystem":7.380785413744741,"loadNice":0,"loadIdle":59.80014025245441,"loadIrq":2.73492286115007,"rawLoad":22930,"rawLoadUser":17160,"rawLoadSystem":4210,"rawLoadNice":0,"rawLoadIdle":34110,"rawLoadIrq":1560,"rawLoadSteal":0,"rawLoadGuest":0},{"load":37.91411042944785,"loadUser":28.028045574057842,"loadSystem":7.081507449605609,"loadNice":0,"loadIdle":62.08588957055214,"loadIrq":2.8045574057844,"rawLoad":21630,"rawLoadUser":15990,"rawLoadSystem":4040,"rawLoadNice":0,"rawLoadIdle":35420,"rawLoadIrq":1600,"rawLoadSteal":0,"rawLoadGuest":0},{"load":38.515529040182486,"loadUser":28.95244779785927,"loadSystem":6.808211967011757,"loadNice":0,"loadIdle":61.484470959817514,"loadIrq":2.754869275311458,"rawLoad":21950,"rawLoadUser":16500,"rawLoadSystem":3880,"rawLoadNice":0,"rawLoadIdle":35040,"rawLoadIrq":1570,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.747191011235955,"loadUser":30.10884831460674,"loadSystem":6.952247191011236,"loadNice":0,"loadIdle":60.25280898876404,"loadIrq":2.6860955056179776,"rawLoad":22640,"rawLoadUser":17150,"rawLoadSystem":3960,"rawLoadNice":0,"rawLoadIdle":34320,"rawLoadIrq":1530,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 40.625
+Final system load calculation (before fallbacks): 41
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 41
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+⏱️ Running minute check for campaign 995224 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+✅ Campaign 995224 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 20 URLs in campaign 995224
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: paused, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 283 with status: paused
+🔍 URL ID: 287, status: paused, clickLimit: 14999, clicks: 0
+❌ Skipping URL ID: 287 with status: paused
+🔍 URL ID: 458, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 458
+🔍 URL ID: 488, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 488
+🔍 URL ID: 384, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 384 with status: paused
+🔍 URL ID: 453, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 453 with status: paused
+🔍 URL ID: 492, status: active, clickLimit: 5000, clicks: 0
+✅ Adding 5000 remaining clicks from URL ID: 492
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2421680,
+        "nice": 0,
+        "sys": 625050,
+        "idle": 10620310,
+        "irq": 282710
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2480950,
+        "nice": 0,
+        "sys": 642930,
+        "idle": 10561640,
+        "irq": 290850
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3536060,
+        "nice": 0,
+        "sys": 842030,
+        "idle": 9066700,
+        "irq": 304080
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3572910,
+        "nice": 0,
+        "sys": 836010,
+        "idle": 9040930,
+        "irq": 297200
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3431180,
+        "nice": 0,
+        "sys": 892890,
+        "idle": 9027440,
+        "irq": 312990
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3431640,
+        "nice": 0,
+        "sys": 892420,
+        "idle": 9053750,
+        "irq": 308040
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3524380,
+        "nice": 0,
+        "sys": 839150,
+        "idle": 9057450,
+        "irq": 304680
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3547930,
+        "nice": 0,
+        "sys": 867550,
+        "idle": 9000840,
+        "irq": 304130
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 23284154368
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.69,
+  "currentLoad": 49.875461254612546,
+  "currentLoadUser": 36.66051660516605,
+  "currentLoadSystem": 10.043819188191883,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 50.12453874538746,
+  "currentLoadIrq": 3.1711254612546127,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 216260,
+  "rawCurrentLoadUser": 158960,
+  "rawCurrentLoadSystem": 43550,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 217340,
+  "rawCurrentLoadIrq": 13750,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 39.113612381287375,
+      "loadUser": 28.121702427013716,
+      "loadSystem": 8.230742173760113,
+      "loadNice": 0,
+      "loadIdle": 60.886387618712625,
+      "loadIrq": 2.761167780513542,
+      "rawLoad": 22240,
+      "rawLoadUser": 15990,
+      "rawLoadSystem": 4680,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34620,
+      "rawLoadIrq": 1570,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.83538949594642,
+      "loadUser": 29.69686288332746,
+      "loadSystem": 8.353894959464222,
+      "loadNice": 0,
+      "loadIdle": 59.164610504053584,
+      "loadIrq": 2.784631653154741,
+      "rawLoad": 23170,
+      "rawLoadUser": 16850,
+      "rawLoadSystem": 4740,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33570,
+      "rawLoadIrq": 1580,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 52.116402116402114,
+      "loadUser": 38.718820861678005,
+      "loadSystem": 9.939531368102797,
+      "loadNice": 0,
+      "loadIdle": 47.883597883597886,
+      "loadIrq": 3.458049886621315,
+      "rawLoad": 27580,
+      "rawLoadUser": 20490,
+      "rawLoadSystem": 5260,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 25340,
+      "rawLoadIrq": 1830,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 54.43586362780185,
+      "loadUser": 41.19419853079676,
+      "loadSystem": 10.05839141081183,
+      "loadNice": 0,
+      "loadIdle": 45.564136372198156,
+      "loadIrq": 3.1832736861932567,
+      "rawLoad": 28900,
+      "rawLoadUser": 21870,
+      "rawLoadSystem": 5340,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 24190,
+      "rawLoadIrq": 1690,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 53.609600600037496,
+      "loadUser": 38.702418901181325,
+      "loadSystem": 11.550721920120008,
+      "loadNice": 0,
+      "loadIdle": 46.3903993999625,
+      "loadIrq": 3.356459778736171,
+      "rawLoad": 28590,
+      "rawLoadUser": 20640,
+      "rawLoadSystem": 6160,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 24740,
+      "rawLoadIrq": 1790,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 53.09220389805097,
+      "loadUser": 39.224137931034484,
+      "loadSystem": 10.53223388305847,
+      "loadNice": 0,
+      "loadIdle": 46.907796101949025,
+      "loadIrq": 3.335832083958021,
+      "rawLoad": 28330,
+      "rawLoadUser": 20930,
+      "rawLoadSystem": 5620,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 25030,
+      "rawLoadIrq": 1780,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 53.24866556230443,
+      "loadUser": 38.726302227130496,
+      "loadSystem": 11.338118903000185,
+      "loadNice": 0,
+      "loadIdle": 46.75133443769556,
+      "loadIrq": 3.184244432173753,
+      "rawLoad": 28930,
+      "rawLoadUser": 21040,
+      "rawLoadSystem": 6160,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 25400,
+      "rawLoadIrq": 1730,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 53.841797243722866,
+      "loadUser": 39.928261279969796,
+      "loadSystem": 10.553143288653954,
+      "loadNice": 0,
+      "loadIdle": 46.15820275627714,
+      "loadIrq": 3.360392675099113,
+      "rawLoad": 28520,
+      "rawLoadUser": 21150,
+      "rawLoadSystem": 5590,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 24450,
+      "rawLoadIrq": 1780,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 5.52, 4.55, 4.35 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [5.52,4.55,4.35]
+Using 1-minute load average: 5.52
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.69,"currentLoad":49.875461254612546,"currentLoadUser":36.66051660516605,"currentLoadSystem":10.043819188191883,"currentLoadNice":0,"currentLoadIdle":50.12453874538746,"currentLoadIrq":3.1711254612546127,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":216260,"rawCurrentLoadUser":158960,"rawCurrentLoadSystem":43550,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":217340,"rawCurrentLoadIrq":13750,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":39.113612381287375,"loadUser":28.121702427013716,"loadSystem":8.230742173760113,"loadNice":0,"loadIdle":60.886387618712625,"loadIrq":2.761167780513542,"rawLoad":22240,"rawLoadUser":15990,"rawLoadSystem":4680,"rawLoadNice":0,"rawLoadIdle":34620,"rawLoadIrq":1570,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.83538949594642,"loadUser":29.69686288332746,"loadSystem":8.353894959464222,"loadNice":0,"loadIdle":59.164610504053584,"loadIrq":2.784631653154741,"rawLoad":23170,"rawLoadUser":16850,"rawLoadSystem":4740,"rawLoadNice":0,"rawLoadIdle":33570,"rawLoadIrq":1580,"rawLoadSteal":0,"rawLoadGuest":0},{"load":52.116402116402114,"loadUser":38.718820861678005,"loadSystem":9.939531368102797,"loadNice":0,"loadIdle":47.883597883597886,"loadIrq":3.458049886621315,"rawLoad":27580,"rawLoadUser":20490,"rawLoadSystem":5260,"rawLoadNice":0,"rawLoadIdle":25340,"rawLoadIrq":1830,"rawLoadSteal":0,"rawLoadGuest":0},{"load":54.43586362780185,"loadUser":41.19419853079676,"loadSystem":10.05839141081183,"loadNice":0,"loadIdle":45.564136372198156,"loadIrq":3.1832736861932567,"rawLoad":28900,"rawLoadUser":21870,"rawLoadSystem":5340,"rawLoadNice":0,"rawLoadIdle":24190,"rawLoadIrq":1690,"rawLoadSteal":0,"rawLoadGuest":0},{"load":53.609600600037496,"loadUser":38.702418901181325,"loadSystem":11.550721920120008,"loadNice":0,"loadIdle":46.3903993999625,"loadIrq":3.356459778736171,"rawLoad":28590,"rawLoadUser":20640,"rawLoadSystem":6160,"rawLoadNice":0,"rawLoadIdle":24740,"rawLoadIrq":1790,"rawLoadSteal":0,"rawLoadGuest":0},{"load":53.09220389805097,"loadUser":39.224137931034484,"loadSystem":10.53223388305847,"loadNice":0,"loadIdle":46.907796101949025,"loadIrq":3.335832083958021,"rawLoad":28330,"rawLoadUser":20930,"rawLoadSystem":5620,"rawLoadNice":0,"rawLoadIdle":25030,"rawLoadIrq":1780,"rawLoadSteal":0,"rawLoadGuest":0},{"load":53.24866556230443,"loadUser":38.726302227130496,"loadSystem":11.338118903000185,"loadNice":0,"loadIdle":46.75133443769556,"loadIrq":3.184244432173753,"rawLoad":28930,"rawLoadUser":21040,"rawLoadSystem":6160,"rawLoadNice":0,"rawLoadIdle":25400,"rawLoadIrq":1730,"rawLoadSteal":0,"rawLoadGuest":0},{"load":53.841797243722866,"loadUser":39.928261279969796,"loadSystem":10.553143288653954,"loadNice":0,"loadIdle":46.15820275627714,"loadIrq":3.360392675099113,"rawLoad":28520,"rawLoadUser":21150,"rawLoadSystem":5590,"rawLoadNice":0,"rawLoadIdle":24450,"rawLoadIrq":1780,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 69
+Final system load calculation (before fallbacks): 69
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 69
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 0 campaigns:
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+Running scheduled empty URL check
+Checking for campaigns with no active URLs to pause TrafficStar campaigns
+Found 1 campaigns with TrafficStar integration
+Campaign 9 (TrafficStar ID: 995224) has 3 active URLs
+10:58:27 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+10:58:27 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+10:58:27 AM [gmail-reader] Current IMAP connection state: authenticated
+10:58:27 AM [gmail-reader] Scanning for processed emails older than 2025-05-07T10:56:27.849Z (2 minutes ago)
+10:58:27 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+⏱️ Running minute check for campaign 995224 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+✅ Campaign 995224 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 20 URLs in campaign 995224
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: paused, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 283 with status: paused
+🔍 URL ID: 287, status: paused, clickLimit: 14999, clicks: 0
+❌ Skipping URL ID: 287 with status: paused
+🔍 URL ID: 458, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 458
+🔍 URL ID: 488, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 488
+🔍 URL ID: 384, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 384 with status: paused
+🔍 URL ID: 453, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 453 with status: paused
+🔍 URL ID: 492, status: active, clickLimit: 5000, clicks: 0
+✅ Adding 5000 remaining clicks from URL ID: 492
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 DEBUG: Received URL creation request: {
+  "name": "zqs",
+  "targetUrl": "https://www.youtube.com/watch?v=pJkLbSwgWsU",
+  "clickLimit": 10000
+}
+🔍 DEBUG: Campaign multiplier: 1.00
+🔍 DEBUG: Original click limit (user input): 10000
+🔍 DEBUG: Creating Original URL Record for name: zqs
+✅ Created Original URL Record with click limit: 10000
+🔍 DEBUG: Calculated click limit after multiplier: 10000
+🔍 DEBUG: Calculation: 10000 × 1 = 10000
+🔍 DEBUG: Final URL data to be saved: {
+  "name": "zqs",
+  "targetUrl": "https://www.youtube.com/watch?v=pJkLbSwgWsU",
+  "clickLimit": 10000,
+  "campaignId": 9,
+  "originalClickLimit": 10000
+}
+🔍 DEBUG: Storage - Creating URL
+  - Name: zqs
+  - Target URL: https://www.youtube.com/watch?v=pJkLbSwgWsU
+  - Campaign ID: 9
+  - Click limit (after multiplier): 10000
+  - Original click limit (user input): 10000
+🧹 Invalidating campaign cache for ID: 9
+URL created in campaign 9 with TrafficStar campaign ID 995224
+Scheduling budget update for this URL in 10 minutes
+🔄 Tracking URL ID 493 for budget update in campaign 9 (TrafficStar ID: 995224)
+❌ Error tracking URL ID 493 for budget update: TypeError: pricePerThousand.toFixed is not a function
+    at TrafficStarService.trackNewUrlForBudgetUpdate (/home/runner/workspace/server/trafficstar-service-new.ts:547:80)
+    at <anonymous> (/home/runner/workspace/server/routes.ts:1300:36)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+URL budget tracking scheduled for URL ID 493
+10:59:01 AM [express] POST /api/campaigns/9/urls 201 in 256ms :: {"id":493,"campaignId":9,"name":"zqs…
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+10:59:01 AM [express] GET /api/campaigns/9 200 in 37ms :: {"id":9,"name":"Test Click Count Fix","redi…
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+10:59:01 AM [express] GET /api/campaigns 200 in 172ms :: [{"id":9,"name":"Test Click Count Fix","redi…
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2435650,
+        "nice": 0,
+        "sys": 628090,
+        "idle": 10659190,
+        "irq": 284180
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2494860,
+        "nice": 0,
+        "sys": 646440,
+        "idle": 10600250,
+        "irq": 292370
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3554990,
+        "nice": 0,
+        "sys": 846020,
+        "idle": 9098710,
+        "irq": 305680
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3593450,
+        "nice": 0,
+        "sys": 839930,
+        "idle": 9071790,
+        "irq": 298720
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3450650,
+        "nice": 0,
+        "sys": 896920,
+        "idle": 9058880,
+        "irq": 314610
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3450570,
+        "nice": 0,
+        "sys": 896570,
+        "idle": 9085000,
+        "irq": 309670
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3542820,
+        "nice": 0,
+        "sys": 843380,
+        "idle": 9089760,
+        "irq": 306290
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3569340,
+        "nice": 0,
+        "sys": 871320,
+        "idle": 9030840,
+        "irq": 305650
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 23629467648
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.58,
+  "currentLoad": 41.55177729815443,
+  "currentLoadUser": 32.053032638858305,
+  "currentLoadSystem": 6.74800687133859,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 58.44822270184557,
+  "currentLoadIrq": 2.7507377879575388,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 188670,
+  "rawCurrentLoadUser": 145540,
+  "rawCurrentLoadSystem": 30640,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 265390,
+  "rawCurrentLoadIrq": 12490,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 32.21757322175732,
+      "loadUser": 24.337517433751742,
+      "loadSystem": 5.317294281729428,
+      "loadNice": 0,
+      "loadIdle": 67.78242677824268,
+      "loadIrq": 2.562761506276151,
+      "rawLoad": 18480,
+      "rawLoadUser": 13960,
+      "rawLoadSystem": 3050,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38880,
+      "rawLoadIrq": 1470,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 32.89885297184567,
+      "loadUser": 24.157108098713937,
+      "loadSystem": 6.100104275286757,
+      "loadNice": 0,
+      "loadIdle": 67.10114702815433,
+      "loadIrq": 2.6416405978449773,
+      "rawLoad": 18930,
+      "rawLoadUser": 13900,
+      "rawLoadSystem": 3510,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38610,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.36752741422002,
+      "loadUser": 33.48072161301733,
+      "loadSystem": 7.056950831269898,
+      "loadNice": 0,
+      "loadIdle": 56.63247258577998,
+      "loadIrq": 2.829854969932791,
+      "rawLoad": 24520,
+      "rawLoadUser": 18930,
+      "rawLoadSystem": 3990,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32020,
+      "rawLoadIrq": 1600,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 45.697694879465075,
+      "loadUser": 36.12528594052437,
+      "loadSystem": 6.897765264824916,
+      "loadNice": 0,
+      "loadIdle": 54.30230512053493,
+      "loadIrq": 2.6746436741157837,
+      "rawLoad": 25970,
+      "rawLoadUser": 20530,
+      "rawLoadSystem": 3920,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30860,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.395332390381895,
+      "loadUser": 34.4059405940594,
+      "loadSystem": 7.125176803394625,
+      "loadNice": 0,
+      "loadIdle": 55.604667609618105,
+      "loadIrq": 2.8642149929278644,
+      "rawLoad": 25110,
+      "rawLoadUser": 19460,
+      "rawLoadSystem": 4030,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31450,
+      "rawLoadIrq": 1620,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.13867047891351,
+      "loadUser": 33.8277340957827,
+      "loadSystem": 7.398141529664046,
+      "loadNice": 0,
+      "loadIdle": 55.86132952108649,
+      "loadIrq": 2.912794853466762,
+      "rawLoad": 24700,
+      "rawLoadUser": 18930,
+      "rawLoadSystem": 4140,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31260,
+      "rawLoadIrq": 1630,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.895015906680804,
+      "loadUser": 32.573347472605164,
+      "loadSystem": 7.4761399787910925,
+      "loadNice": 0,
+      "loadIdle": 57.10498409331919,
+      "loadIrq": 2.8455284552845526,
+      "rawLoad": 24270,
+      "rawLoadUser": 18430,
+      "rawLoadSystem": 4230,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32310,
+      "rawLoadIrq": 1610,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 47.08061386487917,
+      "loadUser": 37.74916210971953,
+      "loadSystem": 6.6502028576468515,
+      "loadNice": 0,
+      "loadIdle": 52.919386135120824,
+      "loadIrq": 2.6812488975127886,
+      "rawLoad": 26690,
+      "rawLoadUser": 21400,
+      "rawLoadSystem": 3770,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30000,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 4.65, 4.48, 4.34 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [4.65,4.48,4.34]
+Using 1-minute load average: 4.65
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.58,"currentLoad":41.55177729815443,"currentLoadUser":32.053032638858305,"currentLoadSystem":6.74800687133859,"currentLoadNice":0,"currentLoadIdle":58.44822270184557,"currentLoadIrq":2.7507377879575388,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":188670,"rawCurrentLoadUser":145540,"rawCurrentLoadSystem":30640,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":265390,"rawCurrentLoadIrq":12490,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":32.21757322175732,"loadUser":24.337517433751742,"loadSystem":5.317294281729428,"loadNice":0,"loadIdle":67.78242677824268,"loadIrq":2.562761506276151,"rawLoad":18480,"rawLoadUser":13960,"rawLoadSystem":3050,"rawLoadNice":0,"rawLoadIdle":38880,"rawLoadIrq":1470,"rawLoadSteal":0,"rawLoadGuest":0},{"load":32.89885297184567,"loadUser":24.157108098713937,"loadSystem":6.100104275286757,"loadNice":0,"loadIdle":67.10114702815433,"loadIrq":2.6416405978449773,"rawLoad":18930,"rawLoadUser":13900,"rawLoadSystem":3510,"rawLoadNice":0,"rawLoadIdle":38610,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.36752741422002,"loadUser":33.48072161301733,"loadSystem":7.056950831269898,"loadNice":0,"loadIdle":56.63247258577998,"loadIrq":2.829854969932791,"rawLoad":24520,"rawLoadUser":18930,"rawLoadSystem":3990,"rawLoadNice":0,"rawLoadIdle":32020,"rawLoadIrq":1600,"rawLoadSteal":0,"rawLoadGuest":0},{"load":45.697694879465075,"loadUser":36.12528594052437,"loadSystem":6.897765264824916,"loadNice":0,"loadIdle":54.30230512053493,"loadIrq":2.6746436741157837,"rawLoad":25970,"rawLoadUser":20530,"rawLoadSystem":3920,"rawLoadNice":0,"rawLoadIdle":30860,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.395332390381895,"loadUser":34.4059405940594,"loadSystem":7.125176803394625,"loadNice":0,"loadIdle":55.604667609618105,"loadIrq":2.8642149929278644,"rawLoad":25110,"rawLoadUser":19460,"rawLoadSystem":4030,"rawLoadNice":0,"rawLoadIdle":31450,"rawLoadIrq":1620,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.13867047891351,"loadUser":33.8277340957827,"loadSystem":7.398141529664046,"loadNice":0,"loadIdle":55.86132952108649,"loadIrq":2.912794853466762,"rawLoad":24700,"rawLoadUser":18930,"rawLoadSystem":4140,"rawLoadNice":0,"rawLoadIdle":31260,"rawLoadIrq":1630,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.895015906680804,"loadUser":32.573347472605164,"loadSystem":7.4761399787910925,"loadNice":0,"loadIdle":57.10498409331919,"loadIrq":2.8455284552845526,"rawLoad":24270,"rawLoadUser":18430,"rawLoadSystem":4230,"rawLoadNice":0,"rawLoadIdle":32310,"rawLoadIrq":1610,"rawLoadSteal":0,"rawLoadGuest":0},{"load":47.08061386487917,"loadUser":37.74916210971953,"loadSystem":6.6502028576468515,"loadNice":0,"loadIdle":52.919386135120824,"loadIrq":2.6812488975127886,"rawLoad":26690,"rawLoadUser":21400,"rawLoadSystem":3770,"rawLoadNice":0,"rawLoadIdle":30000,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 58.12500000000001
+Final system load calculation (before fallbacks): 58
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 58
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+⏱️ Running minute check for campaign 995224 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+✅ Campaign 995224 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 21 URLs in campaign 995224
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: paused, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 283 with status: paused
+🔍 URL ID: 287, status: paused, clickLimit: 14999, clicks: 0
+❌ Skipping URL ID: 287 with status: paused
+🔍 URL ID: 458, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 458
+🔍 URL ID: 488, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 488
+🔍 URL ID: 384, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 384 with status: paused
+🔍 URL ID: 453, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 453 with status: paused
+🔍 URL ID: 492, status: active, clickLimit: 5000, clicks: 0
+✅ Adding 5000 remaining clicks from URL ID: 492
+🔍 URL ID: 493, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 493
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:03}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:10}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:13}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:16}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:19}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:22}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🧹 Invalidating campaign cache for ID: 9
+Logged click for URL ID 493: New click received{07-May-2025:16:30:24}
+Flushed 0 pending click updates to database
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2449480,
+        "nice": 0,
+        "sys": 631380,
+        "idle": 10697690,
+        "irq": 285670
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2508830,
+        "nice": 0,
+        "sys": 649640,
+        "idle": 10639260,
+        "irq": 293900
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3573920,
+        "nice": 0,
+        "sys": 850480,
+        "idle": 9130410,
+        "irq": 307390
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3613470,
+        "nice": 0,
+        "sys": 844160,
+        "idle": 9102470,
+        "irq": 300340
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3469930,
+        "nice": 0,
+        "sys": 901350,
+        "idle": 9089750,
+        "irq": 316290
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3469570,
+        "nice": 0,
+        "sys": 901040,
+        "idle": 9116340,
+        "irq": 311350
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3561650,
+        "nice": 0,
+        "sys": 847810,
+        "idle": 9121460,
+        "irq": 308000
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3588550,
+        "nice": 0,
+        "sys": 875900,
+        "idle": 9061820,
+        "irq": 307330
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 23647436800
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+Load average data: {
+  "avgLoad": 0.55,
+  "currentLoad": 41.69180963287599,
+  "currentLoadUser": 31.519369260246215,
+  "currentLoadSystem": 7.287422644085714,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 58.30819036712401,
+  "currentLoadIrq": 2.885017728544057,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 189310,
+  "rawCurrentLoadUser": 143120,
+  "rawCurrentLoadSystem": 33090,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 264760,
+  "rawCurrentLoadIrq": 13100,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 32.58623708632464,
+      "loadUser": 24.2339345123446,
+      "loadSystem": 5.743302398879355,
+      "loadNice": 0,
+      "loadIdle": 67.41376291367537,
+      "loadIrq": 2.609000175100683,
+      "rawLoad": 18610,
+      "rawLoadUser": 13840,
+      "rawLoadSystem": 3280,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38500,
+      "rawLoadIrq": 1490,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 32.415107415107414,
+      "loadUser": 24.22037422037422,
+      "loadSystem": 5.544005544005544,
+      "loadNice": 0,
+      "loadIdle": 67.58489258489259,
+      "loadIrq": 2.6507276507276507,
+      "rawLoad": 18710,
+      "rawLoadUser": 13980,
+      "rawLoadSystem": 3200,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 39010,
+      "rawLoadIrq": 1530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.190140845070424,
+      "loadUser": 33.32746478873239,
+      "loadSystem": 7.852112676056339,
+      "loadNice": 0,
+      "loadIdle": 55.809859154929576,
+      "loadIrq": 3.0105633802816905,
+      "rawLoad": 25100,
+      "rawLoadUser": 18930,
+      "rawLoadSystem": 4460,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31700,
+      "rawLoadIrq": 1710,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 45.764809902740936,
+      "loadUser": 35.419982316534046,
+      "loadSystem": 7.480106100795755,
+      "loadNice": 0,
+      "loadIdle": 54.235190097259064,
+      "loadIrq": 2.864721485411141,
+      "rawLoad": 25880,
+      "rawLoadUser": 20030,
+      "rawLoadSystem": 4230,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30670,
+      "rawLoadIrq": 1620,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 45.13950595343878,
+      "loadUser": 34.28114448196197,
+      "loadSystem": 7.872756353296606,
+      "loadNice": 0,
+      "loadIdle": 54.86049404656123,
+      "loadIrq": 2.9856051181802026,
+      "rawLoad": 25400,
+      "rawLoadUser": 19290,
+      "rawLoadSystem": 4430,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30870,
+      "rawLoadIrq": 1680,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.53885643476722,
+      "loadUser": 33.634271552487164,
+      "loadSystem": 7.930607187112764,
+      "loadNice": 0,
+      "loadIdle": 55.46114356523278,
+      "loadIrq": 2.973977695167286,
+      "rawLoad": 25160,
+      "rawLoadUser": 19000,
+      "rawLoadSystem": 4480,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31330,
+      "rawLoadIrq": 1680,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 44.07198306280875,
+      "loadUser": 33.23923782639379,
+      "loadSystem": 7.815808045165844,
+      "loadNice": 0,
+      "loadIdle": 55.92801693719125,
+      "loadIrq": 3.016937191249118,
+      "rawLoad": 24980,
+      "rawLoadUser": 18840,
+      "rawLoadSystem": 4430,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31700,
+      "rawLoadIrq": 1710,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 45.11957484499557,
+      "loadUser": 34.03011514614703,
+      "loadSystem": 8.113374667847653,
+      "loadNice": 0,
+      "loadIdle": 54.88042515500443,
+      "loadIrq": 2.9760850310008857,
+      "rawLoad": 25470,
+      "rawLoadUser": 19210,
+      "rawLoadSystem": 4580,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 30980,
+      "rawLoadIrq": 1680,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+⚠️ Found mismatches in 0 campaigns:
+OS load averages: linux [ 4.3, 4.41, 4.33 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [4.3,4.41,4.33]
+Using 1-minute load average: 4.3
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.55,"currentLoad":41.69180963287599,"currentLoadUser":31.519369260246215,"currentLoadSystem":7.287422644085714,"currentLoadNice":0,"currentLoadIdle":58.30819036712401,"currentLoadIrq":2.885017728544057,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":189310,"rawCurrentLoadUser":143120,"rawCurrentLoadSystem":33090,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":264760,"rawCurrentLoadIrq":13100,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":32.58623708632464,"loadUser":24.2339345123446,"loadSystem":5.743302398879355,"loadNice":0,"loadIdle":67.41376291367537,"loadIrq":2.609000175100683,"rawLoad":18610,"rawLoadUser":13840,"rawLoadSystem":3280,"rawLoadNice":0,"rawLoadIdle":38500,"rawLoadIrq":1490,"rawLoadSteal":0,"rawLoadGuest":0},{"load":32.415107415107414,"loadUser":24.22037422037422,"loadSystem":5.544005544005544,"loadNice":0,"loadIdle":67.58489258489259,"loadIrq":2.6507276507276507,"rawLoad":18710,"rawLoadUser":13980,"rawLoadSystem":3200,"rawLoadNice":0,"rawLoadIdle":39010,"rawLoadIrq":1530,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.190140845070424,"loadUser":33.32746478873239,"loadSystem":7.852112676056339,"loadNice":0,"loadIdle":55.809859154929576,"loadIrq":3.0105633802816905,"rawLoad":25100,"rawLoadUser":18930,"rawLoadSystem":4460,"rawLoadNice":0,"rawLoadIdle":31700,"rawLoadIrq":1710,"rawLoadSteal":0,"rawLoadGuest":0},{"load":45.764809902740936,"loadUser":35.419982316534046,"loadSystem":7.480106100795755,"loadNice":0,"loadIdle":54.235190097259064,"loadIrq":2.864721485411141,"rawLoad":25880,"rawLoadUser":20030,"rawLoadSystem":4230,"rawLoadNice":0,"rawLoadIdle":30670,"rawLoadIrq":1620,"rawLoadSteal":0,"rawLoadGuest":0},{"load":45.13950595343878,"loadUser":34.28114448196197,"loadSystem":7.872756353296606,"loadNice":0,"loadIdle":54.86049404656123,"loadIrq":2.9856051181802026,"rawLoad":25400,"rawLoadUser":19290,"rawLoadSystem":4430,"rawLoadNice":0,"rawLoadIdle":30870,"rawLoadIrq":1680,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.53885643476722,"loadUser":33.634271552487164,"loadSystem":7.930607187112764,"loadNice":0,"loadIdle":55.46114356523278,"loadIrq":2.973977695167286,"rawLoad":25160,"rawLoadUser":19000,"rawLoadSystem":4480,"rawLoadNice":0,"rawLoadIdle":31330,"rawLoadIrq":1680,"rawLoadSteal":0,"rawLoadGuest":0},{"load":44.07198306280875,"loadUser":33.23923782639379,"loadSystem":7.815808045165844,"loadNice":0,"loadIdle":55.92801693719125,"loadIrq":3.016937191249118,"rawLoad":24980,"rawLoadUser":18840,"rawLoadSystem":4430,"rawLoadNice":0,"rawLoadIdle":31700,"rawLoadIrq":1710,"rawLoadSteal":0,"rawLoadGuest":0},{"load":45.11957484499557,"loadUser":34.03011514614703,"loadSystem":8.113374667847653,"loadNice":0,"loadIdle":54.88042515500443,"loadIrq":2.9760850310008857,"rawLoad":25470,"rawLoadUser":19210,"rawLoadSystem":4580,"rawLoadNice":0,"rawLoadIdle":30980,"rawLoadIrq":1680,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 53.75
+Final system load calculation (before fallbacks): 54
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 54
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+Flushed 0 pending click updates to database
+Running scheduled Traffic Generator check
+Running Traffic Generator for all enabled campaigns
+Processing 1 campaigns with traffic generator enabled
+Processing Traffic Generator for campaign 9
+Processing Traffic Generator for campaign 9 with TrafficStar ID 995224
+Fetching spent value for campaign 995224 on 2025-05-07
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+=> DONE
+11:00:27 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+11:00:27 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+11:00:27 AM [gmail-reader] Current IMAP connection state: authenticated
+11:00:27 AM [gmail-reader] Scanning for processed emails older than 2025-05-07T10:58:27.848Z (2 minutes ago)
+11:00:27 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+Campaign 995224 spent value from campaign object helper: $32.4900
+<= 'IDLE OK IDLE terminated (Success)'
+=> 'A19 SELECT "INBOX" (CONDSTORE)'
+Campaign 9 spent value: $32.4900
+TRAFFIC-GENERATOR: Handling campaign 995224 by spent value - current spent: $32.4900
+🟢 HIGH SPEND ($32.4900 >= $10.00): Campaign 995224 has spent $10.00 or more
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 10 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14691] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 10219429]'
+<= 'A19 OK [READ-WRITE] INBOX selected. (Success)'
+11:00:28 AM [gmail-reader] Searching for ALL messages in inbox - found in mailbox: 10
+=> 'A20 UID SEARCH ALL'
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997 14363 14530'
+<= 'A20 OK SEARCH completed (Success)'
+11:00:28 AM [gmail-reader] Found 10 emails in mailbox
+=> 'A21 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997,14363,14530 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+11:00:28 AM [gmail-reader] Processing email (ID: 11452)
+11:00:28 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+11:00:28 AM [gmail-reader] Processing email (ID: 11762)
+11:00:28 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+11:00:28 AM [gmail-reader] Processing email (ID: 12778)
+11:00:28 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+11:00:28 AM [gmail-reader] Processing email (ID: 12808)
+11:00:28 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+11:00:28 AM [gmail-reader] Processing email (ID: 13039)
+11:00:28 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+11:00:28 AM [gmail-reader] Processing email (ID: 13513)
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+11:00:28 AM [gmail-reader] Processing email (ID: 13798)
+11:00:28 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+11:00:28 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) BODY[] {73275}'
+11:00:28 AM [gmail-reader] Processing email (ID: 13997)
+11:00:28 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) )'
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) BODY[] {58240}'
+11:00:28 AM [gmail-reader] Processing email (ID: 14363)
+11:00:28 AM [gmail-reader] Email ID: 14363
+            From: "Matt Palmer" <matt@mail.replit.com>
+            Subject: 🔥 What's new in Replit: auth, new tutorials, and more!
+            Date: 2025-05-02T18:02:49.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Matt Palmer" <matt@mail.replit.com>
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) )'
+<= 'A21 OK Success'
+=> 'IDLE IDLE'
+11:00:28 AM [gmail-reader] Processing email (ID: 14530)
+11:00:28 AM [gmail-reader] Email ID: 14530
+            From: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+            Subject: Important: Confirm your $20.00 payment to Cursor
+            Date: 2025-05-04T19:50:21.000Z
+11:00:28 AM [gmail-reader] Skipping email from non-whitelisted sender: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+11:00:28 AM [gmail-reader] Finished processing batch of 10 emails
+<= '+ idling'
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+Campaign 9 price per thousand: $1.0000
+First time detecting high spend for campaign 995224 - initiating pause and wait period
+Pausing campaign 995224
+Successfully paused campaign 995224
+✅ Paused campaign 995224 to begin high spend handling
+Setting campaign 995224 end time to: 2025-05-07 11:00:29
+Flushed 0 pending click updates to database
+Successfully updated end time for campaign 995224
+Confirmed end time update for campaign 995224
+✅ Set end time for campaign 995224 to 2025-05-07 11:00:29
+✅ Marked campaign 9 as 'high_spend_waiting' in database
+⏱️ Starting 1-minute wait period for campaign 995224
+🔄 Starting minute-by-minute PAUSE status check for campaign 995224
+Finished running Traffic Generator for all enabled campaigns
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2459360,
+        "nice": 0,
+        "sys": 633850,
+        "idle": 10741940,
+        "irq": 286850
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2518810,
+        "nice": 0,
+        "sys": 652370,
+        "idle": 10682930,
+        "irq": 295100
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3586360,
+        "nice": 0,
+        "sys": 853720,
+        "idle": 9170800,
+        "irq": 308730
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3625660,
+        "nice": 0,
+        "sys": 847280,
+        "idle": 9143280,
+        "irq": 301650
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3481600,
+        "nice": 0,
+        "sys": 904600,
+        "idle": 9130560,
+        "irq": 317720
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3481330,
+        "nice": 0,
+        "sys": 904020,
+        "idle": 9157150,
+        "irq": 312740
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3573120,
+        "nice": 0,
+        "sys": 850950,
+        "idle": 9162960,
+        "irq": 309400
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3600070,
+        "nice": 0,
+        "sys": 878950,
+        "idle": 9102960,
+        "irq": 308710
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 26486276096
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.53,
+  "currentLoad": 27.354543473523645,
+  "currentLoadUser": 19.812595336674658,
+  "currentLoadSystem": 5.227718457180214,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 72.64545652647637,
+  "currentLoadIrq": 2.3142296796687734,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 125530,
+  "rawCurrentLoadUser": 90920,
+  "rawCurrentLoadSystem": 23990,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 333370,
+  "rawCurrentLoadIrq": 10620,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 23.420460446598582,
+      "loadUser": 17.1023022329929,
+      "loadSystem": 4.292885580751255,
+      "loadNice": 0,
+      "loadIdle": 76.57953955340142,
+      "loadIrq": 2.025272632854423,
+      "rawLoad": 13530,
+      "rawLoadUser": 9880,
+      "rawLoadSystem": 2480,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 44240,
+      "rawLoadIrq": 1170,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 24.153498871331827,
+      "loadUser": 17.329397464837644,
+      "loadSystem": 4.740406320541761,
+      "loadNice": 0,
+      "loadIdle": 75.84650112866818,
+      "loadIrq": 2.083695085952422,
+      "rawLoad": 13910,
+      "rawLoadUser": 9980,
+      "rawLoadSystem": 2730,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 43680,
+      "rawLoadIrq": 1200,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 29.646403065668004,
+      "loadUser": 21.668698832955933,
+      "loadSystem": 5.643616094757011,
+      "loadNice": 0,
+      "loadIdle": 70.353596934332,
+      "loadIrq": 2.33408813795506,
+      "rawLoad": 17020,
+      "rawLoadUser": 12440,
+      "rawLoadSystem": 3240,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40390,
+      "rawLoadIrq": 1340,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 28.939578617447324,
+      "loadUser": 21.22584015323002,
+      "loadSystem": 5.432700679087585,
+      "loadNice": 0,
+      "loadIdle": 71.06042138255268,
+      "loadIrq": 2.281037785129723,
+      "rawLoad": 16620,
+      "rawLoadUser": 12190,
+      "rawLoadSystem": 3120,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40810,
+      "rawLoadIrq": 1310,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 28.603918824352693,
+      "loadUser": 20.416375087473757,
+      "loadSystem": 5.685794261721484,
+      "loadNice": 0,
+      "loadIdle": 71.39608117564731,
+      "loadIrq": 2.5017494751574527,
+      "rawLoad": 16350,
+      "rawLoadUser": 11670,
+      "rawLoadSystem": 3250,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40810,
+      "rawLoadIrq": 1430,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 28.32806462943449,
+      "loadUser": 20.65331928345627,
+      "loadSystem": 5.233579206181946,
+      "loadNice": 0,
+      "loadIdle": 71.6719353705655,
+      "loadIrq": 2.4411661397962767,
+      "rawLoad": 16130,
+      "rawLoadUser": 11760,
+      "rawLoadSystem": 2980,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40810,
+      "rawLoadIrq": 1390,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 27.838636758824553,
+      "loadUser": 19.94435750304295,
+      "loadSystem": 5.459920013910624,
+      "loadNice": 0,
+      "loadIdle": 72.16136324117545,
+      "loadIrq": 2.434359241870979,
+      "rawLoad": 16010,
+      "rawLoadUser": 11470,
+      "rawLoadSystem": 3140,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 41500,
+      "rawLoadIrq": 1400,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 27.955859169732,
+      "loadUser": 20.19618146785777,
+      "loadSystem": 5.34244175862673,
+      "loadNice": 0,
+      "loadIdle": 72.044140830268,
+      "loadIrq": 2.417235943247504,
+      "rawLoad": 15960,
+      "rawLoadUser": 11530,
+      "rawLoadSystem": 3050,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 41130,
+      "rawLoadIrq": 1380,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 3.64, 4.17, 4.25 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [3.64,4.17,4.25]
+Using 1-minute load average: 3.64
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.53,"currentLoad":27.354543473523645,"currentLoadUser":19.812595336674658,"currentLoadSystem":5.227718457180214,"currentLoadNice":0,"currentLoadIdle":72.64545652647637,"currentLoadIrq":2.3142296796687734,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":125530,"rawCurrentLoadUser":90920,"rawCurrentLoadSystem":23990,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":333370,"rawCurrentLoadIrq":10620,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":23.420460446598582,"loadUser":17.1023022329929,"loadSystem":4.292885580751255,"loadNice":0,"loadIdle":76.57953955340142,"loadIrq":2.025272632854423,"rawLoad":13530,"rawLoadUser":9880,"rawLoadSystem":2480,"rawLoadNice":0,"rawLoadIdle":44240,"rawLoadIrq":1170,"rawLoadSteal":0,"rawLoadGuest":0},{"load":24.153498871331827,"loadUser":17.329397464837644,"loadSystem":4.740406320541761,"loadNice":0,"loadIdle":75.84650112866818,"loadIrq":2.083695085952422,"rawLoad":13910,"rawLoadUser":9980,"rawLoadSystem":2730,"rawLoadNice":0,"rawLoadIdle":43680,"rawLoadIrq":1200,"rawLoadSteal":0,"rawLoadGuest":0},{"load":29.646403065668004,"loadUser":21.668698832955933,"loadSystem":5.643616094757011,"loadNice":0,"loadIdle":70.353596934332,"loadIrq":2.33408813795506,"rawLoad":17020,"rawLoadUser":12440,"rawLoadSystem":3240,"rawLoadNice":0,"rawLoadIdle":40390,"rawLoadIrq":1340,"rawLoadSteal":0,"rawLoadGuest":0},{"load":28.939578617447324,"loadUser":21.22584015323002,"loadSystem":5.432700679087585,"loadNice":0,"loadIdle":71.06042138255268,"loadIrq":2.281037785129723,"rawLoad":16620,"rawLoadUser":12190,"rawLoadSystem":3120,"rawLoadNice":0,"rawLoadIdle":40810,"rawLoadIrq":1310,"rawLoadSteal":0,"rawLoadGuest":0},{"load":28.603918824352693,"loadUser":20.416375087473757,"loadSystem":5.685794261721484,"loadNice":0,"loadIdle":71.39608117564731,"loadIrq":2.5017494751574527,"rawLoad":16350,"rawLoadUser":11670,"rawLoadSystem":3250,"rawLoadNice":0,"rawLoadIdle":40810,"rawLoadIrq":1430,"rawLoadSteal":0,"rawLoadGuest":0},{"load":28.32806462943449,"loadUser":20.65331928345627,"loadSystem":5.233579206181946,"loadNice":0,"loadIdle":71.6719353705655,"loadIrq":2.4411661397962767,"rawLoad":16130,"rawLoadUser":11760,"rawLoadSystem":2980,"rawLoadNice":0,"rawLoadIdle":40810,"rawLoadIrq":1390,"rawLoadSteal":0,"rawLoadGuest":0},{"load":27.838636758824553,"loadUser":19.94435750304295,"loadSystem":5.459920013910624,"loadNice":0,"loadIdle":72.16136324117545,"loadIrq":2.434359241870979,"rawLoad":16010,"rawLoadUser":11470,"rawLoadSystem":3140,"rawLoadNice":0,"rawLoadIdle":41500,"rawLoadIrq":1400,"rawLoadSteal":0,"rawLoadGuest":0},{"load":27.955859169732,"loadUser":20.19618146785777,"loadSystem":5.34244175862673,"loadNice":0,"loadIdle":72.044140830268,"loadIrq":2.417235943247504,"rawLoad":15960,"rawLoadUser":11530,"rawLoadSystem":3050,"rawLoadNice":0,"rawLoadIdle":41130,"rawLoadIrq":1380,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 45.5
+Final system load calculation (before fallbacks): 46
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 46
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+Flushed 0 pending click updates to database
+Running scheduled empty URL check
+Checking for campaigns with no active URLs to pause TrafficStar campaigns
+Found 1 campaigns with TrafficStar integration
+Campaign 9 (TrafficStar ID: 995224) has 4 active URLs
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+⏱️ Running minute check for campaign 995224 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is paused, active=false
+⏹️ Campaign 995224 is still paused as expected - monitoring will continue
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+^[[5~Flushed 0 pending click updates to database
+^[[5~^[[5~^[[5~Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2471600,
+        "nice": 0,
+        "sys": 636690,
+        "idle": 10782840,
+        "irq": 288170
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2530960,
+        "nice": 0,
+        "sys": 655180,
+        "idle": 10724200,
+        "irq": 296470
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3602340,
+        "nice": 0,
+        "sys": 857060,
+        "idle": 9206900,
+        "irq": 310210
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3641770,
+        "nice": 0,
+        "sys": 850810,
+        "idle": 9179310,
+        "irq": 303070
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3497150,
+        "nice": 0,
+        "sys": 908280,
+        "idle": 9165750,
+        "irq": 319240
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3497390,
+        "nice": 0,
+        "sys": 907580,
+        "idle": 9192630,
+        "irq": 314240
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3588300,
+        "nice": 0,
+        "sys": 854490,
+        "idle": 9199420,
+        "irq": 310930
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3615720,
+        "nice": 0,
+        "sys": 882480,
+        "idle": 9138110,
+        "irq": 310210
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 25976037376
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.52,
+  "currentLoad": 34.66452266619675,
+  "currentLoadUser": 26.190581082867087,
+  "currentLoadSystem": 5.907749240054628,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 65.33547733380325,
+  "currentLoadIrq": 2.566192343275034,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 157370,
+  "rawCurrentLoadUser": 118900,
+  "rawCurrentLoadSystem": 26820,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 296610,
+  "rawCurrentLoadIrq": 11650,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 28.628750872295882,
+      "loadUser": 21.35380321004885,
+      "loadSystem": 4.954640614096301,
+      "loadNice": 0,
+      "loadIdle": 71.37124912770412,
+      "loadIrq": 2.320307048150733,
+      "rawLoad": 16410,
+      "rawLoadUser": 12240,
+      "rawLoadSystem": 2840,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40910,
+      "rawLoadIrq": 1330,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 28.350694444444446,
+      "loadUser": 21.09375,
+      "loadSystem": 4.878472222222222,
+      "loadNice": 0,
+      "loadIdle": 71.64930555555556,
+      "loadIrq": 2.3784722222222223,
+      "rawLoad": 16330,
+      "rawLoadUser": 12150,
+      "rawLoadSystem": 2810,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 41270,
+      "rawLoadIrq": 1370,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 36.54420812093514,
+      "loadUser": 28.07171734927052,
+      "loadSystem": 5.8709790824397965,
+      "loadNice": 0,
+      "loadIdle": 63.45579187906486,
+      "loadIrq": 2.60151168922482,
+      "rawLoad": 20790,
+      "rawLoadUser": 15970,
+      "rawLoadSystem": 3340,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 36100,
+      "rawLoadIrq": 1480,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 36.889122438255384,
+      "loadUser": 28.218602207041517,
+      "loadSystem": 6.183219478017166,
+      "loadNice": 0,
+      "loadIdle": 63.110877561744616,
+      "loadIrq": 2.487300753196707,
+      "rawLoad": 21060,
+      "rawLoadUser": 16110,
+      "rawLoadSystem": 3530,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 36030,
+      "rawLoadIrq": 1420,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 37.08206686930091,
+      "loadUser": 27.802610405864474,
+      "loadSystem": 6.561773645628464,
+      "loadNice": 0,
+      "loadIdle": 62.91793313069909,
+      "loadIrq": 2.717682817807974,
+      "rawLoad": 20740,
+      "rawLoadUser": 15550,
+      "rawLoadSystem": 3670,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 35190,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 37.307896131425544,
+      "loadUser": 28.36954601660484,
+      "loadSystem": 6.28864158275923,
+      "loadNice": 0,
+      "loadIdle": 62.692103868574456,
+      "loadIrq": 2.6497085320614735,
+      "rawLoad": 21120,
+      "rawLoadUser": 16060,
+      "rawLoadSystem": 3560,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 35490,
+      "rawLoadIrq": 1500,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.70798800916946,
+      "loadUser": 26.767765826132955,
+      "loadSystem": 6.242285311232587,
+      "loadNice": 0,
+      "loadIdle": 64.29201199083055,
+      "loadIrq": 2.6979368718039147,
+      "rawLoad": 20250,
+      "rawLoadUser": 15180,
+      "rawLoadSystem": 3540,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 36460,
+      "rawLoadIrq": 1530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 37.02310585706609,
+      "loadUser": 28.013612753000178,
+      "loadSystem": 6.322765538241089,
+      "loadNice": 0,
+      "loadIdle": 62.9768941429339,
+      "loadIrq": 2.6867275658248255,
+      "rawLoad": 20670,
+      "rawLoadUser": 15640,
+      "rawLoadSystem": 3530,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 35160,
+      "rawLoadIrq": 1500,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 2.77, 3.85, 4.13 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [2.77,3.85,4.13]
+Using 1-minute load average: 2.77
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.52,"currentLoad":34.66452266619675,"currentLoadUser":26.190581082867087,"currentLoadSystem":5.907749240054628,"currentLoadNice":0,"currentLoadIdle":65.33547733380325,"currentLoadIrq":2.566192343275034,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":157370,"rawCurrentLoadUser":118900,"rawCurrentLoadSystem":26820,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":296610,"rawCurrentLoadIrq":11650,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":28.628750872295882,"loadUser":21.35380321004885,"loadSystem":4.954640614096301,"loadNice":0,"loadIdle":71.37124912770412,"loadIrq":2.320307048150733,"rawLoad":16410,"rawLoadUser":12240,"rawLoadSystem":2840,"rawLoadNice":0,"rawLoadIdle":40910,"rawLoadIrq":1330,"rawLoadSteal":0,"rawLoadGuest":0},{"load":28.350694444444446,"loadUser":21.09375,"loadSystem":4.878472222222222,"loadNice":0,"loadIdle":71.64930555555556,"loadIrq":2.3784722222222223,"rawLoad":16330,"rawLoadUser":12150,"rawLoadSystem":2810,"rawLoadNice":0,"rawLoadIdle":41270,"rawLoadIrq":1370,"rawLoadSteal":0,"rawLoadGuest":0},{"load":36.54420812093514,"loadUser":28.07171734927052,"loadSystem":5.8709790824397965,"loadNice":0,"loadIdle":63.45579187906486,"loadIrq":2.60151168922482,"rawLoad":20790,"rawLoadUser":15970,"rawLoadSystem":3340,"rawLoadNice":0,"rawLoadIdle":36100,"rawLoadIrq":1480,"rawLoadSteal":0,"rawLoadGuest":0},{"load":36.889122438255384,"loadUser":28.218602207041517,"loadSystem":6.183219478017166,"loadNice":0,"loadIdle":63.110877561744616,"loadIrq":2.487300753196707,"rawLoad":21060,"rawLoadUser":16110,"rawLoadSystem":3530,"rawLoadNice":0,"rawLoadIdle":36030,"rawLoadIrq":1420,"rawLoadSteal":0,"rawLoadGuest":0},{"load":37.08206686930091,"loadUser":27.802610405864474,"loadSystem":6.561773645628464,"loadNice":0,"loadIdle":62.91793313069909,"loadIrq":2.717682817807974,"rawLoad":20740,"rawLoadUser":15550,"rawLoadSystem":3670,"rawLoadNice":0,"rawLoadIdle":35190,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":37.307896131425544,"loadUser":28.36954601660484,"loadSystem":6.28864158275923,"loadNice":0,"loadIdle":62.692103868574456,"loadIrq":2.6497085320614735,"rawLoad":21120,"rawLoadUser":16060,"rawLoadSystem":3560,"rawLoadNice":0,"rawLoadIdle":35490,"rawLoadIrq":1500,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.70798800916946,"loadUser":26.767765826132955,"loadSystem":6.242285311232587,"loadNice":0,"loadIdle":64.29201199083055,"loadIrq":2.6979368718039147,"rawLoad":20250,"rawLoadUser":15180,"rawLoadSystem":3540,"rawLoadNice":0,"rawLoadIdle":36460,"rawLoadIrq":1530,"rawLoadSteal":0,"rawLoadGuest":0},{"load":37.02310585706609,"loadUser":28.013612753000178,"loadSystem":6.322765538241089,"loadNice":0,"loadIdle":62.9768941429339,"loadIrq":2.6867275658248255,"rawLoad":20670,"rawLoadUser":15640,"rawLoadSystem":3530,"rawLoadNice":0,"rawLoadIdle":35160,"rawLoadIrq":1500,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 34.625
+Final system load calculation (before fallbacks): 35
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 35
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 0 campaigns:
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+11:02:27 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+11:02:27 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+11:02:27 AM [gmail-reader] Current IMAP connection state: authenticated
+11:02:27 AM [gmail-reader] Scanning for processed emails older than 2025-05-07T11:00:27.849Z (2 minutes ago)
+11:02:27 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+⏱️ Running minute check for campaign 995224 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is paused, active=false
+⏹️ Campaign 995224 is still paused as expected - monitoring will continue
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2482590,
+        "nice": 0,
+        "sys": 639130,
+        "idle": 10826170,
+        "irq": 289420
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2541630,
+        "nice": 0,
+        "sys": 657600,
+        "idle": 10767660,
+        "irq": 297770
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3617330,
+        "nice": 0,
+        "sys": 860230,
+        "idle": 9244340,
+        "irq": 311600
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3656780,
+        "nice": 0,
+        "sys": 854140,
+        "idle": 9216340,
+        "irq": 304440
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3511290,
+        "nice": 0,
+        "sys": 911430,
+        "idle": 9203900,
+        "irq": 320720
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3512440,
+        "nice": 0,
+        "sys": 910740,
+        "idle": 9229400,
+        "irq": 315640
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3604200,
+        "nice": 0,
+        "sys": 857550,
+        "idle": 9236160,
+        "irq": 312280
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3630750,
+        "nice": 0,
+        "sys": 885580,
+        "idle": 9175640,
+        "irq": 311580
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 26128793600
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.52,
+  "currentLoad": 32.05515430072226,
+  "currentLoadUser": 24.45611731232217,
+  "currentLoadSystem": 5.213394615889691,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 67.94484569927775,
+  "currentLoadIrq": 2.385642372510396,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 146460,
+  "rawCurrentLoadUser": 111740,
+  "rawCurrentLoadSystem": 23820,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 310440,
+  "rawCurrentLoadIrq": 10900,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 25.29310344827586,
+      "loadUser": 18.931034482758623,
+      "loadSystem": 4.206896551724138,
+      "loadNice": 0,
+      "loadIdle": 74.70689655172413,
+      "loadIrq": 2.1551724137931036,
+      "rawLoad": 14670,
+      "rawLoadUser": 10980,
+      "rawLoadSystem": 2440,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 43330,
+      "rawLoadIrq": 1250,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 24.865986512190904,
+      "loadUser": 18.433339097354313,
+      "loadSystem": 4.184679232232405,
+      "loadNice": 0,
+      "loadIdle": 75.1340134878091,
+      "loadIrq": 2.247968182604185,
+      "rawLoad": 14380,
+      "rawLoadUser": 10660,
+      "rawLoadSystem": 2420,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 43450,
+      "rawLoadIrq": 1300,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 34.28120063191153,
+      "loadUser": 26.31209408460593,
+      "loadSystem": 5.5467790064946465,
+      "loadNice": 0,
+      "loadIdle": 65.71879936808847,
+      "loadIrq": 2.422327540810953,
+      "rawLoad": 19530,
+      "rawLoadUser": 14990,
+      "rawLoadSystem": 3160,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 37440,
+      "rawLoadIrq": 1380,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 34.71977440958759,
+      "loadUser": 26.436376454000705,
+      "loadSystem": 5.8688755727881565,
+      "loadNice": 0,
+      "loadIdle": 65.28022559041241,
+      "loadIrq": 2.414522382798731,
+      "rawLoad": 19700,
+      "rawLoadUser": 15000,
+      "rawLoadSystem": 3330,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 37040,
+      "rawLoadIrq": 1370,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 32.97610681658468,
+      "loadUser": 24.82431482782853,
+      "loadSystem": 5.551651440618412,
+      "loadNice": 0,
+      "loadIdle": 67.02389318341531,
+      "loadIrq": 2.600140548137737,
+      "rawLoad": 18770,
+      "rawLoadUser": 14130,
+      "rawLoadSystem": 3160,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38150,
+      "rawLoadIrq": 1480,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 34.78183753103938,
+      "loadUser": 26.693863072011354,
+      "loadSystem": 5.6048244058176655,
+      "loadNice": 0,
+      "loadIdle": 65.21816246896063,
+      "loadIrq": 2.483150053210358,
+      "rawLoad": 19610,
+      "rawLoadUser": 15050,
+      "rawLoadSystem": 3160,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 36770,
+      "rawLoadIrq": 1400,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 35.589060308555396,
+      "loadUser": 27.857643758765775,
+      "loadSystem": 5.364656381486676,
+      "loadNice": 0,
+      "loadIdle": 64.4109396914446,
+      "loadIrq": 2.366760168302945,
+      "rawLoad": 20300,
+      "rawLoadUser": 15890,
+      "rawLoadSystem": 3060,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 36740,
+      "rawLoadIrq": 1350,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 34.198526832690284,
+      "loadUser": 26.376709926341636,
+      "loadSystem": 5.419151175026307,
+      "loadNice": 0,
+      "loadIdle": 65.80147316730972,
+      "loadIrq": 2.402665731322343,
+      "rawLoad": 19500,
+      "rawLoadUser": 15040,
+      "rawLoadSystem": 3090,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 37520,
+      "rawLoadIrq": 1370,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 3.93, 3.98, 4.16 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [3.93,3.98,4.16]
+Using 1-minute load average: 3.93
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.52,"currentLoad":32.05515430072226,"currentLoadUser":24.45611731232217,"currentLoadSystem":5.213394615889691,"currentLoadNice":0,"currentLoadIdle":67.94484569927775,"currentLoadIrq":2.385642372510396,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":146460,"rawCurrentLoadUser":111740,"rawCurrentLoadSystem":23820,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":310440,"rawCurrentLoadIrq":10900,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":25.29310344827586,"loadUser":18.931034482758623,"loadSystem":4.206896551724138,"loadNice":0,"loadIdle":74.70689655172413,"loadIrq":2.1551724137931036,"rawLoad":14670,"rawLoadUser":10980,"rawLoadSystem":2440,"rawLoadNice":0,"rawLoadIdle":43330,"rawLoadIrq":1250,"rawLoadSteal":0,"rawLoadGuest":0},{"load":24.865986512190904,"loadUser":18.433339097354313,"loadSystem":4.184679232232405,"loadNice":0,"loadIdle":75.1340134878091,"loadIrq":2.247968182604185,"rawLoad":14380,"rawLoadUser":10660,"rawLoadSystem":2420,"rawLoadNice":0,"rawLoadIdle":43450,"rawLoadIrq":1300,"rawLoadSteal":0,"rawLoadGuest":0},{"load":34.28120063191153,"loadUser":26.31209408460593,"loadSystem":5.5467790064946465,"loadNice":0,"loadIdle":65.71879936808847,"loadIrq":2.422327540810953,"rawLoad":19530,"rawLoadUser":14990,"rawLoadSystem":3160,"rawLoadNice":0,"rawLoadIdle":37440,"rawLoadIrq":1380,"rawLoadSteal":0,"rawLoadGuest":0},{"load":34.71977440958759,"loadUser":26.436376454000705,"loadSystem":5.8688755727881565,"loadNice":0,"loadIdle":65.28022559041241,"loadIrq":2.414522382798731,"rawLoad":19700,"rawLoadUser":15000,"rawLoadSystem":3330,"rawLoadNice":0,"rawLoadIdle":37040,"rawLoadIrq":1370,"rawLoadSteal":0,"rawLoadGuest":0},{"load":32.97610681658468,"loadUser":24.82431482782853,"loadSystem":5.551651440618412,"loadNice":0,"loadIdle":67.02389318341531,"loadIrq":2.600140548137737,"rawLoad":18770,"rawLoadUser":14130,"rawLoadSystem":3160,"rawLoadNice":0,"rawLoadIdle":38150,"rawLoadIrq":1480,"rawLoadSteal":0,"rawLoadGuest":0},{"load":34.78183753103938,"loadUser":26.693863072011354,"loadSystem":5.6048244058176655,"loadNice":0,"loadIdle":65.21816246896063,"loadIrq":2.483150053210358,"rawLoad":19610,"rawLoadUser":15050,"rawLoadSystem":3160,"rawLoadNice":0,"rawLoadIdle":36770,"rawLoadIrq":1400,"rawLoadSteal":0,"rawLoadGuest":0},{"load":35.589060308555396,"loadUser":27.857643758765775,"loadSystem":5.364656381486676,"loadNice":0,"loadIdle":64.4109396914446,"loadIrq":2.366760168302945,"rawLoad":20300,"rawLoadUser":15890,"rawLoadSystem":3060,"rawLoadNice":0,"rawLoadIdle":36740,"rawLoadIrq":1350,"rawLoadSteal":0,"rawLoadGuest":0},{"load":34.198526832690284,"loadUser":26.376709926341636,"loadSystem":5.419151175026307,"loadNice":0,"loadIdle":65.80147316730972,"loadIrq":2.402665731322343,"rawLoad":19500,"rawLoadUser":15040,"rawLoadSystem":3090,"rawLoadNice":0,"rawLoadIdle":37520,"rawLoadIrq":1370,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 49.125
+Final system load calculation (before fallbacks): 49
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 49
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+⏱️ Running minute check for campaign 995224 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is paused, active=false
+⏹️ Campaign 995224 is still paused as expected - monitoring will continue
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database

@@ -419,6 +419,15 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       
       console.log(`Campaign ${campaignId} price per thousand: $${campaign.pricePerThousand}`);
       
+      // Check if the campaign is already in high_spend_budget_updated state
+      if (campaign.lastTrafficSenderStatus === 'high_spend_budget_updated') {
+        console.log(`Campaign ${campaignId} is already in high_spend_budget_updated state - checking for new URLs added after budget calculation`);
+        
+        // Check for URLs added after the budget calculation time
+        await checkForNewUrlsAfterBudgetCalculation(campaignId, trafficstarCampaignId);
+        return;
+      }
+      
       // Check if the campaign is already in the waiting period for high spend handling
       if (campaign.lastTrafficSenderStatus === 'high_spend_waiting') {
         // Get high spend wait minutes from campaign (default to 11 if not set)

@@ -1,0 +1,1246 @@
+ampaign 995224 spent value from campaign object helper: $32.4900
+Campaign 9 spent value: $32.4900
+TRAFFIC-GENERATOR: Handling campaign 995224 by spent value - current spent: $32.4900
+🟢 HIGH SPEND ($32.4900 >= $10.00): Campaign 995224 has spent $10.00 or more
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+🔓 DEVELOPMENT MODE: Authentication bypassed
+🔓 DEVELOPMENT MODE: Authentication bypassed
+Fetching saved TrafficStar campaigns
+🔍 Cache miss - fetching fresh URLs for campaign ID: 9
+🔍 Cache miss - fetching fresh URLs for campaign ID: 1
+11:10:30 AM [express] GET /api/campaigns 200 in 85ms :: [{"id":9,"name":"Test Click Count Fix","redir…
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+Campaign 9 price per thousand: $1.0000
+First time detecting high spend for campaign 995224 - initiating pause and wait period
+Pausing campaign 995224
+⏱️ Running minute check for campaign 995224 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Successfully paused campaign 995224
+✅ Paused campaign 995224 to begin high spend handling
+Setting campaign 995224 end time to: 2025-05-07 11:10:31
+Flushed 0 pending click updates to database
+Successfully updated end time for campaign 995224
+Confirmed end time update for campaign 995224
+✅ Set end time for campaign 995224 to 2025-05-07 11:10:31
+✅ Marked campaign 9 as 'high_spend_waiting' in database
+⏱️ Starting 1-minute wait period for campaign 995224
+🔄 Starting minute-by-minute PAUSE status check for campaign 995224
+Finished running Traffic Generator for all enabled campaigns
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is paused, active=false
+⚠️ Campaign 995224 was found paused but should be active - will attempt to reactivate
+🔍 PAUSE DETECTED: Checking remaining clicks for 22 URLs in campaign 995224
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: paused, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 283 with status: paused
+🔍 URL ID: 287, status: paused, clickLimit: 14999, clicks: 0
+❌ Skipping URL ID: 287 with status: paused
+🔍 URL ID: 458, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 458
+🔍 URL ID: 488, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 488
+🔍 URL ID: 384, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 384 with status: paused
+🔍 URL ID: 453, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 453 with status: paused
+🔍 URL ID: 492, status: active, clickLimit: 5000, clicks: 0
+✅ Adding 5000 remaining clicks from URL ID: 492
+🔍 URL ID: 493, status: active, clickLimit: 10000, clicks: 7
+✅ Adding 9993 remaining clicks from URL ID: 493
+🔍 URL ID: 494, status: active, clickLimit: 10000, clicks: 25
+✅ Adding 9975 remaining clicks from URL ID: 494
+✅ Campaign 995224 has 134968 remaining clicks (>= 15000) - will attempt reactivation during monitoring
+Setting campaign 995224 end time to: 2025-05-07 23:59:00
+Response is not an array of campaigns: {
+  page: 1,
+  count: 26,
+  page_count: 3,
+  page_size: 10,
+  response: [
+    {
+      id: 1000866,
+      user_id: 64017,
+      name: 'Clone from ID 995224 - Clone from ID 988699 - Clone from ID 8...',
+      weight: 1,
+      status: 'enabled',
+      approved: 'approved',
+      active: true,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: [],
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.051,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 27.589178,
+      use_total_budget: false,
+      total_budget: 570,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-05-07 23:59:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-24T10:49:38Z',
+      updated_at: '2025-05-07T10:24:14Z',
+      ecpm: 0.051,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 995224,
+      user_id: 64017,
+      name: 'Clone from ID 988699 - Clone from ID 884036 - - ww1',
+      weight: 1,
+      status: 'enabled',
+      approved: 'approved',
+      active: true,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: [],
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.051,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 157.483,
+      use_total_budget: false,
+      total_budget: 570,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-05-07 23:59:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-16T09:38:34Z',
+      updated_at: '2025-05-07T11:05:31Z',
+      spent_today: 32.49,
+      ecpm: 0.051,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 993278,
+      user_id: 64017,
+      name: 'Clone from ID 947555 - Clone from ID 881010 - ww2',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.111,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 217.388035,
+      use_total_budget: true,
+      total_budget: 254,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-30 23:59:59',
+      schedule_timezone: 0,
+      created_at: '2025-04-13T19:13:50Z',
+      updated_at: '2025-04-24T17:32:43Z',
+      ecpm: 0.111,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 988699,
+      user_id: 64017,
+      name: 'Clone from ID 884036 - - ww1',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: [],
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.111,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 171.994375,
+      use_total_budget: true,
+      total_budget: 570,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-25 00:00:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-07T04:54:43Z',
+      updated_at: '2025-04-24T17:32:46Z',
+      ecpm: 0.111,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 988498,
+      user_id: 64017,
+      name: 'Clone from ID 881010 - ww2',
+      weight: 1,
+      status: 'total_budget_is_reached',
+      approved: 'approved',
+      active: true,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 10.15,
+      use_total_budget: true,
+      total_budget: 40,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-25 23:59:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-06T16:16:45Z',
+      updated_at: '2025-04-25T18:29:34Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 988430,
+      user_id: 64017,
+      name: 'Clone from ID 884036 - - ww1',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: [],
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 29,
+      use_total_budget: true,
+      total_budget: 29,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-23 00:00:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-06T11:26:43Z',
+      updated_at: '2025-04-24T17:32:48Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 988349,
+      user_id: 64017,
+      name: 'Clone from ID 883893 - ww4',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 26.5,
+      use_total_budget: true,
+      total_budget: 27,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-07 23:59:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-06T04:48:00Z',
+      updated_at: '2025-04-24T17:32:50Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 988203,
+      user_id: 64017,
+      name: 'Clone from ID 881010 - ww2',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 17,
+      use_total_budget: true,
+      total_budget: 17,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-30 00:00:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-05T18:36:32Z',
+      updated_at: '2025-04-24T17:32:51Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 988075,
+      user_id: 64017,
+      name: 'Clone from ID 949893 - Clone from ID 883893 - ww4',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 20,
+      use_total_budget: true,
+      total_budget: 20,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-30 23:59:59',
+      schedule_timezone: 0,
+      created_at: '2025-04-05T14:13:55Z',
+      updated_at: '2025-04-24T17:32:54Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 987951,
+      user_id: 64017,
+      name: 'Clone from ID 881010 - ww2',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 17,
+      use_total_budget: true,
+      total_budget: 17,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-26 00:00:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-05T09:02:34Z',
+      updated_at: '2025-04-24T17:32:56Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    }
+  ]
+}
+11:10:33 AM [express] GET /api/trafficstar/saved-campaigns 200 in 3405ms :: []
+Flushed 0 pending click updates to database
+Successfully updated end time for campaign 995224
+Confirmed end time update for campaign 995224
+Activating campaign 995224
+Flushed 0 pending click updates to database
+Successfully activated campaign 995224
+✅ REACTIVATED campaign 995224 during monitoring - it has 134968 remaining clicks
+✅ Marked campaign 9 as 'reactivated_during_monitoring' in database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2582710,
+        "nice": 0,
+        "sys": 662400,
+        "idle": 11150800,
+        "irq": 300340
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 2643710,
+        "nice": 0,
+        "sys": 681260,
+        "idle": 11091160,
+        "irq": 309030
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3764600,
+        "nice": 0,
+        "sys": 889570,
+        "idle": 9512200,
+        "irq": 323200
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3803960,
+        "nice": 0,
+        "sys": 883180,
+        "idle": 9484640,
+        "irq": 315880
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3653920,
+        "nice": 0,
+        "sys": 941950,
+        "idle": 9473840,
+        "irq": 332790
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3654270,
+        "nice": 0,
+        "sys": 940500,
+        "idle": 9501270,
+        "irq": 327480
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3746840,
+        "nice": 0,
+        "sys": 886970,
+        "idle": 9508460,
+        "irq": 324130
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 3776930,
+        "nice": 0,
+        "sys": 916060,
+        "idle": 9443340,
+        "irq": 323140
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436744704,
+  "freeMemory": 27294552064
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+Load average data: {
+  "avgLoad": 0.53,
+  "currentLoad": 39.497893180965825,
+  "currentLoadUser": 29.85285358159236,
+  "currentLoadSystem": 6.975666791678617,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 60.502106819034175,
+  "currentLoadIrq": 2.6693728076948533,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 179040,
+  "rawCurrentLoadUser": 135320,
+  "rawCurrentLoadSystem": 31620,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 274250,
+  "rawCurrentLoadIrq": 12100,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 32.78659919734776,
+      "loadUser": 24.480893386843483,
+      "loadSystem": 5.845402198569185,
+      "loadNice": 0,
+      "loadIdle": 67.21340080265225,
+      "loadIrq": 2.46030361193509,
+      "rawLoad": 18790,
+      "rawLoadUser": 14030,
+      "rawLoadSystem": 3350,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38520,
+      "rawLoadIrq": 1410,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 31.873138251270372,
+      "loadUser": 23.742772034343787,
+      "loadSystem": 5.589626774137025,
+      "loadNice": 0,
+      "loadIdle": 68.12686174872962,
+      "loadIrq": 2.5407394427895564,
+      "rawLoad": 18190,
+      "rawLoadUser": 13550,
+      "rawLoadSystem": 3190,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 38880,
+      "rawLoadIrq": 1450,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.122865692659744,
+      "loadUser": 32.35345889808132,
+      "loadSystem": 7.093821510297483,
+      "loadNice": 0,
+      "loadIdle": 57.87713430734026,
+      "loadIrq": 2.6755852842809364,
+      "rawLoad": 23930,
+      "rawLoadUser": 18380,
+      "rawLoadSystem": 4030,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32880,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 41.45781856689022,
+      "loadUser": 31.5037063183904,
+      "loadSystem": 7.271443699258737,
+      "loadNice": 0,
+      "loadIdle": 58.542181433109775,
+      "loadIrq": 2.6826685492410873,
+      "rawLoad": 23490,
+      "rawLoadUser": 17850,
+      "rawLoadSystem": 4120,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33170,
+      "rawLoadIrq": 1520,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 41.56261148769176,
+      "loadUser": 31.1452015697467,
+      "loadSystem": 7.581163039600428,
+      "loadNice": 0,
+      "loadIdle": 58.43738851230824,
+      "loadIrq": 2.8362468783446304,
+      "rawLoad": 23300,
+      "rawLoadUser": 17460,
+      "rawLoadSystem": 4250,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32760,
+      "rawLoadIrq": 1590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 42.129629629629626,
+      "loadUser": 32.193732193732195,
+      "loadSystem": 7.211538461538461,
+      "loadNice": 0,
+      "loadIdle": 57.870370370370374,
+      "loadIrq": 2.7243589743589745,
+      "rawLoad": 23660,
+      "rawLoadUser": 18080,
+      "rawLoadSystem": 4050,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 32500,
+      "rawLoadIrq": 1530,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.5758699876347,
+      "loadUser": 30.36565977742448,
+      "loadSystem": 7.401519166225048,
+      "loadNice": 0,
+      "loadIdle": 59.4241300123653,
+      "loadIrq": 2.808691043985162,
+      "rawLoad": 22970,
+      "rawLoadUser": 17190,
+      "rawLoadSystem": 4190,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33640,
+      "rawLoadIrq": 1590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 43.649531884826004,
+      "loadUser": 33.17435082140964,
+      "loadSystem": 7.8431372549019605,
+      "loadNice": 0,
+      "loadIdle": 56.350468115174,
+      "loadIrq": 2.6320438085143967,
+      "rawLoad": 24710,
+      "rawLoadUser": 18780,
+      "rawLoadSystem": 4440,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 31900,
+      "rawLoadIrq": 1490,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 3.99, 4.22, 4.18 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [3.99,4.22,4.18]
+Using 1-minute load average: 3.99
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.53,"currentLoad":39.497893180965825,"currentLoadUser":29.85285358159236,"currentLoadSystem":6.975666791678617,"currentLoadNice":0,"currentLoadIdle":60.502106819034175,"currentLoadIrq":2.6693728076948533,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":179040,"rawCurrentLoadUser":135320,"rawCurrentLoadSystem":31620,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":274250,"rawCurrentLoadIrq":12100,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":32.78659919734776,"loadUser":24.480893386843483,"loadSystem":5.845402198569185,"loadNice":0,"loadIdle":67.21340080265225,"loadIrq":2.46030361193509,"rawLoad":18790,"rawLoadUser":14030,"rawLoadSystem":3350,"rawLoadNice":0,"rawLoadIdle":38520,"rawLoadIrq":1410,"rawLoadSteal":0,"rawLoadGuest":0},{"load":31.873138251270372,"loadUser":23.742772034343787,"loadSystem":5.589626774137025,"loadNice":0,"loadIdle":68.12686174872962,"loadIrq":2.5407394427895564,"rawLoad":18190,"rawLoadUser":13550,"rawLoadSystem":3190,"rawLoadNice":0,"rawLoadIdle":38880,"rawLoadIrq":1450,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.122865692659744,"loadUser":32.35345889808132,"loadSystem":7.093821510297483,"loadNice":0,"loadIdle":57.87713430734026,"loadIrq":2.6755852842809364,"rawLoad":23930,"rawLoadUser":18380,"rawLoadSystem":4030,"rawLoadNice":0,"rawLoadIdle":32880,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":41.45781856689022,"loadUser":31.5037063183904,"loadSystem":7.271443699258737,"loadNice":0,"loadIdle":58.542181433109775,"loadIrq":2.6826685492410873,"rawLoad":23490,"rawLoadUser":17850,"rawLoadSystem":4120,"rawLoadNice":0,"rawLoadIdle":33170,"rawLoadIrq":1520,"rawLoadSteal":0,"rawLoadGuest":0},{"load":41.56261148769176,"loadUser":31.1452015697467,"loadSystem":7.581163039600428,"loadNice":0,"loadIdle":58.43738851230824,"loadIrq":2.8362468783446304,"rawLoad":23300,"rawLoadUser":17460,"rawLoadSystem":4250,"rawLoadNice":0,"rawLoadIdle":32760,"rawLoadIrq":1590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":42.129629629629626,"loadUser":32.193732193732195,"loadSystem":7.211538461538461,"loadNice":0,"loadIdle":57.870370370370374,"loadIrq":2.7243589743589745,"rawLoad":23660,"rawLoadUser":18080,"rawLoadSystem":4050,"rawLoadNice":0,"rawLoadIdle":32500,"rawLoadIrq":1530,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.5758699876347,"loadUser":30.36565977742448,"loadSystem":7.401519166225048,"loadNice":0,"loadIdle":59.4241300123653,"loadIrq":2.808691043985162,"rawLoad":22970,"rawLoadUser":17190,"rawLoadSystem":4190,"rawLoadNice":0,"rawLoadIdle":33640,"rawLoadIrq":1590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":43.649531884826004,"loadUser":33.17435082140964,"loadSystem":7.8431372549019605,"loadNice":0,"loadIdle":56.350468115174,"loadIrq":2.6320438085143967,"rawLoad":24710,"rawLoadUser":18780,"rawLoadSystem":4440,"rawLoadNice":0,"rawLoadIdle":31900,"rawLoadIrq":1490,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 49.875
+Final system load calculation (before fallbacks): 50
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 50
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+⏱️ Running minute check for campaign 995224 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+⚠️ Campaign 995224 was found active but should be paused - will attempt to pause again
+Campaign 995224 has 134968 remaining clicks but should be paused - re-pausing campaign
+Pausing campaign 995224
+Successfully paused campaign 995224
+Setting campaign 995224 end time to: 2025-05-07 11:11:33
+Flushed 0 pending click updates to database
+Successfully updated end time for campaign 995224
+Confirmed end time update for campaign 995224
+✅ RE-PAUSED campaign 995224 during pause monitoring - it was found active
+✅ Marked campaign 9 as 're_paused_during_monitoring' in database
+Flushed 0 pending click updates to database
