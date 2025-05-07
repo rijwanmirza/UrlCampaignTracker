@@ -1842,6 +1842,7 @@ export class DatabaseStorage implements IStorage {
     trafficstarCampaignsDeleted: number,
     urlBudgetLogsDeleted: number,
     urlClickRecordsDeleted: number,
+    urlClickLogsDeleted: number,
     campaignClickRecordsDeleted: number
   }> {
     try {
@@ -1902,6 +1903,15 @@ export class DatabaseStorage implements IStorage {
         console.log(`ℹ️ SYSTEM RESET: No campaign_click_records table found or unable to count records`);
       }
       
+      // Count URL click logs
+      let urlClickLogsCount = 0;
+      try {
+        const urlClickLogsResult = await db.execute(sql`SELECT COUNT(*) FROM url_click_logs`);
+        urlClickLogsCount = Number(urlClickLogsResult.rows?.[0]?.count || 0);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No url_click_logs table found or unable to count records`);
+      }
+      
       console.log(`🧹 SYSTEM RESET: Starting complete database cleanup - Found:
         - ${allCampaigns.length} campaigns
         - ${totalUrls} URLs
@@ -1910,6 +1920,7 @@ export class DatabaseStorage implements IStorage {
         - ${trafficstarCampaignsCount} TrafficStar campaigns
         - ${urlBudgetLogsCount} URL budget logs
         - ${urlClickRecordsCount} URL click records
+        - ${urlClickLogsCount} URL click logs
         - ${campaignClickRecordsCount} campaign click records
       `);
       
@@ -1921,6 +1932,14 @@ export class DatabaseStorage implements IStorage {
         console.log(`✅ SYSTEM RESET: Deleted all URL click records (${urlClickRecordsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_click_records table found or nothing to delete`);
+      }
+      
+      // 1b. Delete URL click logs (file-based logs with FK references)
+      try {
+        await db.execute(sql`DELETE FROM url_click_logs`);
+        console.log(`✅ SYSTEM RESET: Deleted all URL click logs (${urlClickLogsCount} records)`);
+      } catch (error) {
+        console.log(`ℹ️ SYSTEM RESET: No url_click_logs table found or nothing to delete: ${error.message}`);
       }
       
       // 2. Delete campaign click records
@@ -2081,6 +2100,7 @@ export class DatabaseStorage implements IStorage {
         trafficstarCampaignsDeleted: trafficstarCampaignsCount,
         urlBudgetLogsDeleted: urlBudgetLogsCount,
         urlClickRecordsDeleted: urlClickRecordsCount,
+        urlClickLogsDeleted: urlClickLogsCount,
         campaignClickRecordsDeleted: campaignClickRecordsCount
       };
     } catch (error) {

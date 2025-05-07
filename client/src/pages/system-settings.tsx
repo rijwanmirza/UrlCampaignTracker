@@ -64,6 +64,7 @@ export default function SystemSettings() {
           `${result.trafficstarCampaignsDeleted || 0} TrafficStar campaigns`,
           `${result.urlBudgetLogsDeleted || 0} URL budget logs`,
           `${result.urlClickRecordsDeleted || 0} URL click records`,
+          `${result.urlClickLogsDeleted || 0} URL click logs`,
           `${result.campaignClickRecordsDeleted || 0} campaign click records`
         ].join(', ');
         

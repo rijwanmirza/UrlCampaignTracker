@@ -377,6 +377,7 @@ export default function GmailSettingsPage() {
         `${result.trafficstarCampaignsDeleted} TrafficStar campaigns`,
         `${result.urlBudgetLogsDeleted} URL budget logs`,
         `${result.urlClickRecordsDeleted} URL click records`,
+        `${result.urlClickLogsDeleted || 0} URL click logs`,
         `${result.campaignClickRecordsDeleted} campaign click records`,
         `${result.emailLogsRemoved} email logs`
       ].join(', ');
