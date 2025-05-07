@@ -5240,12 +5240,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Clearing all URL budget logs');
       
       // Get all campaigns with TrafficStar integration
-      const campaignsWithTrafficStar = await db.select({
-        id: campaigns.id
-      })
-      .from(campaigns)
-      .where(ne(campaigns.trafficstarCampaignId, ''))
-      .where(isNull(campaigns.trafficstarCampaignId).not());
+      const campaignsWithTrafficStar = await db.query.campaigns.findMany({
+        where: (c, { eq, and, ne, not, isNull }) => 
+          and(
+            ne(c.trafficstarCampaignId, ''),
+            not(isNull(c.trafficstarCampaignId))
+          ),
+        columns: { id: true }
+      });
       
       // Clear logs for each campaign
       for (const campaign of campaignsWithTrafficStar) {

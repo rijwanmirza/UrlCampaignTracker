@@ -23,6 +23,18 @@ export class UrlBudgetLogger {
     // Set the log directory path to the root directory
     this.logDirectory = path.join('.', 'url_budget_logs');
     this.ensureLogDirectoryExists();
+    
+    // Create the symbolic link or directory for Active_Url_Budget_Logs
+    const activeLogs = path.join('.', 'Active_Url_Budget_Logs');
+    if (!fs.existsSync(activeLogs)) {
+      try {
+        // Create a directory instead of a symlink
+        fs.mkdirSync(activeLogs, { recursive: true });
+        console.log(`Created Active_Url_Budget_Logs directory for easier access`);
+      } catch (error) {
+        console.error(`Failed to create Active_Url_Budget_Logs directory: ${error}`);
+      }
+    }
   }
 
   /**
@@ -90,6 +102,14 @@ export class UrlBudgetLogger {
   }
 
   /**
+   * Get the active logs file path
+   * @returns Path to the active log file
+   */
+  private getActiveLogFilePath(): string {
+    return path.join('.', 'Active_Url_Budget_Logs', 'Active_Url_Budget_Logs');
+  }
+
+  /**
    * Log a URL budget calculation if it hasn't been logged in the current high-spend cycle for this campaign
    * @param campaignId Campaign ID
    * @param urlId URL ID
@@ -116,14 +136,27 @@ export class UrlBudgetLogger {
       const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
       const time = now.toISOString().split('T')[1].substring(0, 8); // HH:MM:SS
       
-      // Format the log entry: UrlId|CampaignId|UrlName|Price|Date::Time
-      const logEntry = `${urlId}|${campaignId}|${urlName}|${price.toFixed(4)}|${date}::${time}\n`;
+      // Format the log entry in requested format: UrlId|Price|Date::Time
+      const logEntryFormat1 = `${urlId}|${price.toFixed(4)}|${date}::${time}\n`;
       
-      // Get the log file path for this campaign
-      const logFilePath = this.getLogFilePath(campaignId);
+      // Format the log entry with campaign info: UrlId|CampaignId|UrlName|Price|Date::Time
+      const logEntryFormat2 = `${urlId}|${campaignId}|${urlName}|${price.toFixed(4)}|${date}::${time}\n`;
+      
+      // Get the log file paths
+      const campaignLogPath = this.getLogFilePath(campaignId);
+      const activeLogPath = this.getActiveLogFilePath();
 
-      // Append to campaign-specific log file
-      await fsPromises.appendFile(logFilePath, logEntry);
+      // Make sure the active log file exists
+      if (!fs.existsSync(activeLogPath)) {
+        await fsPromises.writeFile(activeLogPath, '');
+      }
+
+      // Append to campaign-specific log file with full information
+      await fsPromises.appendFile(campaignLogPath, logEntryFormat2);
+      
+      // Append to active log file with simplified format
+      await fsPromises.appendFile(activeLogPath, logEntryFormat1);
+      
       console.log(`📝 Logged URL budget for URL ID ${urlId} in campaign ${campaignId}: $${price.toFixed(4)} at ${date}::${time}`);
       
       // Add to set of logged URLs for this campaign
