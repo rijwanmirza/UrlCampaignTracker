@@ -28,6 +28,8 @@ import {
   bulkUrlActionSchema,
   insertTrafficstarCredentialSchema,
   trafficstarCampaignActionSchema,
+  insertGmailCampaignAssignmentSchema,
+  updateGmailCampaignAssignmentSchema,
   trafficstarCampaignBudgetSchema,
   // Add Traffic Sender schema
   trafficSenderActionSchema,
