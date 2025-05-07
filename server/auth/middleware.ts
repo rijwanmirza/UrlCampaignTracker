@@ -3,7 +3,8 @@ import { log } from '../vite';
 
 // Simple API key authentication
 // In production, store this in an environment variable
-const API_SECRET_KEY = process.env.API_SECRET_KEY || 'TraffiCS10928';
+// We use a function to get the current key value to make sure we always have the latest value
+const getApiSecretKey = () => process.env.API_SECRET_KEY || 'TraffiCS10928';
 
 // Check if we're in development mode
 const isDevMode = process.env.NODE_ENV === 'development';
@@ -27,7 +28,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     }
     
     // Simple check - just compare the API key with our secret
-    if (apiKey !== API_SECRET_KEY) {
+    if (apiKey !== getApiSecretKey()) {
       log(`Authentication failed - invalid API key provided: ${apiKey}`, 'auth');
       return res.status(401).json({ message: 'Invalid API key' });
     }
@@ -43,7 +44,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 // Validate an API key
 export function validateApiKey(apiKey: string): boolean {
   // Always validate against the real API key
-  return apiKey === API_SECRET_KEY;
+  return apiKey === getApiSecretKey();
 }
 
 // Middleware for CORS and preflight requests

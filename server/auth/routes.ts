@@ -80,4 +80,51 @@ export function registerAuthRoutes(app: Express) {
       message: 'Authentication successful - API key is valid'
     });
   });
+  
+  // Change API key
+  app.post('/api/auth/change-key', requireAuth, (req: Request, res: Response) => {
+    try {
+      const { currentKey, newKey, confirmNewKey } = req.body;
+      
+      // Validate input
+      if (!currentKey || !newKey || !confirmNewKey) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+      
+      // Check if new key and confirm key match
+      if (newKey !== confirmNewKey) {
+        return res.status(400).json({ message: 'New key and confirmation do not match' });
+      }
+      
+      // Validate old key
+      const isCurrentKeyValid = validateApiKey(currentKey);
+      if (!isCurrentKeyValid) {
+        return res.status(401).json({ message: 'Current API key is incorrect' });
+      }
+      
+      // Update API key in environment
+      if (process.env.API_SECRET_KEY) {
+        // In a real production system, this would involve updating 
+        // the environment variable or a secure configuration store
+        process.env.API_SECRET_KEY = newKey;
+        
+        // Clear the current cookie and set a new one
+        res.clearCookie('apiKey');
+        res.cookie('apiKey', newKey, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          sameSite: 'lax'
+        });
+        
+        log(`API key successfully changed`, 'auth');
+        res.json({ message: 'API key successfully updated' });
+      } else {
+        return res.status(500).json({ message: 'Could not update API key' });
+      }
+    } catch (error) {
+      console.error('Error changing API key:', error);
+      res.status(500).json({ message: 'An error occurred while changing the API key' });
+    }
+  });
 }

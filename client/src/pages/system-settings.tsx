@@ -25,6 +25,7 @@ import {
 import { Loader2, AlertTriangle } from "lucide-react";
 import DecimalMultiplierMigration from "@/components/system/decimal-multiplier-migration";
 import TrafficSenderMigration from "@/components/system/traffic-sender-migration";
+import ApiKeyManager from "@/components/system/api-key-manager";
 import { ServerMonitor } from "@/components/server-monitor/server-stats";
 
 export default function SystemSettings() {
@@ -108,6 +109,12 @@ export default function SystemSettings() {
       <div className="mb-10">
         <h2 className="text-xl font-bold mb-4">Server Monitoring</h2>
         <ServerMonitor />
+      </div>
+      
+      {/* API Key Management section */}
+      <div className="mb-10">
+        <h2 className="text-xl font-bold mb-4">Security Settings</h2>
+        <ApiKeyManager />
       </div>
       
       {/* Migration section */}
