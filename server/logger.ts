@@ -1,35 +1,22 @@
-import { log as viteLog } from './vite';
-
-// Simple logger wrapper around vite.log
-export const logger = {
-  info: (message: string, category?: string) => {
-    viteLog(message, category);
-  },
-  
-  error: (message: string, error?: any, category?: string) => {
-    let errorMessage = message;
-    
-    if (error) {
-      if (typeof error === 'object' && error.message) {
-        errorMessage += `: ${error.message}`;
-      } else {
-        errorMessage += `: ${error}`;
-      }
-    }
-    
-    viteLog(`❌ ERROR: ${errorMessage}`, category || 'error');
-    
-    // Log stack trace if available
-    if (error && error.stack) {
-      viteLog(`Stack trace: ${error.stack}`, category || 'error');
-    }
-  },
-  
-  warn: (message: string, category?: string) => {
-    viteLog(`⚠️ WARNING: ${message}`, category || 'warning');
-  },
-  
-  debug: (message: string, category?: string) => {
-    viteLog(`🔍 DEBUG: ${message}`, category || 'debug');
+/**
+ * Simple logger implementation
+ */
+export class Logger {
+  info(message: string, ...args: any[]): void {
+    console.log(`[youtube-api] INFO: ${message}`, ...args);
   }
-};
+  
+  error(message: string, ...args: any[]): void {
+    console.error(`[youtube-api] ERROR: ${message}`, ...args);
+  }
+  
+  warn(message: string, ...args: any[]): void {
+    console.warn(`[youtube-api] WARN: ${message}`, ...args);
+  }
+  
+  debug(message: string, ...args: any[]): void {
+    console.debug(`[youtube-api] DEBUG: ${message}`, ...args);
+  }
+}
+
+export const logger = new Logger();
