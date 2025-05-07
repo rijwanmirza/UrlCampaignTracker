@@ -15,6 +15,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Campaign } from "@shared/schema";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import GmailCampaignAssignments from "@/components/gmail/campaign-assignments";
 
 // Define Gmail settings form schema
 const gmailSettingsSchema = z.object({
@@ -44,6 +46,7 @@ export default function GmailSettingsPage() {
   const [useCustomDateRange, setUseCustomDateRange] = useState(false);
   const [beforeDate, setBeforeDate] = useState<string>("");
   const [afterDate, setAfterDate] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("settings");
   
   // Fetch campaigns for the campaign selector
   const { data: campaigns = [] } = useQuery<Campaign[]>({
