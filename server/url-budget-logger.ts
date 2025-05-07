@@ -195,6 +195,49 @@ export class UrlBudgetLogger {
         await fsPromises.writeFile(logFilePath, '');
       }
       
+      // Get the active log file path
+      const activeLogPath = this.getActiveLogFilePath();
+      
+      // If active log exists, we need to rebuild it from all other campaigns except this one
+      if (fs.existsSync(activeLogPath)) {
+        try {
+          // Clear the active log file first
+          await fsPromises.writeFile(activeLogPath, '');
+          
+          // Get all campaigns with TrafficStar integration except the one being cleared
+          const otherCampaigns = await db.query.campaigns.findMany({
+            where: (c, { eq, and, ne, not, isNull }) => 
+              and(
+                ne(c.id, campaignId), // Not the campaign being cleared
+                ne(c.trafficstarCampaignId, ''),
+                not(isNull(c.trafficstarCampaignId))
+              )
+          });
+          
+          // Rebuild the active log from other campaign logs
+          for (const campaign of otherCampaigns) {
+            const campaignLogPath = this.getLogFilePath(campaign.id);
+            if (fs.existsSync(campaignLogPath)) {
+              // Read the campaign log file
+              const fileContent = await fsPromises.readFile(campaignLogPath, 'utf-8');
+              const lines = fileContent.split('\n').filter(line => line.trim() !== '');
+              
+              // Convert each line to the simplified format and append to active log
+              for (const line of lines) {
+                const [urlId, _campaignId, _urlName, price, dateTime] = line.split('|');
+                // Format the line in requested format: UrlId|Price|Date::Time
+                const simplifiedLine = `${urlId}|${price}|${dateTime}\n`;
+                await fsPromises.appendFile(activeLogPath, simplifiedLine);
+              }
+            }
+          }
+          
+          console.log(`✅ Rebuilt active log after clearing campaign ${campaignId}`);
+        } catch (rebuildError) {
+          console.error(`❌ Failed to rebuild active log: ${rebuildError}`);
+        }
+      }
+      
       // Clear the set of logged URLs for this campaign
       this.loggedUrlsByCampaign.set(campaignId, new Set<number>());
       
