@@ -11,6 +11,8 @@ export class UrlBudgetLogger {
   private static instance: UrlBudgetLogger;
   private logFilePath: string;
   private fileHandle: FileHandle | null = null;
+  // Set to track URLs that have already been logged in the current high-spend cycle
+  private loggedUrlIds: Set<number> = new Set();
 
   private constructor() {
     // Set the log file path to the root directory
@@ -43,11 +45,18 @@ export class UrlBudgetLogger {
   }
 
   /**
-   * Log a URL budget calculation
+   * Log a URL budget calculation if it hasn't been logged in the current high-spend cycle
    * @param urlId URL ID
    * @param price Price calculated for remaining clicks
+   * @returns boolean indicating if the URL was logged (true) or skipped because it was already logged (false)
    */
-  public async logUrlBudget(urlId: number, price: number): Promise<void> {
+  public async logUrlBudget(urlId: number, price: number): Promise<boolean> {
+    // Skip if this URL has already been logged in the current high-spend cycle
+    if (this.loggedUrlIds.has(urlId)) {
+      console.log(`🔄 Skipping duplicate URL budget log for URL ID ${urlId} - already logged in this high-spend cycle`);
+      return false;
+    }
+
     try {
       // Format date and time
       const now = new Date();
@@ -59,9 +68,41 @@ export class UrlBudgetLogger {
 
       // Append to log file
       await fsPromises.appendFile(this.logFilePath, logEntry);
-      console.log(`Logged URL budget for URL ID ${urlId}: $${price.toFixed(4)} at ${date}::${time}`);
+      console.log(`📝 Logged URL budget for URL ID ${urlId}: $${price.toFixed(4)} at ${date}::${time}`);
+      
+      // Add to set of logged URLs for this high-spend cycle
+      this.loggedUrlIds.add(urlId);
+      return true;
     } catch (error) {
-      console.error(`Failed to log URL budget: ${error}`);
+      console.error(`❌ Failed to log URL budget: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Check if a URL has already been logged in the current high-spend cycle
+   * @param urlId URL ID to check
+   * @returns true if the URL has been logged, false otherwise
+   */
+  public isUrlLogged(urlId: number): boolean {
+    return this.loggedUrlIds.has(urlId);
+  }
+
+  /**
+   * Clear all URL budget logs and reset the tracking set
+   * Should be called when campaign spent value drops below $10
+   */
+  public async clearLogs(): Promise<void> {
+    try {
+      // Clear the log file by writing an empty string
+      await fsPromises.writeFile(this.logFilePath, '');
+      
+      // Clear the set of logged URLs
+      this.loggedUrlIds.clear();
+      
+      console.log(`🧹 Cleared all URL budget logs and reset tracking - spent value dropped below threshold`);
+    } catch (error) {
+      console.error(`❌ Failed to clear URL budget logs: ${error}`);
     }
   }
 
@@ -85,7 +126,7 @@ export class UrlBudgetLogger {
         };
       });
     } catch (error) {
-      console.error(`Failed to get URL budget logs: ${error}`);
+      console.error(`❌ Failed to get URL budget logs: ${error}`);
       return [];
     }
   }

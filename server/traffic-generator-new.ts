@@ -201,6 +201,10 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // Handle campaign with less than $10 spent
       console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
       
+      // Clear URL budget logs since we're below the threshold
+      // This ensures we start fresh logging when spent value exceeds $10 again
+      await urlBudgetLogger.clearLogs();
+      
       // Get the campaign details to check URLs and remaining clicks
       const campaign = await db.query.campaigns.findFirst({
         where: (campaign, { eq }) => eq(campaign.id, campaignId),
