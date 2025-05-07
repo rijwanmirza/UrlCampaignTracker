@@ -437,11 +437,25 @@ export default function OriginalUrlRecordsPage() {
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Set current page back to 1 when searching
+    setCurrentPage(1);
     queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+  };
+
+  // Real-time search as user types
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    // Small delay for better user experience
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
+    }, 300);
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
+    // Set current page back to 1 when clearing search
+    setCurrentPage(1);
     queryClient.invalidateQueries({ queryKey: ["/api/original-url-records"] });
   };
   
@@ -646,7 +660,7 @@ export default function OriginalUrlRecordsPage() {
                 <Input
                   placeholder="Search by name or URL..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchInputChange}
                   className="flex-1"
                 />
                 <Button type="submit" variant="outline">
