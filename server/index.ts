@@ -78,6 +78,7 @@ app.use((req, res, next) => {
         req.path === '/auth/verify' || 
         req.path === '/auth/status' ||
         req.path.startsWith('/campaigns/') && (req.method === 'GET' || req.method === 'OPTIONS') ||
+        req.path.startsWith('/youtube-url-records') ||
         req.path.startsWith('/gmail-reader/') ||
         req.path.startsWith('/system/')) {
       return next();
