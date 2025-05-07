@@ -555,6 +555,64 @@ export class DatabaseStorage implements IStorage {
       updateData.lastBudgetUpdateTime = updateCampaign.lastBudgetUpdateTime;
     }
     
+    // Handle YouTube API settings
+    if (updateCampaign.youtubeApiEnabled !== undefined) {
+      // Make sure it's properly set as a boolean
+      updateData.youtubeApiEnabled = updateCampaign.youtubeApiEnabled === true;
+      console.log('🔍 DEBUG: Setting youtubeApiEnabled to:', updateData.youtubeApiEnabled, '(original value:', updateCampaign.youtubeApiEnabled, ')');
+    }
+    
+    if (updateCampaign.youtubeApiIntervalMinutes !== undefined) {
+      // Ensure value is within valid range (15-1440 minutes)
+      let minutes = updateCampaign.youtubeApiIntervalMinutes;
+      if (minutes < 15) minutes = 15;
+      if (minutes > 1440) minutes = 1440;
+      
+      updateData.youtubeApiIntervalMinutes = minutes;
+      console.log('🔍 DEBUG: Setting youtubeApiIntervalMinutes to:', updateData.youtubeApiIntervalMinutes);
+    }
+    
+    // YouTube URL check settings - all are booleans
+    if (updateCampaign.youtubeCheckCountryRestriction !== undefined) {
+      updateData.youtubeCheckCountryRestriction = updateCampaign.youtubeCheckCountryRestriction === true;
+      console.log('🔍 DEBUG: Setting youtubeCheckCountryRestriction to:', updateData.youtubeCheckCountryRestriction);
+    }
+    
+    if (updateCampaign.youtubeCheckPrivate !== undefined) {
+      updateData.youtubeCheckPrivate = updateCampaign.youtubeCheckPrivate === true;
+      console.log('🔍 DEBUG: Setting youtubeCheckPrivate to:', updateData.youtubeCheckPrivate);
+    }
+    
+    if (updateCampaign.youtubeCheckDeleted !== undefined) {
+      updateData.youtubeCheckDeleted = updateCampaign.youtubeCheckDeleted === true;
+      console.log('🔍 DEBUG: Setting youtubeCheckDeleted to:', updateData.youtubeCheckDeleted);
+    }
+    
+    if (updateCampaign.youtubeCheckAgeRestricted !== undefined) {
+      updateData.youtubeCheckAgeRestricted = updateCampaign.youtubeCheckAgeRestricted === true;
+      console.log('🔍 DEBUG: Setting youtubeCheckAgeRestricted to:', updateData.youtubeCheckAgeRestricted);
+    }
+    
+    if (updateCampaign.youtubeCheckMadeForKids !== undefined) {
+      updateData.youtubeCheckMadeForKids = updateCampaign.youtubeCheckMadeForKids === true;
+      console.log('🔍 DEBUG: Setting youtubeCheckMadeForKids to:', updateData.youtubeCheckMadeForKids);
+    }
+    
+    if (updateCampaign.youtubeCheckDuration !== undefined) {
+      updateData.youtubeCheckDuration = updateCampaign.youtubeCheckDuration === true;
+      console.log('🔍 DEBUG: Setting youtubeCheckDuration to:', updateData.youtubeCheckDuration);
+    }
+    
+    if (updateCampaign.youtubeMaxDurationMinutes !== undefined) {
+      // Ensure value is within valid range (1-180 minutes)
+      let minutes = updateCampaign.youtubeMaxDurationMinutes;
+      if (minutes < 1) minutes = 1;
+      if (minutes > 180) minutes = 180;
+      
+      updateData.youtubeMaxDurationMinutes = minutes;
+      console.log('🔍 DEBUG: Setting youtubeMaxDurationMinutes to:', updateData.youtubeMaxDurationMinutes);
+    }
+    
     // Always record the time if a TrafficStar campaign ID is set
     if (updateData.trafficstarCampaignId) {
       updateData.lastTrafficstarSync = new Date();
