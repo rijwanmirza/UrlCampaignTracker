@@ -56,6 +56,43 @@ export class UrlClickLogsManager {
     
     this.initialized = true;
   }
+  
+  /**
+   * Clear all URL click logs
+   * Used during system cleanup to remove all log files
+   */
+  public clearAllLogs(): { success: boolean, entriesRemoved: number } {
+    try {
+      this.initialize(); // Make sure we're initialized
+      
+      let entriesRemoved = 0;
+      
+      // Make sure logs directory exists
+      if (!fs.existsSync(this.logsDir)) {
+        return { success: true, entriesRemoved: 0 };
+      }
+      
+      // Read all files in the logs directory
+      const files = fs.readdirSync(this.logsDir);
+      
+      // Delete each log file
+      for (const file of files) {
+        const filePath = path.join(this.logsDir, file);
+        
+        // Make sure it's a file, not a directory
+        if (fs.statSync(filePath).isFile() && file.endsWith('.log')) {
+          fs.unlinkSync(filePath);
+          entriesRemoved++;
+        }
+      }
+      
+      console.log(`Cleared all URL click logs: ${entriesRemoved} files deleted`);
+      return { success: true, entriesRemoved };
+    } catch (error) {
+      console.error('Failed to clear URL click logs:', error);
+      return { success: false, entriesRemoved: 0 };
+    }
+  }
 
   /**
    * Get the path to a URL's log file
