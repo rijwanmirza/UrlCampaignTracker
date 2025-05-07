@@ -20,23 +20,6 @@ interface UrlWithActiveStatus extends Url {
 }
 
 /**
- * Helper function to get a campaign with only its active URLs
- * This improves performance by filtering at the database level
- * @param campaignId The campaign ID to get
- * @returns The campaign with only its active URLs, or null if not found
- */
-async function getCampaignWithActiveUrls(campaignId: number): Promise<(Campaign & { urls: UrlWithActiveStatus[] }) | null> {
-  return await db.query.campaigns.findFirst({
-    where: (campaign, { eq }) => eq(campaign.id, campaignId),
-    with: { 
-      urls: {
-        where: (urls, { eq }) => eq(urls.status, 'active')
-      }
-    }
-  }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
-}
-
-/**
  * Get TrafficStar campaign status - ALWAYS uses real-time data
  * @param trafficstarCampaignId The TrafficStar campaign ID
  * @returns The campaign status (active, paused, etc.) or null if error
@@ -230,8 +213,12 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       }
       
       // Get the campaign details to check URLs and remaining clicks
-      // Only fetch active URLs to improve performance
-      const campaign = await getCampaignWithActiveUrls(campaignId);
+      const campaign = await db.query.campaigns.findFirst({
+        where: (campaign, { eq }) => eq(campaign.id, campaignId),
+        with: {
+          urls: true
+        }
+      }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
       
       if (!campaign || !campaign.urls || campaign.urls.length === 0) {
         console.log(`⏹️ LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has no URLs - skipping auto-reactivation check`);
@@ -418,8 +405,12 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
       
       // Get the campaign details to check URLs and pricePerThousand
-      // Only fetch active URLs to improve performance
-      const campaign = await getCampaignWithActiveUrls(campaignId);
+      const campaign = await db.query.campaigns.findFirst({
+        where: (campaign, { eq }) => eq(campaign.id, campaignId),
+        with: {
+          urls: true
+        }
+      }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
       
       if (!campaign) {
         console.error(`Campaign ${campaignId} not found - cannot process high spend handling`);
@@ -920,14 +911,9 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
         console.log(`✅ Campaign ${trafficstarCampaignId} is still active - monitoring will continue`);
         
         // Check if we need to pause based on remaining clicks
-        // Only fetch active URLs to improve performance (filter at database level)
         const campaign = await db.query.campaigns.findFirst({
           where: (campaign, { eq }) => eq(campaign.id, campaignId),
-          with: { 
-            urls: {
-              where: (urls, { eq }) => eq(urls.status, 'active')
-            }
-          }
+          with: { urls: true }
         }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
         
         if (campaign && campaign.urls && campaign.urls.length > 0) {
