@@ -61,6 +61,10 @@ export default function UrlBudgetLogs() {
     refetch: refetchLogs
   } = useQuery({
     queryKey: ['/api/url-budget-logs'],
+    queryFn: async () => {
+      const response = await fetch('/api/url-budget-logs');
+      return response.json();
+    },
     enabled: activeTab === 'all'
   });
 
@@ -72,7 +76,10 @@ export default function UrlBudgetLogs() {
     refetch: refetchCampaignLogs
   } = useQuery({
     queryKey: ['/api/url-budget-logs', selectedCampaignId],
-    queryFn: () => apiRequest(`/api/url-budget-logs/${selectedCampaignId}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/url-budget-logs/${selectedCampaignId}`);
+      return response.json();
+    },
     enabled: selectedCampaignId !== 'all' && activeTab === 'campaign'
   });
 
@@ -101,9 +108,13 @@ export default function UrlBudgetLogs() {
     }
 
     try {
-      await apiRequest('/api/url-budget-logs/clear', {
+      const response = await fetch('/api/url-budget-logs/clear', {
         method: 'POST'
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear logs');
+      }
       
       toast({
         title: 'Success',
@@ -137,9 +148,13 @@ export default function UrlBudgetLogs() {
     }
 
     try {
-      await apiRequest(`/api/url-budget-logs/${selectedCampaignId}/clear`, {
+      const response = await fetch(`/api/url-budget-logs/${selectedCampaignId}/clear`, {
         method: 'POST'
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear logs');
+      }
       
       toast({
         title: 'Success',
