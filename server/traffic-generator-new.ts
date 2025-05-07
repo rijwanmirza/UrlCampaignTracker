@@ -485,6 +485,14 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
               await trafficStarService.updateCampaignBudget(Number(trafficstarCampaignId), newBudget);
               console.log(`✅ Updated campaign ${trafficstarCampaignId} budget to $${newBudget.toFixed(4)}`);
               
+              // Track that this campaign has had its initial budget calculation
+              // This will be used to identify URLs added after this point
+              await db.update(campaigns)
+                .set({
+                  budgetUpdateTime: new Date()
+                })
+                .where(eq(campaigns.id, campaignId));
+              
               // 6. Set end time to 23:59 UTC today
               const today = new Date();
               const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
