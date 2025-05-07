@@ -147,12 +147,13 @@ export default function YoutubeUrlRecordsPage() {
 
   // Toggle selection of all records on current page
   const toggleSelectAll = () => {
-    if (!data?.records) return;
+    const filteredRecords = getFilteredRecords();
+    if (filteredRecords.length === 0) return;
     
-    if (selectedIds.length === data.records.length) {
+    if (selectedIds.length === filteredRecords.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(data.records.map((record: YoutubeUrlRecord) => record.id));
+      setSelectedIds(filteredRecords.map((record: YoutubeUrlRecord) => record.id));
     }
   };
 
@@ -283,6 +284,28 @@ export default function YoutubeUrlRecordsPage() {
           </Button>
         </div>
         
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Filter by status:</span>
+          <div className="flex border rounded-md overflow-hidden">
+            <Button
+              type="button"
+              variant={rejectionFilter === 'all' ? 'default' : 'outline'}
+              className="rounded-none"
+              onClick={() => setRejectionFilter('all')}
+            >
+              All Videos
+            </Button>
+            <Button
+              type="button"
+              variant={rejectionFilter === 'direct' ? 'default' : 'outline'}
+              className="rounded-none"
+              onClick={() => setRejectionFilter('direct')}
+            >
+              Rejected Videos
+            </Button>
+          </div>
+        </div>
+        
         {isLoading ? (
           <div className="text-center py-8">Loading records...</div>
         ) : (
@@ -291,14 +314,14 @@ export default function YoutubeUrlRecordsPage() {
               <Table>
                 <TableCaption>
                   {data?.total 
-                    ? `Showing ${data.records.length} of ${data.total} YouTube URL records` 
+                    ? `Showing ${getFilteredRecords().length} ${rejectionFilter === 'direct' ? 'rejected' : rejectionFilter === 'regular' ? 'regular' : ''} YouTube URL records` 
                     : "No YouTube URL records found"}
                 </TableCaption>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">
                       <Checkbox
-                        checked={data?.records?.length > 0 && selectedIds.length === data.records.length}
+                        checked={getFilteredRecords().length > 0 && selectedIds.length === getFilteredRecords().length}
                         onCheckedChange={toggleSelectAll}
                       />
                     </TableHead>
@@ -311,8 +334,8 @@ export default function YoutubeUrlRecordsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.records?.length > 0 ? (
-                    data.records.map((record: YoutubeUrlRecord) => (
+                  {getFilteredRecords().length > 0 ? (
+                    getFilteredRecords().map((record: YoutubeUrlRecord) => (
                       <TableRow key={record.id}>
                         <TableCell>
                           <Checkbox
