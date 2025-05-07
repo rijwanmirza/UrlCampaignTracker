@@ -29,8 +29,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Trash } from "lucide-react";
+import { Trash, Filter } from "lucide-react";
 import { formatDistance } from 'date-fns';
 
 // Type for YouTube URL record
@@ -53,6 +59,7 @@ export default function YoutubeUrlRecordsPage() {
   const [campaignId, setCampaignId] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [limit] = useState(50);
+  const [rejectionFilter, setRejectionFilter] = useState<string>("all");
 
   // Fetch YouTube URL records
   const {
@@ -155,30 +162,19 @@ export default function YoutubeUrlRecordsPage() {
     
     // First check if this is a direct rejection
     if (reason.includes('Direct Rejected') || reason.startsWith('[Direct Rejected]')) {
-      // For all direct rejections, first show the Direct Rejected badge
-      let actualReason = reason;
       // Extract the actual reason from the Direct Rejected prefix if present
+      let actualReason = reason;
       if (reason.includes('[Direct Rejected]')) {
         actualReason = reason.replace('[Direct Rejected] ', '');
       }
       
-      // For exceeds maximum duration, show that specific badge
+      // For exceeds maximum duration
       if (actualReason.includes('exceeds maximum duration')) {
-        return (
-          <div className="flex flex-col gap-1">
-            <Badge variant="destructive">Direct Rejected</Badge>
-            <Badge variant="outline">Video exceeds maximum duration</Badge>
-          </div>
-        );
+        return <Badge variant="destructive">Direct Rejected [Video exceeds maximum duration]</Badge>;
       }
       
       // For all other direct rejections
-      return (
-        <div className="flex flex-col gap-1">
-          <Badge variant="destructive">Direct Rejected</Badge>
-          <Badge variant="outline">{actualReason}</Badge>
-        </div>
-      );
+      return <Badge variant="destructive">Direct Rejected [{actualReason}]</Badge>;
     } 
     // Handle standard YouTube API rejection reasons
     else if (reason.includes('Age restricted video') || reason.includes('age_restricted')) {
@@ -207,6 +203,24 @@ export default function YoutubeUrlRecordsPage() {
     } catch (e) {
       return dateString;
     }
+  };
+  
+  // Check if record is of direct rejected type
+  const isDirectRejected = (record: YoutubeUrlRecord) => {
+    return record.deletionReason.includes('Direct Rejected') || record.deletionReason.startsWith('[Direct Rejected]');
+  };
+
+  // Get filtered records based on rejectionFilter
+  const getFilteredRecords = () => {
+    if (!data?.records) return [];
+    
+    if (rejectionFilter === 'direct') {
+      return data.records.filter(record => isDirectRejected(record));
+    } else if (rejectionFilter === 'regular') {
+      return data.records.filter(record => !isDirectRejected(record));
+    }
+    
+    return data.records;
   };
 
   return (
