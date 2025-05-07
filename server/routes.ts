@@ -1210,8 +1210,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 DEBUG: Received URL creation request:', JSON.stringify(req.body, null, 2));
       console.log('🔍 DEBUG: Campaign multiplier:', campaign.multiplier);
       
-      // Check if YouTube API validation is needed (campaign has YouTube API enabled and URL is a YouTube URL)
-      if (campaign.youtubeApiEnabled && youtubeApiService.isYouTubeUrl(req.body.targetUrl)) {
+      // Check if URL is a YouTube URL (validate even if YouTube API is not enabled for the campaign)
+      if (youtubeApiService.isYouTubeUrl(req.body.targetUrl)) {
+        console.log(`🔍 DEBUG: URL is a YouTube URL - validating: ${req.body.targetUrl}`);
+        
+        // If campaign has YouTube API explicitly enabled, use those settings
+        // Otherwise, use default validation
         console.log(`🔍 DEBUG: Campaign has YouTube API enabled and URL is a YouTube URL - validating: ${req.body.targetUrl}`);
         
         // Check if YouTube API is configured
