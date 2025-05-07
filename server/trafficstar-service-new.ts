@@ -554,7 +554,7 @@ class TrafficStarService {
       // Use the URL budget manager to track this URL for a future budget update
       const tracked = await urlBudgetManager.trackNewUrlForBudgetUpdate(
         campaignId,
-        trafficstarCampaignId,
+        trafficstarCampaignId.toString(),
         urlId,
         clickLimit,
         pricePerThousand

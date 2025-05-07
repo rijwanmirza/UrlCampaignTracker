@@ -50,7 +50,7 @@ export class UrlBudgetManager {
     trafficstarCampaignId: string,
     urlId: number,
     clickLimit: number,
-    pricePerThousand: string
+    pricePerThousand: number
   ): Promise<boolean> {
     // Check if this URL has already been logged
     if (urlBudgetLogger.isUrlLogged(urlId)) {
@@ -59,7 +59,7 @@ export class UrlBudgetManager {
     }
 
     // Calculate budget based on total required clicks (not remaining clicks)
-    const urlBudget = (clickLimit / 1000) * parseFloat(pricePerThousand);
+    const urlBudget = (clickLimit / 1000) * pricePerThousand;
     console.log(`💰 New URL ${urlId} budget calculation: ${clickLimit} clicks at $${pricePerThousand} per 1,000 = $${urlBudget.toFixed(4)}`);
     
     // Log this URL's budget
@@ -229,6 +229,39 @@ export class UrlBudgetManager {
   public getPendingUpdateCount(campaignId: number): number {
     const campaignEntry = this.pendingUpdates.get(campaignId);
     return campaignEntry ? campaignEntry.pendingUrls.size : 0;
+  }
+  
+  /**
+   * Process pending updates for a campaign immediately, without waiting for the timer
+   * This is primarily used for testing
+   * @param campaignId Campaign ID
+   * @returns True if processed successfully, false otherwise
+   */
+  public async processImmediately(campaignId: number): Promise<boolean> {
+    try {
+      const campaignEntry = this.pendingUpdates.get(campaignId);
+      
+      if (!campaignEntry) {
+        console.log(`⚠️ No pending updates found for campaign ${campaignId}`);
+        return false;
+      }
+      
+      console.log(`🚀 Immediately processing ${campaignEntry.pendingUrls.size} pending URL budget updates for campaign ${campaignId}`);
+      
+      // Clear any existing timer
+      if (campaignEntry.timerHandle) {
+        clearTimeout(campaignEntry.timerHandle);
+        campaignEntry.timerHandle = null;
+      }
+      
+      // Process the budget update now
+      await this.processBudgetUpdate(campaignId);
+      
+      return true;
+    } catch (error) {
+      console.error(`❌ Error processing immediate budget update for campaign ${campaignId}:`, error);
+      return false;
+    }
   }
 }
 
