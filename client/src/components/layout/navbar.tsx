@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Navbar() {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { logout } = useAuth();
+  const [, navigate] = useLocation();
   
   // Toggle hamburger menu
   const toggleMenu = () => {
@@ -267,6 +269,22 @@ export default function Navbar() {
             <span className="font-medium">Help & Support</span>
           </div>
         </div>
+        
+        {/* Logout button - added as the last item */}
+        <button 
+          className="block w-full py-3 border-b text-red-600 hover:bg-red-50 transition-colors"
+          onClick={() => {
+            logout().then(() => {
+              setMenuOpen(false);
+              navigate('/login');
+            });
+          }}
+        >
+          <div className="flex items-center">
+            <LogOut className="w-5 h-5 mr-3" />
+            <span className="font-medium">Logout</span>
+          </div>
+        </button>
       </div>
       
       {/* Scroll down button */}
