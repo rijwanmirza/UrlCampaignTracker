@@ -153,17 +153,25 @@ export default function YoutubeUrlRecordsPage() {
   const formatDeletionReason = (record: YoutubeUrlRecord) => {
     const reason = record.deletionReason;
     
-    if (reason.includes('age_restricted')) {
+    // To properly handle direct rejected URLs, check for standard reasons first
+    if (reason.includes('Direct Rejected') && reason.includes('exceeds maximum duration')) {
+      return <Badge variant="destructive">Video exceeds maximum duration</Badge>;
+    } else if (reason.includes('Age restricted video') || reason.includes('age_restricted')) {
       return <Badge variant="destructive">Age Restricted</Badge>;
-    } else if (reason.includes('made_for_kids')) {
+    } else if (reason.includes('Video made for kids') || reason.includes('made_for_kids')) {
       return <Badge>Made for Kids</Badge>;
-    } else if (reason.includes('country_restricted')) {
+    } else if (reason.includes('Video restricted in') || reason.includes('country_restricted')) {
       return <Badge variant="secondary">Country Restricted</Badge>;
-    } else if (reason.includes('private')) {
-      return <Badge variant="outline">Private</Badge>;
-    } else if (reason.includes('deleted') || reason.includes('not_found')) {
-      return <Badge variant="destructive">Deleted</Badge>;
+    } else if (reason.includes('Private video') || reason.includes('private')) {
+      return <Badge variant="outline">Private Video</Badge>;
+    } else if (reason.includes('Video not found') || reason.includes('deleted') || reason.includes('unavailable')) {
+      return <Badge variant="destructive">Video not found (deleted or unavailable)</Badge>;
+    } else if (reason.includes('Direct Rejected')) {
+      // Extract the actual reason from the [Direct Rejected] prefix
+      const actualReason = reason.replace('[Direct Rejected] ', '');
+      return <Badge variant="destructive">{actualReason}</Badge>;
     } else {
+      // For any other reasons, show the full text
       return <Badge>{reason || 'Unknown'}</Badge>;
     }
   };
