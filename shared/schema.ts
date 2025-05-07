@@ -480,7 +480,7 @@ export const campaignRedirectLogsRelations = relations(campaignRedirectLogs, ({ 
 // YouTube URL Records schema - for tracking deleted URLs due to YouTube API checks
 export const youtubeUrlRecords = pgTable("youtube_url_records", {
   id: serial("id").primaryKey(),
-  urlId: integer("url_id").notNull(), // Original URL ID (may be deleted)
+  urlId: integer("url_id"), // Original URL ID (may be deleted) - Can be NULL for direct rejections
   campaignId: integer("campaign_id").notNull().references(() => campaigns.id),
   name: text("name").notNull(), // URL name
   targetUrl: text("target_url").notNull(), // Full URL

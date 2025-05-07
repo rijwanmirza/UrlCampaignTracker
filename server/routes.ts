@@ -1283,34 +1283,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Original click limit from input
             const originalClickLimit = parseInt(req.body.clickLimit, 10);
             
-            // Create original URL record with direct_rejected status
-            const originalRecord = await storage.createOriginalUrlRecord({
-              name: req.body.name,
-              targetUrl: req.body.targetUrl,
-              originalClickLimit: originalClickLimit,
-              status: 'direct_rejected'
-            });
-            
-            console.log(`✅ Created Original URL Record with direct_rejected status and ID: ${originalRecord.id}`);
-            
-            // Calculate click limit with multiplier if available
-            let clickLimit = originalClickLimit;
-            if (campaign.multiplier) {
-              const multiplierValue = typeof campaign.multiplier === 'string' 
-                ? parseFloat(campaign.multiplier) 
-                : campaign.multiplier;
-              
-              if (multiplierValue > 0.01) {
-                clickLimit = Math.ceil(originalClickLimit * multiplierValue);
-              }
-            }
-            
-            // Do NOT create a URL record for campaign - rejected URLs should NOT appear in active URLs list
-            // They will only appear in YouTube URL Records, Original URL Records, and URL History
-            console.log(`🔍 Skipping URL creation in campaign - rejected URLs are not added to campaign`);
-            
-            // Save the validation details in YouTube URL Records
             try {
+              // Create original URL record with direct_rejected status
+              const originalRecord = await storage.createOriginalUrlRecord({
+                name: req.body.name,
+                targetUrl: req.body.targetUrl,
+                originalClickLimit: originalClickLimit,
+                status: 'direct_rejected'
+              });
+              
+              console.log(`✅ Created Original URL Record with direct_rejected status and ID: ${originalRecord.id}`);
+              
+              // Calculate click limit with multiplier if available
+              let clickLimit = originalClickLimit;
+              if (campaign.multiplier) {
+                const multiplierValue = typeof campaign.multiplier === 'string' 
+                  ? parseFloat(campaign.multiplier) 
+                  : campaign.multiplier;
+                
+                if (multiplierValue > 0.01) {
+                  clickLimit = Math.ceil(originalClickLimit * multiplierValue);
+                }
+              }
+            
+              // Do NOT create a URL record for campaign - rejected URLs should NOT appear in active URLs list
+              // They will only appear in YouTube URL Records, Original URL Records, and URL History
+              console.log(`🔍 Skipping URL creation in campaign - rejected URLs are not added to campaign`);
+              
+              // Save the validation details in YouTube URL Records
               await youtubeApiService.saveDirectRejectedUrl(
                 req.body,
                 campaignId,
@@ -1321,9 +1321,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               console.log(`✅ Saved rejected URL to YouTube URL Records with reason: ${validation.reason || 'Unknown validation failure'}`);
             } catch (error) {
-              console.error('Error saving direct rejected URL:', error);
+              console.error('Error processing rejected URL:', error);
+              // Even if there's an error, continue with returning the rejection response
             }
             
+            // Return rejection response
             return res.status(400).json({ 
               message: "URL rejected - YouTube video validation failed", 
               status: 'direct_rejected',
