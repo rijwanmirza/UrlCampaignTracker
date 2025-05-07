@@ -19,6 +19,7 @@ import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
 import UrlClickRecordsPage from "@/pages/url-click-records-page";
 import DetailedUrlRecordPage from "@/pages/detailed-url-record-page";
 import UrlBudgetLogsPage from "@/pages/url-budget-logs";
+import YoutubeUrlRecordsPage from "@/pages/youtube-url-records";
 import ApiTesterPage from "@/pages/api-tester";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
@@ -105,6 +106,9 @@ function Router() {
           <Route path="/url-budget-logs">
             <UrlBudgetLogsPage />
           </Route>
+          <Route path="/youtube-url-records">
+            <YoutubeUrlRecordsPage />
+          </Route>
           <Route path="/api-tester">
             <ApiTesterPage />
           </Route>
@@ -173,6 +177,9 @@ function Router() {
           </Route>
           <Route path="/url-budget-logs">
             <UrlBudgetLogsPage />
+          </Route>
+          <Route path="/youtube-url-records">
+            <YoutubeUrlRecordsPage />
           </Route>
           <Route path="/api-tester">
             <ApiTesterPage />
