@@ -2732,6 +2732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           trafficstarCampaignsDeleted: dbResult.trafficstarCampaignsDeleted || 0,
           urlBudgetLogsDeleted: dbResult.urlBudgetLogsDeleted || 0,
           urlClickRecordsDeleted: dbResult.urlClickRecordsDeleted || 0,
+          urlClickLogsDeleted: dbResult.urlClickLogsDeleted || 0,
           campaignClickRecordsDeleted: dbResult.campaignClickRecordsDeleted || 0,
           emailLogsCleared: emailLogsResult.success,
           emailLogsRemoved: emailLogsResult.entriesRemoved
