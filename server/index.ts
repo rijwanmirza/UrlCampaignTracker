@@ -10,6 +10,7 @@ import { trafficStarService } from "./trafficstar-service-new";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
+import { youtubeApiService } from "./youtube-api-service";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -159,6 +160,14 @@ app.use((req, res, next) => {
         // Initialize Traffic Generator scheduler
         initializeTrafficGeneratorScheduler();
         log('Traffic Generator scheduler initialized successfully');
+        
+        // Initialize YouTube API service if key is present
+        if (youtubeApiService.isConfigured()) {
+          youtubeApiService.scheduleChecks();
+          log('YouTube API service initialized successfully');
+        } else {
+          log('YouTube API service not initialized - API key not configured');
+        }
         
         // Traffic Sender service has been removed
       } catch (trafficstarError) {
