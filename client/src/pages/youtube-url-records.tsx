@@ -1,349 +1,373 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Check, X, Search, Trash2, Loader2, AlertCircle } from "lucide-react";
-import { YoutubeUrlRecord } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { formatDate } from "@/lib/utils";
+import { Trash } from "lucide-react";
+import { formatDistance } from 'date-fns';
+
+// Type for YouTube URL record
+interface YoutubeUrlRecord {
+  id: number;
+  campaignId: number;
+  campaignName: string;
+  name: string;
+  targetUrl: string;
+  youtubeVideoId: string;
+  deletionReason: string;
+  createdAt: string;
+  deletedAt: string;
+}
 
 export default function YoutubeUrlRecordsPage() {
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [displayedRecords, setDisplayedRecords] = useState<YoutubeUrlRecord[]>([]);
-  const [selectedRecords, setSelectedRecords] = useState<number[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [campaignId, setCampaignId] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [limit] = useState(50);
 
   // Fetch YouTube URL records
-  const { data: recordsData, isLoading, isError, refetch } = useQuery<{
-    records: YoutubeUrlRecord[];
-    totalCount: number;
-  }>({
-    queryKey: ['/api/youtube-url-records'],
-    staleTime: 30000,
-    select: (data) => data,
+  const {
+    data,
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['/api/youtube-url-records', page, limit, search, campaignId],
     queryFn: async () => {
-      const res = await fetch('/api/youtube-url-records');
-      if (!res.ok) {
-        throw new Error("Failed to fetch YouTube URL records");
+      let url = `/api/youtube-url-records?page=${page}&limit=${limit}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      if (campaignId) url += `&campaignId=${campaignId}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch YouTube URL records');
       }
-      return res.json();
-    }
+      return response.json();
+    },
   });
-  
-  // Reset selected records when the record data changes
-  useEffect(() => {
-    if (recordsData?.records) {
-      // Only keep selected records that still exist in the current data
-      const existingIds = recordsData.records.map((record) => record.id);
-      setSelectedRecords(prev => prev.filter(id => existingIds.includes(id)));
-      
-      // Update selectAll to be true only if all current records are selected
-      const allSelected = 
-        selectedRecords.length > 0 && 
-        existingIds.length > 0 && 
-        existingIds.every((id: number) => selectedRecords.includes(id));
-        
-      setSelectAll(allSelected);
-    }
-  }, [recordsData, selectedRecords]);
 
-  // Filter records based on search query
-  useEffect(() => {
-    if (recordsData?.records) {
-      if (!searchQuery.trim()) {
-        setDisplayedRecords(recordsData.records);
-      } else {
-        const lowerQuery = searchQuery.toLowerCase().trim();
-        const filtered = recordsData.records.filter(record => {
-          return (
-            record.name?.toLowerCase().includes(lowerQuery) ||
-            record.targetUrl?.toLowerCase().includes(lowerQuery) ||
-            record.youtubeVideoId?.toLowerCase().includes(lowerQuery) ||
-            record.deletionReason?.toLowerCase().includes(lowerQuery) ||
-            record.campaignId.toString() === lowerQuery ||
-            record.urlId.toString() === lowerQuery
-          );
-        });
-        setDisplayedRecords(filtered);
+  // Fetch all campaigns for filter dropdown
+  const { data: campaignsData } = useQuery({
+    queryKey: ['/api/campaigns'],
+    queryFn: async () => {
+      const response = await fetch('/api/campaigns');
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
       }
-    }
-  }, [searchQuery, recordsData]);
+      return response.json();
+    },
+  });
 
-  // Handle select all records
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    if (checked && displayedRecords) {
-      setSelectedRecords(displayedRecords.map(record => record.id));
-    } else {
-      setSelectedRecords([]);
-    }
-  };
-
-  // Handle select individual record
-  const handleSelectRecord = (id: number, checked: boolean) => {
-    if (checked) {
-      setSelectedRecords(prev => [...prev, id]);
-    } else {
-      setSelectedRecords(prev => prev.filter(recordId => recordId !== id));
-    }
-  };
-
-  // Handle bulk delete
-  const handleBulkDelete = async () => {
-    if (selectedRecords.length === 0) return;
-    
-    setIsBulkDeleting(true);
-    try {
-      const response = await apiRequest(
-        "POST",
-        "/api/youtube-url-records/bulk/delete",
-        { ids: selectedRecords }
-      );
-      
-      toast({
-        title: "Records Deleted",
-        description: `Successfully deleted ${selectedRecords.length} record(s)`,
+  // Mutation for bulk delete
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const response = await fetch('/api/youtube-url-records/bulk/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids }),
       });
       
-      // Clear selection
-      setSelectedRecords([]);
-      setSelectAll(false);
+      if (!response.ok) {
+        throw new Error('Failed to delete records');
+      }
       
-      // Refetch records
-      refetch();
-    } catch (error) {
-      console.error("Error deleting records:", error);
+      return response.json();
+    },
+    onSuccess: () => {
       toast({
-        title: "Delete Failed",
-        description: "Failed to delete the selected records. Please try again.",
+        title: "Success",
+        description: `${selectedIds.length} record(s) deleted successfully`,
+      });
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ['/api/youtube-url-records'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete records: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
-    } finally {
-      setIsBulkDeleting(false);
-      setIsDeleteDialogOpen(false);
+    },
+  });
+
+  // Handle bulk delete
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} record(s)?`)) {
+      bulkDeleteMutation.mutate(selectedIds);
+    }
+  };
+
+  // Toggle selection of a record
+  const toggleSelection = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(itemId => itemId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Toggle selection of all records on current page
+  const toggleSelectAll = () => {
+    if (!data?.records) return;
+    
+    if (selectedIds.length === data.records.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(data.records.map((record: YoutubeUrlRecord) => record.id));
     }
   };
 
   // Format deletion reason for display
   const formatDeletionReason = (record: YoutubeUrlRecord) => {
-    const reasons = [];
+    const reason = record.deletionReason;
     
-    if (record.countryRestricted) reasons.push("Country Restricted");
-    if (record.privateVideo) reasons.push("Private Video");
-    if (record.deletedVideo) reasons.push("Deleted Video");
-    if (record.ageRestricted) reasons.push("Age Restricted");
-    if (record.madeForKids) reasons.push("Made for Kids");
-    
-    if (reasons.length > 0) {
-      return reasons.join(", ");
+    if (reason.includes('age_restricted')) {
+      return <Badge variant="destructive">Age Restricted</Badge>;
+    } else if (reason.includes('made_for_kids')) {
+      return <Badge variant="warning">Made for Kids</Badge>;
+    } else if (reason.includes('country_restricted')) {
+      return <Badge variant="secondary">Country Restricted</Badge>;
+    } else if (reason.includes('private')) {
+      return <Badge variant="outline">Private</Badge>;
+    } else if (reason.includes('deleted') || reason.includes('not_found')) {
+      return <Badge variant="destructive">Deleted</Badge>;
     } else {
-      return record.deletionReason || "Unknown";
+      return <Badge>{reason || 'Unknown'}</Badge>;
+    }
+  };
+
+  // Format relative time
+  const formatRelativeTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      return formatDistance(date, new Date(), { addSuffix: true });
+    } catch (e) {
+      return dateString;
     }
   };
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col space-y-6">
-        {/* Header */}
-        <div className="flex flex-col space-y-2">
+    <div className="container mx-auto py-6">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">YouTube URL Records</h1>
-          <p className="text-gray-500">
-            View and manage records of YouTube URLs that have been removed due to problematic video statuses.
-          </p>
+          
+          {selectedIds.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              <Trash className="h-4 w-4" />
+              {bulkDeleteMutation.isPending 
+                ? "Deleting..." 
+                : `Delete Selected (${selectedIds.length})`}
+            </Button>
+          )}
         </div>
         
-        {/* Search and actions */}
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
             <Input
-              placeholder="Search by name, URL, video ID, or reason..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9"
+              placeholder="Search by name, URL, video ID or reason..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full"
             />
           </div>
           
-          {selectedRecords.length > 0 && (
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="shrink-0">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete ({selectedRecords.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete {selectedRecords.length} selected YouTube URL record{selectedRecords.length !== 1 ? 's' : ''}.
-                    This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleBulkDelete} disabled={isBulkDeleting}>
-                    {isBulkDeleting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      "Delete Records"
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          <div className="w-full md:w-1/4">
+            <Select
+              value={campaignId}
+              onValueChange={setCampaignId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by campaign" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Campaigns</SelectItem>
+                {campaignsData?.map((campaign: any) => (
+                  <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                    {campaign.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Button 
+            onClick={() => {
+              setPage(1);
+              refetch();
+            }}
+          >
+            Search
+          </Button>
         </div>
-
-        {/* Records Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>YouTube URL Records</CardTitle>
-            <CardDescription>
-              {displayedRecords?.length
-                ? `Showing ${displayedRecords.length} record${displayedRecords.length !== 1 ? 's' : ''}`
-                : isLoading
-                ? "Loading records..."
-                : "No records found"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isError ? (
-              <Alert variant="destructive" className="mx-6 mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  Failed to load YouTube URL records. Please try again.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <div className="overflow-auto">
-                <Table>
-                  <TableHeader>
+        
+        {isLoading ? (
+          <div className="text-center py-8">Loading records...</div>
+        ) : (
+          <>
+            <div className="rounded-md border">
+              <Table>
+                <TableCaption>
+                  {data?.total 
+                    ? `Showing ${data.records.length} of ${data.total} YouTube URL records` 
+                    : "No YouTube URL records found"}
+                </TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={data?.records?.length > 0 && selectedIds.length === data.records.length}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>URL Name</TableHead>
+                    <TableHead>Campaign</TableHead>
+                    <TableHead>Target URL</TableHead>
+                    <TableHead>Video ID</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Deleted</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data?.records?.length > 0 ? (
+                    data.records.map((record: YoutubeUrlRecord) => (
+                      <TableRow key={record.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.includes(record.id)}
+                            onCheckedChange={() => toggleSelection(record.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{record.name}</TableCell>
+                        <TableCell>{record.campaignName}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          <a 
+                            href={record.targetUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            {record.targetUrl}
+                          </a>
+                        </TableCell>
+                        <TableCell>
+                          <a
+                            href={`https://www.youtube.com/watch?v=${record.youtubeVideoId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            {record.youtubeVideoId}
+                          </a>
+                        </TableCell>
+                        <TableCell>{formatDeletionReason(record)}</TableCell>
+                        <TableCell>{formatRelativeTime(record.deletedAt)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
                     <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectAll}
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Select all records"
-                        />
-                      </TableHead>
-                      <TableHead className="w-12">ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>URL</TableHead>
-                      <TableHead>Video ID</TableHead>
-                      <TableHead>Deletion Reason</TableHead>
-                      <TableHead>Flags</TableHead>
-                      <TableHead>Deleted</TableHead>
-                      <TableHead>Campaign</TableHead>
+                      <TableCell colSpan={7} className="text-center">
+                        No YouTube URL records found
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="h-24 text-center">
-                          <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
-                        </TableCell>
-                      </TableRow>
-                    ) : displayedRecords?.length ? (
-                      displayedRecords.map((record) => (
-                        <TableRow key={record.id}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedRecords.includes(record.id)}
-                              onCheckedChange={(checked) => handleSelectRecord(record.id, !!checked)}
-                              aria-label={`Select record ${record.id}`}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{record.id}</TableCell>
-                          <TableCell>{record.name || 'Unnamed'}</TableCell>
-                          <TableCell className="truncate max-w-xs">
-                            {record.targetUrl ? (
-                              <a 
-                                href={record.targetUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-500 hover:underline"
-                              >
-                                {record.targetUrl}
-                              </a>
-                            ) : (
-                              <span className="text-gray-400">No URL</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {record.youtubeVideoId ? (
-                              <a 
-                                href={`https://www.youtube.com/watch?v=${record.youtubeVideoId}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-500 hover:underline"
-                              >
-                                {record.youtubeVideoId}
-                              </a>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{record.deletionReason || "-"}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {record.countryRestricted && <Badge variant="outline" className="bg-red-50">Country Restricted</Badge>}
-                              {record.privateVideo && <Badge variant="outline" className="bg-yellow-50">Private</Badge>}
-                              {record.deletedVideo && <Badge variant="outline" className="bg-red-50">Deleted</Badge>}
-                              {record.ageRestricted && <Badge variant="outline" className="bg-orange-50">Age Restricted</Badge>}
-                              {record.madeForKids && <Badge variant="outline" className="bg-blue-50">Made for Kids</Badge>}
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatDate(record.deletedAt)}</TableCell>
-                          <TableCell>
-                            <Badge>{record.campaignId}</Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={9} className="h-24 text-center">
-                          No records found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {data?.totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: data.totalPages }, (_, i) => i + 1)
+                    .filter(p => {
+                      // Show first page, last page, current page and pages around current
+                      return (
+                        p === 1 || 
+                        p === data.totalPages || 
+                        (p >= page - 1 && p <= page + 1)
+                      );
+                    })
+                    .map((p, i, arr) => {
+                      // Add ellipsis between non-consecutive pages
+                      const showEllipsisBefore = i > 0 && arr[i - 1] !== p - 1;
+                      
+                      return (
+                        <div key={p} className="flex items-center">
+                          {showEllipsisBefore && (
+                            <PaginationItem>
+                              <span className="px-2">...</span>
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => setPage(p)}
+                              isActive={page === p}
+                              className="cursor-pointer"
+                            >
+                              {p}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </div>
+                      );
+                    })}
+                  
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setPage(p => Math.min(data.totalPages, p + 1))}
+                      className={page === data.totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             )}
-          </CardContent>
-        </Card>
+          </>
+        )}
       </div>
     </div>
   );

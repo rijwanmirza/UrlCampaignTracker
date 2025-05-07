@@ -5305,5 +5305,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // YouTube URL Records API routes
+  app.get("/api/youtube-url-records", async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const search = req.query.search as string | undefined;
+      const campaignId = req.query.campaignId ? parseInt(req.query.campaignId as string) : undefined;
+      
+      // Get records with pagination
+      const offset = (page - 1) * limit;
+      
+      // Build the query
+      let query = db.select().from(youtubeUrlRecords).orderBy(youtubeUrlRecords.deletedAt.desc());
+      
+      // Add campaign filter if provided
+      if (campaignId) {
+        query = query.where(eq(youtubeUrlRecords.campaignId, campaignId));
+      }
+      
+      // Add search filter if provided
+      if (search) {
+        const lowerSearch = search.toLowerCase();
+        query = query.where(
+          sql`LOWER(name) LIKE ${`%${lowerSearch}%`} OR 
+              LOWER(target_url) LIKE ${`%${lowerSearch}%`} OR 
+              LOWER(youtube_video_id) LIKE ${`%${lowerSearch}%`} OR 
+              LOWER(deletion_reason) LIKE ${`%${lowerSearch}%`}`
+        );
+      }
+      
+      // Get total count for pagination
+      const countResult = await db.select({ count: sql`COUNT(*)` }).from(youtubeUrlRecords);
+      const totalCount = Number(countResult[0].count);
+      
+      // Get paginated records
+      const records = await query.limit(limit).offset(offset);
+      
+      res.json({
+        records,
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit)
+      });
+    } catch (error) {
+      console.error("Error fetching YouTube URL records:", error);
+      res.status(500).json({ message: "Failed to fetch YouTube URL records" });
+    }
+  });
+  
+  app.get("/api/youtube-url-records/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const [record] = await db.select().from(youtubeUrlRecords).where(eq(youtubeUrlRecords.id, id));
+      
+      if (!record) {
+        return res.status(404).json({ message: "YouTube URL record not found" });
+      }
+      
+      res.json(record);
+    } catch (error) {
+      console.error("Error fetching YouTube URL record:", error);
+      res.status(500).json({ message: "Failed to fetch YouTube URL record" });
+    }
+  });
+  
+  // Schema for bulk YouTube URL record actions
+  const bulkYoutubeUrlRecordActionSchema = z.object({
+    ids: z.array(z.number())
+  });
+  
+  app.post("/api/youtube-url-records/bulk/delete", async (req: Request, res: Response) => {
+    try {
+      const { ids } = bulkYoutubeUrlRecordActionSchema.parse(req.body);
+      
+      // Delete the records
+      const result = await db.delete(youtubeUrlRecords)
+        .where(inArray(youtubeUrlRecords.id, ids));
+      
+      console.log(`✅ Bulk deleted ${ids.length} YouTube URL records`);
+      
+      res.json({
+        message: `Successfully deleted ${ids.length} records`,
+        deletedRecords: ids.length
+      });
+    } catch (error) {
+      console.error('Error in bulk delete operation:', error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to delete records", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Force check YouTube URLs for a campaign
+  app.post("/api/campaigns/:id/check-youtube", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      // Get campaign first
+      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Import YouTube API service
+      const { youtubeApiService } = await import('./youtube-api-service');
+      
+      // Check if YouTube API is configured
+      if (!youtubeApiService.isConfigured()) {
+        return res.status(400).json({ 
+          message: "YouTube API is not configured", 
+          details: "Please set the YOUTUBE_API_KEY environment variable" 
+        });
+      }
+      
+      // Process the campaign
+      await youtubeApiService.processCampaign(id);
+      
+      // Update the last check time
+      await db.update(campaigns).set({ 
+        youtubeApiLastCheck: new Date(),
+        updatedAt: new Date()
+      }).where(eq(campaigns.id, id));
+      
+      // Get count of YouTube URL records for this campaign
+      const [recordCount] = await db.select({ 
+        count: sql`COUNT(*)` 
+      }).from(youtubeUrlRecords).where(eq(youtubeUrlRecords.campaignId, id));
+      
+      res.json({
+        message: "YouTube URL check completed successfully",
+        campaignId: id,
+        recordCount: Number(recordCount.count)
+      });
+    } catch (error) {
+      console.error("Error checking YouTube URLs:", error);
+      res.status(500).json({ 
+        message: "Failed to check YouTube URLs", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   return server;
 }
