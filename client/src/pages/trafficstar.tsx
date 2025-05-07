@@ -548,25 +548,25 @@ export default function TrafficstarPage() {
             </div>
           )}
           
-          {spentValueData && (
+          {spentValueData && spentValueData.totals && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Campaign Spend Results</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Total Spent</div>
-                  <div className="text-2xl font-bold">${spentValueData.totals.spent.toFixed(2)}</div>
+                  <div className="text-2xl font-bold">${spentValueData.totals.spent?.toFixed(2) || '0.00'}</div>
                 </div>
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Impressions</div>
-                  <div className="text-2xl font-bold">{spentValueData.totals.impressions.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">{spentValueData.totals.impressions?.toLocaleString() || '0'}</div>
                 </div>
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Clicks</div>
-                  <div className="text-2xl font-bold">{spentValueData.totals.clicks.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">{spentValueData.totals.clicks?.toLocaleString() || '0'}</div>
                 </div>
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">eCPM</div>
-                  <div className="text-2xl font-bold">${spentValueData.totals.ecpm.toFixed(4)}</div>
+                  <div className="text-2xl font-bold">${spentValueData.totals.ecpm?.toFixed(4) || '0.0000'}</div>
                 </div>
               </div>
               
@@ -584,7 +584,7 @@ export default function TrafficstarPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {spentValueData.dailyStats.length === 0 ? (
+                    {!spentValueData.dailyStats || spentValueData.dailyStats.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-4">
                           No data available for the selected date range
@@ -594,11 +594,11 @@ export default function TrafficstarPage() {
                       spentValueData.dailyStats.map((day, index) => (
                         <TableRow key={index}>
                           <TableCell>{day.date ? new Date(day.date).toLocaleDateString() : 'N/A'}</TableCell>
-                          <TableCell className="text-right">{day.impressions.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{day.clicks.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{day.ctr.toFixed(2)}%</TableCell>
-                          <TableCell className="text-right">${parseFloat(day.price.toString()).toFixed(2)}</TableCell>
-                          <TableCell className="text-right">${parseFloat(day.ecpm.toString()).toFixed(4)}</TableCell>
+                          <TableCell className="text-right">{day.impressions?.toLocaleString() || '0'}</TableCell>
+                          <TableCell className="text-right">{day.clicks?.toLocaleString() || '0'}</TableCell>
+                          <TableCell className="text-right">{day.ctr?.toFixed(2) || '0.00'}%</TableCell>
+                          <TableCell className="text-right">${(day.price ? parseFloat(day.price.toString()) : 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">${(day.ecpm ? parseFloat(day.ecpm.toString()) : 0).toFixed(4)}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -606,7 +606,7 @@ export default function TrafficstarPage() {
                 </Table>
               </div>
               <div className="text-sm text-muted-foreground mt-2">
-                Date range: {spentValueData.dateRange.from} to {spentValueData.dateRange.to}
+                Date range: {spentValueData.dateRange?.from || 'N/A'} to {spentValueData.dateRange?.to || 'N/A'}
               </div>
             </div>
           )}
