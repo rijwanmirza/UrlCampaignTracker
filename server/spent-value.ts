@@ -4,7 +4,7 @@
  * Helper functions to manage TrafficStar campaign spent values.
  */
 
-import { trafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service-new';
 
 /**
  * Get spent value for a TrafficStar campaign for a specific date
