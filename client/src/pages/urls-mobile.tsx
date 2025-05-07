@@ -14,7 +14,8 @@ import {
   Eye,
   ExternalLink,
   Check,
-  Edit
+  Edit,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -498,6 +499,33 @@ export default function URLsPage() {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleBulkDelete} className="bg-red-500 hover:bg-red-600">
                           Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <AlertDialog open={permanentDeleteModalOpen} onOpenChange={setPermanentDeleteModalOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Permanent Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Permanently Delete URLs</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to permanently delete {selectedUrls.length} URLs? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBulkPermanentDelete} className="bg-red-600 hover:bg-red-700">
+                          Permanently Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
