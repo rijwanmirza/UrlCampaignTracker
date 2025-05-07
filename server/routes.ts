@@ -46,7 +46,7 @@ import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service-new";
 import { db, pool } from "./db";
-import { eq, and, isNotNull, sql, inArray } from "drizzle-orm";
+import { eq, and, isNotNull, sql, inArray, desc } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
