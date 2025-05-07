@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { log } from '../vite';
 
 // Simple API key authentication
-const API_SECRET_KEY = 'TraffiCS10928'; // Simple secret keyword for access
+// In production, store this in an environment variable
+const API_SECRET_KEY = process.env.API_SECRET_KEY || 'TraffiCS10928';
 
 // Check if we're in development mode
 const isDevMode = process.env.NODE_ENV === 'development';

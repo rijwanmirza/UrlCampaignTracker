@@ -76,9 +76,7 @@ export default function LoginPage() {
           </div>
         </form>
         
-        <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Default API key: TraffiCS10928</p>
-        </div>
+        {/* Security improved: API key hint removed */}
       </Card>
     </div>
   );
