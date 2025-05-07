@@ -156,7 +156,7 @@ export default function YoutubeUrlRecordsPage() {
     if (reason.includes('age_restricted')) {
       return <Badge variant="destructive">Age Restricted</Badge>;
     } else if (reason.includes('made_for_kids')) {
-      return <Badge variant="warning">Made for Kids</Badge>;
+      return <Badge>Made for Kids</Badge>;
     } else if (reason.includes('country_restricted')) {
       return <Badge variant="secondary">Country Restricted</Badge>;
     } else if (reason.includes('private')) {
