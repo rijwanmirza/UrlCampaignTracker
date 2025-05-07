@@ -52,6 +52,16 @@ export const campaigns = pgTable("campaigns", {
   lastBudgetUpdateTime: timestamp("last_budget_update_time"), // Last time the budget was updated for new URLs
   // Track when high-spend budget calculation was performed ($10+ handling)
   highSpendBudgetCalcTime: timestamp("high_spend_budget_calc_time"),
+  // YouTube API integration fields
+  youtubeApiEnabled: boolean("youtube_api_enabled").default(false), // Enable/disable YouTube URL checking
+  youtubeApiIntervalMinutes: integer("youtube_api_interval_minutes").default(60), // Minutes between YouTube API checks (default: 60 mins)
+  youtubeApiLastCheck: timestamp("youtube_api_last_check"), // Last time YouTube API check was run
+  // YouTube deletion flags - which conditions to check
+  youtubeCheckCountryRestriction: boolean("youtube_check_country_restriction").default(true), // Check if video is restricted in India
+  youtubeCheckPrivate: boolean("youtube_check_private").default(true), // Check if video is private
+  youtubeCheckDeleted: boolean("youtube_check_deleted").default(true), // Check if video is deleted
+  youtubeCheckAgeRestricted: boolean("youtube_check_age_restricted").default(true), // Check if video is age restricted
+  youtubeCheckMadeForKids: boolean("youtube_check_made_for_kids").default(true), // Check if video is made for kids
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -107,6 +117,16 @@ export const updateCampaignSchema = z.object({
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED
   lastTrafficSenderStatus: z.string().optional(), // DEPRECATED
   lastBudgetUpdateTime: z.date().optional().nullable(),
+  // YouTube API integration fields
+  youtubeApiEnabled: z.boolean().optional(),
+  youtubeApiIntervalMinutes: z.number().int().min(1).max(1440).optional(), // 1 min to 24 hours
+  youtubeApiLastCheck: z.date().optional().nullable(),
+  // YouTube check conditions
+  youtubeCheckCountryRestriction: z.boolean().optional(),
+  youtubeCheckPrivate: z.boolean().optional(),
+  youtubeCheckDeleted: z.boolean().optional(),
+  youtubeCheckAgeRestricted: z.boolean().optional(),
+  youtubeCheckMadeForKids: z.boolean().optional(),
 });
 
 // URL schema
@@ -447,5 +467,41 @@ export const campaignRedirectLogsRelations = relations(campaignRedirectLogs, ({ 
   url: one(urls, {
     fields: [campaignRedirectLogs.urlId],
     references: [urls.id],
+  }),
+}));
+
+// YouTube URL Records schema - for tracking deleted URLs due to YouTube API checks
+export const youtubeUrlRecords = pgTable("youtube_url_records", {
+  id: serial("id").primaryKey(),
+  urlId: integer("url_id").notNull(), // Original URL ID (may be deleted)
+  campaignId: integer("campaign_id").notNull().references(() => campaigns.id),
+  name: text("name").notNull(), // URL name
+  targetUrl: text("target_url").notNull(), // Full URL
+  youtubeVideoId: text("youtube_video_id").notNull(), // YouTube video ID extracted from URL
+  deletionReason: text("deletion_reason").notNull(), // Reason for deletion
+  // Detailed reason flags
+  countryRestricted: boolean("country_restricted").default(false), // Video restricted in India
+  privateVideo: boolean("private_video").default(false), // Private video
+  deletedVideo: boolean("deleted_video").default(false), // Deleted/unavailable video
+  ageRestricted: boolean("age_restricted").default(false), // Age restricted video
+  madeForKids: boolean("made_for_kids").default(false), // Made for kids
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertYoutubeUrlRecordSchema = createInsertSchema(youtubeUrlRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for YouTube URL Records
+export type YoutubeUrlRecord = typeof youtubeUrlRecords.$inferSelect;
+export type InsertYoutubeUrlRecord = z.infer<typeof insertYoutubeUrlRecordSchema>;
+
+// Relations for YouTube URL Records
+export const youtubeUrlRecordsRelations = relations(youtubeUrlRecords, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [youtubeUrlRecords.campaignId],
+    references: [campaigns.id],
   }),
 }));
