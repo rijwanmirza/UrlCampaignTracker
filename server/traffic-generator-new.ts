@@ -201,9 +201,9 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // Handle campaign with less than $10 spent
       console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
       
-      // Clear URL budget logs since we're below the threshold
+      // Clear URL budget logs for this specific campaign since we're below the threshold
       // This ensures we start fresh logging when spent value exceeds $10 again
-      await urlBudgetLogger.clearLogs();
+      await urlBudgetLogger.clearCampaignLogs(campaignId);
       
       // Cancel any pending budget updates for this campaign
       const urlBudgetManager = (await import('./url-budget-manager')).default;
@@ -460,8 +460,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                   const urlPrice = (validRemaining / 1000) * parseFloat(campaign.pricePerThousand);
                   console.log(`💰 URL ${url.id} price for ${validRemaining} remaining clicks: $${urlPrice.toFixed(2)}`);
                   
-                  // Log this URL's budget calculation to the URL budget log file
-                  await urlBudgetLogger.logUrlBudget(url.id, urlPrice);
+                  // Log this URL's budget calculation to the campaign-specific URL budget log file
+                  await urlBudgetLogger.logUrlBudget(campaign.id, url.id, url.name || 'Unknown', urlPrice);
                 }
               } else {
                 console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
@@ -686,8 +686,8 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
       
       console.log(`URL ID ${url.id}: ${totalClicks} clicks = $${urlBudget.toFixed(4)} additional budget`);
       
-      // Log this URL's budget calculation to the URL budget log file
-      await urlBudgetLogger.logUrlBudget(url.id, urlBudget);
+      // Log this URL's budget calculation to the campaign-specific URL budget log file
+      await urlBudgetLogger.logUrlBudget(campaignId, url.id, url.name || 'Unknown', urlBudget);
       
       // Update the URL to mark it as processed
       await db.update(urls)

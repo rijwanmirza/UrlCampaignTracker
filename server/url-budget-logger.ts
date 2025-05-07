@@ -214,10 +214,13 @@ export class UrlBudgetLogger {
   public async getAllUrlBudgetLogs(): Promise<Array<{urlId: number, campaignId: number, urlName: string, price: string, dateTime: string}>> {
     try {
       // Get all campaigns with TrafficStar integration
-      const campaignsWithTrafficStar = await db.select()
-        .from(campaigns)
-        .where(ne(campaigns.trafficstarCampaignId, ''))
-        .where(isNull(campaigns.trafficstarCampaignId).not());
+      const campaignsWithTrafficStar = await db.query.campaigns.findMany({
+        where: (c, { eq, and, ne, not, isNull }) => 
+          and(
+            ne(c.trafficstarCampaignId, ''),
+            not(isNull(c.trafficstarCampaignId))
+          )
+      });
         
       // Combine logs from all campaigns
       let allLogs: Array<{urlId: number, campaignId: number, urlName: string, price: string, dateTime: string}> = [];
@@ -246,19 +249,19 @@ export class UrlBudgetLogger {
    */
   public async getActiveUrlsForCampaign(campaignId: number): Promise<Array<{id: number, name: string, clickLimit: number, clicks: number, remainingClicks: number}>> {
     try {
-      const activeUrls = await db.select({
-        id: urls.id,
-        name: urls.name,
-        clickLimit: urls.clickLimit,
-        clicks: urls.clicks,
-      })
-      .from(urls)
-      .where(
-        and(
-          eq(urls.campaignId, campaignId),
-          eq(urls.status, 'active')
-        )
-      );
+      const activeUrls = await db.query.urls.findMany({
+        where: (url, { eq, and }) => 
+          and(
+            eq(url.campaignId, campaignId),
+            eq(url.status, 'active')
+          ),
+        columns: {
+          id: true,
+          name: true,
+          clickLimit: true,
+          clicks: true,
+        }
+      });
       
       // Calculate remaining clicks and filter out any with 0 remaining
       return activeUrls
@@ -281,16 +284,14 @@ export class UrlBudgetLogger {
    */
   public async hasCampaignTrafficStarIntegration(campaignId: number): Promise<boolean> {
     try {
-      const campaign = await db.select({
-        trafficstarCampaignId: campaigns.trafficstarCampaignId
-      })
-      .from(campaigns)
-      .where(eq(campaigns.id, campaignId))
-      .limit(1);
+      const campaign = await db.query.campaigns.findFirst({
+        where: (c, { eq }) => eq(c.id, campaignId),
+        columns: { trafficstarCampaignId: true }
+      });
       
-      return campaign.length > 0 && 
-             campaign[0].trafficstarCampaignId !== null && 
-             campaign[0].trafficstarCampaignId !== '';
+      return !!campaign && 
+             !!campaign.trafficstarCampaignId && 
+             campaign.trafficstarCampaignId !== '';
     } catch (error) {
       console.error(`❌ Failed to check TrafficStar integration for campaign ${campaignId}: ${error}`);
       return false;
