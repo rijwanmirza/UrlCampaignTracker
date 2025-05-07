@@ -230,12 +230,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       }
       
       // Get the campaign details to check URLs and remaining clicks
-      const campaign = await db.query.campaigns.findFirst({
-        where: (campaign, { eq }) => eq(campaign.id, campaignId),
-        with: {
-          urls: true
-        }
-      }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+      // Only fetch active URLs to improve performance
+      const campaign = await getCampaignWithActiveUrls(campaignId);
       
       if (!campaign || !campaign.urls || campaign.urls.length === 0) {
         console.log(`⏹️ LOW SPEND ACTION: Campaign ${trafficstarCampaignId} has no URLs - skipping auto-reactivation check`);
@@ -422,12 +418,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
       
       // Get the campaign details to check URLs and pricePerThousand
-      const campaign = await db.query.campaigns.findFirst({
-        where: (campaign, { eq }) => eq(campaign.id, campaignId),
-        with: {
-          urls: true
-        }
-      }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+      // Only fetch active URLs to improve performance
+      const campaign = await getCampaignWithActiveUrls(campaignId);
       
       if (!campaign) {
         console.error(`Campaign ${campaignId} not found - cannot process high spend handling`);
