@@ -461,15 +461,15 @@ class GmailReader {
   // Attempt to reconnect to the IMAP server
   private reconnect() {
     if (!this.isRunning) {
-      setTimeout(() => {
+      setTimeout(async () => {
         log('Attempting to reconnect to IMAP server...', 'gmail-reader');
-        this.start();
+        await this.start();
       }, 60000); // Retry every 60 seconds - increased to reduce connection attempts
     }
   }
 
   // Update the configuration
-  public updateConfig(newConfig: Partial<GmailConfigOptions>) {
+  public async updateConfig(newConfig: Partial<GmailConfigOptions>) {
     const wasRunning = this.isRunning;
     
     if (wasRunning) {
@@ -495,7 +495,7 @@ class GmailReader {
     this.setupImapConnection();
     
     if (wasRunning) {
-      this.start();
+      await this.start();
     }
     
     return this.config;
@@ -1218,7 +1218,7 @@ class GmailReader {
   }
 
   // Start the Gmail reader
-  public start() {
+  public async start() {
     if (this.isRunning) return;
     
     if (!this.config.user || !this.config.password) {
