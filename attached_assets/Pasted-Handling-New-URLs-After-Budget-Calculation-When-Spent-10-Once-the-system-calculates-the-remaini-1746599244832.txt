@@ -1,0 +1,42 @@
+Handling New URLs After Budget Calculation (When Spent > $10)
+Once the system calculates the remaining click budget after detecting that the TrafficStars spent value is more than $10, any new URLs added afterward must still be handled — but within the existing log cycle.
+
+If a new URL is added after this calculation, its budget was not included in the previous total. However, we will use the same logging system to track and process it.
+
+⚠️ Important: For newly added URLs, we calculate their budget based on required clicks, not remaining clicks.
+
+Example:
+Suppose a new URL is added with ID 106, requiring 7,000 clicks.
+If the campaign pricing is $1 per 1,000 clicks, its budget will be:
+→ 7,000 ÷ 1,000 = 7 → $7
+
+We add this to the existing log, like so:
+
+bash
+Copy
+Edit
+106 | $7 | 07-05-2025 :: 05:59:00
+If the current TrafficStars daily budget is $18.20, we will prepare to increase it to $25.20 ($18.20 + $7).
+However, we do not update the TrafficStars daily budget immediately. Instead, we wait 9 minutes before applying the new total.
+
+Step-by-Step Process:
+The system calculates the remaining click budget once the spent value crosses $10.
+
+If a new URL is added, we calculate its budget using its required click count, not remaining clicks.
+
+The existing log system is updated with the new URL’s ID, budget, and timestamp.
+
+A 9-minute timer starts; after it expires, the new URL budget is added to the TrafficStars daily budget.
+
+During this 9-minute window:
+
+If additional URLs are added, their budgets are also logged and included in the total.
+
+At the end of the 9 minutes, all pending budgets are added together and applied in a single update to the daily budget.
+
+No duplicate budgets are allowed — each URL is processed only once, using the logs for reference.
+
+This loop continues as long as the spent value stays above $10.
+
+If the system detects that the spent value drops below $10, all logs from this cycle are cleared, and the process will restart fresh when the spent value exceeds $10 again.
+

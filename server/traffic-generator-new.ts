@@ -205,6 +205,13 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // This ensures we start fresh logging when spent value exceeds $10 again
       await urlBudgetLogger.clearLogs();
       
+      // Cancel any pending budget updates for this campaign
+      const urlBudgetManager = (await import('./url-budget-manager')).default;
+      if (urlBudgetManager.hasPendingUpdates(campaignId)) {
+        console.log(`🔄 Cancelling pending budget updates for campaign ${campaignId} as spent value is below threshold`);
+        urlBudgetManager.cancelPendingUpdates(campaignId);
+      }
+      
       // Get the campaign details to check URLs and remaining clicks
       const campaign = await db.query.campaigns.findFirst({
         where: (campaign, { eq }) => eq(campaign.id, campaignId),
