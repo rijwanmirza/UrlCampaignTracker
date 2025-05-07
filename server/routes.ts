@@ -45,6 +45,7 @@ import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service-new";
+import { youtubeApiService } from "./youtube-api-service";
 import { db, pool } from "./db";
 import { eq, and, isNotNull, sql, inArray, desc } from "drizzle-orm";
 import Imap from "imap";
