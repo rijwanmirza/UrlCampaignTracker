@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// TEMPORARY DEVELOPMENT MODE - Always bypass authentication
-const BYPASS_AUTH = true;
+// Authentication is now enabled - set to false to require login
+const BYPASS_AUTH = false;
 
 interface AuthContextType {
   isAuthenticated: boolean;

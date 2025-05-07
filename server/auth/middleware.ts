@@ -10,11 +10,11 @@ const isDevMode = process.env.NODE_ENV === 'development';
 // Middleware to require authentication
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    // TEMPORARY: Skip authentication in development mode
-    if (isDevMode) {
-      console.log('🔓 DEVELOPMENT MODE: Authentication bypassed');
-      return next();
-    }
+    // Do not bypass authentication in any mode now
+    // if (isDevMode) {
+    //   console.log('🔓 DEVELOPMENT MODE: Authentication bypassed');
+    //   return next();
+    // }
     
     // Get API key from cookie, header, or query param
     const apiKey = req.cookies?.apiKey || 
@@ -41,10 +41,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 // Validate an API key
 export function validateApiKey(apiKey: string): boolean {
-  // TEMPORARY: Always return true in development mode
-  if (isDevMode) {
-    return true;
-  }
+  // Always validate against the real API key
   return apiKey === API_SECRET_KEY;
 }
 
