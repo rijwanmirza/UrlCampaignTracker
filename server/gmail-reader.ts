@@ -607,18 +607,39 @@ class GmailReader {
             Quantity: ${quantity}
           `, 'gmail-reader');
           
-          // Add URL to the campaign
+          // Add URL to the appropriate campaign based on click quantity
           try {
-            // SAFETY CHECK: Make sure we have a campaign ID
-            if (!this.config.defaultCampaignId) {
-              log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
-              this.logProcessedEmail(msgId, 'error-no-campaign-id');
-              resolve();
-              return;
+            // Try to find a matching campaign based on click quantity
+            let campaignId: number | undefined;
+            
+            // Check if we have a valid quantity and attempt to find a matching campaign
+            if (quantity && !isNaN(parseInt(quantity, 10))) {
+              const clickQuantity = parseInt(quantity, 10);
+              log(`Attempting to find a campaign for ${clickQuantity} clicks using assignment service`, 'gmail-reader');
+              
+              // Use the assignment service to find the appropriate campaign
+              campaignId = await gmailCampaignAssignmentService.findCampaignForClickQuantity(clickQuantity);
+              
+              if (campaignId) {
+                log(`Found matching campaign ID ${campaignId} for ${clickQuantity} clicks from assignment rules`, 'gmail-reader');
+              } else {
+                log(`No matching campaign found for ${clickQuantity} clicks, falling back to default`, 'gmail-reader');
+              }
             }
             
-            // Store the campaign ID locally to ensure it never changes
-            const campaignId = this.config.defaultCampaignId;
+            // Fall back to default campaign ID if no match was found
+            if (!campaignId) {
+              // SAFETY CHECK: Make sure we have a default campaign ID
+              if (!this.config.defaultCampaignId) {
+                log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
+                this.logProcessedEmail(msgId, 'error-no-campaign-id');
+                resolve();
+                return;
+              }
+              
+              campaignId = this.config.defaultCampaignId;
+              log(`Using default campaign ID: ${campaignId}`, 'gmail-reader');
+            }
             
             // First check if we already have this order ID in the campaign
             // This is our first defense against duplicates
@@ -1205,9 +1226,19 @@ class GmailReader {
       return;
     }
     
-    if (!this.config.defaultCampaignId) {
-      log('Cannot start Gmail reader: missing default campaign ID', 'gmail-reader');
+    // Check for campaign assignment rules first
+    const assignments = await gmailCampaignAssignmentService.getAllAssignments();
+    const hasAssignmentRules = assignments && assignments.length > 0;
+    
+    if (!hasAssignmentRules && !this.config.defaultCampaignId) {
+      log('Cannot start Gmail reader: missing both default campaign ID and campaign assignment rules', 'gmail-reader');
       return;
+    }
+    
+    if (hasAssignmentRules) {
+      log(`Found ${assignments.length} campaign assignment rules that will be used for URL assignment`, 'gmail-reader');
+    } else {
+      log(`No campaign assignment rules found, will use default campaign ID: ${this.config.defaultCampaignId}`, 'gmail-reader');
     }
     
     this.isRunning = true;
