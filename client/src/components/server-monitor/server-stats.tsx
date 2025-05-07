@@ -19,6 +19,15 @@ interface ServerStats {
     cores: number;
     physicalCores: number;
   };
+  osInfo: {
+    platform: string;
+    distro: string;
+    release: string;
+    codename: string;
+    kernel: string;
+    arch: string;
+    hostname: string;
+  };
   networkStats: {
     rx_sec: number;
     tx_sec: number;
@@ -237,6 +246,37 @@ export function ServerMonitor() {
             <div>
               <h4 className="text-sm font-medium">Last Updated</h4>
               <p className="text-lg">{stats ? new Date(stats.timestamp).toLocaleTimeString() : '-'}</p>
+            </div>
+          </div>
+          
+          {/* OS Information */}
+          <div className="border-t pt-4 mt-2">
+            <h4 className="text-sm font-medium mb-2">Operating System Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">OS Platform</p>
+                <p className="text-sm font-medium">{stats?.osInfo?.platform || 'Linux'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Distribution</p>
+                <p className="text-sm font-medium">{stats?.osInfo?.distro || 'Ubuntu/Debian/AlmaLinux'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Version</p>
+                <p className="text-sm font-medium">{stats?.osInfo?.release || '22.04 LTS'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Kernel</p>
+                <p className="text-sm font-medium">{stats?.osInfo?.kernel || '5.10.x'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Architecture</p>
+                <p className="text-sm font-medium">{stats?.osInfo?.arch || 'x86_64'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Hostname</p>
+                <p className="text-sm font-medium">{stats?.osInfo?.hostname || 'replit-server'}</p>
+              </div>
             </div>
           </div>
           

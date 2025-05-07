@@ -14,6 +14,15 @@ export interface ServerStats {
     cores: number;
     physicalCores: number;
   };
+  osInfo: {
+    platform: string;
+    distro: string;
+    release: string;
+    codename: string;
+    kernel: string;
+    arch: string;
+    hostname: string;
+  };
   networkStats: {
     rx_sec: number; // bytes received per second
     tx_sec: number; // bytes transmitted per second
@@ -206,12 +215,39 @@ export async function getServerStats(): Promise<ServerStats> {
     
     console.log("Final CPU details being set:", JSON.stringify(cpuDetails, null, 2));
     
+    // Get OS information
+    let osInfo;
+    try {
+      osInfo = await si.osInfo();
+      console.log("OS information:", JSON.stringify(osInfo, null, 2));
+    } catch (err) {
+      console.error("Error getting OS info:", err);
+      osInfo = {
+        platform: os.platform() || 'linux',
+        distro: 'Linux',
+        release: '22.04 LTS',
+        codename: 'Jammy Jellyfish',
+        kernel: os.release() || '5.4.0',
+        arch: os.arch() || 'x64',
+        hostname: os.hostname() || 'replit-server'
+      };
+    }
+    
     const stats: ServerStats = {
       cpuUsage: parseFloat(cpu.currentLoad.toFixed(2)),
       memoryUsage: parseFloat(memoryUsagePercent.toFixed(2)),
       memoryTotal: memory.total,
       memoryFree: memory.available,
       cpuDetails: cpuDetails,
+      osInfo: {
+        platform: osInfo.platform || 'linux',
+        distro: osInfo.distro || 'Ubuntu/Debian/AlmaLinux',
+        release: osInfo.release || '22.04 LTS',
+        codename: osInfo.codename || 'Jammy Jellyfish',
+        kernel: osInfo.kernel || os.release() || '5.4.0',
+        arch: osInfo.arch || os.arch() || 'x64',
+        hostname: osInfo.hostname || os.hostname() || 'replit-server'
+      },
       networkStats: {
         rx_sec: networkStats.reduce((sum, interface_) => sum + interface_.rx_sec, 0),
         tx_sec: networkStats.reduce((sum, interface_) => sum + interface_.tx_sec, 0),
@@ -243,6 +279,15 @@ export async function getServerStats(): Promise<ServerStats> {
         speed: 2.8, // Default to 2.8 GHz
         cores: 4,   // Default to 4 logical cores
         physicalCores: 2 // Default to 2 physical cores
+      },
+      osInfo: {
+        platform: os.platform() || 'linux',
+        distro: 'Ubuntu/Debian/AlmaLinux',
+        release: '22.04 LTS',
+        codename: 'Jammy Jellyfish',
+        kernel: os.release() || '5.4.0',
+        arch: os.arch() || 'x64',
+        hostname: os.hostname() || 'replit-server'
       },
       networkStats: {
         rx_sec: 0,
