@@ -1254,26 +1254,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             
-            // Also create a URL record with direct_rejected status so it appears in the URL list
-            try {
-              const urlData = {
-                name: req.body.name,
-                campaignId,
-                targetUrl: req.body.targetUrl,
-                clickLimit: clickLimit,
-                originalClickLimit: originalClickLimit,
-                status: 'direct_rejected' as const,
-                clicks: 0
-              };
-              
-              console.log(`🔍 Creating URL record with direct_rejected status: ${JSON.stringify(urlData, null, 2)}`);
-              
-              const urlRecord = await storage.createUrl(urlData);
-              console.log(`✅ Created URL record with direct_rejected status and ID: ${urlRecord.id}`);
-            } catch (urlError) {
-              console.error(`⚠️ Error creating direct_rejected URL record:`, urlError);
-              // Continue even if URL creation fails - the original record is the most important
-            }
+            // Do NOT create a URL record for campaign - rejected URLs should NOT appear in active URLs list
+            // They will only appear in YouTube URL Records, Original URL Records, and URL History
+            console.log(`🔍 Skipping URL creation in campaign - rejected URLs are not added to campaign`);
             
             // Record the validation failure in youtube_url_records
             await youtubeApiService.saveDirectRejectedUrl(
@@ -1322,40 +1305,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             
-            // Also create a URL record with direct_rejected status so it appears in the URL list
-            try {
-              const urlData = {
-                name: req.body.name,
-                campaignId,
-                targetUrl: req.body.targetUrl,
-                clickLimit: clickLimit,
-                originalClickLimit: originalClickLimit,
-                status: 'direct_rejected' as const,
-                clicks: 0
-              };
-              
-              console.log(`🔍 Creating URL record with direct_rejected status: ${JSON.stringify(urlData, null, 2)}`);
-              
-              const urlRecord = await storage.createUrl(urlData);
-              console.log(`✅ Created URL record with direct_rejected status and ID: ${urlRecord.id}`);
-            } catch (urlError) {
-              console.error(`⚠️ Error creating direct_rejected URL record:`, urlError);
-              // Continue even if URL creation fails - the original record is the most important
-            }
+            // Do NOT create a URL record for campaign - rejected URLs should NOT appear in active URLs list
+            // They will only appear in YouTube URL Records, Original URL Records, and URL History
+            console.log(`🔍 Skipping URL creation in campaign - rejected URLs are not added to campaign`);
             
-            // Record the validation failure in youtube_url_records
+            // Save the validation details in YouTube URL Records
             await youtubeApiService.saveDirectRejectedUrl(
               req.body,
               campaignId,
-              validation.reason,
+              validation.reason || 'Unknown validation failure',
               videoId,
-              validation.validationDetails || {}
+              validation.validationDetails
             );
             
             return res.status(400).json({ 
-              message: `URL rejected - ${validation.reason}`, 
+              message: "URL rejected - YouTube video validation failed", 
               status: 'direct_rejected',
-              reason: validation.reason
+              reason: validation.reason || 'Video did not pass validation criteria'
             });
           }
           
