@@ -643,12 +643,13 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
     
     console.log(`⚠️ Found ${newUrls.length} new URLs added after budget calculation`);
     
-    // Check if the 9-minute waiting period has elapsed since the newest URL was added
-    const newestUrl = [...newUrls].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-    const waitDuration = Date.now() - newestUrl.createdAt.getTime();
+    // Check if there's a running timer for this campaign
+    // The timer should be based on the FIRST URL added after budget calc, not the newest
+    const oldestNewUrl = [...newUrls].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+    const waitDuration = Date.now() - oldestNewUrl.createdAt.getTime();
     const waitMinutes = Math.floor(waitDuration / (60 * 1000));
     
-    console.log(`Newest URL (ID: ${newestUrl.id}) was added ${waitMinutes} minutes ago`);
+    console.log(`First URL (ID: ${oldestNewUrl.id}) was added ${waitMinutes} minutes ago`);
     
     // Apply 9-minute delay before updating budget for newly added URLs
     const DELAY_MINUTES = 9;
@@ -774,18 +775,19 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
     
     console.log(`Found ${newUrls.length} URLs added after high-spend budget calculation for campaign ${campaignId}`);
     
-    // Check if the 9-minute waiting period has elapsed since the newest URL was added
-    const newestUrl = [...newUrls].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-    const waitDuration = Date.now() - newestUrl.createdAt.getTime();
+    // Check if the 9-minute waiting period has elapsed from the OLDEST new URL
+    // This ensures all URLs added within the 9-minute window get processed together
+    const oldestNewUrl = [...newUrls].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+    const waitDuration = Date.now() - oldestNewUrl.createdAt.getTime();
     const waitMinutes = Math.floor(waitDuration / (60 * 1000));
     
-    console.log(`Newest URL (ID: ${newestUrl.id}) was added ${waitMinutes} minutes ago`);
+    console.log(`First URL (ID: ${oldestNewUrl.id}) was added ${waitMinutes} minutes ago`);
     
     // Apply 9-minute delay before updating budget for newly added URLs
     const DELAY_MINUTES = 9;
     
     if (waitMinutes < DELAY_MINUTES) {
-      console.log(`Waiting period not elapsed yet (${waitMinutes}/${DELAY_MINUTES} minutes) - will check again later`);
+      console.log(`⏱️ Waiting period not elapsed yet (${waitMinutes}/${DELAY_MINUTES} minutes) - will check again later`);
       
       // Mark these URLs as pending in the database
       for (const url of newUrls) {
