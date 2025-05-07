@@ -17,11 +17,12 @@ export type RedirectMethodType = typeof RedirectMethod[keyof typeof RedirectMeth
 
 // URL status enum
 export const urlStatusEnum = pgEnum('url_status', [
-  'active',    // URL is active and receiving traffic
-  'paused',    // URL is paused by user
-  'completed', // URL has reached its click limit
-  'deleted',   // URL is soft-deleted
-  'rejected'   // URL was rejected due to duplicate name
+  'active',         // URL is active and receiving traffic
+  'paused',         // URL is paused by user
+  'completed',      // URL has reached its click limit
+  'deleted',        // URL is soft-deleted
+  'rejected',       // URL was rejected due to duplicate name
+  'direct_rejected' // URL was rejected immediately due to YouTube API validation
 ]);
 
 // Campaign schema
@@ -173,7 +174,7 @@ export const updateUrlSchema = createInsertSchema(urls).omit({
   clickLimit: z.number().int().min(1).optional(),
   originalClickLimit: z.number().int().min(1).optional(),
   clicks: z.number().int().min(0).optional(),
-  status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected']).optional(),
+  status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected', 'direct_rejected']).optional(),
   // URL budget tracking fields
   pendingBudgetUpdate: z.boolean().optional(),
   budgetCalculated: z.boolean().optional(),
@@ -306,7 +307,7 @@ export const updateOriginalUrlRecordSchema = createInsertSchema(originalUrlRecor
   name: z.string().optional(),
   targetUrl: z.string().url().optional(),
   originalClickLimit: z.number().int().min(1).optional(),
-  status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected']).optional(),
+  status: z.enum(['active', 'paused', 'completed', 'deleted', 'rejected', 'direct_rejected']).optional(),
 });
 
 // Types
