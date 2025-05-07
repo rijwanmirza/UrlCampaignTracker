@@ -489,6 +489,7 @@ export const youtubeUrlRecords = pgTable("youtube_url_records", {
   deletedVideo: boolean("deleted_video").default(false), // Deleted/unavailable video
   ageRestricted: boolean("age_restricted").default(false), // Age restricted video
   madeForKids: boolean("made_for_kids").default(false), // Made for kids
+  exceededDuration: boolean("exceeded_duration").default(false), // Video exceeds maximum duration
   deletedAt: timestamp("deleted_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

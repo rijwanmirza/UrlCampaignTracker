@@ -17,6 +17,7 @@ const BATCH_SIZE = 50; // Maximum videos to fetch in a single API call
  * - Deleted videos
  * - Age-restricted videos
  * - Made for kids
+ * - Video duration exceeding maximum limit
  */
 export class YouTubeApiService {
   private youtube: youtube_v3.Youtube;
@@ -90,6 +91,32 @@ export class YouTubeApiService {
       return isYouTubeDomain && !!this.extractVideoId(url);
     } catch (error) {
       return false;
+    }
+  }
+  
+  /**
+   * Parse ISO 8601 duration to minutes
+   * Example: PT1H30M15S -> 90.25 minutes
+   */
+  parseDurationToMinutes(duration: string): number {
+    try {
+      // Remove the "PT" prefix
+      const time = duration.substring(2);
+      
+      // Extract hours, minutes, seconds
+      const hoursMatch = time.match(/(\d+)H/);
+      const minutesMatch = time.match(/(\d+)M/);
+      const secondsMatch = time.match(/(\d+)S/);
+      
+      const hours = hoursMatch ? parseInt(hoursMatch[1]) : 0;
+      const minutes = minutesMatch ? parseInt(minutesMatch[1]) : 0;
+      const seconds = secondsMatch ? parseInt(secondsMatch[1]) : 0;
+      
+      // Convert to total minutes (including fractional minutes for seconds)
+      return hours * 60 + minutes + (seconds / 60);
+    } catch (error) {
+      logger.error(`Error parsing duration: ${duration}`, error);
+      return 0; // Return 0 minutes on error
     }
   }
   
@@ -283,6 +310,19 @@ export class YouTubeApiService {
           });
           continue;
         }
+        
+        // Check for video duration exceeding max limit
+        if (campaign.youtubeCheckDuration && video.contentDetails?.duration) {
+          const durationMinutes = this.parseDurationToMinutes(video.contentDetails.duration);
+          const maxDurationMinutes = campaign.youtubeMaxDurationMinutes || 30; // Default to 30 minutes
+          
+          if (durationMinutes > maxDurationMinutes) {
+            await this.deleteUrl(url, campaign, `Video exceeds maximum duration (${Math.floor(durationMinutes)} minutes)`, {
+              exceededDuration: true
+            });
+            continue;
+          }
+        }
       }
     } catch (error) {
       logger.error('Error processing YouTube video batch:', error);
@@ -302,6 +342,7 @@ export class YouTubeApiService {
       deletedVideo?: boolean;
       ageRestricted?: boolean;
       madeForKids?: boolean;
+      exceededDuration?: boolean;
     }
   ): Promise<void> {
     try {
@@ -321,6 +362,7 @@ export class YouTubeApiService {
         deletedVideo: flags.deletedVideo || false,
         ageRestricted: flags.ageRestricted || false,
         madeForKids: flags.madeForKids || false,
+        exceededDuration: flags.exceededDuration || false,
         deletedAt: new Date(),
         createdAt: new Date()
       });
