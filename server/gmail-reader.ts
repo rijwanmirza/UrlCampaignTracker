@@ -9,6 +9,7 @@ import smtpTransport from 'nodemailer-smtp-transport';
 import fs from 'fs';
 import path from 'path';
 import { gmailService } from './gmail-service';
+import { gmailCampaignAssignmentService } from './gmail-campaign-assignment';
 
 interface GmailConfigOptions {
   user: string;
