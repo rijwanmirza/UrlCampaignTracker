@@ -50,7 +50,7 @@ import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service-new";
 import { youtubeApiService } from "./youtube-api-service";
 import { db, pool } from "./db";
-import { eq, and, isNotNull, sql, inArray, desc } from "drizzle-orm";
+import { eq, and, isNotNull, sql, inArray, desc, asc } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
@@ -5605,6 +5605,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Using Gmail campaign assignment service imported at the top of the file
 
+  // Simple campaign list endpoint for dropdowns and selects
+  app.get("/api/campaigns/list", requireAuth, async (_req: Request, res: Response) => {
+    try {
+      // Fetch only the id and name fields for all campaigns
+      const campaigns = await db.select({
+        id: campaigns.id,
+        name: campaigns.name
+      }).from(campaigns).orderBy(asc(campaigns.name));
+      
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error getting campaign list:', error);
+      res.status(500).json({ 
+        message: "Failed to get campaign list",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Gmail Campaign Assignment Routes
   
   // Get all Gmail campaign assignments
