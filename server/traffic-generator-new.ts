@@ -650,7 +650,7 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
       for (const url of newUrls) {
         await db.update(urls)
           .set({
-            pendingBudgetUpdate: true,
+            pendingBudgetUpdate: true as boolean, // Cast to boolean to fix TypeScript error
             updatedAt: new Date()
           })
           .where(eq(urls.id, url.id));
@@ -692,8 +692,8 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
       // Update the URL to mark it as processed
       await db.update(urls)
         .set({
-          pendingBudgetUpdate: false,
-          budgetCalculated: true,
+          pendingBudgetUpdate: false as boolean, // Cast to boolean to fix TypeScript error
+          budgetCalculated: true as boolean, // Cast to boolean to fix TypeScript error
           updatedAt: new Date()
         })
         .where(eq(urls.id, url.id));
