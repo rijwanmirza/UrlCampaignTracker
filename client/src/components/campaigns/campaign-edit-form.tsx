@@ -277,8 +277,19 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     
     console.log("AFTER VALIDATION - highSpendWaitMinutes value:", values.highSpendWaitMinutes);
     
-    // Make sure youtubeApiEnabled is a proper boolean
-    values.youtubeApiEnabled = values.youtubeApiEnabled === true;
+    // CRITICAL FIX: Make sure youtubeApiEnabled is properly set as a boolean
+    console.log("Before fixing YouTube API value:", values.youtubeApiEnabled, typeof values.youtubeApiEnabled);
+    
+    // This is very important - we need to make sure we don't lose the true value
+    // First, check if the value is explicitly false
+    if (values.youtubeApiEnabled === false) {
+      values.youtubeApiEnabled = false;
+    } else {
+      // Otherwise, if it's truthy (like "true", true, 1, etc.), set to true
+      values.youtubeApiEnabled = Boolean(values.youtubeApiEnabled);
+    }
+    
+    console.log("After fixing YouTube API value:", values.youtubeApiEnabled, typeof values.youtubeApiEnabled);
     
     // Make sure YouTube API settings are handled correctly
     if (values.youtubeApiEnabled) {
@@ -834,21 +845,34 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                   <FormField
                     control={form.control}
                     name="youtubeApiEnabled"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-sm">
-                            {field.value ? "Enabled" : "Disabled"}
-                          </FormLabel>
-                        </div>
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      // Add logging to debug the value
+                      console.log("YouTube API Switch render:", field.value, typeof field.value);
+                      
+                      return (
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <Switch
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => {
+                                console.log("Switch toggled to:", checked);
+                                field.onChange(checked);
+                                
+                                // Force the form value to be a boolean
+                                form.setValue('youtubeApiEnabled', checked === true);
+                                
+                                console.log("After toggle, form value:", form.getValues('youtubeApiEnabled'));
+                              }}
+                            />
+                          </FormControl>
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">
+                              {field.value === true ? "Enabled" : "Disabled"}
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      );
+                    }}
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
