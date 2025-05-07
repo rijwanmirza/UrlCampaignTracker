@@ -83,7 +83,7 @@ export function registerAuthRoutes(app: Express) {
   });
   
   // Change API key
-  app.post('/api/auth/change-key', requireAuth, (req: Request, res: Response) => {
+  app.post('/api/auth/change-key', requireAuth, async (req: Request, res: Response) => {
     try {
       const { currentKey, newKey, confirmNewKey } = req.body;
       
@@ -98,15 +98,16 @@ export function registerAuthRoutes(app: Express) {
       }
       
       // Validate old key
-      const isCurrentKeyValid = validateApiKey(currentKey);
+      const isCurrentKeyValid = await validateApiKey(currentKey);
       if (!isCurrentKeyValid) {
         return res.status(401).json({ message: 'Current API key is incorrect' });
       }
       
-      // Update API key in environment
-      if (process.env.API_SECRET_KEY) {
-        // In a real production system, this would involve updating 
-        // the environment variable or a secure configuration store
+      try {
+        // Save new API key to database for persistence
+        await saveApiKeyToDatabase(newKey);
+        
+        // Update environment variable
         process.env.API_SECRET_KEY = newKey;
         
         // Clear the current cookie and set a new one
@@ -118,10 +119,17 @@ export function registerAuthRoutes(app: Express) {
           sameSite: 'lax'
         });
         
-        log(`API key successfully changed`, 'auth');
-        res.json({ message: 'API key successfully updated' });
-      } else {
-        return res.status(500).json({ message: 'Could not update API key' });
+        log(`API key successfully changed and saved to database`, 'auth');
+        res.json({ 
+          message: 'API key successfully updated',
+          success: true 
+        });
+      } catch (dbError) {
+        console.error('Error saving API key to database:', dbError);
+        return res.status(500).json({ 
+          message: 'API key was changed but could not be saved permanently. It may revert on server restart.',
+          success: false
+        });
       }
     } catch (error) {
       console.error('Error changing API key:', error);

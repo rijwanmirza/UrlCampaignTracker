@@ -11,6 +11,7 @@ import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
 import { youtubeApiService } from "./youtube-api-service";
+import { initKeyManager } from "./auth/key-manager";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -120,6 +121,10 @@ app.use((req, res, next) => {
     
     // Auto-configure and start Gmail reader with provided credentials
     try {
+      // Initialize API key manager to load key from database
+      await initKeyManager();
+      log('API key manager initialized successfully');
+      
       // Check if there are campaigns but DON'T override defaultCampaignId
       // This prevents setting first campaign as default which could change user settings
       const campaigns = await storage.getCampaigns();
