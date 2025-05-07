@@ -1310,13 +1310,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`🔍 Skipping URL creation in campaign - rejected URLs are not added to campaign`);
             
             // Save the validation details in YouTube URL Records
-            await youtubeApiService.saveDirectRejectedUrl(
-              req.body,
-              campaignId,
-              validation.reason || 'Unknown validation failure',
-              videoId,
-              validation.validationDetails
-            );
+            try {
+              await youtubeApiService.saveDirectRejectedUrl(
+                req.body,
+                campaignId,
+                validation.reason || 'Unknown validation failure',
+                videoId,
+                validation.validationDetails || {}
+              );
+              
+              console.log(`✅ Saved rejected URL to YouTube URL Records with reason: ${validation.reason || 'Unknown validation failure'}`);
+            } catch (error) {
+              console.error('Error saving direct rejected URL:', error);
+            }
             
             return res.status(400).json({ 
               message: "URL rejected - YouTube video validation failed", 

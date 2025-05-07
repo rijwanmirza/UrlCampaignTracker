@@ -462,26 +462,35 @@ export class YouTubeApiService {
   ): Promise<void> {
     try {
       // Insert record into youtube_url_records
-      await db.insert(youtubeUrlRecords).values({
-        urlId: 0, // No URL ID since it wasn't created
+      const record = await db.insert(youtubeUrlRecords).values({
+        urlId: null, // NULL for direct rejections that weren't created as URLs
         campaignId: campaignId,
-        name: urlData.name,
-        targetUrl: urlData.targetUrl,
-        youtubeVideoId: videoId,
+        name: urlData.name || 'Unnamed URL',
+        targetUrl: urlData.targetUrl || '',
+        youtubeVideoId: videoId || 'unknown',
         deletionReason: `[Direct Rejected] ${reason}`,
-        countryRestricted: flags.countryRestricted || false,
-        privateVideo: flags.privateVideo || false,
-        deletedVideo: flags.deletedVideo || false,
-        ageRestricted: flags.ageRestricted || false,
-        madeForKids: flags.madeForKids || false,
-        exceededDuration: flags.exceededDuration || false,
+        countryRestricted: flags?.countryRestricted || false,
+        privateVideo: flags?.privateVideo || false,
+        deletedVideo: flags?.deletedVideo || false,
+        ageRestricted: flags?.ageRestricted || false,
+        madeForKids: flags?.madeForKids || false,
+        exceededDuration: flags?.exceededDuration || false,
         deletedAt: new Date(),
         createdAt: new Date()
-      });
+      }).returning();
       
-      logger.info(`Direct rejected URL recorded: ${urlData.name} - ${reason}`);
+      logger.info(`Direct rejected URL recorded (ID: ${record[0]?.id}): ${urlData.name} - ${reason}`);
+      
+      // Log detailed validation results
+      console.log('✅ Saved YouTube URL validation record with details:', {
+        name: urlData.name,
+        videoId,
+        reason,
+        flags
+      });
     } catch (error) {
       logger.error('Error recording direct rejected URL:', error);
+      console.error('Failed to save YouTube URL validation record:', error);
     }
   }
 
