@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { Link2, Menu, ChevronDown, ChevronUp } from "lucide-react";
+import { Link2, Menu, ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
   const [location] = useLocation();
