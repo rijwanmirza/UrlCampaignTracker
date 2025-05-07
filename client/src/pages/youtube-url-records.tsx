@@ -153,10 +153,35 @@ export default function YoutubeUrlRecordsPage() {
   const formatDeletionReason = (record: YoutubeUrlRecord) => {
     const reason = record.deletionReason;
     
-    // To properly handle direct rejected URLs, check for standard reasons first
-    if (reason.includes('Direct Rejected') && reason.includes('exceeds maximum duration')) {
-      return <Badge variant="destructive">Video exceeds maximum duration</Badge>;
-    } else if (reason.includes('Age restricted video') || reason.includes('age_restricted')) {
+    // First check if this is a direct rejection
+    if (reason.includes('Direct Rejected') || reason.startsWith('[Direct Rejected]')) {
+      // For all direct rejections, first show the Direct Rejected badge
+      let actualReason = reason;
+      // Extract the actual reason from the Direct Rejected prefix if present
+      if (reason.includes('[Direct Rejected]')) {
+        actualReason = reason.replace('[Direct Rejected] ', '');
+      }
+      
+      // For exceeds maximum duration, show that specific badge
+      if (actualReason.includes('exceeds maximum duration')) {
+        return (
+          <div className="flex flex-col gap-1">
+            <Badge variant="destructive">Direct Rejected</Badge>
+            <Badge variant="outline">Video exceeds maximum duration</Badge>
+          </div>
+        );
+      }
+      
+      // For all other direct rejections
+      return (
+        <div className="flex flex-col gap-1">
+          <Badge variant="destructive">Direct Rejected</Badge>
+          <Badge variant="outline">{actualReason}</Badge>
+        </div>
+      );
+    } 
+    // Handle standard YouTube API rejection reasons
+    else if (reason.includes('Age restricted video') || reason.includes('age_restricted')) {
       return <Badge variant="destructive">Age Restricted</Badge>;
     } else if (reason.includes('Video made for kids') || reason.includes('made_for_kids')) {
       return <Badge>Made for Kids</Badge>;
@@ -166,10 +191,6 @@ export default function YoutubeUrlRecordsPage() {
       return <Badge variant="outline">Private Video</Badge>;
     } else if (reason.includes('Video not found') || reason.includes('deleted') || reason.includes('unavailable')) {
       return <Badge variant="destructive">Video not found (deleted or unavailable)</Badge>;
-    } else if (reason.includes('Direct Rejected')) {
-      // Extract the actual reason from the [Direct Rejected] prefix
-      const actualReason = reason.replace('[Direct Rejected] ', '');
-      return <Badge variant="destructive">{actualReason}</Badge>;
     } else {
       // For any other reasons, show the full text
       return <Badge>{reason || 'Unknown'}</Badge>;
