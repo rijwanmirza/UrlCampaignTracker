@@ -27,8 +27,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// TEMPORARY DEVELOPMENT MODE FLAG
-const BYPASS_LOGIN = true; // Completely bypass login and protected routes
+// Authentication is now enabled - set to false to require login
+const BYPASS_LOGIN = false; // Login and protected routes are now enforced
 
 function Router() {
   const [location] = useLocation();
