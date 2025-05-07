@@ -606,7 +606,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
 }
 
 /**
- * Check for URLs added after high-spend budget calculation and immediately update the budget
+ * Check for URLs added after high-spend budget calculation and update the budget after a 9-minute delay
  * This is different from handleNewUrlsAfterBudgetCalc - this is called directly from the high spend handler
  * when detecting that the campaign is already in high_spend_budget_updated state
  * @param campaignId The campaign ID in our system 
@@ -643,6 +643,34 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
     
     console.log(`⚠️ Found ${newUrls.length} new URLs added after budget calculation`);
     
+    // Check if the 9-minute waiting period has elapsed since the newest URL was added
+    const newestUrl = [...newUrls].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    const waitDuration = Date.now() - newestUrl.createdAt.getTime();
+    const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+    
+    console.log(`Newest URL (ID: ${newestUrl.id}) was added ${waitMinutes} minutes ago`);
+    
+    // Apply 9-minute delay before updating budget for newly added URLs
+    const DELAY_MINUTES = 9;
+    
+    if (waitMinutes < DELAY_MINUTES) {
+      console.log(`⏱️ Waiting period not elapsed yet (${waitMinutes}/${DELAY_MINUTES} minutes) - will check again on next iteration`);
+      
+      // Mark these URLs as pending in the database
+      for (const url of newUrls) {
+        await db.update(urls)
+          .set({
+            pendingBudgetUpdate: true as boolean, // Cast to boolean to fix TypeScript error
+            updatedAt: new Date()
+          })
+          .where(eq(urls.id, url.id));
+      }
+      
+      return;
+    }
+    
+    console.log(`✅ ${DELAY_MINUTES}-minute wait period has elapsed - processing ${newUrls.length} new URLs`);
+    
     // Get the current budget from TrafficStar
     const campaignData = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
     if (!campaignData || !campaignData.max_daily) {
@@ -670,6 +698,15 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
       
       // Add to total new URLs budget
       newUrlsBudget += urlBudget;
+      
+      // Update the URL to mark it as processed
+      await db.update(urls)
+        .set({
+          pendingBudgetUpdate: false as boolean, // Cast to boolean to fix TypeScript error
+          budgetCalculated: true as boolean, // Cast to boolean to fix TypeScript error
+          updatedAt: new Date()
+        })
+        .where(eq(urls.id, url.id));
     }
     
     // Calculate updated budget (current budget + new URLs budget)
@@ -687,11 +724,13 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
       .set({
         highSpendBudgetCalcTime: new Date(),
         lastTrafficSenderAction: new Date(),
+        lastTrafficSenderStatus: 'batch_updated_new_urls',
         updatedAt: new Date()
       })
       .where(eq(campaigns.id, campaignId));
     
     console.log(`✅ Updated highSpendBudgetCalcTime for campaign ${campaignId}`);
+    console.log(`✅ Marked campaign ${campaignId} as 'batch_updated_new_urls' in database`);
     
   } catch (error) {
     console.error(`Error checking for new URLs after budget calculation for campaign ${campaignId}:`, error);

@@ -1,0 +1,239 @@
+Fetching spent value for campaign 995224 on 2025-05-07
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+Campaign 995224 spent value from campaign object helper: $32.4900
+Campaign 9 spent value: $32.4900
+TRAFFIC-GENERATOR: Handling campaign 995224 by spent value - current spent: $32.4900
+🟢 HIGH SPEND ($32.4900 >= $10.00): Campaign 995224 has spent $10.00 or more
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+Campaign 9 price per thousand: $1.0000
+Campaign 9 is already in high_spend_budget_updated state - checking for new URLs added after budget calculation
+🔍 Checking for new URLs added after budget calculation for campaign 9
+Campaign 9 budget calculation time: 2025-05-07T11:31:21.470Z
+⚠️ Found 1 new URLs added after budget calculation
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+=> DONE
+<= 'IDLE OK IDLE terminated (Success)'
+=> 'A19 SELECT "INBOX" (CONDSTORE)'
+Current TrafficStar budget for campaign 995224: $267.4580
+New URL 496 budget: $100.0000 (100000 clicks)
+📝 Logged URL budget for URL ID 496 in campaign 9: $100.0000 at 2025-05-07::11:46:19
+Updating budget for campaign 995224 from $267.4580 to $367.4580 (+ $100.0000 for new URLs)
+Updating daily budget for campaign 995224 to: $367.46
+<= '* FLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing)'
+<= '* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Draft \\Deleted \\Seen $NotPhishing $Phishing \\*)] Flags permitted.'
+<= '* OK [UIDVALIDITY 1] UIDs valid.'
+<= '* 10 EXISTS'
+<= '* 0 RECENT'
+<= '* OK [UIDNEXT 14691] Predicted next UID.'
+<= '* OK [HIGHESTMODSEQ 10219429]'
+<= 'A19 OK [READ-WRITE] INBOX selected. (Success)'
+11:46:19 AM [gmail-reader] Searching for ALL messages in inbox - found in mailbox: 10
+=> 'A20 UID SEARCH ALL'
+<= '* SEARCH 11452 11762 12778 12808 13039 13513 13798 13997 14363 14530'
+<= 'A20 OK SEARCH completed (Success)'
+11:46:20 AM [gmail-reader] Found 10 emails in mailbox
+=> 'A21 UID FETCH 11452,11762,12778,12808,13039,13513,13798,13997,14363,14530 (X-GM-THRID X-GM-MSGID X-GM-LABELS MODSEQ UID FLAGS INTERNALDATE BODY[])'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) BODY[] {31758}'
+<= '* 1 FETCH (X-GM-THRID 1828079680993441670 X-GM-MSGID 1828079680993441670 X-GM-LABELS ("\\\\Important") UID 11452 MODSEQ (5005983) INTERNALDATE "31-Mar-2025 03:44:00 +0000" FLAGS (\\Seen) )'
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) BODY[] {33486}'
+11:46:20 AM [gmail-reader] Processing email (ID: 11452)
+11:46:20 AM [gmail-reader] Email ID: 11452
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Atoms Shoe Feat. MKBHD x Replit Collector’s Limited Edition
+            Date: 2025-03-31T03:43:59.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+<= '* 2 FETCH (X-GM-THRID 1828219771118417949 X-GM-MSGID 1828219771118417949 X-GM-LABELS ("\\\\Important") UID 11762 MODSEQ (6748051) INTERNALDATE "01-Apr-2025 16:50:40 +0000" FLAGS (\\Seen) )'
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) BODY[] {17997}'
+11:46:20 AM [gmail-reader] Processing email (ID: 11762)
+11:46:20 AM [gmail-reader] Email ID: 11762
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: ⚡ Limited Time Offer + Create Your Dream App
+            Date: 2025-04-01T16:50:39.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 3 FETCH (X-GM-THRID 1828842461301181856 X-GM-MSGID 1828842461301181856 X-GM-LABELS ("\\\\Important") UID 12778 MODSEQ (6748053) INTERNALDATE "08-Apr-2025 13:48:04 +0000" FLAGS (\\Seen) )'
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) BODY[] {32773}'
+11:46:20 AM [gmail-reader] Processing email (ID: 12778)
+<= '* 4 FETCH (X-GM-THRID 1828873422433337838 X-GM-MSGID 1828873422433337838 X-GM-LABELS ("\\\\Important") UID 12808 MODSEQ (6748055) INTERNALDATE "08-Apr-2025 22:00:10 +0000" FLAGS (\\Seen) )'
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) BODY[] {74433}'
+11:46:20 AM [gmail-reader] Processing email (ID: 12808)
+<= '* 5 FETCH (X-GM-THRID 1829155517314620502 X-GM-MSGID 1829155517314620502 X-GM-LABELS ("\\\\Important") UID 13039 MODSEQ (6748057) INTERNALDATE "12-Apr-2025 00:43:57 +0000" FLAGS (\\Seen) )'
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) BODY[] {29346}'
+11:46:20 AM [gmail-reader] Processing email (ID: 13039)
+<= '* 6 FETCH (X-GM-THRID 1829770617320597680 X-GM-MSGID 1829770617320597680 X-GM-LABELS ("\\\\Important") UID 13513 MODSEQ (6748119) INTERNALDATE "18-Apr-2025 19:40:42 +0000" FLAGS (\\Seen) )'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) BODY[] {5496}'
+<= '* 7 FETCH (X-GM-THRID 1830266338368481139 X-GM-MSGID 1830266338368481139 X-GM-LABELS ("\\\\Important") UID 13798 MODSEQ (6933036) INTERNALDATE "24-Apr-2025 06:59:58 +0000" FLAGS (\\Seen) )'
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) BODY[] {36908}'
+11:46:20 AM [gmail-reader] Processing email (ID: 13513)
+11:46:20 AM [gmail-reader] Processing email (ID: 13798)
+<= '* 8 FETCH (X-GM-THRID 1830490677151303582 X-GM-MSGID 1830490677151303582 X-GM-LABELS ("\\\\Important") UID 13997 MODSEQ (7234096) INTERNALDATE "26-Apr-2025 18:25:45 +0000" FLAGS (\\Seen) )'
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) BODY[] {73275}'
+11:46:20 AM [gmail-reader] Processing email (ID: 13997)
+11:46:20 AM [gmail-reader] Email ID: 12778
+            From: "Windsurf Team" <updates@windsurf.ai>
+            Subject: Welcome to Windsurf Pro - Unlock exclusive perks
+            Date: 2025-04-08T13:48:03.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Windsurf Team" <updates@windsurf.ai>
+11:46:20 AM [gmail-reader] Email ID: 13798
+            From: "Rijwa Mirza" <rijwamirza@gmail.com>
+            Subject: hi
+            Date: 2025-04-24T06:59:45.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Rijwa Mirza" <rijwamirza@gmail.com>
+11:46:20 AM [gmail-reader] Email ID: 12808
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Build fast in Replit
+            Date: 2025-04-08T22:00:09.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+11:46:20 AM [gmail-reader] Email ID: 13513
+            From: "The Replit Team" <contact@mail.replit.com>
+            Subject: Ask your questions in our office hours
+            Date: 2025-04-18T19:40:41.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "The Replit Team" <contact@mail.replit.com>
+<= '* 9 FETCH (X-GM-THRID 1831032820169350592 X-GM-MSGID 1831032820169350592 X-GM-LABELS () UID 14363 MODSEQ (8222750) INTERNALDATE "02-May-2025 18:02:52 +0000" FLAGS (\\Seen) )'
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) BODY[] {58240}'
+11:46:20 AM [gmail-reader] Processing email (ID: 14363)
+11:46:20 AM [gmail-reader] Email ID: 13997
+            From: "Google One" <googleone-noreply@google.com>
+            Subject: Come back to Google One today, Rijwan
+            Date: 2025-04-26T18:25:44.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Google One" <googleone-noreply@google.com>
+<= '* 10 FETCH (X-GM-THRID 1831220776074937041 X-GM-MSGID 1831220776074937041 X-GM-LABELS ("\\\\Important") UID 14530 MODSEQ (9408987) INTERNALDATE "04-May-2025 19:50:21 +0000" FLAGS (\\Seen) )'
+<= 'A21 OK Success'
+=> 'IDLE IDLE'
+11:46:20 AM [gmail-reader] Processing email (ID: 14530)
+11:46:20 AM [gmail-reader] Email ID: 13039
+            From: "Replit" <contact@mail.replit.com>
+            Subject: Hot vibe coding news, can you believe some of these were done in 24 hours or less?
+            Date: 2025-04-12T00:43:56.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Replit" <contact@mail.replit.com>
+11:46:20 AM [gmail-reader] Email ID: 14363
+            From: "Matt Palmer" <matt@mail.replit.com>
+            Subject: 🔥 What's new in Replit: auth, new tutorials, and more!
+            Date: 2025-05-02T18:02:49.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Matt Palmer" <matt@mail.replit.com>
+11:46:20 AM [gmail-reader] Email ID: 14530
+            From: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+            Subject: Important: Confirm your $20.00 payment to Cursor
+            Date: 2025-05-04T19:50:21.000Z
+11:46:20 AM [gmail-reader] Skipping email from non-whitelisted sender: "Cursor" <billing+acct_1Lb5LzB4TZWxSIGU@stripe.com>
+11:46:20 AM [gmail-reader] Finished processing batch of 10 emails
+Flushed 0 pending click updates to database
+<= '+ idling'
+Successfully updated daily budget for campaign 995224
+Confirmed daily budget update for campaign 995224
+✅ Successfully updated budget for campaign 995224 to include new URLs
+✅ Updated highSpendBudgetCalcTime for campaign 9
+Finished running Traffic Generator for all enabled campaigns
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+⏱️ Running minute check for campaign 995224 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 995224
+Getting campaign 995224 details
+Flushed 0 pending click updates to database
+TRAFFIC-GENERATOR: TrafficStar campaign 995224 REAL status is enabled, active=true
+✅ Campaign 995224 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 24 URLs in campaign 995224
+🔍 URL ID: 105, status: deleted, clickLimit: 5000, clicks: 0
+❌ Skipping URL ID: 105 with status: deleted
+🔍 URL ID: 86, status: deleted, clickLimit: 100, clicks: 2
+❌ Skipping URL ID: 86 with status: deleted
+🔍 URL ID: 87, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 87 with status: deleted
+🔍 URL ID: 92, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 92 with status: deleted
+🔍 URL ID: 104, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 104 with status: deleted
+🔍 URL ID: 121, status: deleted, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 121 with status: deleted
+🔍 URL ID: 201, status: deleted, clickLimit: 100, clicks: 0
+❌ Skipping URL ID: 201 with status: deleted
+🔍 URL ID: 197, status: deleted, clickLimit: 10, clicks: 0
+❌ Skipping URL ID: 197 with status: deleted
+🔍 URL ID: 198, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 198 with status: deleted
+🔍 URL ID: 199, status: deleted, clickLimit: 25000, clicks: 0
+❌ Skipping URL ID: 199 with status: deleted
+🔍 URL ID: 200, status: deleted, clickLimit: 10000, clicks: 0
+❌ Skipping URL ID: 200 with status: deleted
+🔍 URL ID: 280, status: deleted, clickLimit: 20000, clicks: 0
+❌ Skipping URL ID: 280 with status: deleted
+🔍 URL ID: 281, status: deleted, clickLimit: 4000, clicks: 0
+❌ Skipping URL ID: 281 with status: deleted
+🔍 URL ID: 283, status: paused, clickLimit: 100000, clicks: 0
+❌ Skipping URL ID: 283 with status: paused
+🔍 URL ID: 287, status: paused, clickLimit: 14999, clicks: 0
+❌ Skipping URL ID: 287 with status: paused
+🔍 URL ID: 458, status: active, clickLimit: 100000, clicks: 0
+✅ Adding 100000 remaining clicks from URL ID: 458
+🔍 URL ID: 488, status: active, clickLimit: 10000, clicks: 0
+✅ Adding 10000 remaining clicks from URL ID: 488
+🔍 URL ID: 384, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 384 with status: paused
+🔍 URL ID: 453, status: paused, clickLimit: 1000, clicks: 0
+❌ Skipping URL ID: 453 with status: paused
+🔍 URL ID: 492, status: active, clickLimit: 5000, clicks: 0
+✅ Adding 5000 remaining clicks from URL ID: 492
+🔍 URL ID: 493, status: active, clickLimit: 10000, clicks: 7
+✅ Adding 9993 remaining clicks from URL ID: 493
+🔍 URL ID: 494, status: active, clickLimit: 10000, clicks: 25
+✅ Adding 9975 remaining clicks from URL ID: 494
+🔍 URL ID: 495, status: active, clickLimit: 100000, clicks: 1
+✅ Adding 99999 remaining clicks from URL ID: 495
+🔍 URL ID: 496, status: active, clickLimit: 100000, clicks: 7
+✅ Adding 99993 remaining clicks from URL ID: 496
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates to database
+Flushed 0 pending click updates
