@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Link2, Menu } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Link2, Menu, ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 
 export default function Navbar() {
   const [location] = useLocation();
@@ -31,10 +31,84 @@ export default function Navbar() {
     </div>
   );
 
+  // State for scrolling position
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
+  
+  // References for menu container
+  const menuRef = useRef<HTMLDivElement>(null);
+  
+  // Check if scroll buttons should be shown
+  useEffect(() => {
+    if (menuOpen && menuRef.current) {
+      const containerHeight = menuRef.current.clientHeight;
+      const scrollHeight = menuRef.current.scrollHeight;
+      setShowScrollButtons(scrollHeight > containerHeight);
+    }
+  }, [menuOpen]);
+  
+  // Scroll up
+  const scrollUp = () => {
+    if (menuRef.current) {
+      const newPosition = Math.max(0, scrollPosition - 100);
+      menuRef.current.scrollTo({
+        top: newPosition,
+        behavior: 'smooth'
+      });
+      setScrollPosition(newPosition);
+    }
+  };
+  
+  // Scroll down
+  const scrollDown = () => {
+    if (menuRef.current) {
+      const newPosition = Math.min(
+        menuRef.current.scrollHeight - menuRef.current.clientHeight,
+        scrollPosition + 100
+      );
+      menuRef.current.scrollTo({
+        top: newPosition,
+        behavior: 'smooth'
+      });
+      setScrollPosition(newPosition);
+    }
+  };
+
   // Hamburger menu dropdown
   const HamburgerMenu = () => (
     <div className={`absolute top-[60px] left-0 right-0 bg-white z-50 shadow-md transition-all duration-300 ${menuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-      <div className="py-2 px-4">
+      {/* Scroll up button */}
+      {showScrollButtons && (
+        <div 
+          className="sticky top-0 w-full bg-white py-1 border-b text-center cursor-pointer z-10 shadow-sm"
+          onClick={scrollUp}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="inline-block"
+          >
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </div>
+      )}
+      
+      <div 
+        ref={menuRef} 
+        className="py-2 px-4 max-h-[70vh] overflow-y-auto"
+        onScroll={(e) => {
+          if (e.currentTarget) {
+            setScrollPosition(e.currentTarget.scrollTop);
+          }
+        }}
+      >
         <Link 
           href="/campaigns" 
           className="block py-3 border-b"
@@ -216,6 +290,29 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      
+      {/* Scroll down button */}
+      {showScrollButtons && (
+        <div 
+          className="sticky bottom-0 w-full bg-white py-1 border-t text-center cursor-pointer z-10 shadow-sm"
+          onClick={scrollDown}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="inline-block"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      )}
     </div>
   );
 
