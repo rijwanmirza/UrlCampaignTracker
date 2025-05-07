@@ -508,7 +508,7 @@ export default function URLsPage() {
           </div>
 
           {/* Select All action for all users */}
-          {urls.length > 0 && selectedUrls.length === 0 && (
+          {urls.length > 0 && (
             <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
               <Button
                 size="sm"
@@ -516,8 +516,17 @@ export default function URLsPage() {
                 onClick={toggleSelectAll}
                 className="w-full gap-1 border-blue-300 text-blue-700"
               >
-                <Check className="h-3 w-3" />
-                Select All URLs on This Page ({urls.length})
+                {selectedUrls.length === urls.length ? (
+                  <>
+                    <X className="h-3 w-3" />
+                    Deselect All URLs
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Select All URLs on This Page ({urls.length})
+                  </>
+                )}
               </Button>
             </div>
           )}
