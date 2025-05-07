@@ -5317,7 +5317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = (page - 1) * limit;
       
       // Build the query
-      let query = db.select().from(youtubeUrlRecords).orderBy(youtubeUrlRecords.deletedAt.desc());
+      let query = db.select().from(youtubeUrlRecords).orderBy(desc(youtubeUrlRecords.deletedAt));
       
       // Add campaign filter if provided
       if (campaignId) {
