@@ -4,7 +4,7 @@
  * credentials are properly configured in the database
  */
 import { db } from './db';
-import { trafficStarService } from './trafficstar-service-new';
+import { trafficStarService } from './trafficstar-service';
 import { trafficstarCredentials } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
