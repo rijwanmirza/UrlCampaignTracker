@@ -8,6 +8,7 @@ import { getServerStats, getStatsHistory, initServerMonitor } from './server-mon
 import { requireAuth } from "./auth/middleware";
 import { registerUrlClickRoutes } from "./url-click-routes";
 import { urlClickLogsManager } from "./url-click-logs-manager";
+import urlBudgetTestApi from "./url-budget-test-api";
 
 import { 
   optimizeResponseHeaders,
@@ -68,6 +69,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register the new Reports API test routes
   registerReportsAPITestRoutes(app);
+  
+  // Register URL budget test API routes
+  app.use('/api/url-budget-test', urlBudgetTestApi);
   
   // Test TrafficStar routes have been removed as per user request
   
