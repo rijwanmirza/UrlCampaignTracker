@@ -1209,6 +1209,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 DEBUG: Received URL creation request:', JSON.stringify(req.body, null, 2));
       console.log('🔍 DEBUG: Campaign multiplier:', campaign.multiplier);
       
+      // Check if YouTube API validation is needed (campaign has YouTube API enabled and URL is a YouTube URL)
+      if (campaign.youtubeApiEnabled && youtubeApiService.isYouTubeUrl(req.body.targetUrl)) {
+        console.log(`🔍 DEBUG: Campaign has YouTube API enabled and URL is a YouTube URL - validating: ${req.body.targetUrl}`);
+        
+        // Check if YouTube API is configured
+        if (!youtubeApiService.isConfigured()) {
+          console.warn('⚠️ YouTube API not configured - skipping validation');
+        } else {
+          // Extract video ID
+          const videoId = youtubeApiService.extractVideoId(req.body.targetUrl);
+          
+          if (!videoId) {
+            // Invalid YouTube URL - direct reject
+            console.log(`❌ YouTube URL validation failed: Could not extract video ID from ${req.body.targetUrl}`);
+            
+            // Create original URL record with direct_rejected status
+            await storage.createOriginalUrlRecord({
+              name: req.body.name,
+              targetUrl: req.body.targetUrl,
+              originalClickLimit: parseInt(req.body.clickLimit, 10),
+              status: 'direct_rejected'
+            });
+            
+            // Record the validation failure
+            await youtubeApiService.saveDirectRejectedUrl(
+              req.body,
+              campaignId,
+              'Invalid YouTube URL - could not extract video ID',
+              videoId || 'unknown',
+              { deletedVideo: true }
+            );
+            
+            return res.status(400).json({ 
+              message: "URL rejected - Invalid YouTube URL format", 
+              status: 'direct_rejected',
+              reason: 'Could not extract video ID from the URL'
+            });
+          }
+          
+          // Proceed with full validation
+          const validation = await youtubeApiService.validateSingleUrl(req.body.targetUrl, campaign);
+          
+          if (!validation.isValid) {
+            console.log(`❌ YouTube URL validation failed: ${validation.reason}`);
+            
+            // Create original URL record with direct_rejected status
+            await storage.createOriginalUrlRecord({
+              name: req.body.name,
+              targetUrl: req.body.targetUrl,
+              originalClickLimit: parseInt(req.body.clickLimit, 10),
+              status: 'direct_rejected'
+            });
+            
+            // Record the validation failure
+            await youtubeApiService.saveDirectRejectedUrl(
+              req.body,
+              campaignId,
+              validation.reason,
+              videoId,
+              validation.validationDetails || {}
+            );
+            
+            return res.status(400).json({ 
+              message: `URL rejected - ${validation.reason}`, 
+              status: 'direct_rejected',
+              reason: validation.reason
+            });
+          }
+          
+          console.log(`✅ YouTube URL validation passed for: ${req.body.targetUrl}`);
+        }
+      }
+      
       // Store original click limit - EXACTLY as entered by user
       let originalClickLimit = parseInt(req.body.clickLimit, 10);
       if (isNaN(originalClickLimit) || originalClickLimit <= 0) {
