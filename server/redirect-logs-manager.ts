@@ -45,6 +45,41 @@ export class RedirectLogsManager {
   }
   
   /**
+   * Clear all redirect logs files
+   * Used during system cleanup
+   */
+  public clearAllLogs(): { success: boolean, entriesRemoved: number } {
+    try {
+      let entriesRemoved = 0;
+      
+      // Make sure logs directory exists
+      if (!fs.existsSync(LOGS_BASE_DIR)) {
+        return { success: true, entriesRemoved: 0 };
+      }
+      
+      // Read all files in the logs directory
+      const files = fs.readdirSync(LOGS_BASE_DIR);
+      
+      // Delete each log file
+      for (const file of files) {
+        const filePath = path.join(LOGS_BASE_DIR, file);
+        
+        // Make sure it's a file, not a directory
+        if (fs.statSync(filePath).isFile() && file.endsWith('.log')) {
+          fs.unlinkSync(filePath);
+          entriesRemoved++;
+        }
+      }
+      
+      console.log(`Cleared all redirect logs: ${entriesRemoved} files deleted`);
+      return { success: true, entriesRemoved };
+    } catch (error) {
+      console.error('Failed to clear redirect logs:', error);
+      return { success: false, entriesRemoved: 0 };
+    }
+  }
+  
+  /**
    * Get the path to a campaign's log file
    */
   private getCampaignLogFilePath(campaignId: number): string {
