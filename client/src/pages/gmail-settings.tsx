@@ -338,6 +338,7 @@ export default function GmailSettingsPage() {
         trafficstarCampaignsDeleted: number,
         urlBudgetLogsDeleted: number,
         urlClickRecordsDeleted: number,
+        urlClickLogsDeleted: number,
         campaignClickRecordsDeleted: number,
         emailLogsCleared: boolean,
         emailLogsRemoved: number
@@ -357,6 +358,7 @@ export default function GmailSettingsPage() {
           trafficstarCampaignsDeleted: number,
           urlBudgetLogsDeleted: number,
           urlClickRecordsDeleted: number,
+          urlClickLogsDeleted: number,
           campaignClickRecordsDeleted: number,
           emailLogsCleared: boolean,
           emailLogsRemoved: number
