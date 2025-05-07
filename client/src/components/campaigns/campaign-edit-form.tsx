@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Loader2, X } from "lucide-react";
 import {
   Form,
@@ -761,6 +762,180 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
               )}
               
               {/* Traffic Sender section removed */}
+            </div>
+            
+            {/* YouTube API Section */}
+            <div className="rounded-lg border p-3 mt-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">YouTube API Monitor</h4>
+                  <FormField
+                    control={form.control}
+                    name="youtubeApiEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm">
+                            {field.value ? "Enabled" : "Disabled"}
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, YouTube API will automatically check and remove problematic YouTube URLs from the campaign.
+                </p>
+                
+                {/* Check Interval - only show when YouTube API is enabled */}
+                {form.watch("youtubeApiEnabled") && (
+                  <FormField
+                    control={form.control}
+                    name="youtubeApiIntervalMinutes"
+                    render={({ field }) => (
+                      <FormItem className="mt-3 pt-3 border-t border-gray-100">
+                        <FormLabel>Check Interval (minutes)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="15"
+                            max="1440"
+                            step="15"
+                            {...field}
+                            onChange={(e) => {
+                              // Just use the raw value from the input to allow proper editing
+                              const value = e.target.value;
+                              
+                              // Only parse and validate when submitting or onBlur
+                              if (value === '') {
+                                // Empty field - set default
+                                field.onChange(60);
+                              } else {
+                                // Update with the raw value
+                                const parsedValue = parseInt(value, 10);
+                                if (!isNaN(parsedValue)) {
+                                  field.onChange(parsedValue);
+                                }
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          How often to check URLs using YouTube API (15-1440 minutes). Recommended: 60 minutes.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+                {/* Video Status Checks - only show when YouTube API is enabled */}
+                {form.watch("youtubeApiEnabled") && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <FormLabel className="block mb-2">URL Removal Conditions</FormLabel>
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="youtubeCheckCountryRestriction"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              Remove videos restricted in India
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="youtubeCheckPrivate"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              Remove private videos
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="youtubeCheckDeleted"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              Remove deleted videos
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="youtubeCheckAgeRestricted"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              Remove age-restricted videos
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="youtubeCheckMadeForKids"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              Remove videos made for kids
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormDescription className="mt-2">
+                      When a URL is removed due to these conditions, it will be recorded in YouTube URL Records.
+                    </FormDescription>
+                  </div>
+                )}
+              </div>
             </div>
             
             <DialogFooter className="pt-4">
