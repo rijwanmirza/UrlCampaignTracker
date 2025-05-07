@@ -5178,34 +5178,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // API endpoint to get URL budget logs
+  // API endpoint to get URL budget logs for all campaigns with TrafficStar integration
   app.get("/api/url-budget-logs", async (_req: Request, res: Response) => {
     try {
-      console.log('Fetching URL budget logs');
-      const logs = await urlBudgetLogger.getUrlBudgetLogs();
-      
-      // Get URL details for each log entry to enhance the response
-      const enhancedLogs = await Promise.all(logs.map(async (log) => {
-        try {
-          const url = await storage.getUrl(log.urlId);
-          return {
-            ...log,
-            urlName: url ? url.name : 'Unknown URL',
-            campaignId: url ? url.campaignId : null
-          };
-        } catch (error) {
-          console.error(`Error fetching URL details for ID ${log.urlId}:`, error);
-          return {
-            ...log,
-            urlName: 'Unknown URL',
-            campaignId: null
-          };
-        }
-      }));
+      console.log('Fetching URL budget logs for all campaigns with TrafficStar integration');
+      const logs = await urlBudgetLogger.getAllUrlBudgetLogs();
       
       res.json({
         success: true,
-        logs: enhancedLogs.reverse() // Return newest logs first
+        logs: logs.reverse() // Return newest logs first
       });
     } catch (error) {
       console.error("Error fetching URL budget logs:", error);
@@ -5216,11 +5197,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint to get URL budget logs for a specific campaign
+  app.get("/api/url-budget-logs/:campaignId", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid campaign ID"
+        });
+      }
+      
+      // Check if campaign has TrafficStar integration
+      const hasTrafficStar = await urlBudgetLogger.hasCampaignTrafficStarIntegration(campaignId);
+      if (!hasTrafficStar) {
+        return res.status(404).json({
+          success: false,
+          error: "Campaign not found or doesn't have TrafficStar integration"
+        });
+      }
+      
+      console.log(`Fetching URL budget logs for campaign ${campaignId}`);
+      const logs = await urlBudgetLogger.getCampaignUrlBudgetLogs(campaignId);
+      
+      res.json({
+        success: true,
+        campaignId,
+        logs: logs.reverse() // Return newest logs first
+      });
+    } catch (error) {
+      console.error(`Error fetching URL budget logs for campaign ${req.params.campaignId}:`, error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to fetch URL budget logs for campaign" 
+      });
+    }
+  });
+  
   // Clear all URL budget logs - mainly for testing and manual cleanup
   app.post("/api/url-budget-logs/clear", async (_req: Request, res: Response) => {
     try {
       console.log('Clearing all URL budget logs');
-      await urlBudgetLogger.clearLogs();
+      
+      // Get all campaigns with TrafficStar integration
+      const campaignsWithTrafficStar = await db.select({
+        id: campaigns.id
+      })
+      .from(campaigns)
+      .where(ne(campaigns.trafficstarCampaignId, ''))
+      .where(isNull(campaigns.trafficstarCampaignId).not());
+      
+      // Clear logs for each campaign
+      for (const campaign of campaignsWithTrafficStar) {
+        await urlBudgetLogger.clearCampaignLogs(campaign.id);
+      }
       
       res.json({
         success: true,
@@ -5231,6 +5261,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: "Failed to clear URL budget logs" 
+      });
+    }
+  });
+  
+  // Clear URL budget logs for a specific campaign
+  app.post("/api/url-budget-logs/:campaignId/clear", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid campaign ID"
+        });
+      }
+      
+      // Check if campaign has TrafficStar integration
+      const hasTrafficStar = await urlBudgetLogger.hasCampaignTrafficStarIntegration(campaignId);
+      if (!hasTrafficStar) {
+        return res.status(404).json({
+          success: false,
+          error: "Campaign not found or doesn't have TrafficStar integration"
+        });
+      }
+      
+      console.log(`Clearing URL budget logs for campaign ${campaignId}`);
+      await urlBudgetLogger.clearCampaignLogs(campaignId);
+      
+      res.json({
+        success: true,
+        message: `URL budget logs for campaign ${campaignId} cleared successfully`
+      });
+    } catch (error) {
+      console.error(`Error clearing URL budget logs for campaign ${req.params.campaignId}:`, error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to clear URL budget logs for campaign" 
       });
     }
   });
