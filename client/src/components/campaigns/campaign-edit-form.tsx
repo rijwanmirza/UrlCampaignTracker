@@ -126,12 +126,23 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
     postPauseCheckMinutes: campaign.postPauseCheckMinutes || 2,
     highSpendWaitMinutes: campaign.highSpendWaitMinutes || 11,
+    // YouTube API Settings
+    youtubeApiEnabled: campaign.youtubeApiEnabled || false,
+    youtubeApiIntervalMinutes: campaign.youtubeApiIntervalMinutes || 60,
+    youtubeCheckCountryRestriction: campaign.youtubeCheckCountryRestriction !== false,
+    youtubeCheckPrivate: campaign.youtubeCheckPrivate !== false,
+    youtubeCheckDeleted: campaign.youtubeCheckDeleted !== false,
+    youtubeCheckAgeRestricted: campaign.youtubeCheckAgeRestricted !== false,
+    youtubeCheckMadeForKids: campaign.youtubeCheckMadeForKids !== false,
+    youtubeCheckDuration: campaign.youtubeCheckDuration || false,
+    youtubeMaxDurationMinutes: campaign.youtubeMaxDurationMinutes || 30,
     // Traffic Sender references removed
     // Auto-management has been removed
   });
   
-  // DEBUGGING - Log all fields for debugging the issue
+  // DEBUGGING - Log specific fields for debugging
   console.log("Debug - highSpendWaitMinutes in campaign:", campaign.highSpendWaitMinutes);
+  console.log("Debug - youtubeApiEnabled in campaign:", campaign.youtubeApiEnabled);
   
   // CRITICAL FIX: Force the form values to be set properly
   setTimeout(() => {
@@ -246,6 +257,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     
     // Log form highSpendWaitMinutes value specifically
     console.log("BEFORE SUBMIT - highSpendWaitMinutes value:", values.highSpendWaitMinutes);
+    console.log("BEFORE SUBMIT - youtubeApiEnabled value:", values.youtubeApiEnabled);
     
     // Make sure highSpendWaitMinutes is included and is a valid number
     if (values.highSpendWaitMinutes === undefined) {
@@ -264,6 +276,52 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     }
     
     console.log("AFTER VALIDATION - highSpendWaitMinutes value:", values.highSpendWaitMinutes);
+    
+    // Make sure youtubeApiEnabled is a proper boolean
+    values.youtubeApiEnabled = values.youtubeApiEnabled === true;
+    
+    // Make sure YouTube API settings are handled correctly
+    if (values.youtubeApiEnabled) {
+      // Validate youtubeApiIntervalMinutes
+      if (values.youtubeApiIntervalMinutes === undefined) {
+        values.youtubeApiIntervalMinutes = campaign.youtubeApiIntervalMinutes || 60;
+      }
+      
+      // Ensure interval is a number between 15-1440 minutes
+      const intervalMinutes = Number(values.youtubeApiIntervalMinutes);
+      if (isNaN(intervalMinutes) || intervalMinutes < 15) {
+        values.youtubeApiIntervalMinutes = 15;
+      } else if (intervalMinutes > 1440) {
+        values.youtubeApiIntervalMinutes = 1440;
+      } else {
+        values.youtubeApiIntervalMinutes = intervalMinutes;
+      }
+      
+      // Ensure boolean flags are properly set
+      values.youtubeCheckCountryRestriction = values.youtubeCheckCountryRestriction !== false;
+      values.youtubeCheckPrivate = values.youtubeCheckPrivate !== false;
+      values.youtubeCheckDeleted = values.youtubeCheckDeleted !== false;
+      values.youtubeCheckAgeRestricted = values.youtubeCheckAgeRestricted !== false;
+      values.youtubeCheckMadeForKids = values.youtubeCheckMadeForKids !== false;
+      values.youtubeCheckDuration = values.youtubeCheckDuration === true;
+      
+      // Validate youtubeMaxDurationMinutes
+      if (values.youtubeMaxDurationMinutes === undefined) {
+        values.youtubeMaxDurationMinutes = campaign.youtubeMaxDurationMinutes || 30;
+      }
+      
+      // Ensure max duration is a number between 1-180 minutes
+      const maxDurationMinutes = Number(values.youtubeMaxDurationMinutes);
+      if (isNaN(maxDurationMinutes) || maxDurationMinutes < 1) {
+        values.youtubeMaxDurationMinutes = 1;
+      } else if (maxDurationMinutes > 180) {
+        values.youtubeMaxDurationMinutes = 180;
+      } else {
+        values.youtubeMaxDurationMinutes = maxDurationMinutes;
+      }
+    }
+    
+    console.log("AFTER VALIDATION - youtubeApiEnabled value:", values.youtubeApiEnabled);
     
     updateCampaignMutation.mutate(values);
   };
