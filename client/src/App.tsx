@@ -19,6 +19,7 @@ import CampaignClickDetailPage from "@/pages/campaign-click-detail-page";
 import UrlClickRecordsPage from "@/pages/url-click-records-page";
 import DetailedUrlRecordPage from "@/pages/detailed-url-record-page";
 import UrlBudgetLogsPage from "@/pages/url-budget-logs";
+import UrlBudgetPage from "@/pages/url-budget-page";
 import ApiTesterPage from "@/pages/api-tester";
 import LoginPage from "@/pages/login-page";
 import AppLayout from "@/components/layout/app-layout";
