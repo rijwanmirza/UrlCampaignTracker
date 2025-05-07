@@ -188,48 +188,6 @@ export default function Navbar() {
         </Link>
         
         <Link 
-          href="/url-budget" 
-          className="block py-3 border-b"
-          onClick={() => setMenuOpen(false)}
-        >
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="font-medium">URL Budget</span>
-          </div>
-        </Link>
-        
-        <Link 
-          href="/redirect-test" 
-          className="block py-3 border-b"
-          onClick={() => setMenuOpen(false)}
-        >
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17 8l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 12h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="font-medium">Redirect Test</span>
-          </div>
-        </Link>
-        
-        <Link 
-          href="/test-spent-value" 
-          className="block py-3 border-b"
-          onClick={() => setMenuOpen(false)}
-        >
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5l6.74-6.76z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <line x1="16" y1="8" x2="2" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <line x1="17.5" y1="15" x2="9" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="font-medium">Auto-Management Test</span>
-          </div>
-        </Link>
-        
-        <Link 
           href="/original-url-records" 
           className="block py-3 border-b"
           onClick={() => setMenuOpen(false)}
