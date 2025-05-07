@@ -557,9 +557,21 @@ export class DatabaseStorage implements IStorage {
     
     // Handle YouTube API settings
     if (updateCampaign.youtubeApiEnabled !== undefined) {
-      // Make sure it's properly set as a boolean
-      updateData.youtubeApiEnabled = updateCampaign.youtubeApiEnabled === true;
-      console.log('🔍 DEBUG: Setting youtubeApiEnabled to:', updateData.youtubeApiEnabled, '(original value:', updateCampaign.youtubeApiEnabled, ')');
+      // CRITICAL FIX: Properly convert to boolean while preserving true values
+      // First check if it's already a proper boolean
+      if (typeof updateCampaign.youtubeApiEnabled === 'boolean') {
+        updateData.youtubeApiEnabled = updateCampaign.youtubeApiEnabled;
+      } else {
+        // Handle string value "true", "false", or non-boolean values
+        const boolValue = (updateCampaign.youtubeApiEnabled === true || 
+                          updateCampaign.youtubeApiEnabled === 'true' || 
+                          updateCampaign.youtubeApiEnabled === 1);
+        updateData.youtubeApiEnabled = boolValue;
+      }
+      
+      console.log('🔍 DEBUG: Setting youtubeApiEnabled to:', updateData.youtubeApiEnabled, 
+                  '(original value:', updateCampaign.youtubeApiEnabled, 
+                  ', type:', typeof updateCampaign.youtubeApiEnabled, ')');
     }
     
     if (updateCampaign.youtubeApiIntervalMinutes !== undefined) {
