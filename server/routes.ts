@@ -34,10 +34,12 @@ import {
   trafficstarCampaignEndTimeSchema,
   insertOriginalUrlRecordSchema,
   updateOriginalUrlRecordSchema,
+  insertYoutubeUrlRecordSchema,
   trafficstarCampaigns,
   campaigns,
   urls,
-  originalUrlRecords
+  originalUrlRecords,
+  youtubeUrlRecords
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
