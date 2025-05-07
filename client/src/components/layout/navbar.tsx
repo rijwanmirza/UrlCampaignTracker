@@ -31,8 +31,7 @@ export default function Navbar() {
     </div>
   );
 
-  // State for scrolling position
-  const [scrollPosition, setScrollPosition] = useState(0);
+  // State for scrolling
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   
   // References for menu container
@@ -41,36 +40,44 @@ export default function Navbar() {
   // Check if scroll buttons should be shown
   useEffect(() => {
     if (menuOpen && menuRef.current) {
-      const containerHeight = menuRef.current.clientHeight;
-      const scrollHeight = menuRef.current.scrollHeight;
-      setShowScrollButtons(scrollHeight > containerHeight);
+      const checkScrollNeeded = () => {
+        if (!menuRef.current) return;
+        const containerHeight = menuRef.current.clientHeight;
+        const scrollHeight = menuRef.current.scrollHeight;
+        setShowScrollButtons(scrollHeight > containerHeight);
+      };
+      
+      // Initial check
+      checkScrollNeeded();
+      
+      // Check again after a slight delay to ensure all content is rendered
+      setTimeout(checkScrollNeeded, 100);
+      
+      // Add window resize listener
+      window.addEventListener('resize', checkScrollNeeded);
+      return () => window.removeEventListener('resize', checkScrollNeeded);
     }
   }, [menuOpen]);
   
   // Scroll up
   const scrollUp = () => {
     if (menuRef.current) {
-      const newPosition = Math.max(0, scrollPosition - 100);
-      menuRef.current.scrollTo({
-        top: newPosition,
-        behavior: 'smooth'
+      // Scroll up by 200px at a time
+      menuRef.current.scrollBy({
+        top: -200,
+        behavior: 'auto'
       });
-      setScrollPosition(newPosition);
     }
   };
   
   // Scroll down
   const scrollDown = () => {
     if (menuRef.current) {
-      const newPosition = Math.min(
-        menuRef.current.scrollHeight - menuRef.current.clientHeight,
-        scrollPosition + 100
-      );
-      menuRef.current.scrollTo({
-        top: newPosition,
-        behavior: 'smooth'
+      // Scroll down by 200px at a time
+      menuRef.current.scrollBy({
+        top: 200,
+        behavior: 'auto'
       });
-      setScrollPosition(newPosition);
     }
   };
 
@@ -80,34 +87,32 @@ export default function Navbar() {
       {/* Scroll up button */}
       {showScrollButtons && (
         <div 
-          className="sticky top-0 w-full bg-white py-1 border-b text-center cursor-pointer z-10 shadow-sm"
+          className="sticky top-0 w-full bg-white py-2 border-b text-center cursor-pointer z-10 shadow-sm hover:bg-gray-100 transition-colors"
           onClick={scrollUp}
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className="inline-block"
-          >
-            <polyline points="18 15 12 9 6 15"></polyline>
-          </svg>
+          <div className="flex items-center justify-center">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="inline-block text-primary"
+            >
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+            <span className="ml-1 text-xs text-gray-500">Scroll up</span>
+          </div>
         </div>
       )}
       
       <div 
         ref={menuRef} 
         className="py-2 px-4 max-h-[70vh] overflow-y-auto"
-        onScroll={(e) => {
-          if (e.currentTarget) {
-            setScrollPosition(e.currentTarget.scrollTop);
-          }
-        }}
       >
         <Link 
           href="/campaigns" 
@@ -294,23 +299,26 @@ export default function Navbar() {
       {/* Scroll down button */}
       {showScrollButtons && (
         <div 
-          className="sticky bottom-0 w-full bg-white py-1 border-t text-center cursor-pointer z-10 shadow-sm"
+          className="sticky bottom-0 w-full bg-white py-2 border-t text-center cursor-pointer z-10 shadow-sm hover:bg-gray-100 transition-colors"
           onClick={scrollDown}
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className="inline-block"
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
+          <div className="flex items-center justify-center">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="inline-block text-primary"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+            <span className="ml-1 text-xs text-gray-500">Scroll down</span>
+          </div>
         </div>
       )}
     </div>
