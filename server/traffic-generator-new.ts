@@ -489,7 +489,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
               // This will be used to identify URLs added after this point
               await db.update(campaigns)
                 .set({
-                  budgetUpdateTime: new Date().toISOString()
+                  highSpendBudgetCalcTime: new Date()
                 })
                 .where(eq(campaigns.id, campaignId));
               
@@ -510,8 +510,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
               await db.update(campaigns)
                 .set({
                   lastTrafficSenderStatus: 'high_spend_budget_updated',
-                  lastTrafficSenderAction: new Date().toISOString(),
-                  updatedAt: new Date().toISOString()
+                  lastTrafficSenderAction: new Date(),
+                  updatedAt: new Date()
                 })
                 .where(eq(campaigns.id, campaignId));
               

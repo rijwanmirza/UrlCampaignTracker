@@ -50,6 +50,8 @@ export const campaigns = pgTable("campaigns", {
   lastTrafficSenderAction: timestamp("last_traffic_sender_action"), // DEPRECATED: Traffic Sender removed
   lastTrafficSenderStatus: text("last_traffic_sender_status"), // DEPRECATED: Traffic Sender removed
   lastBudgetUpdateTime: timestamp("last_budget_update_time"), // Last time the budget was updated for new URLs
+  // Track when high-spend budget calculation was performed ($10+ handling)
+  highSpendBudgetCalcTime: timestamp("high_spend_budget_calc_time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
