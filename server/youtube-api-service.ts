@@ -278,7 +278,7 @@ export class YouTubeApiService {
   /**
    * Process a single campaign
    */
-  async processCampaign(campaignId: number): Promise<void> {
+  async processCampaign(campaignId: number, forceCheck: boolean = false): Promise<void> {
     try {
       // Get campaign details
       const [campaign] = await db
@@ -294,6 +294,17 @@ export class YouTubeApiService {
       if (!campaign.youtubeApiEnabled) {
         logger.info(`YouTube API not enabled for campaign ${campaignId}`);
         return;
+      }
+      
+      // Check if interval has elapsed unless forceCheck is true
+      if (!forceCheck && campaign.youtubeApiLastCheck) {
+        const intervalMinutes = campaign.youtubeApiIntervalMinutes || 60; // Default to 60 minutes if null
+        const now = new Date();
+        
+        if (!this.hasIntervalElapsed(campaign.youtubeApiLastCheck, intervalMinutes, now)) {
+          logger.info(`Skipping YouTube check for campaign ${campaignId} - interval not elapsed (${intervalMinutes} minutes)`);
+          return;
+        }
       }
       
       logger.info(`Processing YouTube checks for campaign ${campaignId}`);

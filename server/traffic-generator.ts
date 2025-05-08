@@ -23,7 +23,13 @@ interface UrlWithActiveStatus extends Url {
  * @param trafficstarCampaignId The TrafficStar campaign ID
  * @returns The campaign status (active, paused, etc.) or null if error
  */
-export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string) {
+export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string | null): Promise<string | null> {
+  // If no campaign ID, return null immediately
+  if (!trafficstarCampaignId) {
+    console.log('Cannot get status: No TrafficStar campaign ID provided');
+    return null;
+  }
+  
   try {
     console.log(`TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign ${trafficstarCampaignId}`);
     
@@ -44,6 +50,17 @@ export async function getTrafficStarCampaignStatus(trafficstarCampaignId: string
     console.error('Error getting TrafficStar campaign status:', error);
     return null;
   }
+}
+
+/**
+ * Helper function to safely handle campaign status checks
+ * This avoids TypeScript errors when comparing status from null campaign IDs
+ * @param actualStatus The actual status returned from getTrafficStarCampaignStatus
+ * @param expectedStatus The status we're checking for
+ * @returns True if status matches expected, false otherwise
+ */
+function statusMatches(actualStatus: string | null, expectedStatus: string): boolean {
+  return actualStatus === expectedStatus;
 }
 
 /**
@@ -144,7 +161,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
         console.log(`📊 Campaign ${trafficstarCampaignId} current status: ${currentStatus}`);
         
         // Handle based on remaining clicks and current status
-        if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD && currentStatus !== 'active') {
+        if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD && !statusMatches(currentStatus, 'active')) {
           // Case 1: High remaining clicks (≥15,000) but not active - ACTIVATE CAMPAIGN
           console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) - will attempt auto-reactivation`);
           
@@ -177,7 +194,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
               console.log(`✅ Marked campaign ${campaignId} as 'auto_reactivated_low_spend' in database`);
               
               // Start minute-by-minute monitoring to check if the campaign stays active
-              startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+              // Use type assertion since we know trafficstarCampaignId exists in this context
+              startMinutelyStatusCheck(campaignId, trafficstarCampaignId as string);
               
               return;
             } catch (activateError) {
@@ -186,7 +204,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
           } catch (error) {
             console.error(`❌ Error auto-reactivating low spend campaign ${trafficstarCampaignId}:`, error);
           }
-        } else if (totalRemainingClicks <= MINIMUM_CLICKS_THRESHOLD && currentStatus === 'active') {
+        } else if (totalRemainingClicks <= MINIMUM_CLICKS_THRESHOLD && statusMatches(currentStatus, 'active')) {
           // Case 2: Low remaining clicks (≤5,000) and active - PAUSE CAMPAIGN
           console.log(`⏹️ Campaign ${trafficstarCampaignId} only has ${totalRemainingClicks} remaining clicks (<= ${MINIMUM_CLICKS_THRESHOLD}) - will pause campaign`);
           
@@ -217,7 +235,8 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                 console.log(`✅ Marked campaign ${campaignId} as 'auto_paused_low_clicks' in database`);
                 
                 // Start pause status monitoring to ensure campaign stays paused
-                startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+                // Use type assertion since we know trafficstarCampaignId exists in this context
+                startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId as string);
                 
                 return;
               } catch (endTimeError) {
@@ -229,12 +248,13 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
           } catch (error) {
             console.error(`❌ Error pausing low spend campaign ${trafficstarCampaignId} with low remaining clicks:`, error);
           }
-        } else if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD && currentStatus === 'active') {
+        } else if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD && statusMatches(currentStatus, 'active')) {
           // Case 3: High remaining clicks and already active - CONTINUE MONITORING
           console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks and is already active - continuing monitoring`);
           
           // Ensure we're monitoring this campaign
-          startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+          // Use type assertion since we know trafficstarCampaignId exists in this context
+          startMinutelyStatusCheck(campaignId, trafficstarCampaignId as string);
           
           // Mark status in database
           await db.update(campaigns)
@@ -246,12 +266,13 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
             .where(eq(campaigns.id, campaignId));
           
           return;
-        } else if (totalRemainingClicks <= MINIMUM_CLICKS_THRESHOLD && currentStatus !== 'active') {
+        } else if (totalRemainingClicks <= MINIMUM_CLICKS_THRESHOLD && !statusMatches(currentStatus, 'active')) {
           // Case 4: Low remaining clicks and already paused - CONTINUE PAUSE MONITORING
           console.log(`⏹️ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (<= ${MINIMUM_CLICKS_THRESHOLD}) and is already paused - monitoring to ensure it stays paused`);
           
           // Ensure we're monitoring this campaign's pause status
-          startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+          // Use type assertion since we know trafficstarCampaignId exists in this context
+          startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId as string);
           
           // Mark status in database
           await db.update(campaigns)
@@ -352,7 +373,7 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
       // Get the current status
       const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
       
-      if (status === 'active') {
+      if (statusMatches(status, 'active')) {
         console.log(`✅ Campaign ${trafficstarCampaignId} is still active - monitoring will continue`);
         
         // Check if we need to pause based on remaining clicks
@@ -414,7 +435,8 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
                   console.log(`✅ Marked campaign ${campaignId} as 'auto_paused_low_clicks_during_monitoring' in database`);
                   
                   // Start pause status monitoring to ensure campaign stays paused
-                  startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+                  // Use type assertion since we know trafficstarCampaignId exists in this context
+                  startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId as string);
                 } catch (endTimeError) {
                   console.error(`❌ Error setting end time for campaign ${trafficstarCampaignId}:`, endTimeError);
                 }
@@ -422,13 +444,15 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
                 console.error(`❌ Failed to pause low spend campaign ${trafficstarCampaignId} with low remaining clicks:`, pauseError);
                 
                 // If we failed to pause, restart the active monitoring
-                startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+                // Use non-null assertion as we know trafficstarCampaignId exists in this context
+                startMinutelyStatusCheck(campaignId, trafficstarCampaignId as string);
               }
             } catch (error) {
               console.error(`❌ Error pausing low spend campaign ${trafficstarCampaignId} with low remaining clicks:`, error);
               
               // If we failed to pause, restart the active monitoring
-              startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+              // Use type assertion as we know trafficstarCampaignId exists in this context
+              startMinutelyStatusCheck(campaignId, trafficstarCampaignId as string);
             }
           }
         }
@@ -495,7 +519,8 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
               activeStatusChecks.delete(campaignId);
               
               // Start pause monitoring instead
-              startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId);
+              // Use type assertion since we know trafficstarCampaignId exists in this context
+              startMinutelyPauseStatusCheck(campaignId, trafficstarCampaignId as string);
               
               // Mark as staying paused during monitoring in the database
               await db.update(campaigns)
@@ -553,7 +578,7 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
       // Get the current status
       const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
       
-      if (status === 'paused') {
+      if (statusMatches(status, 'paused')) {
         console.log(`⏹️ Campaign ${trafficstarCampaignId} is still paused as expected - monitoring will continue`);
         
         // Check current spent value and remaining clicks periodically
@@ -631,7 +656,8 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
                   // Stop pause monitoring and start active monitoring
                   clearInterval(interval);
                   pauseStatusChecks.delete(campaignId);
-                  startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
+                  // Use type assertion as we know trafficstarCampaignId exists in this context
+                  startMinutelyStatusCheck(campaignId, trafficstarCampaignId as string);
                 } catch (error) {
                   console.error(`❌ Error reactivating campaign ${trafficstarCampaignId} after pause:`, error);
                 }
@@ -652,7 +678,7 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
             }
           }
         }
-      } else if (status === 'active') {
+      } else if (statusMatches(status, 'active')) {
         console.log(`⚠️ Campaign ${trafficstarCampaignId} was found active but should be paused - will attempt to pause again`);
         
         try {
@@ -727,7 +753,7 @@ export async function pauseTrafficStarCampaign(trafficstarCampaignId: string): P
     // Get current status first to see if it's already paused
     const status = await getTrafficStarCampaignStatus(trafficstarCampaignId);
     
-    if (status === 'paused') {
+    if (statusMatches(status, 'paused')) {
       console.log(`TrafficStar campaign ${trafficstarCampaignId} is already paused, no action needed`);
       return true;
     }
@@ -787,7 +813,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
         
         // If it's paused but has URLs and traffic generator is OFF, activate it
-        if (status === 'paused') {
+        if (statusMatches(status, 'paused')) {
           console.log(`⚠️ Campaign ${campaign.trafficstarCampaignId} is paused but has active URLs and Traffic Generator is OFF - activating it`);
           
           try {
@@ -844,7 +870,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         // Get current status
         const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
         
-        if (status === 'active') {
+        if (statusMatches(status, 'active')) {
           // Pause the campaign immediately without waiting for minute-by-minute check
           await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
           
@@ -860,7 +886,8 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
           console.log(`✅ IMMEDIATELY PAUSED campaign ${campaign.trafficstarCampaignId} due to low clicks (${totalRemainingClicks} < ${MINIMUM_CLICKS_THRESHOLD})`);
           
           // Start pause monitoring
-          startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
+          // Use type assertion since we know trafficstarCampaignId exists in this context
+          startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId as string);
           return;
         }
       }
@@ -890,7 +917,8 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         console.log(`✅ FORCE MODE: Successfully activated campaign ${campaign.trafficstarCampaignId}`);
         
         // Start minute-by-minute monitoring
-        startMinutelyStatusCheck(campaignId, campaign.trafficstarCampaignId);
+        // Use type assertion for the campaign ID as we know it exists
+        startMinutelyStatusCheck(campaignId, campaign.trafficstarCampaignId as string);
         
         return;
       } catch (error) {
@@ -907,7 +935,8 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         console.log(`✅ FORCE MODE: Successfully paused campaign ${campaign.trafficstarCampaignId}`);
         
         // Start minute-by-minute pause monitoring
-        startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
+        // Use type assertion since we've already checked trafficstarCampaignId exists before this point
+        startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId as string);
         
         return;
       } catch (error) {
@@ -970,32 +999,32 @@ export async function runTrafficGeneratorForAllCampaigns() {
 
 /**
  * Initialize Traffic Generator scheduler
- * This function sets up a periodic job to run the traffic generator
+ * This function sets up a system to handle campaign status changes
+ * 
+ * IMPORTANT: No periodic processing of campaigns when traffic generator is enabled
+ * - Only check for campaigns with no URLs to pause them
+ * - Traffic Generator settings are applied once when enabled
+ * - Status is determined by each campaign independently
  */
 export function initializeTrafficGeneratorScheduler() {
-  console.log('Initializing Traffic Generator scheduler');
+  console.log('Initializing Traffic Generator status monitor');
   
-  // Run the traffic generator on startup
+  // Run the traffic generator once on startup to initialize campaigns
   console.log('Running initial traffic generator check on startup');
   runTrafficGeneratorForAllCampaigns();
-  
-  // Set up a periodic job to run the traffic generator every 5 minutes
-  setInterval(() => {
-    console.log('Running scheduled Traffic Generator check');
-    runTrafficGeneratorForAllCampaigns();
-  }, 5 * 60 * 1000); // 5 minutes
   
   // Run initial empty URL check
   console.log('Running initial empty URL check');
   checkForCampaignsWithNoURLs();
   
-  // Set up a periodic job to check for campaigns with no URLs every 5 minutes
+  // Only keep the empty URL check on a schedule (every minute)
+  // This ensures campaigns with no URLs are paused immediately
   setInterval(() => {
     console.log('Running scheduled empty URL check');
     checkForCampaignsWithNoURLs();
-  }, 5 * 60 * 1000); // 5 minutes
+  }, 60 * 1000); // Check every minute
   
-  console.log('Traffic Generator scheduler initialized successfully');
+  console.log('Traffic Generator status monitor initialized successfully');
 }
 
 /**
@@ -1065,7 +1094,7 @@ export async function checkForCampaignsWithNoURLs() {
         // Check the current status of the TrafficStar campaign
         const currentStatus = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
         
-        if (currentStatus === 'active') {
+        if (statusMatches(currentStatus, 'active')) {
           console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE with no active URLs - will pause it`);
           
           try {
@@ -1090,12 +1119,12 @@ export async function checkForCampaignsWithNoURLs() {
               })
               .where(eq(campaigns.id, campaign.id));
             
-            // Start empty URL status monitoring for this specific scenario
-            startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+            // Empty URL monitoring is now handled by the main scheduler check every minute
+            console.log(`🔄 Starting minute-by-minute EMPTY URL status check for campaign ${campaign.trafficstarCampaignId}`);
           } catch (error) {
             console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
           }
-        } else if (currentStatus === 'paused') {
+        } else if (statusMatches(currentStatus, 'paused')) {
           console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already PAUSED with no active URLs - continuing monitoring`);
           
           // Update status in database
@@ -1107,14 +1136,14 @@ export async function checkForCampaignsWithNoURLs() {
             })
             .where(eq(campaigns.id, campaign.id));
           
-          // Start empty URL status monitoring for this specific scenario
-          startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          // Start minute-by-minute empty URL check (replaces startEmptyUrlStatusCheck)
+          console.log(`🔄 Starting minute-by-minute EMPTY URL status check for campaign ${campaign.trafficstarCampaignId}`);
         } else {
           console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} has status: ${currentStatus || 'unknown'} - will monitor`);
           
-          // Start empty URL status monitoring for this specific scenario if there's a valid campaign ID
+          // Campaign will be included in the minute-by-minute empty URL check
           if (campaign.trafficstarCampaignId) {
-            startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+            console.log(`🔄 Campaign ${campaign.id} included in the minute-by-minute empty URL check`);
           }
         }
       } else if (campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
@@ -1127,7 +1156,7 @@ export async function checkForCampaignsWithNoURLs() {
         // Get current status
         const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
         
-        if (status === 'paused') {
+        if (statusMatches(status, 'paused')) {
           console.log(`Campaign ${campaign.trafficstarCampaignId} is paused but now has active URLs - activating it`);
           
           try {
@@ -1154,7 +1183,8 @@ export async function checkForCampaignsWithNoURLs() {
               .where(eq(campaigns.id, campaign.id));
             
             // Start active monitoring
-            startMinutelyStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+            // Use type assertion since we've already checked trafficstarCampaignId exists before this point
+            startMinutelyStatusCheck(campaign.id, campaign.trafficstarCampaignId as string);
           } catch (error) {
             console.error(`❌ Error activating campaign ${campaign.trafficstarCampaignId} with new URLs:`, error);
           }
@@ -1203,7 +1233,7 @@ export async function checkCampaignStatusAfterUrlChange(campaignId: number, urlW
       // Get current status
       const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
       
-      if (status === 'paused') {
+      if (statusMatches(status, 'paused')) {
         try {
           // Set end time to 23:59 UTC today
           const today = new Date();
@@ -1228,7 +1258,8 @@ export async function checkCampaignStatusAfterUrlChange(campaignId: number, urlW
             .where(eq(campaigns.id, campaignId));
           
           // Start active monitoring
-          startMinutelyStatusCheck(campaignId, campaign.trafficstarCampaignId);
+          // Use type assertion since we've already checked trafficstarCampaignId exists before this point
+          startMinutelyStatusCheck(campaignId, campaign.trafficstarCampaignId as string);
         } catch (error) {
           console.error(`❌ REAL-TIME: Error activating campaign ${campaign.trafficstarCampaignId} after URL activation:`, error);
         }
@@ -1240,7 +1271,7 @@ export async function checkCampaignStatusAfterUrlChange(campaignId: number, urlW
       // Get current status
       const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
       
-      if (status === 'active') {
+      if (statusMatches(status, 'active')) {
         try {
           // Set current date/time for end time
           const now = new Date();
@@ -1263,8 +1294,8 @@ export async function checkCampaignStatusAfterUrlChange(campaignId: number, urlW
             })
             .where(eq(campaigns.id, campaignId));
           
-          // Start empty URL status monitoring for this specific scenario
-          startEmptyUrlStatusCheck(campaignId, campaign.trafficstarCampaignId);
+          // Empty URL monitoring is now handled by the main scheduler
+          console.log(`🔄 Campaign ${campaignId} now included in the minute-by-minute empty URL check`);
         } catch (error) {
           console.error(`❌ REAL-TIME: Error pausing campaign ${campaign.trafficstarCampaignId} after URL deactivation:`, error);
         }

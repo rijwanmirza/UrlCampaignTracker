@@ -100,6 +100,22 @@ class TrafficStarService {
   }
 
   /**
+   * Get API key from environment
+   * @returns The API key or null if not set
+   */
+  private async getApiKey(): Promise<string | null> {
+    const apiKey = process.env.TRAFFICSTAR_API_KEY;
+    return apiKey || null;
+  }
+  
+  /**
+   * Ensure we have a valid token by checking and refreshing if needed
+   */
+  private async ensureToken(): Promise<void> {
+    await this.getAccessToken();
+  }
+  
+  /**
    * Get access token for API requests
    * Handles refreshing if token is expired
    */

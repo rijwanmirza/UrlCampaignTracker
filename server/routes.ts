@@ -5591,14 +5591,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Process the campaign
-      await youtubeApiService.processCampaign(id);
+      // Process the campaign with force check flag
+      // This ignores the interval setting for manual checks
+      await youtubeApiService.processCampaign(id, true);
       
-      // Update the last check time
-      await db.update(campaigns).set({ 
-        youtubeApiLastCheck: new Date(),
-        updatedAt: new Date()
-      }).where(eq(campaigns.id, id));
+      // Note: last check time is already updated in processCampaign
+      // so we don't need to update it here
       
       // Get count of YouTube URL records for this campaign
       const [recordCount] = await db.select({ 
