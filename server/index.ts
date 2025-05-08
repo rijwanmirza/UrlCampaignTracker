@@ -14,6 +14,7 @@ import { youtubeApiService } from "./youtube-api-service";
 import { initKeyManager } from "./auth/key-manager";
 import { initAccessCodeManager } from "./auth/access-code-manager";
 import { handleAccessRoutes, isValidTemporaryLoginPath, isSessionValid } from "./access-control";
+import { processScheduledBudgetUpdates } from "./scheduled-budget-updater";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -199,6 +200,14 @@ app.use((req, res, next) => {
         // Initialize Traffic Generator scheduler
         initializeTrafficGeneratorScheduler();
         log('Traffic Generator scheduler initialized successfully');
+        
+        // Set up a scheduler for budget updates - check every minute
+        setInterval(() => {
+          processScheduledBudgetUpdates().catch(error => {
+            log(`Error processing scheduled budget updates: ${error}`, 'budget-updater');
+          });
+        }, 60 * 1000); // Run every minute
+        log('Budget update scheduler initialized successfully');
         
         // Initialize YouTube API service if key is present
         if (youtubeApiService.isConfigured()) {

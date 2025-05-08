@@ -3101,41 +3101,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Manually trigger budget update for this campaign
-      console.log(`🔄 Forcing immediate TrafficStar budget update for campaign ${campaignId}`);
+      // Check if campaign has a budget update time and respect it
+      const budgetUpdateTime = campaign.budgetUpdateTime || "00:00:00";
       
-      try {
-        // Set daily budget to $10.15 via TrafficStar API
-        await trafficStarService.updateCampaignBudget(
-          Number(campaign.trafficstarCampaignId), 
-          10.15
-        );
-        
-        // Update last sync time in campaigns table
-        await db.update(campaigns)
-          .set({
-            lastTrafficstarSync: new Date(),
-            updatedAt: new Date()
-          })
-          .where(eq(campaigns.id, Number(campaignId)));
-          
-        return res.json({ 
-          success: true, 
-          message: `Budget for campaign ${campaignId} updated to $10.15 successfully`,
-          timestamp: new Date().toISOString()
-        });
-      } catch (error) {
-        console.error(`Error forcing budget update for campaign ${campaignId}:`, error);
-        return res.status(500).json({ 
-          success: false,
-          message: "Failed to force budget update",
-          error: error instanceof Error ? error.message : String(error)
-        });
+      // Get current time in UTC
+      const now = new Date();
+      const currentHour = now.getUTCHours();
+      const currentMinute = now.getUTCMinutes();
+      const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}:00`;
+      
+      // Parse budgetUpdateTime
+      const [scheduledHour, scheduledMinute] = budgetUpdateTime.split(':').map(Number);
+      
+      // Calculate when the next update should happen
+      let nextUpdateDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        scheduledHour,
+        scheduledMinute,
+        0
+      ));
+      
+      // If the scheduled time already passed today, schedule for tomorrow
+      if (nextUpdateDate < now) {
+        nextUpdateDate = new Date(nextUpdateDate.getTime() + 24 * 60 * 60 * 1000); // Add 24 hours
       }
+      
+      // Format time for display
+      const nextUpdateTimeStr = nextUpdateDate.toISOString().replace('T', ' ').split('.')[0];
+      
+      // Mark the update as scheduled instead of immediate
+      console.log(`🔄 Scheduling TrafficStar budget update for campaign ${campaignId} at ${nextUpdateTimeStr} (Budget update time: ${budgetUpdateTime})`);
+      
+      // Update the database to indicate this campaign has a pending budget update
+      await db.update(campaigns)
+        .set({
+          pendingBudgetUpdate: true,
+          updatedAt: new Date()
+        })
+        .where(eq(campaigns.id, Number(campaignId)));
+        
+      return res.json({ 
+        success: true, 
+        scheduled: true,
+        message: `Budget update for campaign ${campaignId} scheduled for ${nextUpdateTimeStr}`,
+        scheduledTime: nextUpdateTimeStr,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
-      console.error('Error forcing TrafficStar budget update:', error);
+      console.error('Error scheduling TrafficStar budget update:', error);
       res.status(500).json({ 
-        message: "Failed to force TrafficStar budget update",
+        message: "Failed to schedule TrafficStar budget update",
         error: error instanceof Error ? error.message : String(error)
       });
     }
