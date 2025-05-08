@@ -39,7 +39,9 @@ import {
   campaigns,
   urls,
   originalUrlRecords,
-  youtubeUrlRecords
+  youtubeUrlRecords,
+  youtubeApiLogs,
+  YouTubeApiLogType
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -47,7 +49,7 @@ import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service";
 import { youtubeApiService } from "./youtube-api-service";
 import { db, pool } from "./db";
-import { eq, and, isNotNull, sql, inArray, desc } from "drizzle-orm";
+import { eq, and, isNotNull, sql, inArray, desc, lt } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
@@ -5578,6 +5580,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to delete records", 
         error: error instanceof Error ? error.message : String(error) 
       });
+    }
+  });
+  
+  // YouTube API Logs endpoints
+  app.get("/api/youtube-api-logs", async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+      const logType = req.query.type as string || undefined;
+      const campaignId = req.query.campaignId ? parseInt(req.query.campaignId as string) : undefined;
+      const isError = req.query.isError === 'true';
+      
+      // Base query
+      let query = db.select().from(youtubeApiLogs).orderBy(desc(youtubeApiLogs.timestamp));
+      
+      // Apply filters
+      if (logType) {
+        query = query.where(eq(youtubeApiLogs.logType, logType));
+      }
+      
+      if (campaignId) {
+        query = query.where(eq(youtubeApiLogs.campaignId, campaignId));
+      }
+      
+      if (req.query.isError !== undefined) {
+        query = query.where(eq(youtubeApiLogs.isError, isError));
+      }
+      
+      // Get total count for pagination
+      const countResult = await db.select({ count: sql`COUNT(*)` }).from(youtubeApiLogs);
+      const totalCount = Number(countResult[0].count);
+      
+      // Get paginated records
+      const logs = await query.limit(limit).offset(offset);
+      
+      // Get campaign details for all campaign IDs in the logs
+      const campaignIds = logs
+        .filter(log => log.campaignId !== null)
+        .map(log => log.campaignId as number);
+      
+      const campaignMap = new Map();
+      
+      if (campaignIds.length > 0) {
+        const campaignDetails = await db
+          .select({ id: campaigns.id, name: campaigns.name })
+          .from(campaigns)
+          .where(inArray(campaigns.id, campaignIds));
+          
+        campaignDetails.forEach(campaign => {
+          campaignMap.set(campaign.id, campaign.name);
+        });
+      }
+      
+      // Add campaign names to logs
+      const logsWithCampaignNames = logs.map(log => ({
+        ...log,
+        campaignName: log.campaignId ? campaignMap.get(log.campaignId) || `Campaign ${log.campaignId}` : null
+      }));
+      
+      res.json({
+        logs: logsWithCampaignNames,
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit)
+      });
+    } catch (error) {
+      console.error("Error fetching YouTube API logs:", error);
+      res.status(500).json({ message: "Failed to fetch YouTube API logs" });
+    }
+  });
+  
+  app.delete("/api/youtube-api-logs/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const result = await db.delete(youtubeApiLogs).where(eq(youtubeApiLogs.id, id));
+      
+      res.json({ message: "YouTube API log deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting YouTube API log:", error);
+      res.status(500).json({ message: "Failed to delete YouTube API log" });
+    }
+  });
+  
+  app.delete("/api/youtube-api-logs", async (req: Request, res: Response) => {
+    try {
+      // Add a clear all functionality with optional filters
+      const { olderThan, logType, campaignId } = req.query;
+      
+      let query = db.delete(youtubeApiLogs);
+      
+      if (olderThan) {
+        const date = new Date(olderThan as string);
+        if (!isNaN(date.getTime())) {
+          query = query.where(lt(youtubeApiLogs.timestamp, date));
+        }
+      }
+      
+      if (logType) {
+        query = query.where(eq(youtubeApiLogs.logType, logType as string));
+      }
+      
+      if (campaignId) {
+        const id = parseInt(campaignId as string);
+        if (!isNaN(id)) {
+          query = query.where(eq(youtubeApiLogs.campaignId, id));
+        }
+      }
+      
+      await query;
+      
+      res.json({ message: "YouTube API logs cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing YouTube API logs:", error);
+      res.status(500).json({ message: "Failed to clear YouTube API logs" });
     }
   });
   

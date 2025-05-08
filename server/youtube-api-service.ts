@@ -42,13 +42,14 @@ export class YouTubeApiService {
     isError: boolean = false
   ): Promise<void> {
     try {
+      // Use DrizzleORM insert instead of raw SQL to avoid parameter binding issues
       await db.insert(youtubeApiLogs).values({
         logType,
         message,
         campaignId: campaignId || null,
-        details: details || null,
+        details: details ? details : null,
         isError,
-        timestamp: new Date(),
+        timestamp: new Date()
       });
     } catch (error) {
       logger.error('Error logging YouTube API activity:', error);
