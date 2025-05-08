@@ -111,65 +111,94 @@ export class UrlBudgetLogger {
 
   /**
    * Log a URL budget calculation if it hasn't been logged in the current high-spend cycle for this campaign
-   * @param campaignId Campaign ID
+   * This is an optimized version that supports concurrent logging
+   * 
    * @param urlId URL ID
-   * @param urlName URL name/identifier
    * @param price Price calculated for remaining clicks
+   * @param campaignId Campaign ID
+   * @param timestamp Timestamp (optional, defaults to current time)
    * @returns boolean indicating if the URL was logged (true) or skipped because it was already logged (false)
    */
-  public async logUrlBudget(campaignId: number, urlId: number, urlName: string, price: number): Promise<boolean> {
-    // First, check if this campaign has TrafficStar integration
-    const hasTrafficStar = await this.hasCampaignTrafficStarIntegration(campaignId);
-    if (!hasTrafficStar) {
-      console.log(`⚠️ Skipping URL budget log for URL ID ${urlId} - Campaign ${campaignId} has no TrafficStar integration`);
-      return false;
-    }
-    
-    // Check if the URL is active and belongs to this campaign
-    const isValidUrl = await this.isUrlActiveForCampaign(urlId, campaignId);
-    if (!isValidUrl) {
-      console.log(`⚠️ Skipping URL budget log for URL ID ${urlId} - URL is not active for campaign ${campaignId}`);
-      return false;
-    }
-    
-    // Initialize tracking for this campaign if needed
-    this.initCampaignTracking(campaignId);
-    
-    // Get tracking set for this campaign
-    const loggedUrls = this.loggedUrlsByCampaign.get(campaignId);
-    
-    // Skip if this URL has already been logged for this campaign
-    if (loggedUrls?.has(urlId)) {
-      console.log(`🔄 Skipping duplicate URL budget log for URL ID ${urlId} in campaign ${campaignId} - already logged in this high-spend cycle`);
-      return false;
-    }
-
+  public async logUrlBudget(
+    urlId: number, 
+    price: number, 
+    campaignId: number, 
+    timestamp: Date = new Date()
+  ): Promise<boolean> {
     try {
-      // Format date and time
-      const now = new Date();
-      const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const time = now.toISOString().split('T')[1].substring(0, 8); // HH:MM:SS
+      // First, check if this campaign has TrafficStar integration
+      const hasTrafficStar = await this.hasCampaignTrafficStarIntegration(campaignId);
+      if (!hasTrafficStar) {
+        console.log(`⚠️ Skipping URL budget log for URL ID ${urlId} - Campaign ${campaignId} has no TrafficStar integration`);
+        return false;
+      }
       
-      // Format the log entry in requested format: UrlId|Price|Date::Time
+      // Check if the URL is active and belongs to this campaign (optimized to reduce DB calls)
+      const isValidUrl = await this.isUrlActiveForCampaign(urlId, campaignId);
+      if (!isValidUrl) {
+        console.log(`⚠️ Skipping URL budget log for URL ID ${urlId} - URL is not active for campaign ${campaignId}`);
+        return false;
+      }
+      
+      // Initialize tracking for this campaign if needed
+      this.initCampaignTracking(campaignId);
+      
+      // Get tracking set for this campaign
+      const loggedUrls = this.loggedUrlsByCampaign.get(campaignId);
+      
+      // Skip if this URL has already been logged for this campaign
+      if (loggedUrls?.has(urlId)) {
+        console.log(`🔄 Skipping duplicate URL budget log for URL ID ${urlId} in campaign ${campaignId} - already logged in this high-spend cycle`);
+        return false;
+      }
+      
+      // Get URL name from database if needed for the log
+      let urlName = `URL-${urlId}`;
+      try {
+        const urlInfo = await db.select({
+          name: urls.name
+        }).from(urls).where(eq(urls.id, urlId)).limit(1);
+        
+        if (urlInfo.length > 0) {
+          urlName = urlInfo[0].name || urlName;
+        }
+      } catch (error) {
+        // Continue with default name if there's an error
+        console.warn(`⚠️ Could not get name for URL ${urlId}, using default: ${error}`);
+      }
+      
+      // Ensure log directory and campaign-specific log file exist (done in parallel)
+      await Promise.all([
+        this.ensureLogDirectoryExists(),
+        this.ensureCampaignLogFileExists(campaignId)
+      ]);
+      
+      // Format the log entries
+      const date = timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+      const time = timestamp.toISOString().split('T')[1].substring(0, 8); // HH:MM:SS
+      
+      // Format: UrlId|Price|Date::Time
       const logEntryFormat1 = `${urlId}|${price.toFixed(4)}|${date}::${time}\n`;
       
-      // Format the log entry with campaign info: UrlId|CampaignId|UrlName|Price|Date::Time
+      // Format: UrlId|CampaignId|UrlName|Price|Date::Time
       const logEntryFormat2 = `${urlId}|${campaignId}|${urlName}|${price.toFixed(4)}|${date}::${time}\n`;
       
-      // Get the log file paths
       const campaignLogPath = this.getLogFilePath(campaignId);
       const activeLogPath = this.getActiveLogFilePath();
 
-      // Make sure the active log file exists
-      if (!fs.existsSync(activeLogPath)) {
-        await fsPromises.writeFile(activeLogPath, '');
-      }
-
-      // Append to campaign-specific log file with full information
-      await fsPromises.appendFile(campaignLogPath, logEntryFormat2);
+      // Make sure the active log file exists and write both logs in parallel
+      const writePromises = [];
       
-      // Append to active log file with simplified format
-      await fsPromises.appendFile(activeLogPath, logEntryFormat1);
+      if (!fs.existsSync(activeLogPath)) {
+        writePromises.push(fsPromises.writeFile(activeLogPath, ''));
+      }
+      
+      // Push both write operations to be executed in parallel
+      writePromises.push(fsPromises.appendFile(campaignLogPath, logEntryFormat2));
+      writePromises.push(fsPromises.appendFile(activeLogPath, logEntryFormat1));
+      
+      // Wait for all file operations to complete
+      await Promise.all(writePromises);
       
       console.log(`📝 Logged URL budget for URL ID ${urlId} in campaign ${campaignId}: $${price.toFixed(4)} at ${date}::${time}`);
       
@@ -177,7 +206,7 @@ export class UrlBudgetLogger {
       loggedUrls?.add(urlId);
       return true;
     } catch (error) {
-      console.error(`❌ Failed to log URL budget for campaign ${campaignId}: ${error}`);
+      console.error(`❌ Failed to log URL budget for URL ${urlId}: ${error}`);
       return false;
     }
   }
