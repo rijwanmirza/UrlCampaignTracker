@@ -130,14 +130,11 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
         console.log(`🔍 DEBUG: Checking remaining clicks for ${campaign.urls.length} URLs in campaign ${trafficstarCampaignId}`);
         for (const url of campaign.urls) {
           console.log(`🔍 URL ID: ${url.id}, status: ${url.status}, clickLimit: ${url.clickLimit}, clicks: ${url.clicks}`);
-          if (url.status === 'active') {
-            const remainingClicks = url.clickLimit - url.clicks;
-            const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
-            totalRemainingClicks += validRemaining;
-            console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
-          } else {
-            console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
-          }
+          // Since we're already filtering for active URLs in the query, all URLs here are active
+          const remainingClicks = url.clickLimit - url.clicks;
+          const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
+          totalRemainingClicks += validRemaining;
+          console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
         }
         
         console.log(`📊 Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} total remaining clicks across all active URLs`);
