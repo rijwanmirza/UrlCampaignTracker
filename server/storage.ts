@@ -20,11 +20,7 @@ import {
   UrlClickRecord,
   InsertUrlClickRecord,
   urlClickRecords,
-  TimeRangeFilter,
-  GmailCampaignAssignment,
-  InsertGmailCampaignAssignment,
-  UpdateGmailCampaignAssignment,
-  gmailCampaignAssignments
+  TimeRangeFilter
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or, gte, lte } from "drizzle-orm";
@@ -149,15 +145,6 @@ export interface IStorage {
     urlClickLogsDeleted: number,
     campaignClickRecordsDeleted: number
   }>;
-  
-  // Gmail campaign assignment operations
-  getGmailCampaignAssignments(): Promise<GmailCampaignAssignment[]>;
-  getGmailCampaignAssignment(id: number): Promise<GmailCampaignAssignment | undefined>;
-  getGmailCampaignAssignmentsByCampaignId(campaignId: number): Promise<GmailCampaignAssignment[]>;
-  createGmailCampaignAssignment(assignment: InsertGmailCampaignAssignment): Promise<GmailCampaignAssignment>;
-  updateGmailCampaignAssignment(id: number, assignment: UpdateGmailCampaignAssignment): Promise<GmailCampaignAssignment | undefined>;
-  deleteGmailCampaignAssignment(id: number): Promise<boolean>;
-  findCampaignIdForClickQuantity(quantity: number): Promise<number | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3005,97 +2992,6 @@ export class DatabaseStorage implements IStorage {
           dateRange: 'Error retrieving data'
         }
       };
-    }
-  }
-
-  // Gmail Campaign Assignment operations
-  async getGmailCampaignAssignments(): Promise<GmailCampaignAssignment[]> {
-    try {
-      return await db.select().from(gmailCampaignAssignments).orderBy(asc(gmailCampaignAssignments.priority));
-    } catch (error) {
-      console.error('Error getting Gmail campaign assignments:', error);
-      return [];
-    }
-  }
-
-  async getGmailCampaignAssignment(id: number): Promise<GmailCampaignAssignment | undefined> {
-    try {
-      const [assignment] = await db.select().from(gmailCampaignAssignments).where(eq(gmailCampaignAssignments.id, id));
-      return assignment;
-    } catch (error) {
-      console.error(`Error getting Gmail campaign assignment ${id}:`, error);
-      return undefined;
-    }
-  }
-
-  async getGmailCampaignAssignmentsByCampaignId(campaignId: number): Promise<GmailCampaignAssignment[]> {
-    try {
-      return await db.select().from(gmailCampaignAssignments)
-        .where(eq(gmailCampaignAssignments.campaignId, campaignId))
-        .orderBy(asc(gmailCampaignAssignments.priority));
-    } catch (error) {
-      console.error(`Error getting Gmail campaign assignments for campaign ${campaignId}:`, error);
-      return [];
-    }
-  }
-
-  async createGmailCampaignAssignment(assignment: InsertGmailCampaignAssignment): Promise<GmailCampaignAssignment> {
-    try {
-      const [createdAssignment] = await db.insert(gmailCampaignAssignments).values(assignment).returning();
-      return createdAssignment;
-    } catch (error) {
-      console.error('Error creating Gmail campaign assignment:', error);
-      throw error;
-    }
-  }
-
-  async updateGmailCampaignAssignment(id: number, assignment: UpdateGmailCampaignAssignment): Promise<GmailCampaignAssignment | undefined> {
-    try {
-      const [updatedAssignment] = await db.update(gmailCampaignAssignments)
-        .set({
-          ...assignment,
-          updatedAt: new Date()
-        })
-        .where(eq(gmailCampaignAssignments.id, id))
-        .returning();
-      
-      return updatedAssignment;
-    } catch (error) {
-      console.error(`Error updating Gmail campaign assignment ${id}:`, error);
-      return undefined;
-    }
-  }
-
-  async deleteGmailCampaignAssignment(id: number): Promise<boolean> {
-    try {
-      const result = await db.delete(gmailCampaignAssignments)
-        .where(eq(gmailCampaignAssignments.id, id));
-      
-      return true;
-    } catch (error) {
-      console.error(`Error deleting Gmail campaign assignment ${id}:`, error);
-      return false;
-    }
-  }
-
-  async findCampaignIdForClickQuantity(quantity: number): Promise<number | undefined> {
-    try {
-      // Find all active assignments that match the quantity range
-      const assignments = await db.select().from(gmailCampaignAssignments)
-        .where(
-          and(
-            eq(gmailCampaignAssignments.active, true),
-            lte(gmailCampaignAssignments.minClickQuantity, quantity),
-            gte(gmailCampaignAssignments.maxClickQuantity, quantity)
-          )
-        )
-        .orderBy(asc(gmailCampaignAssignments.priority));
-      
-      // Return the first matching campaign ID or undefined
-      return assignments.length > 0 ? assignments[0].campaignId : undefined;
-    } catch (error) {
-      console.error(`Error finding campaign for click quantity ${quantity}:`, error);
-      return undefined;
     }
   }
 }

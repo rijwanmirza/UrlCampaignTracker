@@ -9,7 +9,6 @@ import { requireAuth } from "./auth/middleware";
 import { registerUrlClickRoutes } from "./url-click-routes";
 import { urlClickLogsManager } from "./url-click-logs-manager";
 import urlBudgetTestApi from "./url-budget-test-api";
-import { gmailCampaignAssignmentService } from './gmail-campaign-assignment';
 
 import { 
   optimizeResponseHeaders,
@@ -29,8 +28,6 @@ import {
   bulkUrlActionSchema,
   insertTrafficstarCredentialSchema,
   trafficstarCampaignActionSchema,
-  insertGmailCampaignAssignmentSchema,
-  updateGmailCampaignAssignmentSchema,
   trafficstarCampaignBudgetSchema,
   // Add Traffic Sender schema
   trafficSenderActionSchema,
@@ -50,7 +47,7 @@ import { gmailReader } from "./gmail-reader";
 import { trafficStarService } from "./trafficstar-service-new";
 import { youtubeApiService } from "./youtube-api-service";
 import { db, pool } from "./db";
-import { eq, and, isNotNull, sql, inArray, desc, asc } from "drizzle-orm";
+import { eq, and, isNotNull, sql, inArray, desc } from "drizzle-orm";
 import Imap from "imap";
 import { registerCampaignClickRoutes } from "./campaign-click-routes";
 import { registerRedirectLogsRoutes } from "./redirect-logs-routes";
@@ -5602,159 +5599,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
-  // Using Gmail campaign assignment service imported at the top of the file
-
-  // Simple campaign list endpoint for dropdowns and selects
-  app.get("/api/campaigns/list", requireAuth, async (_req: Request, res: Response) => {
-    try {
-      // Fetch only the id and name fields for all campaigns
-      const campaigns = await db.select({
-        id: campaigns.id,
-        name: campaigns.name
-      }).from(campaigns).orderBy(asc(campaigns.name));
-      
-      res.json(campaigns);
-    } catch (error) {
-      console.error('Error getting campaign list:', error);
-      res.status(500).json({ 
-        message: "Failed to get campaign list",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Gmail Campaign Assignment Routes
-  
-  // Get all Gmail campaign assignments
-  app.get("/api/gmail/assignments", requireAuth, async (_req: Request, res: Response) => {
-    try {
-      const assignments = await gmailCampaignAssignmentService.getAllAssignments();
-      res.json(assignments);
-    } catch (error) {
-      console.error('Error getting Gmail campaign assignments:', error);
-      res.status(500).json({ 
-        message: "Failed to get Gmail campaign assignments",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Get assignments for a specific campaign
-  app.get("/api/gmail/assignments/campaign/:campaignId", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const campaignId = parseInt(req.params.campaignId, 10);
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-      
-      const assignments = await gmailCampaignAssignmentService.getAssignmentsForCampaign(campaignId);
-      res.json(assignments);
-    } catch (error) {
-      console.error('Error getting Gmail campaign assignments for campaign:', error);
-      res.status(500).json({ 
-        message: "Failed to get Gmail campaign assignments for campaign",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Get a specific assignment
-  app.get("/api/gmail/assignments/:id", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid assignment ID" });
-      }
-      
-      const assignment = await gmailCampaignAssignmentService.getAssignment(id);
-      if (!assignment) {
-        return res.status(404).json({ message: "Assignment not found" });
-      }
-      
-      res.json(assignment);
-    } catch (error) {
-      console.error('Error getting Gmail campaign assignment:', error);
-      res.status(500).json({ 
-        message: "Failed to get Gmail campaign assignment",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Create a new assignment
-  app.post("/api/gmail/assignments", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const result = insertGmailCampaignAssignmentSchema.safeParse(req.body);
-      if (!result.success) {
-        const validationError = fromZodError(result.error);
-        return res.status(400).json({ message: validationError.message });
-      }
-      
-      const assignment = await gmailCampaignAssignmentService.createAssignment(result.data);
-      res.status(201).json(assignment);
-    } catch (error) {
-      console.error('Error creating Gmail campaign assignment:', error);
-      res.status(500).json({ 
-        message: "Failed to create Gmail campaign assignment",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Update an existing assignment
-  app.patch("/api/gmail/assignments/:id", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid assignment ID" });
-      }
-      
-      const result = updateGmailCampaignAssignmentSchema.safeParse(req.body);
-      if (!result.success) {
-        const validationError = fromZodError(result.error);
-        return res.status(400).json({ message: validationError.message });
-      }
-      
-      const updatedAssignment = await gmailCampaignAssignmentService.updateAssignment(id, result.data);
-      if (!updatedAssignment) {
-        return res.status(404).json({ message: "Assignment not found" });
-      }
-      
-      res.json(updatedAssignment);
-    } catch (error) {
-      console.error('Error updating Gmail campaign assignment:', error);
-      res.status(500).json({ 
-        message: "Failed to update Gmail campaign assignment",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // Delete an assignment
-  app.delete("/api/gmail/assignments/:id", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid assignment ID" });
-      }
-      
-      const success = await gmailCampaignAssignmentService.deleteAssignment(id);
-      if (!success) {
-        return res.status(404).json({ message: "Assignment not found or could not be deleted" });
-      }
-      
-      res.json({ success: true, message: "Assignment deleted successfully" });
-    } catch (error) {
-      console.error('Error deleting Gmail campaign assignment:', error);
-      res.status(500).json({ 
-        message: "Failed to delete Gmail campaign assignment",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  console.log('Gmail campaign assignment API routes registered');
   
   return server;
 }

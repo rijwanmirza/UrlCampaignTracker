@@ -9,7 +9,7 @@ import URLsPage from "@/pages/urls";
 import URLsMobilePage from "@/pages/urls-mobile";
 import RedirectPage from "@/pages/redirect";
 import RedirectTest from "@/pages/redirect-test";
-import GmailSettingsPage from "@/pages/gmail-settings-page";
+import GmailSettingsPage from "@/pages/gmail-settings";
 import SystemSettingsPage from "@/pages/system-settings";
 import TrafficstarPage from "@/pages/trafficstar";
 import TestSpentValuePage from "@/pages/test-spent-value";

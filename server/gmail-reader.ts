@@ -9,7 +9,6 @@ import smtpTransport from 'nodemailer-smtp-transport';
 import fs from 'fs';
 import path from 'path';
 import { gmailService } from './gmail-service';
-import { gmailCampaignAssignmentService } from './gmail-campaign-assignment';
 
 interface GmailConfigOptions {
   user: string;
@@ -461,15 +460,15 @@ class GmailReader {
   // Attempt to reconnect to the IMAP server
   private reconnect() {
     if (!this.isRunning) {
-      setTimeout(async () => {
+      setTimeout(() => {
         log('Attempting to reconnect to IMAP server...', 'gmail-reader');
-        await this.start();
+        this.start();
       }, 60000); // Retry every 60 seconds - increased to reduce connection attempts
     }
   }
 
   // Update the configuration
-  public async updateConfig(newConfig: Partial<GmailConfigOptions>) {
+  public updateConfig(newConfig: Partial<GmailConfigOptions>) {
     const wasRunning = this.isRunning;
     
     if (wasRunning) {
@@ -495,7 +494,7 @@ class GmailReader {
     this.setupImapConnection();
     
     if (wasRunning) {
-      await this.start();
+      this.start();
     }
     
     return this.config;
@@ -607,39 +606,18 @@ class GmailReader {
             Quantity: ${quantity}
           `, 'gmail-reader');
           
-          // Add URL to the appropriate campaign based on click quantity
+          // Add URL to the campaign
           try {
-            // Try to find a matching campaign based on click quantity
-            let campaignId: number | undefined;
-            
-            // Check if we have a valid quantity and attempt to find a matching campaign
-            if (quantity && !isNaN(parseInt(quantity, 10))) {
-              const clickQuantity = parseInt(quantity, 10);
-              log(`Attempting to find a campaign for ${clickQuantity} clicks using assignment service`, 'gmail-reader');
-              
-              // Use the assignment service to find the appropriate campaign
-              campaignId = await gmailCampaignAssignmentService.findCampaignForClickQuantity(clickQuantity);
-              
-              if (campaignId) {
-                log(`Found matching campaign ID ${campaignId} for ${clickQuantity} clicks from assignment rules`, 'gmail-reader');
-              } else {
-                log(`No matching campaign found for ${clickQuantity} clicks, falling back to default`, 'gmail-reader');
-              }
+            // SAFETY CHECK: Make sure we have a campaign ID
+            if (!this.config.defaultCampaignId) {
+              log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
+              this.logProcessedEmail(msgId, 'error-no-campaign-id');
+              resolve();
+              return;
             }
             
-            // Fall back to default campaign ID if no match was found
-            if (!campaignId) {
-              // SAFETY CHECK: Make sure we have a default campaign ID
-              if (!this.config.defaultCampaignId) {
-                log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
-                this.logProcessedEmail(msgId, 'error-no-campaign-id');
-                resolve();
-                return;
-              }
-              
-              campaignId = this.config.defaultCampaignId;
-              log(`Using default campaign ID: ${campaignId}`, 'gmail-reader');
-            }
+            // Store the campaign ID locally to ensure it never changes
+            const campaignId = this.config.defaultCampaignId;
             
             // First check if we already have this order ID in the campaign
             // This is our first defense against duplicates
@@ -1218,7 +1196,7 @@ class GmailReader {
   }
 
   // Start the Gmail reader
-  public async start() {
+  public start() {
     if (this.isRunning) return;
     
     if (!this.config.user || !this.config.password) {
@@ -1226,19 +1204,9 @@ class GmailReader {
       return;
     }
     
-    // Check for campaign assignment rules first
-    const assignments = await gmailCampaignAssignmentService.getAllAssignments();
-    const hasAssignmentRules = assignments && assignments.length > 0;
-    
-    if (!hasAssignmentRules && !this.config.defaultCampaignId) {
-      log('Cannot start Gmail reader: missing both default campaign ID and campaign assignment rules', 'gmail-reader');
+    if (!this.config.defaultCampaignId) {
+      log('Cannot start Gmail reader: missing default campaign ID', 'gmail-reader');
       return;
-    }
-    
-    if (hasAssignmentRules) {
-      log(`Found ${assignments.length} campaign assignment rules that will be used for URL assignment`, 'gmail-reader');
-    } else {
-      log(`No campaign assignment rules found, will use default campaign ID: ${this.config.defaultCampaignId}`, 'gmail-reader');
     }
     
     this.isRunning = true;
