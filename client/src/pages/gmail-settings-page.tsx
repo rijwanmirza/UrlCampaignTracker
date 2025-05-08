@@ -1,14 +1,14 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import GmailConfig from "@/components/gmail/gmail-config";
+import GmailConfigNew from "@/components/gmail/gmail-config-new";
 import GmailCampaignAssignments from "@/components/gmail/campaign-assignments";
 
 export default function GmailSettingsPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gmail Integration Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Gmail Reader Settings</h1>
         <p className="text-muted-foreground">
-          Configure Gmail email reader and campaign assignment rules.
+          Configure automatic URL import from emails and campaign assignment rules.
         </p>
       </div>
       
@@ -19,7 +19,7 @@ export default function GmailSettingsPage() {
         </TabsList>
         
         <TabsContent value="config" className="space-y-4">
-          <GmailConfig />
+          <GmailConfigNew />
         </TabsContent>
         
         <TabsContent value="assignments" className="space-y-4">
