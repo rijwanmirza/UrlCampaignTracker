@@ -1,7 +1,7 @@
 import { google, youtube_v3 } from 'googleapis';
 import { db } from './db';
-import { urls, youtubeUrlRecords, campaigns } from '@shared/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { urls, youtubeUrlRecords, campaigns, youtubeApiLogs, YouTubeApiLogType } from '@shared/schema';
+import { eq, and, inArray, desc } from 'drizzle-orm';
 import { logger } from './logger';
 import { storage } from './storage';
 
@@ -29,6 +29,30 @@ export class YouTubeApiService {
     });
     
     logger.info('YouTube API Service initialized');
+  }
+  
+  /**
+   * Log YouTube API activity to database
+   */
+  async logApiActivity(
+    logType: string, 
+    message: string, 
+    campaignId?: number, 
+    details?: any, 
+    isError: boolean = false
+  ): Promise<void> {
+    try {
+      await db.insert(youtubeApiLogs).values({
+        logType,
+        message,
+        campaignId: campaignId || null,
+        details: details || null,
+        isError,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      logger.error('Error logging YouTube API activity:', error);
+    }
   }
   
   /**
@@ -584,18 +608,83 @@ export class YouTubeApiService {
         .from(campaigns)
         .where(eq(campaigns.youtubeApiEnabled, true));
       
+      // Log scheduler activity
+      await this.logApiActivity(
+        YouTubeApiLogType.INTERVAL_CHECK,
+        `Scheduler checking ${enabledCampaigns.length} campaigns with YouTube API enabled`,
+        null,
+        { campaignIds: enabledCampaigns.map(c => c.id) }
+      );
+      
       const now = new Date();
       
       for (const campaign of enabledCampaigns) {
         // If no last check time or interval has elapsed, process campaign
         const intervalMinutes = campaign.youtubeApiIntervalMinutes || 60; // Default to 60 minutes if null
-        if (!campaign.youtubeApiLastCheck || 
-            this.hasIntervalElapsed(campaign.youtubeApiLastCheck, intervalMinutes, now)) {
+        
+        // Calculate time remaining until next check
+        let minutesRemaining = 0;
+        let shouldProcess = false;
+        
+        if (!campaign.youtubeApiLastCheck) {
+          shouldProcess = true;
+          const message = `Campaign ${campaign.id}: No previous check found, processing now`;
+          logger.info(`[youtube-api-scheduler] ${message}`);
+          
+          await this.logApiActivity(
+            YouTubeApiLogType.INTERVAL_CHECK,
+            message,
+            campaign.id,
+            { 
+              name: campaign.name,
+              intervalMinutes,
+              reason: 'initial_check'
+            }
+          );
+        } else {
+          const elapsedMs = now.getTime() - campaign.youtubeApiLastCheck.getTime();
+          const elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
+          minutesRemaining = intervalMinutes - elapsedMinutes;
+          
+          shouldProcess = minutesRemaining <= 0;
+          
+          const message = `Campaign ${campaign.id}: Last check: ${campaign.youtubeApiLastCheck.toISOString()}, Interval: ${intervalMinutes} minutes, Time remaining: ${minutesRemaining > 0 ? minutesRemaining : 0} minutes`;
+          logger.info(`[youtube-api-scheduler] ${message}`);
+          
+          await this.logApiActivity(
+            YouTubeApiLogType.INTERVAL_CHECK,
+            message,
+            campaign.id,
+            { 
+              name: campaign.name,
+              lastCheck: campaign.youtubeApiLastCheck,
+              intervalMinutes,
+              elapsedMinutes,
+              minutesRemaining: minutesRemaining > 0 ? minutesRemaining : 0,
+              shouldProcess
+            }
+          );
+        }
+        
+        if (shouldProcess) {
+          const message = `Campaign ${campaign.id}: Interval elapsed, processing now`;
+          logger.info(`[youtube-api-scheduler] ${message}`);
           await this.processCampaign(campaign.id);
+        } else {
+          const message = `Campaign ${campaign.id}: Skipping check, ${minutesRemaining} minutes remaining`;
+          logger.info(`[youtube-api-scheduler] ${message}`);
         }
       }
     } catch (error) {
       logger.error('Error checking campaigns for YouTube API processing:', error);
+      
+      await this.logApiActivity(
+        YouTubeApiLogType.INTERVAL_CHECK,
+        'Error checking campaigns for YouTube API processing',
+        null,
+        { error: error instanceof Error ? error.message : String(error) },
+        true
+      );
     }
   }
   

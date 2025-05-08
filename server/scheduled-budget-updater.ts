@@ -33,22 +33,22 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
     console.log(`🕒 Checking for scheduled budget updates at current time ${currentTimeStr} UTC`);
     
     // Find campaigns that:
-    // 1. Have TrafficStar integration enabled (trafficstarCampaignId is not null)
+    // 1. Have TrafficStar integration enabled (trafficstar_campaign_id is not null)
     // 2. Have pendingBudgetUpdate set to true OR have budgetUpdateTime matching current time
     // Using SQL directly to avoid circular structure issues
     const { rows: campaignsToUpdate } = await pool.query(`
       SELECT 
         id, 
         name, 
-        "trafficstarCampaignId", 
-        "budgetUpdateTime", 
-        "pendingBudgetUpdate"
+        trafficstar_campaign_id as "trafficstarCampaignId", 
+        budget_update_time as "budgetUpdateTime", 
+        pending_budget_update as "pendingBudgetUpdate"
       FROM campaigns
       WHERE 
-        "trafficstarCampaignId" IS NOT NULL
+        trafficstar_campaign_id IS NOT NULL
         AND (
-          "pendingBudgetUpdate" IS TRUE
-          OR "budgetUpdateTime" = $1
+          pending_budget_update IS TRUE
+          OR budget_update_time = $1
         )
     `, [currentTimeStr]);
     
@@ -86,13 +86,15 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
         console.log(`✅ Successfully updated budget for campaign ${campaign.id} to $${DEFAULT_BUDGET_AMOUNT}`);
         
         // Update the campaign in the database to mark the update as complete
-        await db.update(campaigns)
-          .set({
-            pendingBudgetUpdate: false,
-            lastTrafficstarSync: new Date(),
-            updatedAt: new Date()
-          })
-          .where(eq(campaigns.id, campaign.id));
+        // Using raw SQL to avoid column name mismatch issues
+        await pool.query(`
+          UPDATE campaigns
+          SET 
+            pending_budget_update = false,
+            last_trafficstar_sync = $1,
+            updated_at = $1
+          WHERE id = $2
+        `, [new Date(), campaign.id]);
           
         console.log(`✅ Marked campaign ${campaign.id} budget update as complete`);
       } catch (error) {

@@ -36,6 +36,7 @@ export const campaigns = pgTable("campaigns", {
   trafficstarCampaignId: text("trafficstar_campaign_id"), // Link to TrafficStar campaign ID
   autoManageTrafficstar: boolean("auto_manage_trafficstar").default(false), // DEPRECATED: Auto-manage functionality has been removed
   budgetUpdateTime: text("budget_update_time").default("00:00:00"), // Daily budget update time in UTC (HH:MM:SS format)
+  pendingBudgetUpdate: boolean("pending_budget_update").default(false), // Whether a budget update is pending for this campaign
   lastTrafficstarSync: timestamp("last_trafficstar_sync"), // Last time TS campaign was synced
   // TrafficStar spent tracking fields
   dailySpent: numeric("daily_spent", { precision: 10, scale: 4 }).default("0"), // Daily spent value from TrafficStar
@@ -110,6 +111,7 @@ export const updateCampaignSchema = z.object({
   // DEPRECATED: Auto-management functionality has been completely removed from the system
   autoManageTrafficstar: z.boolean().optional(), // DEPRECATED
   budgetUpdateTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Invalid time format. Use HH:MM:SS").optional(),
+  pendingBudgetUpdate: z.boolean().optional(),
   lastTrafficstarSync: z.date().optional().nullable(),
   // Traffic Generator feature
   trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
@@ -510,6 +512,43 @@ export type InsertYoutubeUrlRecord = z.infer<typeof insertYoutubeUrlRecordSchema
 export const youtubeUrlRecordsRelations = relations(youtubeUrlRecords, ({ one }) => ({
   campaign: one(campaigns, {
     fields: [youtubeUrlRecords.campaignId],
+    references: [campaigns.id],
+  }),
+}));
+
+// YouTube API Log type enum
+export enum YouTubeApiLogType {
+  INTERVAL_CHECK = 'interval_check',  // Scheduled interval check
+  FORCE_CHECK = 'force_check',        // Manual/forced check
+  URL_VALIDATION = 'url_validation',  // Direct URL validation when adding URLs
+  URL_DELETION = 'url_deletion'       // URL deletion due to validation failure
+}
+
+// YouTube API Logs table for tracking API usage
+export const youtubeApiLogs = pgTable("youtube_api_logs", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => campaigns.id), // Can be NULL for system-wide checks
+  logType: text("log_type").notNull(), // Using YouTubeApiLogType enum values
+  message: text("message").notNull(),
+  details: jsonb("details"), // Additional structured data about the request
+  isError: boolean("is_error").default(false), // Whether this log is an error
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertYoutubeApiLogSchema = createInsertSchema(youtubeApiLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for YouTube API Logs
+export type YouTubeApiLog = typeof youtubeApiLogs.$inferSelect;
+export type InsertYouTubeApiLog = z.infer<typeof insertYoutubeApiLogSchema>;
+
+// Relations for YouTube API Logs
+export const youtubeApiLogsRelations = relations(youtubeApiLogs, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [youtubeApiLogs.campaignId],
     references: [campaigns.id],
   }),
 }));
