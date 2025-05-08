@@ -476,7 +476,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                   console.log(`💰 URL ${url.id} price for ${validRemaining} remaining clicks: $${urlPrice.toFixed(2)}`);
                   
                   // Log this URL's budget calculation to the campaign-specific URL budget log file
-                  await urlBudgetLogger.logUrlBudget(url.id, urlPrice, campaign.id);
+                  await urlBudgetLogger.logUrlBudget(campaign.id, url.id, url.name || 'Unknown', urlPrice);
                 }
               } else {
                 console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
@@ -706,7 +706,7 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
       console.log(`New URL ${url.id} budget: $${urlBudget.toFixed(4)} (${url.clickLimit} clicks)`);
       
       // Log this URL's budget calculation
-      await urlBudgetLogger.logUrlBudget(url.id, urlBudget, campaign.id);
+      await urlBudgetLogger.logUrlBudget(campaign.id, url.id, url.name || 'Unknown', urlBudget);
       
       // Add to total new URLs budget
       newUrlsBudget += urlBudget;
@@ -848,7 +848,7 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
       console.log(`URL ID ${url.id}: ${totalClicks} clicks = $${urlBudget.toFixed(4)} additional budget`);
       
       // Log this URL's budget calculation to the campaign-specific URL budget log file
-      await urlBudgetLogger.logUrlBudget(url.id, urlBudget, campaignId);
+      await urlBudgetLogger.logUrlBudget(campaignId, url.id, url.name || 'Unknown', urlBudget);
       
       // Update the URL to mark it as processed
       await db.update(urls)
@@ -1550,12 +1550,7 @@ export async function runTrafficGeneratorForAllCampaigns() {
     console.log('Running Traffic Generator for all enabled campaigns');
     
     // Get all campaigns with traffic generator enabled
-    // Use a more efficient query with only necessary fields
     const enabledCampaigns = await db.query.campaigns.findMany({
-      columns: {
-        id: true,
-        trafficstarCampaignId: true,
-      },
       where: (campaign, { eq }) => eq(campaign.trafficGeneratorEnabled, true),
     });
     
@@ -1566,30 +1561,12 @@ export async function runTrafficGeneratorForAllCampaigns() {
     
     console.log(`Processing ${enabledCampaigns.length} campaigns with traffic generator enabled`);
     
-    // Set a reasonable concurrency limit to prevent overwhelming the system
-    const CONCURRENCY_LIMIT = 2;
-    const chunks = [];
-    
-    // Split campaigns into chunks based on concurrency limit
-    for (let i = 0; i < enabledCampaigns.length; i += CONCURRENCY_LIMIT) {
-      chunks.push(enabledCampaigns.slice(i, i + CONCURRENCY_LIMIT));
-    }
-    
-    // Process each chunk of campaigns in parallel
-    for (const chunk of chunks) {
-      await Promise.all(
-        chunk.map(async (campaign) => {
-          try {
-            await processTrafficGenerator(campaign.id);
-          } catch (error) {
-            console.error(`Error processing campaign ${campaign.id}:`, error);
-          }
-        })
-      );
-      
-      // Small break between chunks to prevent resource exhaustion
-      if (chunks.length > 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+    // Process each campaign
+    for (const campaign of enabledCampaigns) {
+      try {
+        await processTrafficGenerator(campaign.id);
+      } catch (error) {
+        console.error(`Error processing campaign ${campaign.id}:`, error);
       }
     }
     

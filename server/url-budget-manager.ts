@@ -53,7 +53,7 @@ export class UrlBudgetManager {
     pricePerThousand: number
   ): Promise<boolean> {
     // Check if this URL has already been logged
-    if (urlBudgetLogger.isUrlLogged(urlId, campaignId)) {
+    if (urlBudgetLogger.isUrlLogged(urlId)) {
       console.log(`📋 URL ${urlId} has already been logged for budget calculation - skipping`);
       return false;
     }
@@ -63,7 +63,7 @@ export class UrlBudgetManager {
     console.log(`💰 New URL ${urlId} budget calculation: ${clickLimit} clicks at $${pricePerThousand} per 1,000 = $${urlBudget.toFixed(4)}`);
     
     // Log this URL's budget
-    await urlBudgetLogger.logUrlBudget(urlId, urlBudget, campaignId, new Date());
+    await urlBudgetLogger.logUrlBudget(urlId, urlBudget);
     
     // Get or create an entry for this campaign
     let campaignEntry = this.pendingUpdates.get(campaignId);
@@ -134,16 +134,8 @@ export class UrlBudgetManager {
       const trafficstarCampaignId = campaignEntry.trafficstarCampaignId;
       
       try {
-        // Fetch campaign details and prepare end time in parallel for performance improvement
-        const campaignDetailsPromise = trafficStarService.getCampaign(Number(trafficstarCampaignId));
-        
-        // Prepare end time data while waiting for API response
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-        const endTimeStr = `${todayStr} 23:59:00`;
-        
-        // Wait for campaign details
-        const campaignDetails = await campaignDetailsPromise;
+        // Get campaign details
+        const campaignDetails = await trafficStarService.getCampaign(Number(trafficstarCampaignId));
         
         if (!campaignDetails) {
           throw new Error(`Failed to get campaign details for ${trafficstarCampaignId}`);
@@ -162,14 +154,18 @@ export class UrlBudgetManager {
         const newBudget = currentBudget + totalPendingBudget;
         console.log(`💰 New budget calculation: $${currentBudget.toFixed(4)} + $${totalPendingBudget.toFixed(4)} = $${newBudget.toFixed(4)}`);
         
-        // Execute budget update and end time update in parallel
-        await Promise.all([
-          trafficStarService.updateCampaignBudget(Number(trafficstarCampaignId), newBudget),
-          trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr)
-        ]);
-        
+        // Update the TrafficStar campaign budget
+        await trafficStarService.updateCampaignBudget(Number(trafficstarCampaignId), newBudget);
         console.log(`✅ Updated campaign ${trafficstarCampaignId} budget to $${newBudget.toFixed(4)}`);
-        console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
+        
+        // Ensure campaign is active and has the correct end time
+        // Set end time to 23:59 UTC today
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+        const endTimeStr = `${todayStr} 23:59:00`;
+        
+        // Set the end time
+        await trafficStarService.updateCampaignEndTime(Number(trafficstarCampaignId), endTimeStr);
         console.log(`✅ Set campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
         
         // Make sure campaign is active
