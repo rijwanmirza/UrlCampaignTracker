@@ -49,13 +49,27 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ message: 'API key required' });
     }
     
-    // Get the current API key from database or environment
+    // For important authentication checks, force a cache refresh
+    // every 30 seconds to ensure we're using the latest key
+    const now = Date.now();
+    if ((now - lastCacheTime) > 30000) { // 30 seconds
+      cachedApiKey = null;
+    }
+    
+    // Get the current API key from database
     const currentKey = await getCurrentApiKey();
     
     // Simple check - just compare the API key with our secret
     if (apiKey !== currentKey) {
-      log(`Authentication failed - invalid API key provided`, 'auth');
-      return res.status(401).json({ message: 'Invalid API key' });
+      // If key doesn't match, force a fresh check from the database 
+      // in case the cache hasn't been cleared yet
+      cachedApiKey = null;
+      const freshKey = await getApiSecretKey();
+      
+      if (apiKey !== freshKey) {
+        log(`Authentication failed - invalid API key provided`, 'auth');
+        return res.status(401).json({ message: 'Invalid API key' });
+      }
     }
     
     // Authentication successful
@@ -69,15 +83,21 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 // Validate an API key
 export async function validateApiKey(apiKey: string): Promise<boolean> {
   try {
-    // Get the current API key from database or environment
+    // Force refresh cache to get the latest API key directly from database
+    // This ensures we're validating against the most current key
+    cachedApiKey = null;
+    lastCacheTime = 0;
+    
+    // Get the current API key from database
     const currentKey = await getCurrentApiKey();
     
     // Always validate against the real API key
     return apiKey === currentKey;
   } catch (error) {
     console.error('Error validating API key:', error);
-    // Fallback to environment variable or default
-    return apiKey === (process.env.API_SECRET_KEY || 'TraffiCS10928');
+    // Don't fall back to environment variable or default
+    // Return false to ensure strict validation
+    return false;
   }
 }
 

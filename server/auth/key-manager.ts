@@ -48,6 +48,9 @@ export async function getApiSecretKey(): Promise<string> {
  */
 export async function saveApiKeyToDatabase(apiKey: string): Promise<void> {
   try {
+    // Import the clearApiKeyCache function to reset cache when key changes
+    const { clearApiKeyCache } = await import('./middleware');
+    
     // Check if the setting already exists
     const [existing] = await db
       .select()
@@ -75,7 +78,10 @@ export async function saveApiKeyToDatabase(apiKey: string): Promise<void> {
     // Also update the environment variable
     process.env.API_SECRET_KEY = apiKey;
     
-    log('API key successfully saved to database', 'key-manager');
+    // Clear the API key cache to force re-reading from database
+    clearApiKeyCache();
+    
+    log('API key successfully saved to database and cache cleared', 'key-manager');
   } catch (error) {
     console.error('Error saving API key to database:', error);
     throw error;
