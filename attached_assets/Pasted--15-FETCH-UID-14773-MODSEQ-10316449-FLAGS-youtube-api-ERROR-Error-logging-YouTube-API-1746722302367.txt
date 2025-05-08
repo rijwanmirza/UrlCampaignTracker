@@ -1,0 +1,147 @@
+ '* 15 FETCH (UID 14773 MODSEQ (10316449) FLAGS ())'
+[youtube-api] ERROR: Error logging YouTube API activity: error: null value in column "log_type" of relation "youtube_api_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.scheduleNextCheck (/home/runner/workspace/server/youtube-api-service.ts:690:7) {
+  length: 326,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (130, null, Calculating next check time for 1 campaigns, null, {"campaignCount": 1}, f, 2025-05-08 16:36:51.345).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'youtube_api_logs',
+  column: 'log_type',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[youtube-api] ERROR: Error logging YouTube API activity: error: null value in column "log_type" of relation "youtube_api_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.scheduleNextCheck (/home/runner/workspace/server/youtube-api-service.ts:760:7) {
+  length: 353,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (131, null, Campaign timing details, null, {"campaignTimings": [{"id": 1, "name": "Test", "lastCheck": "202..., f, 2025-05-08 16:36:51.364).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'youtube_api_logs',
+  column: 'log_type',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[youtube-api] ERROR: Error logging YouTube API activity: error: null value in column "log_type" of relation "youtube_api_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.scheduleNextCheck (/home/runner/workspace/server/youtube-api-service.ts:773:9) {
+  length: 324,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (132, null, Processing 1 campaigns now: 1, null, {"campaignsNeedingProcess": [1]}, f, 2025-05-08 16:36:51.444).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'youtube_api_logs',
+  column: 'log_type',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[youtube-api] INFO: [youtube-api-scheduler] Campaign 1: Last check: 2025-05-08T16:06:50.168Z, Interval: 30 minutes, Time remaining: 0 minutes
+[youtube-api] INFO: [youtube-api-scheduler] Campaign 1: Interval elapsed, processing now
+[youtube-api] INFO: Processing YouTube checks for campaign 1
+[youtube-api] INFO: Found 22 YouTube URLs to check for campaign 1
+[youtube-api] INFO: [YOUTUBE-API] Making request for 22 videos: tNx-YeEYFE4, BaCQqVIpMAU, jDq-gvwrptQ...
+[youtube-api] INFO: [YOUTUBE-API] Response received with 22 videos in 214ms
+[youtube-api] INFO: YouTube checks completed for campaign 1
+[youtube-api] ERROR: Error logging YouTube API activity: error: null value in column "log_type" of relation "youtube_api_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.scheduleNextCheck (/home/runner/workspace/server/youtube-api-service.ts:690:7) {
+  length: 326,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (137, null, Calculating next check time for 1 campaigns, null, {"campaignCount": 1}, f, 2025-05-08 16:36:56.959).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'youtube_api_logs',
+  column: 'log_type',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[youtube-api] ERROR: Error logging YouTube API activity: error: null value in column "log_type" of relation "youtube_api_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.scheduleNextCheck (/home/runner/workspace/server/youtube-api-service.ts:760:7) {
+  length: 353,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (138, null, Campaign timing details, null, {"campaignTimings": [{"id": 1, "name": "Test", "lastCheck": "202..., f, 2025-05-08 16:36:56.977).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'youtube_api_logs',
+  column: 'log_type',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[youtube-api] ERROR: Error logging YouTube API activity: error: null value in column "log_type" of relation "youtube_api_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.scheduleNextCheck (/home/runner/workspace/server/youtube-api-service.ts:794:9) {
+  length: 393,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (139, null, Next check scheduled for campaign 1 in 30 minutes at 2025-05-08T..., 1, {"campaignInfo": {"id": 1, "name": "Test", "intervalMinutes": 30..., f, 2025-05-08 16:36:57.05).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'youtube_api_logs',
+  column: 'log_type',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[youtube-api] INFO: [youtube-api-scheduler] Next check scheduled in exactly 30 minutes

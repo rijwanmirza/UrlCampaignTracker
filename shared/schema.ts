@@ -519,6 +519,7 @@ export const youtubeUrlRecordsRelations = relations(youtubeUrlRecords, ({ one })
 // YouTube API Log type definition
 export const YouTubeApiLogType = {
   SCHEDULER: "scheduler_check",       // Scheduler checking if it's time to run a check
+  SCHEDULER_CHECK: "scheduler_check", // Same as SCHEDULER for backward compatibility
   INTERVAL_CHECK: "interval_check",   // Regular interval check for a campaign
   API_REQUEST: "api_request",         // Actual API request to YouTube
   API_RESPONSE: "api_response",       // Response from YouTube API

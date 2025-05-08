@@ -688,7 +688,7 @@ export class YouTubeApiService {
       
       // Log detailed information about all campaigns for debugging
       await this.logApiActivity(
-        YouTubeApiLogType.SCHEDULER_CHECK,
+        YouTubeApiLogType.SCHEDULER,
         `Calculating next check time for ${enabledCampaigns.length} campaigns`,
         null,
         { campaignCount: enabledCampaigns.length }
@@ -758,7 +758,7 @@ export class YouTubeApiService {
       
       // Log detailed timing information for debugging
       await this.logApiActivity(
-        YouTubeApiLogType.SCHEDULER_CHECK,
+        YouTubeApiLogType.SCHEDULER,
         `Campaign timing details`,
         null,
         { campaignTimings }
@@ -771,7 +771,7 @@ export class YouTubeApiService {
           .map(c => c.id);
           
         await this.logApiActivity(
-          YouTubeApiLogType.SCHEDULER_CHECK,
+          YouTubeApiLogType.SCHEDULER,
           `Processing ${campaignsNeedingProcess.length} campaigns now: ${campaignsNeedingProcess.join(', ')}`,
           null,
           { campaignsNeedingProcess }
@@ -792,9 +792,9 @@ export class YouTubeApiService {
         const nextCheckTime = new Date(now.getTime() + nextCheckMs);
         
         await this.logApiActivity(
-          YouTubeApiLogType.SCHEDULER_CHECK,
+          YouTubeApiLogType.SCHEDULER,
           `Next check scheduled for campaign ${campaignWithShortestTime?.id} in ${nextCheckMinutes} minutes at ${nextCheckTime.toISOString()}`,
-          campaignWithShortestTime?.id ?? null,
+          campaignWithShortestTime?.id ?? undefined,
           { 
             nextCheckMinutes,
             nextCheckTime: nextCheckTime.toISOString(),
