@@ -6,7 +6,7 @@ import { saveApiKeyToDatabase } from './key-manager';
 // Register authentication routes
 export function registerAuthRoutes(app: Express) {
   // API key verification route
-  app.post('/api/auth/verify-key', (req: Request, res: Response) => {
+  app.post('/api/auth/verify-key', async (req: Request, res: Response) => {
     const { apiKey } = req.body;
     
     try {
@@ -15,8 +15,8 @@ export function registerAuthRoutes(app: Express) {
         return res.status(400).json({ message: 'API key is required' });
       }
       
-      // Validate the API key
-      const isValid = validateApiKey(apiKey);
+      // Validate the API key - properly await the async function
+      const isValid = await validateApiKey(apiKey);
       
       if (!isValid) {
         log(`API key verification failed - invalid key provided`, 'auth');
@@ -48,7 +48,7 @@ export function registerAuthRoutes(app: Express) {
   });
   
   // Check authentication status
-  app.get('/api/auth/status', (req: Request, res: Response) => {
+  app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
       // Get API key from cookie, header, or query param
       const apiKey = req.cookies?.apiKey || 
@@ -59,8 +59,8 @@ export function registerAuthRoutes(app: Express) {
         return res.json({ authenticated: false });
       }
       
-      // Validate the API key
-      const isValid = validateApiKey(apiKey as string);
+      // Validate the API key - properly await the async function
+      const isValid = await validateApiKey(apiKey as string);
       
       res.json({ authenticated: isValid });
     } catch (error) {

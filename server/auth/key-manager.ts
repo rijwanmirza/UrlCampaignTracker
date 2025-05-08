@@ -25,20 +25,35 @@ export async function getApiSecretKey(): Promise<string> {
       return setting.value;
     }
     
-    // If not in database, use the environment variable
+    // If not in database, use the environment variable if available
     if (process.env.API_SECRET_KEY) {
       // Save to database for future use
       await saveApiKeyToDatabase(process.env.API_SECRET_KEY);
       return process.env.API_SECRET_KEY;
     }
     
-    // Fallback to default
-    log('No API key found in database or environment, using default', 'key-manager');
-    return 'TraffiCS10928'; // Default fallback
+    // Only use default for initial setup when no key exists yet
+    // This will only happen the very first time the application runs
+    log('WARNING: No API key found in database or environment. A one-time default will be set, please change immediately', 'key-manager');
+    
+    // Generate a secure random key instead of using a hardcoded default
+    const randomKey = `CS_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
+    
+    // Save this random key to database immediately
+    await saveApiKeyToDatabase(randomKey);
+    log(`Generated and saved random API key: ${randomKey}`, 'key-manager');
+    return randomKey;
   } catch (error) {
     console.error('Error getting API key:', error);
-    // Fallback to environment variable or default
-    return process.env.API_SECRET_KEY || 'TraffiCS10928';
+    
+    // Do not fall back to default key
+    if (process.env.API_SECRET_KEY) {
+      return process.env.API_SECRET_KEY;
+    }
+    
+    // If we can't access the database and have no environment variable,
+    // throw an error instead of providing a fallback to prevent security issues
+    throw new Error('Cannot retrieve API key from database or environment');
   }
 }
 
