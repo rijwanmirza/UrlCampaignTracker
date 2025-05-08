@@ -194,6 +194,8 @@ app.use((req, res, next) => {
         await initializeTrafficStar();
         log('TrafficStar API initialized successfully');
         
+        // Remove test code - fix has been verified
+        
         // Initialize Traffic Generator scheduler
         initializeTrafficGeneratorScheduler();
         log('Traffic Generator scheduler initialized successfully');

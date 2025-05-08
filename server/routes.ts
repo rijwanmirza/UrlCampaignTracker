@@ -3059,7 +3059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // BACKGROUND API CALL - Process API call after response is sent
       setTimeout(() => {
         try {
-          trafficStarService.updateCampaignDailyBudget(campaignId, maxDaily)
+          trafficStarService.updateCampaignBudget(campaignId, maxDaily)
             .catch(error => console.error(`Background API call to update budget for campaign ${campaignId} failed:`, error));
             
           // Refresh campaign in background
@@ -3106,7 +3106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         // Set daily budget to $10.15 via TrafficStar API
-        await trafficStarService.updateCampaignDailyBudget(
+        await trafficStarService.updateCampaignBudget(
           Number(campaign.trafficstarCampaignId), 
           10.15
         );
