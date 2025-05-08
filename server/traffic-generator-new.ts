@@ -1453,10 +1453,13 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     console.log(`Processing Traffic Generator for campaign ${campaignId}`);
     
     // Get the campaign details with URLs
+    // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (campaign, { eq }) => eq(campaign.id, campaignId),
       with: {
-        urls: true
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        }
       }
     }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
@@ -1757,10 +1760,13 @@ export async function debugProcessCampaign(campaignId: number) {
     console.log(`🔍 DEBUG: Testing Traffic Generator for campaign ${campaignId}`);
     
     // Get the campaign details with URLs
+    // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (campaign, { eq }) => eq(campaign.id, campaignId),
       with: {
-        urls: true
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        }
       }
     }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
