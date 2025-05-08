@@ -516,15 +516,21 @@ export const youtubeUrlRecordsRelations = relations(youtubeUrlRecords, ({ one })
   }),
 }));
 
-// YouTube API Log type enum
-export enum YouTubeApiLogType {
-  INTERVAL_CHECK = 'interval_check',  // Scheduled interval check
-  FORCE_CHECK = 'force_check',        // Manual/forced check
-  URL_VALIDATION = 'url_validation',  // Direct URL validation when adding URLs
-  URL_DELETION = 'url_deletion'       // URL deletion due to validation failure
-}
+// YouTube API Log type definition
+export const YouTubeApiLogType = {
+  SCHEDULER: "scheduler_check",       // Scheduler checking if it's time to run a check
+  INTERVAL_CHECK: "interval_check",   // Regular interval check for a campaign
+  API_REQUEST: "api_request",         // Actual API request to YouTube
+  API_RESPONSE: "api_response",       // Response from YouTube API
+  API_ERROR: "api_error",             // Error from YouTube API
+  URL_ACTION: "url_action",           // Action taken on a URL (delete, etc.)
+  FORCE_CHECK: "force_check",         // Manual force check from UI
+  URL_VALIDATION: "url_validation",   // Direct URL validation when adding URLs
+  URL_DELETION: "url_deletion"        // URL deletion due to validation failure
+} as const;
 
-// YouTube API Logs table for tracking API usage
+export type YouTubeApiLogTypeValues = typeof YouTubeApiLogType[keyof typeof YouTubeApiLogType];
+
 export const youtubeApiLogs = pgTable("youtube_api_logs", {
   id: serial("id").primaryKey(),
   campaignId: integer("campaign_id").references(() => campaigns.id), // Can be NULL for system-wide checks
@@ -533,7 +539,6 @@ export const youtubeApiLogs = pgTable("youtube_api_logs", {
   details: jsonb("details"), // Additional structured data about the request
   isError: boolean("is_error").default(false), // Whether this log is an error
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  // createdAt column removed as it doesn't exist in the actual table
 });
 
 export const insertYoutubeApiLogSchema = createInsertSchema(youtubeApiLogs).omit({

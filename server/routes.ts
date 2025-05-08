@@ -5731,6 +5731,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Log the manual force check action in YouTube API logs
+      await youtubeApiService.logApiActivity(
+        YouTubeApiLogType.FORCE_CHECK,
+        `Manual force check triggered at ${new Date().toISOString()} for campaign ${id}`,
+        id,
+        {
+          timestamp: new Date().toISOString(),
+          trigger: 'manual', // Indicate this was manually triggered via the UI
+          userAgent: req.headers['user-agent'] || 'unknown'  // Track browser info
+        },
+        false
+      );
+      
       // Process the campaign with force check flag
       // This ignores the interval setting for manual checks
       await youtubeApiService.processCampaign(id, true);

@@ -154,12 +154,24 @@ export class YouTubeApiService {
     }
     
     try {
-      // Log the API call being made
+      // Create a more detailed API request message with timestamp
+      const formattedVideoIds = videoIds.length > 5 
+        ? `${videoIds.slice(0, 5).join(', ')}... (and ${videoIds.length - 5} more)`
+        : videoIds.join(', ');
+      
+      const apiRequestMsg = `API Request at ${new Date().toISOString()} - ${videoIds.length} videos: ${formattedVideoIds}`;
+      
+      // Log the API call being made - this is what we want to see in the logs UI
       await this.logApiActivity(
         YouTubeApiLogType.API_REQUEST,
-        `Making YouTube API request for ${videoIds.length} videos: ${videoIds.join(', ')}`,
+        apiRequestMsg,
         campaignId,
-        { videoIds },
+        { 
+          videoIds,
+          timestamp: new Date().toISOString(),
+          requestType: 'videos.list',
+          quotaCost: 1 // Each videos.list call costs 1 quota unit
+        },
         false
       );
       
@@ -177,15 +189,20 @@ export class YouTubeApiService {
       // Calculate request duration
       const duration = Date.now() - startTime;
       
-      // Log successful API response
+      // Create a detailed API response message with timestamp
+      const apiResponseMsg = `API Response at ${new Date().toISOString()} - Received ${response.data.items?.length || 0}/${videoIds.length} videos in ${duration}ms`;
+      
+      // Log successful API response - this is also what we want to see in the logs UI
       await this.logApiActivity(
         YouTubeApiLogType.API_RESPONSE,
-        `Received YouTube API response for ${videoIds.length} videos in ${duration}ms`,
+        apiResponseMsg,
         campaignId,
         { 
           responseTime: duration,
           videosReceived: (response.data.items || []).length,
-          quotaUsage: 1, // Each videos.list call costs 1 quota unit
+          videoIdsRequested: videoIds.length,
+          timestamp: new Date().toISOString(),
+          quotaUsage: 1 // Each videos.list call costs 1 quota unit
         },
         false
       );
@@ -194,14 +211,17 @@ export class YouTubeApiService {
       
       return response.data.items || [];
     } catch (error) {
-      // Log failed API request
+      // Log failed API request with timestamp
+      const errorMsg = `API Error at ${new Date().toISOString()} - ${error instanceof Error ? error.message : String(error)}`;
+      
       await this.logApiActivity(
         YouTubeApiLogType.API_ERROR,
-        `YouTube API request failed: ${error instanceof Error ? error.message : String(error)}`,
+        errorMsg,
         campaignId,
         { 
           error: error instanceof Error ? error.message : String(error),
-          videoIds
+          videoIds,
+          timestamp: new Date().toISOString()
         },
         true
       );
