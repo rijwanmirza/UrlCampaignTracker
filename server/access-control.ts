@@ -8,7 +8,8 @@ const SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // Store temporary login paths
 const temporaryLoginPaths = new Map<string, { timestamp: number, sessionId: string }>();
-const TEMP_LOGIN_EXPIRY = 2 * 60 * 1000; // 2 minutes in milliseconds
+const TEMP_LOGIN_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
+const TEMP_LOGIN_PREFIX = 'login_'; // Prefix for temporary login paths
 
 // Access configuration
 const SECRET_ACCESS_CODE = 'ABCD123'; // You can change this to your preferred access code
@@ -40,7 +41,7 @@ function generateTemporaryLoginPath(sessionId: string): string {
   cleanupExpiredTemporaryPaths();
   
   // Generate a random temporary login path
-  const tempPath = `login_${Math.random().toString(36).substring(2, 15)}`;
+  const tempPath = `${TEMP_LOGIN_PREFIX}${Math.random().toString(36).substring(2, 15)}`;
   
   // Store this path with the associated session ID
   temporaryLoginPaths.set(tempPath, {
@@ -93,8 +94,20 @@ function isValidTemporaryLoginPath(path: string): boolean {
   // Remove leading slash if present
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
   
-  // Check if this path exists in our temporary login paths
-  return temporaryLoginPaths.has(cleanPath);
+  // Check if path matches the login pattern, regardless of the random string
+  if (cleanPath.startsWith(TEMP_LOGIN_PREFIX)) {
+    // For extra security, also check if this exact path exists in our temporary login paths
+    if (temporaryLoginPaths.has(cleanPath)) {
+      return true;
+    }
+    
+    // For debugging in case the exact match failed
+    if (DEBUG_MODE) {
+      log(`Path ${cleanPath} matches prefix but not found in temporary paths map. Keys: ${Array.from(temporaryLoginPaths.keys()).join(', ')}`, 'access');
+    }
+  }
+  
+  return false;
 }
 
 /**
@@ -149,7 +162,69 @@ export function handleAccessRoutes(req: Request, res: Response, next: NextFuncti
   if (path.startsWith('/access/')) {
     const parts = path.split('/access/');
     if (parts.length < 2) {
-      return res.status(404).send('Page not found');
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invalid Access URL</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              background-color: #f1f5f9;
+              background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+              margin: 0;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              text-align: center;
+            }
+            .container {
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+              width: 100%;
+              max-width: 500px;
+              padding: 2rem;
+              border: 1px solid rgba(0, 0, 0, 0.05);
+            }
+            h1 {
+              color: #1e293b;
+              margin-top: 0;
+            }
+            p {
+              color: #475569;
+              line-height: 1.6;
+              margin-bottom: 1.5rem;
+            }
+            .url-example {
+              background-color: #f1f5f9;
+              padding: 0.75rem 1rem;
+              border-radius: 0.375rem;
+              font-family: monospace;
+              margin: 1rem 0;
+              word-break: break-all;
+            }
+            .warning-icon {
+              font-size: 3rem;
+              margin-bottom: 1rem;
+              color: #f59e0b;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="warning-icon">⚠️</div>
+            <h1>Invalid Access URL</h1>
+            <p>The access URL you provided is incomplete. Please use the correct format:</p>
+            <div class="url-example">[YOUR_DOMAIN]/access/ABCD123</div>
+            <p>If you're experiencing issues, please contact your system administrator.</p>
+          </div>
+        </body>
+        </html>
+      `);
     }
     
     const code = parts[1];
@@ -186,9 +261,46 @@ export function handleAccessRoutes(req: Request, res: Response, next: NextFuncti
               window.location.href = '/${tempLoginPath}';
             }, 100);
           </script>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              background-color: #f1f5f9;
+              margin: 0;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              text-align: center;
+            }
+            .redirect-container {
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              padding: 2rem;
+              max-width: 400px;
+            }
+            .spinner {
+              border: 4px solid rgba(0, 0, 0, 0.1);
+              border-radius: 50%;
+              border-top: 4px solid #2563eb;
+              width: 24px;
+              height: 24px;
+              margin: 10px auto;
+              animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
         </head>
         <body>
-          <p>Redirecting to secure login page...</p>
+          <div class="redirect-container">
+            <h2>Access Confirmed</h2>
+            <p>Redirecting to secure login page...</p>
+            <div class="spinner"></div>
+          </div>
         </body>
         </html>
       `);
@@ -216,13 +328,180 @@ export function handleAccessRoutes(req: Request, res: Response, next: NextFuncti
       return res.status(404).send('Page not found');
     }
     
-    // Serve the login page for this temporary path
-    // In reality, this is the same content as our /login page
-    log(`Serving login page for temporary path: ${path} with session: ${sessionId}`, 'access');
+    // Set or refresh the session cookie to ensure login works
+    res.cookie('session_id', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: SESSION_EXPIRY,
+      sameSite: 'lax'
+    });
     
-    // Forward this request to the normal login page processing
-    req.url = '/login';
-    return next();
+    // Serve the login form directly for this temporary path
+    log(`Serving login form for temporary path: ${path} with session: ${sessionId}`, 'access');
+    
+    // Return an HTML page with the login form directly
+    // This avoids client-side routing issues
+    return res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>URL Campaign Manager - Login</title>
+        <style>
+          body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+          }
+          .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+          }
+          .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+          }
+          .subtitle {
+            color: #6b7280;
+            font-size: 0.875rem;
+          }
+          .form-group {
+            margin-bottom: 1rem;
+          }
+          .input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            box-sizing: border-box;
+            transition: border-color 0.15s, box-shadow 0.15s;
+          }
+          .input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+          }
+          .button {
+            background-color: #2563eb;
+            color: white;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            width: 100%;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+          }
+          .button:hover {
+            background-color: #1d4ed8;
+          }
+          .button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
+          .error {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #b91c1c;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            display: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="header">
+            <h1 class="title">URL Campaign Manager</h1>
+            <p class="subtitle">Enter your secret API key to continue</p>
+          </div>
+          
+          <div id="error-message" class="error"></div>
+          
+          <form id="login-form">
+            <div class="form-group">
+              <input 
+                type="password" 
+                id="apiKey" 
+                class="input" 
+                placeholder="Enter API key" 
+                required 
+                autocomplete="off"
+              >
+            </div>
+            
+            <button 
+              type="submit" 
+              id="submit-button" 
+              class="button"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+        
+        <script>
+          // Simple login script
+          document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const errorEl = document.getElementById('error-message');
+            const buttonEl = document.getElementById('submit-button');
+            const apiKey = document.getElementById('apiKey').value;
+            
+            errorEl.style.display = 'none';
+            buttonEl.disabled = true;
+            buttonEl.textContent = 'Verifying...';
+            
+            try {
+              const response = await fetch('/api/auth/verify-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey }),
+              });
+              
+              const data = await response.json();
+              
+              if (data.authenticated) {
+                window.location.href = '/campaigns';
+              } else {
+                errorEl.textContent = 'Invalid API key. Please try again.';
+                errorEl.style.display = 'block';
+                buttonEl.disabled = false;
+                buttonEl.textContent = 'Login';
+              }
+            } catch (error) {
+              errorEl.textContent = 'An error occurred. Please try again.';
+              errorEl.style.display = 'block';
+              buttonEl.disabled = false;
+              buttonEl.textContent = 'Login';
+            }
+          });
+        </script>
+      </body>
+      </html>
+    `);
   }
   
   // Special case for login page with direct access
@@ -291,9 +570,72 @@ export function handleAccessRoutes(req: Request, res: Response, next: NextFuncti
     return;
   }
   
-  // Otherwise, display blank page with 404
+  // Otherwise, display a detailed 404 page with access instructions
   log(`Access denied for path: ${path} - no valid session or API key`, 'access');
-  return res.status(404).send('Page not found');
+  return res.status(404).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Access Restricted</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body {
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          background-color: #f1f5f9;
+          background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+          margin: 0;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          text-align: center;
+        }
+        .container {
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          width: 100%;
+          max-width: 500px;
+          padding: 2rem;
+          border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+          color: #1e293b;
+          margin-top: 0;
+        }
+        p {
+          color: #475569;
+          line-height: 1.6;
+          margin-bottom: 1.5rem;
+        }
+        .url-example {
+          background-color: #f1f5f9;
+          padding: 0.75rem 1rem;
+          border-radius: 0.375rem;
+          font-family: monospace;
+          margin: 1rem 0;
+          word-break: break-all;
+        }
+        .lock-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+          color: #64748b;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="lock-icon">🔒</div>
+        <h1>Access Restricted</h1>
+        <p>This URL Campaign Manager instance requires special access. To gain access, please use the special access URL:</p>
+        <div class="url-example">[YOUR_DOMAIN]/access/ABCD123</div>
+        <p>This will generate a temporary login URL where you can enter your API key for authentication.</p>
+        <p>If you're experiencing issues, please contact your system administrator.</p>
+      </div>
+    </body>
+    </html>
+  `);
 }
 
 /**
