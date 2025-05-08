@@ -131,6 +131,14 @@ class GmailReader {
       // Create a clean version of the config for saving
       const configToSave: any = { ...this.config };
       
+      // Log campaign assignments (if any) before saving
+      if (configToSave.campaignAssignments && Array.isArray(configToSave.campaignAssignments)) {
+        console.log('🔍 DEBUG: Saving Gmail config with campaignAssignments:', 
+                   JSON.stringify(configToSave.campaignAssignments));
+      } else {
+        console.log('⚠️ WARNING: No campaignAssignments array found in config to save');
+      }
+      
       // Convert RegExp objects to strings for serialization
       if (configToSave.subjectPattern && configToSave.subjectPattern instanceof RegExp) {
         // Store as a string without the / /

@@ -2436,12 +2436,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rawConfig = req.body;
       
       // Parse the input with basic validation
+      console.log('🔍 DEBUG: Gmail config raw input:', JSON.stringify({
+        ...rawConfig,
+        password: '*******' // Hide password in logs
+      }, null, 2));
+      
       const result = gmailConfigSchema.safeParse(rawConfig);
       
       if (!result.success) {
         const validationError = fromZodError(result.error);
+        console.log('❌ Gmail config validation error:', validationError);
         return res.status(400).json({ message: validationError.message });
       }
+      
+      console.log('✅ Gmail config validation successful, campaignAssignments:', 
+                 JSON.stringify(result.data.campaignAssignments));
       
       // Convert string patterns to RegExp objects
       const config = {
