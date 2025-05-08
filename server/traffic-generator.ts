@@ -6,7 +6,7 @@
  * based on the traffic generator settings.
  */
 
-import { trafficStarService, TrafficStarService } from './trafficstar-service';
+import { trafficStarService } from './trafficstar-service';
 import { db } from './db';
 import { campaigns, urls, type Campaign, type Url } from '../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
@@ -342,11 +342,11 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
     pauseStatusChecks.delete(campaignId);
   }
   
-  console.log(`🔄 Starting 30-second ACTIVE status check for campaign ${trafficstarCampaignId}`);
+  console.log(`🔄 Starting minute-by-minute ACTIVE status check for campaign ${trafficstarCampaignId}`);
   
-  // Set up a new interval that runs every 30 seconds
+  // Set up a new interval that runs every minute
   const interval = setInterval(async () => {
-    console.log(`⏱️ Running 30-second check for campaign ${trafficstarCampaignId} active status`);
+    console.log(`⏱️ Running minute check for campaign ${trafficstarCampaignId} active status`);
     
     try {
       // Get the current status
@@ -543,11 +543,11 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
     activeStatusChecks.delete(campaignId);
   }
   
-  console.log(`🔄 Starting 30-second PAUSE status check for campaign ${trafficstarCampaignId}`);
+  console.log(`🔄 Starting minute-by-minute PAUSE status check for campaign ${trafficstarCampaignId}`);
   
-  // Set up a new interval that runs every 30 seconds
+  // Set up a new interval that runs every minute
   const interval = setInterval(async () => {
-    console.log(`⏱️ Running 30-second check for campaign ${trafficstarCampaignId} pause status`);
+    console.log(`⏱️ Running minute check for campaign ${trafficstarCampaignId} pause status`);
     
     try {
       // Get the current status
@@ -778,6 +778,48 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
     // Skip if traffic generator is not enabled
     if (!campaign.trafficGeneratorEnabled && !forceMode) {
       console.log(`Traffic Generator not enabled for campaign ${campaignId} - skipping`);
+      
+      // CRITICAL FIX: If traffic generator is disabled, make sure the campaign is ACTIVE if it has URLs
+      if (campaign.trafficstarCampaignId && campaign.urls.length > 0) {
+        console.log(`🔄 Campaign has Traffic Generator DISABLED but has ${campaign.urls.length} active URLs - ensuring it's ACTIVE 24/7`);
+        
+        // Get current status
+        const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+        
+        // If it's paused but has URLs and traffic generator is OFF, activate it
+        if (status === 'paused') {
+          console.log(`⚠️ Campaign ${campaign.trafficstarCampaignId} is paused but has active URLs and Traffic Generator is OFF - activating it`);
+          
+          try {
+            // Set end time to 23:59 UTC today
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            const endTimeStr = `${todayStr} 23:59:00`;
+            
+            // First set the end time, then activate
+            await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), endTimeStr);
+            console.log(`Set campaign ${campaign.trafficstarCampaignId} end time to ${endTimeStr}`);
+            
+            // Activate the campaign
+            await trafficStarService.activateCampaign(Number(campaign.trafficstarCampaignId));
+            console.log(`Activating campaign ${campaign.trafficstarCampaignId}`);
+            
+            // Update the database
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'activated_manually_traffic_gen_off',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaignId));
+            
+            console.log(`✅ Successfully activated campaign ${campaign.trafficstarCampaignId} with Traffic Generator OFF`);
+          } catch (error) {
+            console.error(`❌ Error activating campaign ${campaign.trafficstarCampaignId} with Traffic Generator OFF:`, error);
+          }
+        }
+      }
+      
       return;
     }
     
@@ -802,7 +844,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         // Get current status
         const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
         
-        if (status === 'enabled') {
+        if (status === 'active') {
           // Pause the campaign immediately without waiting for minute-by-minute check
           await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
           
@@ -943,7 +985,294 @@ export function initializeTrafficGeneratorScheduler() {
     runTrafficGeneratorForAllCampaigns();
   }, 5 * 60 * 1000); // 5 minutes
   
+  // Run initial empty URL check
+  console.log('Running initial empty URL check');
+  checkForCampaignsWithNoURLs();
+  
+  // Set up a periodic job to check for campaigns with no URLs every 5 minutes
+  setInterval(() => {
+    console.log('Running scheduled empty URL check');
+    checkForCampaignsWithNoURLs();
+  }, 5 * 60 * 1000); // 5 minutes
+  
   console.log('Traffic Generator scheduler initialized successfully');
+}
+
+/**
+ * Check for campaigns with no active URLs and ensure they are paused
+ * This ensures campaigns with no URLs don't run unnecessarily
+ */
+export async function checkForCampaignsWithNoURLs() {
+  try {
+    console.log('Checking for campaigns with no active URLs to pause TrafficStar campaigns');
+    
+    // Get all campaigns with TrafficStar campaign IDs
+    const campaignsWithTrafficStar = await db.select({
+      id: campaigns.id,
+      name: campaigns.name,
+      trafficstarCampaignId: campaigns.trafficstarCampaignId,
+      trafficGeneratorEnabled: campaigns.trafficGeneratorEnabled,
+      lastTrafficSenderStatus: campaigns.lastTrafficSenderStatus,
+      lastTrafficSenderAction: campaigns.lastTrafficSenderAction
+    }).from(campaigns)
+      .where(sql`${campaigns.trafficstarCampaignId} IS NOT NULL`);
+    
+    if (campaignsWithTrafficStar.length === 0) {
+      console.log('No campaigns with TrafficStar integration found');
+      return;
+    }
+    
+    console.log(`Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
+    
+    // Check each campaign for active URLs
+    for (const campaign of campaignsWithTrafficStar) {
+      // Skip campaigns that were recently paused/activated and are still within the wait period
+      if (campaign.lastTrafficSenderAction && 
+          campaign.lastTrafficSenderStatus && 
+          (campaign.lastTrafficSenderStatus === 'auto_paused_low_clicks' || 
+           campaign.lastTrafficSenderStatus === 'auto_paused_low_spend' || 
+           campaign.lastTrafficSenderStatus === 'reactivated_during_monitoring')) {
+        
+        // Check if we're within the wait period
+        if (campaign.lastTrafficSenderAction) {
+          const waitDuration = Date.now() - campaign.lastTrafficSenderAction.getTime();
+          const waitMinutes = Math.floor(waitDuration / (60 * 1000));
+          const requiredWaitMinutes = 10; // Wait 10 minutes by default
+          
+          if (waitMinutes < requiredWaitMinutes) {
+            console.log(`Campaign ${campaign.id} was recently processed (${waitMinutes}/${requiredWaitMinutes} minutes ago) - skipping empty URL check`);
+            continue;
+          }
+        }
+      }
+      
+      // Get all active URLs for this campaign
+      const activeUrls = await db.select()
+        .from(urls)
+        .where(
+          and(
+            eq(urls.campaignId, campaign.id),
+            eq(urls.status, 'active')
+          )
+        );
+      
+      console.log(`Campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId}) has ${activeUrls.length} active URLs`);
+      
+      // If there are no active URLs, pause the TrafficStar campaign
+      if (activeUrls.length === 0) {
+        console.log(`Campaign ${campaign.id} has NO active URLs - will pause TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+        
+        // Check the current status of the TrafficStar campaign
+        const currentStatus = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+        
+        if (currentStatus === 'active') {
+          console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is ACTIVE with no active URLs - will pause it`);
+          
+          try {
+            // Set current date/time for end time
+            const now = new Date();
+            const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+            
+            // First pause the campaign
+            await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+            
+            // Then set its end time
+            await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedDateTime);
+            
+            console.log(`✅ PAUSED campaign ${campaign.trafficstarCampaignId} with NO active URLs`);
+            
+            // Update status in database
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'auto_paused_no_active_urls',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaign.id));
+            
+            // Start empty URL status monitoring for this specific scenario
+            startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          } catch (error) {
+            console.error(`❌ Error pausing TrafficStar campaign ${campaign.trafficstarCampaignId}:`, error);
+          }
+        } else if (currentStatus === 'paused') {
+          console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} is already PAUSED with no active URLs - continuing monitoring`);
+          
+          // Update status in database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'paused_no_active_urls',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaign.id));
+          
+          // Start empty URL status monitoring for this specific scenario
+          startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+        } else {
+          console.log(`TrafficStar campaign ${campaign.trafficstarCampaignId} has status: ${currentStatus || 'unknown'} - will monitor`);
+          
+          // Start empty URL status monitoring for this specific scenario if there's a valid campaign ID
+          if (campaign.trafficstarCampaignId) {
+            startEmptyUrlStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          }
+        }
+      } else if (campaign.lastTrafficSenderStatus === 'auto_paused_no_active_urls' || 
+                 campaign.lastTrafficSenderStatus === 'paused_no_active_urls') {
+        // If there are active URLs now, and the campaign was previously paused due to no active URLs, 
+        // we should activate it
+        
+        console.log(`Campaign ${campaign.id} now has ${activeUrls.length} active URLs but was previously paused - will check status`);
+        
+        // Get current status
+        const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+        
+        if (status === 'paused') {
+          console.log(`Campaign ${campaign.trafficstarCampaignId} is paused but now has active URLs - activating it`);
+          
+          try {
+            // Set end time to 23:59 UTC today
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            const endTimeStr = `${todayStr} 23:59:00`;
+            
+            // First set the end time
+            await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), endTimeStr);
+            console.log(`Set campaign ${campaign.trafficstarCampaignId} end time to ${endTimeStr}`);
+            
+            // Then activate
+            await trafficStarService.activateCampaign(Number(campaign.trafficstarCampaignId));
+            console.log(`✅ Activated campaign ${campaign.trafficstarCampaignId} that now has active URLs`);
+            
+            // Update database status
+            await db.update(campaigns)
+              .set({
+                lastTrafficSenderStatus: 'activated_with_new_urls',
+                lastTrafficSenderAction: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(campaigns.id, campaign.id));
+            
+            // Start active monitoring
+            startMinutelyStatusCheck(campaign.id, campaign.trafficstarCampaignId);
+          } catch (error) {
+            console.error(`❌ Error activating campaign ${campaign.trafficstarCampaignId} with new URLs:`, error);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error checking for campaigns with no URLs:', error);
+  }
+}
+
+/**
+ * Real-time check for campaign status after URL status change
+ * This is called directly when a URL is activated or deactivated to ensure immediate campaign action
+ * @param campaignId Campaign ID in our system
+ * @param urlWasActivated True if URL was activated, false if deactivated
+ */
+export async function checkCampaignStatusAfterUrlChange(campaignId: number, urlWasActivated: boolean) {
+  try {
+    console.log(`🔄 REAL-TIME CHECK: Campaign ${campaignId} status after URL was ${urlWasActivated ? 'activated' : 'deactivated'}`);
+    
+    // Get the campaign details
+    const campaign = await db.query.campaigns.findFirst({
+      where: (campaign, { eq }) => eq(campaign.id, campaignId),
+      with: {
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        }
+      }
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
+    
+    if (!campaign) {
+      console.error(`Campaign ${campaignId} not found in real-time check`);
+      return;
+    }
+    
+    if (!campaign.trafficstarCampaignId) {
+      console.log(`Campaign ${campaignId} has no TrafficStar ID - skipping real-time check`);
+      return;
+    }
+    
+    // If URL was activated and there was previously no URLs, activate the campaign
+    if (urlWasActivated && campaign.urls.length === 1) {
+      console.log(`✅ REAL-TIME: First URL added to campaign ${campaignId} - activating TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+      
+      // Get current status
+      const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+      
+      if (status === 'paused') {
+        try {
+          // Set end time to 23:59 UTC today
+          const today = new Date();
+          const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+          const endTimeStr = `${todayStr} 23:59:00`;
+          
+          // First set the end time
+          await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), endTimeStr);
+          console.log(`Set campaign ${campaign.trafficstarCampaignId} end time to ${endTimeStr}`);
+          
+          // Then activate
+          await trafficStarService.activateCampaign(Number(campaign.trafficstarCampaignId));
+          console.log(`✅ REAL-TIME: Activated campaign ${campaign.trafficstarCampaignId} after first URL was added`);
+          
+          // Update database status
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'activated_after_url_added',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+          
+          // Start active monitoring
+          startMinutelyStatusCheck(campaignId, campaign.trafficstarCampaignId);
+        } catch (error) {
+          console.error(`❌ REAL-TIME: Error activating campaign ${campaign.trafficstarCampaignId} after URL activation:`, error);
+        }
+      }
+    } else if (!urlWasActivated && campaign.urls.length === 0) {
+      // If URL was deactivated and there are now no URLs, pause the campaign
+      console.log(`⏹️ REAL-TIME: Last URL removed from campaign ${campaignId} - pausing TrafficStar campaign ${campaign.trafficstarCampaignId}`);
+      
+      // Get current status
+      const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+      
+      if (status === 'active') {
+        try {
+          // Set current date/time for end time
+          const now = new Date();
+          const formattedDateTime = now.toISOString().replace('T', ' ').split('.')[0]; // YYYY-MM-DD HH:MM:SS
+          
+          // First pause the campaign
+          await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+          
+          // Then set its end time
+          await trafficStarService.updateCampaignEndTime(Number(campaign.trafficstarCampaignId), formattedDateTime);
+          
+          console.log(`✅ REAL-TIME: Paused campaign ${campaign.trafficstarCampaignId} after last URL was removed`);
+          
+          // Update status in database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'paused_after_url_removed',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+          
+          // Start empty URL status monitoring for this specific scenario
+          startEmptyUrlStatusCheck(campaignId, campaign.trafficstarCampaignId);
+        } catch (error) {
+          console.error(`❌ REAL-TIME: Error pausing campaign ${campaign.trafficstarCampaignId} after URL deactivation:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Error in real-time campaign status check after URL change:`, error);
+  }
 }
 
 /**

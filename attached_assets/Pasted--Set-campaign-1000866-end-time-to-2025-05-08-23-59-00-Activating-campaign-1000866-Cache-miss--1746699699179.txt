@@ -1,0 +1,426 @@
+ Set campaign 1000866 end time to 2025-05-08 23:59:00
+Activating campaign 1000866
+🔍 Cache miss - fetching fresh URLs for campaign ID: 2
+🔍 DEBUG: Storage - Creating URL
+  - Name: 63818264
+  - Target URL: https://www.youtube.com/watch?v=IvFwdh1wZ-Q
+  - Campaign ID: 2
+  - Click limit (after multiplier): 11000
+  - Original click limit (user input): 11000
+🔍 DEBUG: Created original URL record for 63818264
+🧹 Invalidating campaign cache for ID: 2
+10:14:48 AM [gmail-reader] Successfully added URL to campaign 2:
+              Name: 63818264
+              Target URL: https://www.youtube.com/watch?v=IvFwdh1wZ-Q
+              Original Click Limit: 11000
+              Applied Multiplier: 1x
+              Calculated Click Limit: 11000
+              Status: active
+            
+10:14:48 AM [gmail-reader] Logged email ID 14748 as success at 2025-05-08T10:14:48.728Z
+10:14:48 AM [gmail-reader] Skipping already processed email (ID: 14748)
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is paused, active=false
+⏹️ Campaign 1000866 is still paused as expected - monitoring will continue
+<= '* 12 FETCH (UID 14748 MODSEQ (10307763) FLAGS (\\Seen))'
+<= 'A15 OK Success'
+=> 'IDLE IDLE'
+10:14:48 AM [gmail-reader] Finished processing batch of 12 emails
+<= '+ idling'
+Successfully activated campaign 1000866
+✅ AUTO-REACTIVATED low spend campaign 1000866 - it has 219555 remaining clicks
+✅ Marked campaign 1 as 'auto_reactivated_low_spend' in database
+🔄 Starting minute-by-minute ACTIVE status check for campaign 1000866
+Processing Traffic Generator for campaign 2
+Campaign 2 has no TrafficStar ID - skipping
+Finished running Traffic Generator for all enabled campaigns
+⏱️ Running 30-second check for campaign 1000866 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+⚠️ Campaign 1000866 was found active but should be paused - will attempt to pause again
+Campaign 1000866 has 219555 remaining clicks but should be paused - re-pausing campaign
+Pausing campaign 1000866
+Successfully paused campaign 1000866
+Setting campaign 1000866 end time to: 2025-05-08 10:15:12
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+✅ RE-PAUSED campaign 1000866 during pause monitoring - it was found active
+✅ Marked campaign 1 as 're_paused_during_monitoring' in database
+⏱️ Running 30-second check for campaign 1000866 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is paused, active=false
+⏹️ Campaign 1000866 is still paused as expected - monitoring will continue
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
+OS module CPU info: {
+  "cpus": [
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 13205140,
+        "nice": 80,
+        "sys": 3135350,
+        "idle": 38291440,
+        "irq": 1418400
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 13437550,
+        "nice": 170,
+        "sys": 3219760,
+        "idle": 37911330,
+        "irq": 1465870
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 18740550,
+        "nice": 10,
+        "sys": 4152420,
+        "idle": 30772690,
+        "irq": 1599380
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 18757560,
+        "nice": 0,
+        "sys": 4109580,
+        "idle": 30926070,
+        "irq": 1523980
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 18123370,
+        "nice": 100,
+        "sys": 4351650,
+        "idle": 30934460,
+        "irq": 1622790
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 18077190,
+        "nice": 0,
+        "sys": 4315130,
+        "idle": 31082370,
+        "irq": 1601290
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 18627620,
+        "nice": 50,
+        "sys": 4138410,
+        "idle": 30910200,
+        "irq": 1571660
+      }
+    },
+    {
+      "model": "AMD EPYC 7B13",
+      "speed": 0,
+      "times": {
+        "user": 18581300,
+        "nice": 30,
+        "sys": 4141450,
+        "idle": 30938590,
+        "irq": 1543110
+      }
+    }
+  ],
+  "cpuCount": 8,
+  "arch": "x64",
+  "platform": "linux",
+  "osType": "Linux",
+  "totalMemory": 67436748800,
+  "freeMemory": 12185284608
+}
+Using OS module CPU info: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 0,
+  "cores": 8,
+  "physicalCores": 4
+}
+🔍 Found 0 URLs with mismatched click values (incorrect multiplication)
+⚠️ Found mismatches in 0 campaigns:
+Load average data: {
+  "avgLoad": 0.59,
+  "currentLoad": 37.48134819626086,
+  "currentLoadUser": 28.480207144737996,
+  "currentLoadSystem": 6.29992100412534,
+  "currentLoadNice": 0,
+  "currentLoadIdle": 62.51865180373913,
+  "currentLoadIrq": 2.7012200473975247,
+  "currentLoadSteal": 0,
+  "currentLoadGuest": 0,
+  "rawCurrentLoad": 170810,
+  "rawCurrentLoadUser": 129790,
+  "rawCurrentLoadSystem": 28710,
+  "rawCurrentLoadNice": 0,
+  "rawCurrentLoadIdle": 284910,
+  "rawCurrentLoadIrq": 12310,
+  "rawCurrentLoadSteal": 0,
+  "rawCurrentLoadGuest": 0,
+  "cpus": [
+    {
+      "load": 28.797633547938055,
+      "loadUser": 21.680876979293544,
+      "loadSystem": 4.6807029754654605,
+      "loadNice": 0,
+      "loadIdle": 71.20236645206195,
+      "loadIrq": 2.4360535931790497,
+      "rawLoad": 16550,
+      "rawLoadUser": 12460,
+      "rawLoadSystem": 2690,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40920,
+      "rawLoadIrq": 1400,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 29.93232691306611,
+      "loadUser": 22.366822835328822,
+      "loadSystem": 5.101509630400833,
+      "loadNice": 0,
+      "loadIdle": 70.0676730869339,
+      "loadIrq": 2.463994447336457,
+      "rawLoad": 17250,
+      "rawLoadUser": 12890,
+      "rawLoadSystem": 2940,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 40380,
+      "rawLoadIrq": 1420,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.09159767482826,
+      "loadUser": 30.17438788092302,
+      "loadSystem": 7.063589924255768,
+      "loadNice": 0,
+      "loadIdle": 59.90840232517175,
+      "loadIrq": 2.853619869649463,
+      "rawLoad": 22760,
+      "rawLoadUser": 17130,
+      "rawLoadSystem": 4010,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34010,
+      "rawLoadIrq": 1620,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 41.662292213473314,
+      "loadUser": 32.84339457567804,
+      "loadSystem": 6.21172353455818,
+      "loadNice": 0,
+      "loadIdle": 58.337707786526686,
+      "loadIrq": 2.6071741032370954,
+      "rawLoad": 23810,
+      "rawLoadUser": 18770,
+      "rawLoadSystem": 3550,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33340,
+      "rawLoadIrq": 1490,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.520446096654275,
+      "loadUser": 30.53637812002124,
+      "loadSystem": 7.134006018764383,
+      "loadNice": 0,
+      "loadIdle": 59.479553903345725,
+      "loadIrq": 2.8500619578686495,
+      "rawLoad": 22890,
+      "rawLoadUser": 17250,
+      "rawLoadSystem": 4030,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33600,
+      "rawLoadIrq": 1610,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 39.14265635980323,
+      "loadUser": 29.111033028812365,
+      "loadSystem": 7.238229093464511,
+      "loadNice": 0,
+      "loadIdle": 60.857343640196774,
+      "loadIrq": 2.793394237526353,
+      "rawLoad": 22280,
+      "rawLoadUser": 16570,
+      "rawLoadSystem": 4120,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34640,
+      "rawLoadIrq": 1590,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 38.96655459210759,
+      "loadUser": 29.53459564678818,
+      "loadSystem": 6.582905680410548,
+      "loadNice": 0,
+      "loadIdle": 61.03344540789241,
+      "loadIrq": 2.8490532649088656,
+      "rawLoad": 22020,
+      "rawLoadUser": 16690,
+      "rawLoadSystem": 3720,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 34490,
+      "rawLoadIrq": 1610,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    },
+    {
+      "load": 40.9475167312434,
+      "loadUser": 31.75413878126101,
+      "loadSystem": 6.428319830926382,
+      "loadNice": 0,
+      "loadIdle": 59.0524832687566,
+      "loadIrq": 2.7650581190560057,
+      "rawLoad": 23250,
+      "rawLoadUser": 18030,
+      "rawLoadSystem": 3650,
+      "rawLoadNice": 0,
+      "rawLoadIdle": 33530,
+      "rawLoadIrq": 1570,
+      "rawLoadSteal": 0,
+      "rawLoadGuest": 0
+    }
+  ]
+}
+OS load averages: linux [ 4.7, 4.32, 4.42 ]
+========== SYSTEM LOAD CALCULATION ==========
+Raw OS load averages: [4.7,4.32,4.42]
+Using 1-minute load average: 4.7
+CPU Info raw length: 8
+Number of CPUs detected: 8
+SI current load data: {"avgLoad":0.59,"currentLoad":37.48134819626086,"currentLoadUser":28.480207144737996,"currentLoadSystem":6.29992100412534,"currentLoadNice":0,"currentLoadIdle":62.51865180373913,"currentLoadIrq":2.7012200473975247,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":170810,"rawCurrentLoadUser":129790,"rawCurrentLoadSystem":28710,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":284910,"rawCurrentLoadIrq":12310,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":28.797633547938055,"loadUser":21.680876979293544,"loadSystem":4.6807029754654605,"loadNice":0,"loadIdle":71.20236645206195,"loadIrq":2.4360535931790497,"rawLoad":16550,"rawLoadUser":12460,"rawLoadSystem":2690,"rawLoadNice":0,"rawLoadIdle":40920,"rawLoadIrq":1400,"rawLoadSteal":0,"rawLoadGuest":0},{"load":29.93232691306611,"loadUser":22.366822835328822,"loadSystem":5.101509630400833,"loadNice":0,"loadIdle":70.0676730869339,"loadIrq":2.463994447336457,"rawLoad":17250,"rawLoadUser":12890,"rawLoadSystem":2940,"rawLoadNice":0,"rawLoadIdle":40380,"rawLoadIrq":1420,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.09159767482826,"loadUser":30.17438788092302,"loadSystem":7.063589924255768,"loadNice":0,"loadIdle":59.90840232517175,"loadIrq":2.853619869649463,"rawLoad":22760,"rawLoadUser":17130,"rawLoadSystem":4010,"rawLoadNice":0,"rawLoadIdle":34010,"rawLoadIrq":1620,"rawLoadSteal":0,"rawLoadGuest":0},{"load":41.662292213473314,"loadUser":32.84339457567804,"loadSystem":6.21172353455818,"loadNice":0,"loadIdle":58.337707786526686,"loadIrq":2.6071741032370954,"rawLoad":23810,"rawLoadUser":18770,"rawLoadSystem":3550,"rawLoadNice":0,"rawLoadIdle":33340,"rawLoadIrq":1490,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.520446096654275,"loadUser":30.53637812002124,"loadSystem":7.134006018764383,"loadNice":0,"loadIdle":59.479553903345725,"loadIrq":2.8500619578686495,"rawLoad":22890,"rawLoadUser":17250,"rawLoadSystem":4030,"rawLoadNice":0,"rawLoadIdle":33600,"rawLoadIrq":1610,"rawLoadSteal":0,"rawLoadGuest":0},{"load":39.14265635980323,"loadUser":29.111033028812365,"loadSystem":7.238229093464511,"loadNice":0,"loadIdle":60.857343640196774,"loadIrq":2.793394237526353,"rawLoad":22280,"rawLoadUser":16570,"rawLoadSystem":4120,"rawLoadNice":0,"rawLoadIdle":34640,"rawLoadIrq":1590,"rawLoadSteal":0,"rawLoadGuest":0},{"load":38.96655459210759,"loadUser":29.53459564678818,"loadSystem":6.582905680410548,"loadNice":0,"loadIdle":61.03344540789241,"loadIrq":2.8490532649088656,"rawLoad":22020,"rawLoadUser":16690,"rawLoadSystem":3720,"rawLoadNice":0,"rawLoadIdle":34490,"rawLoadIrq":1610,"rawLoadSteal":0,"rawLoadGuest":0},{"load":40.9475167312434,"loadUser":31.75413878126101,"loadSystem":6.428319830926382,"loadNice":0,"loadIdle":59.0524832687566,"loadIrq":2.7650581190560057,"rawLoad":23250,"rawLoadUser":18030,"rawLoadSystem":3650,"rawLoadNice":0,"rawLoadIdle":33530,"rawLoadIrq":1570,"rawLoadSteal":0,"rawLoadGuest":0}]}
+Initial calculated load value: 58.75
+Final system load calculation (before fallbacks): 59
+FINAL SYSTEM LOAD VALUE TO DISPLAY: 59
+===========================================
+Final CPU details being set: {
+  "manufacturer": "AMD",
+  "brand": "AMD EPYC 7B13",
+  "speed": 2.8,
+  "cores": 8,
+  "physicalCores": 4
+}
+OS information: {
+  "platform": "linux",
+  "distro": "Ubuntu",
+  "release": "20.04.2 LTS",
+  "codename": "focal",
+  "kernel": "6.2.16",
+  "arch": "x64",
+  "hostname": "51a432ba5734",
+  "fqdn": "51a432ba5734",
+  "codepage": "UTF-8",
+  "logofile": "ubuntu",
+  "serial": "",
+  "build": "",
+  "servicepack": "",
+  "uefi": false
+}
+✅ Fixed 0 URL click values with incorrect multipliers
+🧹 Invalidating caches for 0 affected campaigns
+✅ Automatic multiplier check: No issues found
+10:15:47 AM [gmail-reader] Running scheduled auto-delete check (2 minute threshold)
+10:15:47 AM [gmail-reader] Running email auto-delete check with interval set to 2 minutes
+10:15:47 AM [gmail-reader] Current IMAP connection state: authenticated
+10:15:47 AM [gmail-reader] Scanning for processed emails older than 2025-05-08T10:13:47.660Z (2 minutes ago)
+10:15:47 AM [gmail-reader] No emails found that are successfully processed and older than 2 minutes
+⏱️ Running minute check for campaign 1000866 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is paused, active=false
+⚠️ Campaign 1000866 was found paused but should be active - will attempt to reactivate
+🔍 PAUSE DETECTED: Checking remaining clicks for 23 URLs in campaign 1000866
+🔍 URL ID: 35, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 35
+🔍 URL ID: 36, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 36
+🔍 URL ID: 41, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 41
+🔍 URL ID: 25, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 25
+🔍 URL ID: 42, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 42
+🔍 URL ID: 11, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 11
+🔍 URL ID: 12, status: active, clickLimit: 1575, clicks: 0
+✅ Adding 1575 remaining clicks from URL ID: 12
+🔍 URL ID: 14, status: active, clickLimit: 45000, clicks: 0
+✅ Adding 45000 remaining clicks from URL ID: 14
+🔍 URL ID: 15, status: active, clickLimit: 40500, clicks: 0
+✅ Adding 40500 remaining clicks from URL ID: 15
+🔍 URL ID: 17, status: active, clickLimit: 495, clicks: 0
+✅ Adding 495 remaining clicks from URL ID: 17
+🔍 URL ID: 18, status: active, clickLimit: 9000, clicks: 0
+✅ Adding 9000 remaining clicks from URL ID: 18
+🔍 URL ID: 19, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 19
+🔍 URL ID: 20, status: active, clickLimit: 22500, clicks: 0
+✅ Adding 22500 remaining clicks from URL ID: 20
+🔍 URL ID: 21, status: active, clickLimit: 45000, clicks: 0
+✅ Adding 45000 remaining clicks from URL ID: 21
+🔍 URL ID: 22, status: active, clickLimit: 135, clicks: 0
+✅ Adding 135 remaining clicks from URL ID: 22
+🔍 URL ID: 29, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 29
+🔍 URL ID: 40, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 40
+🔍 URL ID: 38, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 38
+🔍 URL ID: 39, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 39
+🔍 URL ID: 43, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 43
+🔍 URL ID: 37, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 37
+🔍 URL ID: 44, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 44
+🔍 URL ID: 46, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 46
+✅ Campaign 1000866 has 219555 remaining clicks (>= 15000) - will attempt reactivation during monitoring
+Setting campaign 1000866 end time to: 2025-05-08 23:59:00
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+Activating campaign 1000866
+Successfully activated campaign 1000866
+✅ REACTIVATED campaign 1000866 during monitoring - it has 219555 remaining clicks
+✅ Marked campaign 1 as 'reactivated_during_monitoring' in database
+⏱️ Running 30-second check for campaign 1000866 pause status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+⚠️ Campaign 1000866 was found active but should be paused - will attempt to pause again
+Campaign 1000866 has 219555 remaining clicks but should be paused - re-pausing campaign
+Pausing campaign 1000866
+Successfully paused campaign 1000866
+Setting campaign 1000866 end time to: 2025-05-08 10:16:11
+Successfully updated end time for campaign 1000866
+Confirmed end time update for campaign 1000866
+✅ RE-PAUSED campaign 1000866 during pause monitoring - it was found active
+✅ Marked campaign 1 as 're_paused_during_monitoring' in database
