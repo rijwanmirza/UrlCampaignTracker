@@ -1757,11 +1757,11 @@ export function initializeTrafficGeneratorScheduler() {
     pauseTrafficStarForEmptyCampaigns();
   }, 10 * 1000);
   
-  // Set up a periodic job to run the traffic generator every 1.30 minutes (90 seconds)
+  // Set up a periodic job to run the traffic generator every 5 minutes
   setInterval(() => {
-    console.log('Running scheduled Traffic Generator check (1.30 minute interval)');
+    console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
-  }, 90 * 1000); // 90 seconds = 1.30 minutes
+  }, 5 * 60 * 1000); // 5 minutes
   
   // Set up a periodic job to check for empty campaigns every 3 minutes
   setInterval(() => {
