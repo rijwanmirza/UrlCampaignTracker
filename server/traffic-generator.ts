@@ -781,6 +781,49 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
       return;
     }
     
+    // IMMEDIATE CHECK: Check if remaining clicks are below 5000 and pause immediately if needed
+    // This ensures we don't wait for the minute-by-minute check when a campaign is already below threshold
+    if (campaign.trafficstarCampaignId && campaign.urls.length > 0) {
+      const MINIMUM_CLICKS_THRESHOLD = 5000;
+      let totalRemainingClicks = 0;
+      
+      // Calculate total remaining clicks
+      for (const url of campaign.urls) {
+        const remainingClicks = url.clickLimit - url.clicks;
+        if (remainingClicks > 0) {
+          totalRemainingClicks += remainingClicks;
+        }
+      }
+      
+      // If clicks are already below threshold, pause immediately
+      if (totalRemainingClicks <= MINIMUM_CLICKS_THRESHOLD) {
+        console.log(`⚠️ IMMEDIATE ACTION: Campaign ${campaign.trafficstarCampaignId} has only ${totalRemainingClicks} remaining clicks (≤ ${MINIMUM_CLICKS_THRESHOLD}) - pausing immediately`);
+        
+        // Get current status
+        const status = await getTrafficStarCampaignStatus(campaign.trafficstarCampaignId);
+        
+        if (status === 'enabled') {
+          // Pause the campaign immediately without waiting for minute-by-minute check
+          await pauseTrafficStarCampaign(campaign.trafficstarCampaignId);
+          
+          // Update database
+          await db.update(campaigns)
+            .set({
+              lastTrafficSenderStatus: 'auto_paused_low_clicks_immediate',
+              lastTrafficSenderAction: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(campaigns.id, campaignId));
+            
+          console.log(`✅ IMMEDIATELY PAUSED campaign ${campaign.trafficstarCampaignId} due to low clicks (${totalRemainingClicks} < ${MINIMUM_CLICKS_THRESHOLD})`);
+          
+          // Start pause monitoring
+          startMinutelyPauseStatusCheck(campaignId, campaign.trafficstarCampaignId);
+          return;
+        }
+      }
+    }
+    
     if (!campaign.trafficstarCampaignId) {
       console.error(`Campaign ${campaignId} has no TrafficStar ID - skipping`);
       return;
