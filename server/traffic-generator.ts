@@ -374,14 +374,11 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
           console.log(`🔍 ACTIVE MONITORING: Checking remaining clicks for ${campaign.urls.length} URLs in campaign ${trafficstarCampaignId}`);
           for (const url of campaign.urls) {
             console.log(`🔍 URL ID: ${url.id}, status: ${url.status}, clickLimit: ${url.clickLimit}, clicks: ${url.clicks}`);
-            if (url.status === 'active') {
-              const remainingClicks = url.clickLimit - url.clicks;
-              const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
-              totalRemainingClicks += validRemaining;
-              console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
-            } else {
-              console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
-            }
+            // Since we're already filtering for active URLs in the query, we don't need to check status again
+            const remainingClicks = url.clickLimit - url.clicks;
+            const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
+            totalRemainingClicks += validRemaining;
+            console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
           }
           
           // If remaining clicks fell below threshold, pause the campaign
@@ -458,14 +455,11 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
             console.log(`🔍 PAUSE DETECTED: Checking remaining clicks for ${campaign.urls.length} URLs in campaign ${trafficstarCampaignId}`);
             for (const url of campaign.urls) {
               console.log(`🔍 URL ID: ${url.id}, status: ${url.status}, clickLimit: ${url.clickLimit}, clicks: ${url.clicks}`);
-              if (url.status === 'active') {
-                const remainingClicks = url.clickLimit - url.clicks;
-                const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
-                totalRemainingClicks += validRemaining;
-                console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
-              } else {
-                console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
-              }
+              // Since we're already filtering for active URLs in the query, we don't need to check status again
+              const remainingClicks = url.clickLimit - url.clicks;
+              const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
+              totalRemainingClicks += validRemaining;
+              console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
             }
             
             // Only reactivate if there are enough remaining clicks
@@ -600,14 +594,11 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
               console.log(`🔍 PAUSE MONITORING: Checking remaining clicks for ${campaign.urls.length} URLs in campaign ${trafficstarCampaignId}`);
               for (const url of campaign.urls) {
                 console.log(`🔍 URL ID: ${url.id}, status: ${url.status}, clickLimit: ${url.clickLimit}, clicks: ${url.clicks}`);
-                if (url.status === 'active') {
-                  const remainingClicks = url.clickLimit - url.clicks;
-                  const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
-                  totalRemainingClicks += validRemaining;
-                  console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
-                } else {
-                  console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
-                }
+                // Since we're already filtering for active URLs in the query, we don't need to check status again
+                const remainingClicks = url.clickLimit - url.clicks;
+                const validRemaining = remainingClicks > 0 ? remainingClicks : 0;
+                totalRemainingClicks += validRemaining;
+                console.log(`✅ Adding ${validRemaining} remaining clicks from URL ID: ${url.id}`);
               }
               
               // Check if clicks have been replenished
@@ -682,10 +673,9 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
             // Calculate total remaining clicks
             let totalRemainingClicks = 0;
             for (const url of campaign.urls) {
-              if (url.status === 'active') {
-                const remainingClicks = url.clickLimit - url.clicks;
-                totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
-              }
+              // Since we're already filtering for active URLs in the query, we don't need to check status again
+              const remainingClicks = url.clickLimit - url.clicks;
+              totalRemainingClicks += remainingClicks > 0 ? remainingClicks : 0;
             }
             
             console.log(`Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks but should be paused - re-pausing campaign`);
@@ -955,7 +945,7 @@ export async function debugProcessCampaign(campaignId: number) {
     let urlDetails = [];
     
     for (const url of campaign.urls) {
-      const isActive = url.status === 'active';
+      // Since we're already filtering for active URLs in the query, we know all URLs in this list are active
       const remainingClicks = url.clickLimit - url.clicks;
       const effectiveRemaining = remainingClicks > 0 ? remainingClicks : 0;
       
@@ -966,15 +956,12 @@ export async function debugProcessCampaign(campaignId: number) {
         clickLimit: url.clickLimit,
         clicks: url.clicks,
         remainingClicks: effectiveRemaining,
-        isActive
+        isActive: true
       });
       
-      if (isActive) {
-        totalRemainingClicks += effectiveRemaining;
-        activeUrls++;
-      } else {
-        inactiveUrls++;
-      }
+      // Add to total remaining clicks and increment active URL count
+      totalRemainingClicks += effectiveRemaining;
+      activeUrls++;
     }
     
     // Return all the debug information

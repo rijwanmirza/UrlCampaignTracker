@@ -1,0 +1,146 @@
+ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    },
+    {
+      id: 987951,
+      user_id: 64017,
+      name: 'Clone from ID 881010 - ww2',
+      weight: 1,
+      status: 'paused',
+      approved: 'approved',
+      active: false,
+      is_traced: false,
+      no_funds: false,
+      is_archived: false,
+      type: 'direct',
+      exclusive: false,
+      backup: false,
+      categories: [Array],
+      exclude_categories: [],
+      format_id: 7,
+      browsers: [Array],
+      browser_versions: [],
+      oses: [Array],
+      os_versions: [],
+      languages: null,
+      devices: [Array],
+      device_brands: [],
+      device_models: [],
+      device_release_date_offset: 0,
+      device_price_on_release_from: null,
+      device_price_on_release_to: null,
+      pricing_model: 'cpm',
+      dynamic: true,
+      price: 0.121,
+      price_mode: null,
+      allow_setting_any_price: false,
+      disable_rtb: false,
+      disable_direct: false,
+      max_daily: 17,
+      use_total_budget: true,
+      total_budget: 17,
+      adspots: [Array],
+      spots: [Array],
+      exclude_spots: null,
+      spot_applications: [Array],
+      enabled_applications: null,
+      disabled_applications: null,
+      enabled_subids: null,
+      disabled_subids: null,
+      stretch_time: false,
+      hours_targeting: '111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111',
+      timezone: 0,
+      reject_reason: null,
+      reject_comment: null,
+      group_id: null,
+      flat_rate: null,
+      flat_rate_amount: null,
+      compromised: false,
+      ip_range: null,
+      exclude_ip_range: null,
+      schedule_start_time: null,
+      schedule_end_time: '2025-04-26 00:00:00',
+      schedule_timezone: 0,
+      created_at: '2025-04-05T09:02:34Z',
+      updated_at: '2025-04-24T17:32:56Z',
+      ecpm: 0.121,
+      last_note: '',
+      is_prime: true,
+      traffic_type: 'prime',
+      traffic_source_type: 'all',
+      network_traffic_type: 'non_proxy',
+      push_format_option: 'all',
+      ad_format_options: [Array],
+      push_subscription_interval: 'any',
+      test_period: false,
+      test_period_budget: 0,
+      retargeting_list_id: null,
+      native_creatives_limit: 0,
+      postback_payout_modifier: false,
+      postback_payout_modifier_percent: 0,
+      prime_list_auto_update: true,
+      user: [Object]
+    }
+  ]
+}
+5:36:25 AM [express] GET /api/trafficstar/saved-campaigns 304 in 2676ms :: []
+⏱️ Running minute check for campaign 1000866 active status
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true
+✅ Campaign 1000866 is still active - monitoring will continue
+🔍 ACTIVE MONITORING: Checking remaining clicks for 22 URLs in campaign 1000866
+🔍 URL ID: 13, status: deleted, clickLimit: 270000, clicks: 0
+❌ Skipping URL ID: 13 with status: deleted
+🔍 URL ID: 16, status: deleted, clickLimit: 45000, clicks: 0
+❌ Skipping URL ID: 16 with status: deleted
+🔍 URL ID: 2, status: deleted, clickLimit: 450, clicks: 4
+❌ Skipping URL ID: 2 with status: deleted
+🔍 URL ID: 3, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 3 with status: deleted
+🔍 URL ID: 4, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 4 with status: deleted
+🔍 URL ID: 5, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 5 with status: deleted
+🔍 URL ID: 8, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 8 with status: deleted
+🔍 URL ID: 9, status: deleted, clickLimit: 3150, clicks: 0
+❌ Skipping URL ID: 9 with status: deleted
+🔍 URL ID: 10, status: deleted, clickLimit: 14400, clicks: 0
+❌ Skipping URL ID: 10 with status: deleted
+🔍 URL ID: 6, status: deleted, clickLimit: 45000, clicks: 0
+❌ Skipping URL ID: 6 with status: deleted
+🔍 URL ID: 7, status: deleted, clickLimit: 22500, clicks: 0
+❌ Skipping URL ID: 7 with status: deleted
+🔍 URL ID: 11, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 11
+🔍 URL ID: 12, status: active, clickLimit: 1575, clicks: 0
+✅ Adding 1575 remaining clicks from URL ID: 12
+🔍 URL ID: 14, status: active, clickLimit: 45000, clicks: 0
+✅ Adding 45000 remaining clicks from URL ID: 14
+🔍 URL ID: 15, status: active, clickLimit: 40500, clicks: 0
+✅ Adding 40500 remaining clicks from URL ID: 15
+🔍 URL ID: 17, status: active, clickLimit: 495, clicks: 0
+✅ Adding 495 remaining clicks from URL ID: 17
+🔍 URL ID: 18, status: active, clickLimit: 9000, clicks: 0
+✅ Adding 9000 remaining clicks from URL ID: 18
+🔍 URL ID: 19, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 19
+🔍 URL ID: 20, status: active, clickLimit: 22500, clicks: 0
+✅ Adding 22500 remaining clicks from URL ID: 20
+🔍 URL ID: 21, status: active, clickLimit: 45000, clicks: 0
+✅ Adding 45000 remaining clicks from URL ID: 21
+🔍 URL ID: 22, status: active, clickLimit: 135, clicks: 0
+✅ Adding 135 remaining clicks from URL ID: 22
+🔍 URL ID: 25, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 25
+🔄 Running scheduled multiplier verification check...
+🔍 VERIFYING CLICK MULTIPLIERS: Checking for inconsistencies between original and required click values
