@@ -1,0 +1,25 @@
+Error checking TrafficStar configuration: TypeError: trafficStarService.isConfigured is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2802:53)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at requireAuth (/home/runner/workspace/server/auth/middleware.ts:76:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+9:46:07 AM [express] GET /api/trafficstar/status 500 in 12ms :: {"message":"Failed to check TrafficS…
+9:46:07 AM [access] Access check for path: /api/trafficstar/campaigns
+Error fetching TrafficStar campaigns: TypeError: trafficStarService.getCampaigns is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2836:50)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at requireAuth (/home/runner/workspace/server/auth/middleware.ts:76:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+9:46:07 AM [express] GET /api/trafficstar/campaigns 500 in 1ms :: {"message":"Failed to fetch Traffi…

@@ -58,6 +58,46 @@ class TrafficStarService {
   public getBaseUrl(): string {
     return this.BASE_URL_V1_1;
   }
+  
+  /**
+   * Check if the TrafficStar API is configured with a valid API key
+   * @returns True if configured, false otherwise
+   */
+  public async isConfigured(): Promise<boolean> {
+    try {
+      // Check if we have an API key stored
+      const apiKey = await this.getApiKey();
+      if (!apiKey) return false;
+      
+      // Try to call a simple API endpoint to verify the key works
+      await this.ensureToken();
+      return true;
+    } catch (error) {
+      console.error('Error checking TrafficStar configuration:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Get all campaigns from TrafficStar
+   * @returns Array of campaigns
+   */
+  public async getCampaigns(): Promise<Campaign[]> {
+    try {
+      await this.ensureToken();
+      
+      const response = await axios.get(`${this.BASE_URL_V1_1}/advertiser/campaigns`, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
+      });
+      
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error getting TrafficStar campaigns:', error);
+      throw error;
+    }
+  }
 
   /**
    * Get access token for API requests

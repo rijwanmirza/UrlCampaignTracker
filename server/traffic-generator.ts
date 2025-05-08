@@ -342,11 +342,11 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
     pauseStatusChecks.delete(campaignId);
   }
   
-  console.log(`🔄 Starting minute-by-minute ACTIVE status check for campaign ${trafficstarCampaignId}`);
+  console.log(`🔄 Starting 30-second ACTIVE status check for campaign ${trafficstarCampaignId}`);
   
-  // Set up a new interval that runs every minute
+  // Set up a new interval that runs every 30 seconds
   const interval = setInterval(async () => {
-    console.log(`⏱️ Running minute check for campaign ${trafficstarCampaignId} active status`);
+    console.log(`⏱️ Running 30-second check for campaign ${trafficstarCampaignId} active status`);
     
     try {
       // Get the current status
@@ -518,7 +518,7 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
     } catch (error) {
       console.error(`❌ Error checking campaign ${trafficstarCampaignId} status during active monitoring:`, error);
     }
-  }, 60 * 1000); // Check every minute
+  }, 30 * 1000); // Check every 30 seconds
   
   // Store the interval so we can clear it later if needed
   activeStatusChecks.set(campaignId, interval);
@@ -543,11 +543,11 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
     activeStatusChecks.delete(campaignId);
   }
   
-  console.log(`🔄 Starting minute-by-minute PAUSE status check for campaign ${trafficstarCampaignId}`);
+  console.log(`🔄 Starting 30-second PAUSE status check for campaign ${trafficstarCampaignId}`);
   
-  // Set up a new interval that runs every minute
+  // Set up a new interval that runs every 30 seconds
   const interval = setInterval(async () => {
-    console.log(`⏱️ Running minute check for campaign ${trafficstarCampaignId} pause status`);
+    console.log(`⏱️ Running 30-second check for campaign ${trafficstarCampaignId} pause status`);
     
     try {
       // Get the current status
@@ -709,7 +709,7 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
     } catch (error) {
       console.error(`❌ Error checking campaign ${trafficstarCampaignId} status during pause monitoring:`, error);
     }
-  }, 60 * 1000); // Check every minute
+  }, 30 * 1000); // Check every 30 seconds
   
   // Store the interval so we can clear it later if needed
   pauseStatusChecks.set(campaignId, interval);
@@ -937,11 +937,11 @@ export function initializeTrafficGeneratorScheduler() {
   console.log('Running initial traffic generator check on startup');
   runTrafficGeneratorForAllCampaigns();
   
-  // Set up a periodic job to run the traffic generator every 5 minutes
+  // Set up a periodic job to run the traffic generator every 30 seconds
   setInterval(() => {
     console.log('Running scheduled Traffic Generator check');
     runTrafficGeneratorForAllCampaigns();
-  }, 5 * 60 * 1000); // 5 minutes
+  }, 30 * 1000); // 30 seconds
   
   console.log('Traffic Generator scheduler initialized successfully');
 }
