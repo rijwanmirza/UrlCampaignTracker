@@ -321,9 +321,9 @@ export default function OriginalUrlRecordsPage() {
   const pauseMutation = useMutation({
     mutationFn: async (id: number) => {
       try {
-        const res = await apiRequest("POST", `/api/original-url-records/${id}/pause`);
-        const jsonData = await res.json();
-        return jsonData;
+        // apiRequest already returns the parsed JSON data
+        const data = await apiRequest("POST", `/api/original-url-records/${id}/pause`);
+        return data;
       } catch (error) {
         console.error("Error in pause mutation:", error);
         throw error;
@@ -351,9 +351,9 @@ export default function OriginalUrlRecordsPage() {
   const resumeMutation = useMutation({
     mutationFn: async (id: number) => {
       try {
-        const res = await apiRequest("POST", `/api/original-url-records/${id}/resume`);
-        const jsonData = await res.json();
-        return jsonData;
+        // apiRequest already returns the parsed JSON data
+        const data = await apiRequest("POST", `/api/original-url-records/${id}/resume`);
+        return data;
       } catch (error) {
         console.error("Error in resume mutation:", error);
         throw error;
@@ -506,8 +506,8 @@ export default function OriginalUrlRecordsPage() {
     setBulkActionLoading(true);
     try {
       // Create a single request to pause all selected records
-      const res = await apiRequest("POST", "/api/original-url-records/bulk/pause", { ids: selectedRecords });
-      const result = await res.json();
+      // apiRequest already returns the parsed JSON data
+      const result = await apiRequest("POST", "/api/original-url-records/bulk/pause", { ids: selectedRecords });
       
       toast({
         title: "Success",
@@ -537,8 +537,8 @@ export default function OriginalUrlRecordsPage() {
     setBulkActionLoading(true);
     try {
       // Create a single request to resume all selected records
-      const res = await apiRequest("POST", "/api/original-url-records/bulk/resume", { ids: selectedRecords });
-      const result = await res.json();
+      // apiRequest already returns the parsed JSON data
+      const result = await apiRequest("POST", "/api/original-url-records/bulk/resume", { ids: selectedRecords });
       
       toast({
         title: "Success",
@@ -568,8 +568,8 @@ export default function OriginalUrlRecordsPage() {
     setBulkActionLoading(true);
     try {
       // Create a single request to delete all selected records
-      const res = await apiRequest("POST", "/api/original-url-records/bulk/delete", { ids: selectedRecords });
-      const result = await res.json();
+      // apiRequest already returns the parsed JSON data
+      const result = await apiRequest("POST", "/api/original-url-records/bulk/delete", { ids: selectedRecords });
       
       toast({
         title: "Success",
