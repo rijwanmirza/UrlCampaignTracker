@@ -213,10 +213,13 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       }
       
       // Get the campaign details to check URLs and remaining clicks
+      // Only fetch active URLs for the campaign to improve performance
       const campaign = await db.query.campaigns.findFirst({
         where: (campaign, { eq }) => eq(campaign.id, campaignId),
         with: {
-          urls: true
+          urls: {
+            where: (urls, { eq }) => eq(urls.status, 'active')
+          }
         }
       }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
       
@@ -405,10 +408,13 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       const currentStatus = await getTrafficStarCampaignStatus(trafficstarCampaignId);
       
       // Get the campaign details to check URLs and pricePerThousand
+      // Only fetch active URLs for the campaign to improve performance
       const campaign = await db.query.campaigns.findFirst({
         where: (campaign, { eq }) => eq(campaign.id, campaignId),
         with: {
-          urls: true
+          urls: {
+            where: (urls, { eq }) => eq(urls.status, 'active')
+          }
         }
       }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
       
@@ -617,9 +623,14 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
     console.log(`🔍 Checking for new URLs added after budget calculation for campaign ${campaignId}`);
     
     // Get the campaign with its budget calculation timestamp
+    // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (c, { eq }) => eq(c.id, campaignId),
-      with: { urls: true }
+      with: { 
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        } 
+      }
     }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
     if (!campaign || !campaign.highSpendBudgetCalcTime) {
@@ -751,9 +762,14 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
     console.log(`Checking for URLs added after high-spend budget calculation for campaign ${campaignId}`);
     
     // Get the campaign with its budget calculation timestamp
+    // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (c, { eq }) => eq(c.id, campaignId),
-      with: { urls: true }
+      with: { 
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        } 
+      }
     }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
     if (!campaign || !campaign.highSpendBudgetCalcTime) {
@@ -911,9 +927,14 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
         console.log(`✅ Campaign ${trafficstarCampaignId} is still active - monitoring will continue`);
         
         // Check if we need to pause based on remaining clicks
+        // Only fetch active URLs for the campaign to improve performance
         const campaign = await db.query.campaigns.findFirst({
           where: (campaign, { eq }) => eq(campaign.id, campaignId),
-          with: { urls: true }
+          with: { 
+            urls: {
+              where: (urls, { eq }) => eq(urls.status, 'active')
+            } 
+          }
         }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
         
         if (campaign && campaign.urls && campaign.urls.length > 0) {
