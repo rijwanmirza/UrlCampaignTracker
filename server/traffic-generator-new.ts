@@ -1757,13 +1757,73 @@ export function initializeTrafficGeneratorScheduler() {
     pauseTrafficStarForEmptyCampaigns();
   }, 10 * 1000);
   
+  // Define all functions that need to run in the continuous loop
+  const FUNCTIONS_TO_RUN = [
+    { name: 'Traffic Generator', fn: runTrafficGeneratorForAllCampaigns, interval: 1 },
+    { name: 'Empty URL Check', fn: pauseTrafficStarForEmptyCampaigns, interval: 60 }, // Run once per minute
+    { name: 'Auto Multiplier Check', fn: async () => {
+      try {
+        console.log('Running automatic multiplier check (24/7 mode)');
+        
+        // Load the multiplier check function dynamically
+        try {
+          const { checkUrlClickMultiplierErrors } = await import('./url-click-validator');
+          if (typeof checkUrlClickMultiplierErrors === 'function') {
+            await checkUrlClickMultiplierErrors();
+          }
+        } catch (importError) {
+          console.log('URL multiplier check module not available:', importError.message);
+        }
+      } catch (error) {
+        console.error('Error in automatic multiplier check:', error);
+      }
+    }, interval: 30 }, // Run every 30 seconds
+    { name: 'Remaining Clicks Check', fn: async () => {
+      try {
+        console.log('Running remaining clicks check (24/7 mode)');
+        
+        // Try to dynamically load and call the clicks check functions
+        try {
+          const { checkCampaignsForAutoPause } = await import('./campaign-click-monitor');
+          if (typeof checkCampaignsForAutoPause === 'function') {
+            await checkCampaignsForAutoPause();
+          }
+        } catch (importError) {
+          console.log('Campaign click monitor not available:', importError.message);
+          
+          // Since we need this functionality, implement it directly here as a fallback
+          await checkRemainingClicksForAllCampaigns();
+        }
+      } catch (error) {
+        console.error('Error in remaining clicks check:', error);
+      }
+    }, interval: 20 } // Run every 20 seconds
+  ];
+  
+  // Keep track of when each function was last run
+  const lastRunTimes = FUNCTIONS_TO_RUN.reduce((acc, func) => {
+    acc[func.name] = 0; // Initialize with 0 (never run)
+    return acc;
+  }, {} as Record<string, number>);
+  
   // Run the traffic generator continuously in a loop
   const runContinuousTrafficGenerator = async () => {
     try {
-      console.log('Running continuous Traffic Generator check (24/7 mode)');
-      await runTrafficGeneratorForAllCampaigns();
+      const now = Date.now();
+      
+      // Run each function if its interval has elapsed
+      for (const func of FUNCTIONS_TO_RUN) {
+        const lastRun = lastRunTimes[func.name];
+        const secondsSinceLastRun = (now - lastRun) / 1000;
+        
+        if (secondsSinceLastRun >= func.interval) {
+          console.log(`Running ${func.name} (interval: ${func.interval}s, elapsed: ${secondsSinceLastRun.toFixed(1)}s)`);
+          await func.fn();
+          lastRunTimes[func.name] = now;
+        }
+      }
     } catch (error) {
-      console.error('Error in continuous traffic generator:', error);
+      console.error('Error in continuous traffic generator loop:', error);
     } finally {
       // Immediately schedule the next run with a small delay to prevent resource exhaustion
       setTimeout(runContinuousTrafficGenerator, 1000); // 1 second delay between runs
