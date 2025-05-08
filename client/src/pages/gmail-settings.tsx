@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Loader2, Mail, Play, Power, RefreshCw, RotateCcw, Save, Trash, Calendar } from "lucide-react";
+import { AlertTriangle, Loader2, Mail, Play, Power, RefreshCw, RotateCcw, Save, Trash, Calendar, Plus, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Campaign } from "@shared/schema";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 // Campaign assignment schema for form
 const campaignAssignmentSchema = z.object({
@@ -88,6 +89,16 @@ export default function GmailSettingsPage() {
           
         const messagePattern = config.messagePattern || {};
         
+        // Prepare campaign assignments if they exist in config
+        const campaignAssignments = Array.isArray(config.campaignAssignments) 
+          ? config.campaignAssignments.map((assignment: any) => ({
+              campaignId: assignment.campaignId,
+              minClickLimit: assignment.minClickLimit || undefined,
+              maxClickLimit: assignment.maxClickLimit || undefined,
+              active: assignment.active !== undefined ? assignment.active : true
+            }))
+          : [];
+        
         form.reset({
           user: config.user || '',
           password: '', // Don't pre-fill password
@@ -100,6 +111,7 @@ export default function GmailSettingsPage() {
           urlRegex: messagePattern.urlRegex ? messagePattern.urlRegex.toString().slice(1, -1) : 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
           quantityRegex: messagePattern.quantityRegex ? messagePattern.quantityRegex.toString().slice(1, -1) : 'Quantity\\s*:\\s*(\\d+)',
           defaultCampaignId: config.defaultCampaignId !== undefined && config.defaultCampaignId !== null ? config.defaultCampaignId : (campaigns.length > 0 ? campaigns[0].id : 0),
+          campaignAssignments,
           checkInterval: config.checkInterval || 60000,
           autoDeleteMinutes: config.autoDeleteMinutes || 0
         });
@@ -123,9 +135,16 @@ export default function GmailSettingsPage() {
       urlRegex: 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
       quantityRegex: 'Quantity\\s*:\\s*(\\d+)',
       defaultCampaignId: 0, // Initially set to 0, will be properly set from config when loaded
+      campaignAssignments: [], // Empty campaign assignments array
       checkInterval: 60000,
       autoDeleteMinutes: 0
     }
+  });
+  
+  // Setup field array for campaign assignments
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "campaignAssignments"
   });
   
   // Update configuration mutation
@@ -135,6 +154,14 @@ export default function GmailSettingsPage() {
       const whitelistSenders = values.whitelistSenders 
         ? values.whitelistSenders.split(',').map(sender => sender.trim())
         : [];
+      
+      // Ensure campaign assignments have valid values
+      const campaignAssignments = values.campaignAssignments.map(assignment => ({
+        ...assignment,
+        minClickLimit: assignment.minClickLimit || undefined,
+        maxClickLimit: assignment.maxClickLimit || undefined,
+        active: assignment.active !== undefined ? assignment.active : true
+      }));
       
       // Format the data for the API
       const configData = {
@@ -151,6 +178,7 @@ export default function GmailSettingsPage() {
           quantityRegex: values.quantityRegex
         },
         defaultCampaignId: values.defaultCampaignId,
+        campaignAssignments, // Add campaign assignments to the config
         checkInterval: values.checkInterval,
         autoDeleteMinutes: values.autoDeleteMinutes
       };
@@ -838,7 +866,7 @@ export default function GmailSettingsPage() {
                       name="defaultCampaignId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Target Campaign</FormLabel>
+                          <FormLabel>Default Campaign</FormLabel>
                           <Select
                             onValueChange={(value) => field.onChange(Number(value))}
                             defaultValue={field.value?.toString()}
@@ -858,12 +886,154 @@ export default function GmailSettingsPage() {
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            Campaign where new URLs will be added
+                            Default campaign where new URLs will be added if no campaign assignments match
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Campaign Assignments */}
+                    <div className="col-span-2 mb-4 mt-8">
+                      <h3 className="text-lg font-medium mb-2">Campaign Assignments</h3>
+                      <p className="text-sm text-gray-500 mb-4">Assign URLs to specific campaigns based on click quantity limits</p>
+                      
+                      <div className="border rounded-md p-4 mb-4 bg-gray-50">
+                        {fields.length === 0 ? (
+                          <div className="text-center py-4 text-gray-500">
+                            No campaign assignments. Add one below.
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {fields.map((field, index) => (
+                              <div key={field.id} className="grid grid-cols-1 md:grid-cols-10 gap-4 p-4 border rounded-md bg-white relative">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-2 top-2"
+                                  onClick={() => remove(index)}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                
+                                {/* Campaign Selection */}
+                                <div className="md:col-span-4">
+                                  <FormField
+                                    control={form.control}
+                                    name={`campaignAssignments.${index}.campaignId`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Campaign</FormLabel>
+                                        <Select
+                                          onValueChange={(value) => field.onChange(Number(value))}
+                                          defaultValue={field.value?.toString()}
+                                          value={field.value?.toString()}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select a campaign" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {campaigns.map((campaign) => (
+                                              <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                                                {campaign.name} (ID: {campaign.id})
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                                
+                                {/* Min Click Limit */}
+                                <div className="md:col-span-2">
+                                  <FormField
+                                    control={form.control}
+                                    name={`campaignAssignments.${index}.minClickLimit`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Min Clicks</FormLabel>
+                                        <FormControl>
+                                          <Input 
+                                            type="number" 
+                                            placeholder="Min clicks" 
+                                            {...field}
+                                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                                
+                                {/* Max Click Limit */}
+                                <div className="md:col-span-2">
+                                  <FormField
+                                    control={form.control}
+                                    name={`campaignAssignments.${index}.maxClickLimit`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Max Clicks</FormLabel>
+                                        <FormControl>
+                                          <Input 
+                                            type="number" 
+                                            placeholder="Max clicks" 
+                                            {...field}
+                                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                                
+                                {/* Active Status */}
+                                <div className="md:col-span-2 flex items-end mb-1">
+                                  <FormField
+                                    control={form.control}
+                                    name={`campaignAssignments.${index}.active`}
+                                    render={({ field }) => (
+                                      <FormItem className="flex flex-row items-center justify-start space-x-3 space-y-0">
+                                        <FormControl>
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                          />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                          <FormLabel>Active</FormLabel>
+                                        </div>
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="mt-4" 
+                          onClick={() => append({ 
+                            campaignId: campaigns.length > 0 ? campaigns[0].id : 0, 
+                            minClickLimit: undefined,
+                            maxClickLimit: undefined,
+                            active: true 
+                          })}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Campaign Assignment
+                        </Button>
+                      </div>
+                    </div>
                     
                     {/* Patterns */}
                     <FormField
