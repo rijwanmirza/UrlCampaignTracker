@@ -1012,9 +1012,14 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
         
         try {
           // Get the campaign details to check URLs and remaining clicks
+          // Only fetch active URLs for the campaign to improve performance
           const campaign = await db.query.campaigns.findFirst({
             where: (campaign, { eq }) => eq(campaign.id, campaignId),
-            with: { urls: true }
+            with: { 
+              urls: {
+                where: (urls, { eq }) => eq(urls.status, 'active')
+              } 
+            }
           }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
           
           if (campaign && campaign.urls && campaign.urls.length > 0) {
@@ -1131,9 +1136,14 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
         console.log(`⏹️ Campaign ${trafficstarCampaignId} is still paused as expected - monitoring will continue`);
         
         // Check current spent value and remaining clicks periodically
+        // Only fetch active URLs for the campaign to improve performance
         const campaign = await db.query.campaigns.findFirst({
           where: (campaign, { eq }) => eq(campaign.id, campaignId),
-          with: { urls: true }
+          with: { 
+            urls: {
+              where: (urls, { eq }) => eq(urls.status, 'active')
+            } 
+          }
         }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
         
         // Get current pause duration if we've auto-paused the campaign
@@ -1230,9 +1240,14 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
         
         try {
           // Get the campaign details to check URLs and remaining clicks
+          // Only fetch active URLs for the campaign to improve performance
           const campaign = await db.query.campaigns.findFirst({
             where: (campaign, { eq }) => eq(campaign.id, campaignId),
-            with: { urls: true }
+            with: { 
+              urls: {
+                where: (urls, { eq }) => eq(urls.status, 'active')
+              } 
+            }
           }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
           
           if (campaign && campaign.urls && campaign.urls.length > 0) {
