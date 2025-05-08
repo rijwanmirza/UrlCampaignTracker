@@ -32,21 +32,24 @@ export default function AccessCodeManager() {
       setIsLoading(true);
       const data = await apiRequest("GET", "/api/auth/access-code");
       
-      if (data.success) {
+      if (data?.success) {
         setMaskedAccessCode(data.accessCode);
       } else {
         toast({
           title: "Error",
-          description: data.message || "Failed to load access code",
+          description: data?.message || "Failed to load access code",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error("Error fetching access code:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        description: "Unable to load access code. Please refresh the page and try again.",
         variant: "destructive",
       });
+      // Set a default masked code so the UI doesn't break
+      setMaskedAccessCode("****");
     } finally {
       setIsLoading(false);
     }

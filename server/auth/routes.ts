@@ -2,7 +2,7 @@ import { Express, Request, Response } from 'express';
 import { validateApiKey, requireAuth } from './middleware';
 import { log } from '../vite';
 import { saveApiKeyToDatabase } from './key-manager';
-import { getAccessCode as getStoredAccessCode, saveAccessCodeToDatabase } from './access-code-manager';
+import { getAccessCode as getAccessCodeFromDB, saveAccessCodeToDatabase } from './access-code-manager';
 import { storeApiKeyInSession, getAccessCode as getCurrentAccessCode } from '../access-control';
 
 // Register authentication routes
@@ -174,10 +174,22 @@ export function registerAuthRoutes(app: Express) {
   app.get('/api/auth/access-code', requireAuth, async (_req: Request, res: Response) => {
     try {
       // Get the access code from the database
-      const accessCode = await getStoredAccessCode();
+      const accessCode = await getAccessCodeFromDB();
       
       // Return just a masked version for security
-      const maskedCode = accessCode.substring(0, 2) + '*'.repeat(accessCode.length - 4) + accessCode.substring(accessCode.length - 2);
+      let maskedCode = accessCode;
+      
+      // Handle masking differently based on length to avoid negative repeat values
+      if (accessCode.length > 4) {
+        // For longer codes, show first 2 and last 2 characters
+        maskedCode = accessCode.substring(0, 2) + '*'.repeat(accessCode.length - 4) + accessCode.substring(accessCode.length - 2);
+      } else if (accessCode.length > 2) {
+        // For medium length codes, show just first and last character
+        maskedCode = accessCode.substring(0, 1) + '*'.repeat(accessCode.length - 2) + accessCode.substring(accessCode.length - 1);
+      } else if (accessCode.length > 0) {
+        // For very short codes, just mask everything
+        maskedCode = '*'.repeat(accessCode.length);
+      }
       
       res.json({ 
         accessCode: maskedCode,
