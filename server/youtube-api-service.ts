@@ -148,19 +148,64 @@ export class YouTubeApiService {
   /**
    * Get videos information in batch
    */
-  async getVideosInfo(videoIds: string[]): Promise<youtube_v3.Schema$Video[]> {
+  async getVideosInfo(videoIds: string[], campaignId?: number): Promise<youtube_v3.Schema$Video[]> {
     if (!this.isConfigured()) {
       throw new Error('YouTube API key not configured');
     }
     
     try {
+      // Log the API call being made
+      await this.logApiActivity(
+        YouTubeApiLogType.API_REQUEST,
+        `Making YouTube API request for ${videoIds.length} videos: ${videoIds.join(', ')}`,
+        campaignId,
+        { videoIds },
+        false
+      );
+      
+      // Log when API request starts
+      logger.info(`[YOUTUBE-API] Making request for ${videoIds.length} videos: ${videoIds.slice(0, 3).join(', ')}${videoIds.length > 3 ? '...' : ''}`);
+      
+      // Track API request time for performance monitoring
+      const startTime = Date.now();
+      
       const response = await this.youtube.videos.list({
         part: ['snippet', 'contentDetails', 'status'],
         id: videoIds
       });
       
+      // Calculate request duration
+      const duration = Date.now() - startTime;
+      
+      // Log successful API response
+      await this.logApiActivity(
+        YouTubeApiLogType.API_RESPONSE,
+        `Received YouTube API response for ${videoIds.length} videos in ${duration}ms`,
+        campaignId,
+        { 
+          responseTime: duration,
+          videosReceived: (response.data.items || []).length,
+          quotaUsage: 1, // Each videos.list call costs 1 quota unit
+        },
+        false
+      );
+      
+      logger.info(`[YOUTUBE-API] Response received with ${response.data.items?.length || 0} videos in ${duration}ms`);
+      
       return response.data.items || [];
     } catch (error) {
+      // Log failed API request
+      await this.logApiActivity(
+        YouTubeApiLogType.API_ERROR,
+        `YouTube API request failed: ${error instanceof Error ? error.message : String(error)}`,
+        campaignId,
+        { 
+          error: error instanceof Error ? error.message : String(error),
+          videoIds
+        },
+        true
+      );
+      
       logger.error('Error fetching YouTube videos info:', error);
       throw error;
     }
@@ -186,8 +231,8 @@ export class YouTubeApiService {
         };
       }
       
-      // Get video info from YouTube API
-      const videos = await this.getVideosInfo([videoId]);
+      // Get video info from YouTube API with campaign ID for logging
+      const videos = await this.getVideosInfo([videoId], campaign.id);
       
       if (!videos || videos.length === 0) {
         return { 
@@ -398,8 +443,8 @@ export class YouTubeApiService {
     videoIds: string[]
   ): Promise<void> {
     try {
-      // Fetch video info from YouTube API
-      const videos = await this.getVideosInfo(videoIds);
+      // Fetch video info from YouTube API with campaign ID for logging
+      const videos = await this.getVideosInfo(videoIds, campaign.id);
       const videoMap = new Map<string, youtube_v3.Schema$Video>();
       
       videos.forEach(video => {

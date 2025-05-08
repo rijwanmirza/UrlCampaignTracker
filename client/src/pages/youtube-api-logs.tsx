@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Table,
@@ -23,7 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -61,6 +60,9 @@ export default function YouTubeApiLogsPage() {
   const [campaignIdFilter, setCampaignIdFilter] = useState<number | null>(null);
   const [errorFilter, setErrorFilter] = useState<boolean | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // State for force check
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   
   // Selected log for detailed view
   const [selectedLog, setSelectedLog] = useState<YouTubeApiLog | null>(null);
@@ -173,6 +175,37 @@ export default function YouTubeApiLogsPage() {
     setSelectedLog(log);
   };
   
+  // Force a YouTube API check for a campaign
+  const forceYouTubeCheck = async (campaignId: number) => {
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/check-youtube`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      toast({
+        title: 'YouTube check triggered',
+        description: data.message || 'YouTube API check has been manually triggered.',
+      });
+      
+      // Wait a bit and then refresh the logs
+      setTimeout(() => {
+        refetch();
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Failed to trigger YouTube API check: ${error instanceof Error ? error.message : String(error)}`,
+        variant: 'destructive',
+      });
+    }
+  };
+  
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -204,7 +237,7 @@ export default function YouTubeApiLogsPage() {
         </div>
       </div>
       
-      {/* Filters */}
+      {/* Filters Card */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -216,93 +249,142 @@ export default function YouTubeApiLogsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Select
-                value={logTypeFilter || 'all_types'}
-                onValueChange={(value) => setLogTypeFilter(value === 'all_types' ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Log Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Log Type</SelectLabel>
-                    <SelectItem value="all_types">All Types</SelectItem>
-                    {uniqueLogTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col space-y-4">
+            {/* Force check button */}
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <p className="text-sm text-muted-foreground">Want to see actual YouTube API calls? Select a campaign and force a check.</p>
+              <div className="flex gap-2">
+                <Select
+                  value={selectedCampaignId?.toString() || 'select_campaign'}
+                  onValueChange={(value) => setSelectedCampaignId(value === 'select_campaign' ? null : Number(value))}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select Campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Force Check Campaign</SelectLabel>
+                      <SelectItem value="select_campaign">Select Campaign</SelectItem>
+                      {uniqueCampaignIds.map((id) => {
+                        if (id === null) return null;
+                        return (
+                          <SelectItem key={id} value={id.toString()}>
+                            Campaign {id}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={() => {
+                    if (selectedCampaignId) {
+                      forceYouTubeCheck(selectedCampaignId);
+                    } else {
+                      toast({
+                        title: 'Campaign required',
+                        description: 'Please select a campaign first',
+                        variant: 'destructive'
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-1"
+                  disabled={!selectedCampaignId}
+                >
+                  <Youtube className="h-4 w-4" />
+                  Force Check
+                </Button>
+              </div>
             </div>
-            
-            <div>
-              <Select
-                value={campaignIdFilter?.toString() || 'all_campaigns'}
-                onValueChange={(value) => setCampaignIdFilter(value === 'all_campaigns' ? null : Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Campaign ID" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Campaign ID</SelectLabel>
-                    <SelectItem value="all_campaigns">All Campaigns</SelectItem>
-                    {uniqueCampaignIds.map((id) => {
-                      // Skip null IDs to prevent empty value errors
-                      if (id === null) return null;
-                      return (
-                        <SelectItem key={id} value={id.toString()}>
-                          {id}
+
+            {/* Filter controls */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Select
+                  value={logTypeFilter || 'all_types'}
+                  onValueChange={(value) => setLogTypeFilter(value === 'all_types' ? null : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Log Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Log Type</SelectLabel>
+                      <SelectItem value="all_types">All Types</SelectItem>
+                      {uniqueLogTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
                         </SelectItem>
-                      );
-                    })}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Select
-                value={errorFilter === null ? 'all_statuses' : errorFilter ? 'true' : 'false'}
-                onValueChange={(value) => {
-                  if (value === 'all_statuses') setErrorFilter(null);
-                  else setErrorFilter(value === 'true');
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Error Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Error Status</SelectLabel>
-                    <SelectItem value="all_statuses">All Statuses</SelectItem>
-                    <SelectItem value="true">Errors Only</SelectItem>
-                    <SelectItem value="false">Success Only</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Search logs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
               
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={resetFilters}
-                title="Reset filters"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
+              <div>
+                <Select
+                  value={campaignIdFilter?.toString() || 'all_campaigns'}
+                  onValueChange={(value) => setCampaignIdFilter(value === 'all_campaigns' ? null : Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Campaign ID" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Campaign ID</SelectLabel>
+                      <SelectItem value="all_campaigns">All Campaigns</SelectItem>
+                      {uniqueCampaignIds.map((id) => {
+                        if (id === null) return null;
+                        return (
+                          <SelectItem key={id} value={id.toString()}>
+                            {id}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Select
+                  value={errorFilter === null ? 'all_statuses' : errorFilter ? 'true' : 'false'}
+                  onValueChange={(value) => {
+                    if (value === 'all_statuses') setErrorFilter(null);
+                    else setErrorFilter(value === 'true');
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Error Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Error Status</SelectLabel>
+                      <SelectItem value="all_statuses">All Statuses</SelectItem>
+                      <SelectItem value="true">Errors Only</SelectItem>
+                      <SelectItem value="false">Success Only</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search logs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1"
+                />
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={resetFilters}
+                  title="Reset filters"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -427,9 +509,15 @@ export default function YouTubeApiLogsPage() {
                                       <p className="text-sm font-semibold">Status</p>
                                       <p className="text-md">
                                         {selectedLog.isError ? (
-                                          <Badge variant="destructive" className="mt-1">Error</Badge>
+                                          <Badge variant="destructive" className="flex items-center gap-1">
+                                            <AlertTriangle className="h-3 w-3" />
+                                            Error
+                                          </Badge>
                                         ) : (
-                                          <Badge variant="outline" className="mt-1 bg-green-100 text-green-800">Success</Badge>
+                                          <Badge variant="success" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
+                                            <CheckCircle className="h-3 w-3" />
+                                            Success
+                                          </Badge>
                                         )}
                                       </p>
                                     </div>
@@ -441,32 +529,28 @@ export default function YouTubeApiLogsPage() {
                                   
                                   <div>
                                     <p className="text-sm font-semibold">Message</p>
-                                    <p className="text-md p-2 bg-gray-50 rounded mt-1">{selectedLog.message}</p>
+                                    <p className="text-md mt-1">{selectedLog.message}</p>
                                   </div>
                                   
-                                  {selectedLog.details && (
-                                    <div>
-                                      <p className="text-sm font-semibold">Details</p>
-                                      <pre className="p-4 bg-gray-50 rounded mt-1 overflow-x-auto text-xs">
+                                  <div>
+                                    <p className="text-sm font-semibold">Details</p>
+                                    {selectedLog.details ? (
+                                      <pre className="bg-muted p-4 rounded-md mt-1 overflow-auto max-h-[300px] text-sm">
                                         {JSON.stringify(selectedLog.details, null, 2)}
                                       </pre>
-                                    </div>
-                                  )}
+                                    ) : (
+                                      <p className="text-md mt-1 text-muted-foreground">No details available</p>
+                                    )}
+                                  </div>
                                   
-                                  <div className="flex justify-end gap-2">
-                                    <DialogClose asChild>
-                                      <Button variant="outline">Close</Button>
-                                    </DialogClose>
+                                  <div className="flex justify-between">
                                     <Button
-                                      variant="destructive"
-                                      onClick={() => {
-                                        handleDeleteLog(selectedLog.id);
-                                        document.querySelector('[data-ui-dialog-close]')?.dispatchEvent(
-                                          new MouseEvent('click', { bubbles: true })
-                                        );
-                                      }}
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteLog(selectedLog.id)}
                                     >
-                                      Delete Log
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete this log
                                     </Button>
                                   </div>
                                 </div>
@@ -477,7 +561,6 @@ export default function YouTubeApiLogsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
                             onClick={() => handleDeleteLog(log.id)}
                           >
                             <Trash2 className="h-4 w-4" />
