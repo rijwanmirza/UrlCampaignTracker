@@ -653,6 +653,12 @@ export class YouTubeApiService {
    * This schedules the next check based on the campaign with the shortest remaining time
    */
   scheduleChecks(): void {
+    // Clear any existing scheduler if it exists
+    if (this.schedulerTimer) {
+      clearTimeout(this.schedulerTimer);
+      this.schedulerTimer = null;
+    }
+    
     // Initial scheduling (this will create the first timer)
     this.scheduleNextCheck();
     
@@ -673,44 +679,109 @@ export class YouTubeApiService {
       
       if (enabledCampaigns.length === 0) {
         // If no campaigns, check again in 15 minutes
-        setTimeout(() => this.scheduleNextCheck(), 15 * 60 * 1000);
+        this.schedulerTimer = setTimeout(() => this.scheduleNextCheck(), 15 * 60 * 1000);
+        logger.info('[youtube-api-scheduler] No enabled campaigns found, checking again in 15 minutes');
         return;
       }
       
       const now = new Date();
+      
+      // Log detailed information about all campaigns for debugging
+      await this.logApiActivity(
+        YouTubeApiLogType.SCHEDULER_CHECK,
+        `Calculating next check time for ${enabledCampaigns.length} campaigns`,
+        null,
+        { campaignCount: enabledCampaigns.length }
+      );
+      
+      // Track campaigns and their time information
+      const campaignTimings: Array<{
+        id: number;
+        name: string;
+        lastCheck: Date | null;
+        intervalMinutes: number;
+        elapsedMinutes: number;
+        remainingMinutes: number;
+        needsProcessing: boolean;
+      }> = [];
+      
       let shortestRemainingMs = Infinity;
+      let campaignWithShortestTime: typeof enabledCampaigns[0] | null = null;
       let anyNeedsProcessingNow = false;
       
       // Find the campaign with the shortest remaining time
       for (const campaign of enabledCampaigns) {
-        if (!campaign.youtubeApiLastCheck) {
-          // If any campaign has no last check, process immediately
-          anyNeedsProcessingNow = true;
-          break;
-        }
-        
         const intervalMinutes = campaign.youtubeApiIntervalMinutes || 60; // Default to 60 minutes if null
         const intervalMs = intervalMinutes * 60 * 1000;
-        const elapsedMs = now.getTime() - campaign.youtubeApiLastCheck.getTime();
-        const remainingMs = Math.max(0, intervalMs - elapsedMs);
         
-        if (remainingMs === 0) {
-          // If any campaign needs processing now, do it
+        let elapsedMs = 0;
+        let elapsedMinutes = 0;
+        let remainingMs = intervalMs;
+        let remainingMinutes = intervalMinutes;
+        let needsProcessing = false;
+        
+        if (!campaign.youtubeApiLastCheck) {
+          // If any campaign has no last check, process immediately
+          needsProcessing = true;
           anyNeedsProcessingNow = true;
-          break;
+        } else {
+          elapsedMs = now.getTime() - campaign.youtubeApiLastCheck.getTime();
+          elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
+          remainingMs = Math.max(0, intervalMs - elapsedMs);
+          remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+          
+          // Only process if the full interval has elapsed (strictly greater than or equal)
+          needsProcessing = elapsedMinutes >= intervalMinutes;
+          
+          if (needsProcessing) {
+            anyNeedsProcessingNow = true;
+          }
         }
         
+        // Add to campaign timings for logging
+        campaignTimings.push({
+          id: campaign.id,
+          name: campaign.name,
+          lastCheck: campaign.youtubeApiLastCheck,
+          intervalMinutes,
+          elapsedMinutes,
+          remainingMinutes,
+          needsProcessing
+        });
+        
         // Track the shortest remaining time
-        if (remainingMs < shortestRemainingMs) {
+        if (!needsProcessing && remainingMs < shortestRemainingMs) {
           shortestRemainingMs = remainingMs;
+          campaignWithShortestTime = campaign;
         }
       }
       
+      // Log detailed timing information for debugging
+      await this.logApiActivity(
+        YouTubeApiLogType.SCHEDULER_CHECK,
+        `Campaign timing details`,
+        null,
+        { campaignTimings }
+      );
+      
       if (anyNeedsProcessingNow) {
+        // Log which campaigns need processing now
+        const campaignsNeedingProcess = campaignTimings
+          .filter(c => c.needsProcessing)
+          .map(c => c.id);
+          
+        await this.logApiActivity(
+          YouTubeApiLogType.SCHEDULER_CHECK,
+          `Processing ${campaignsNeedingProcess.length} campaigns now: ${campaignsNeedingProcess.join(', ')}`,
+          null,
+          { campaignsNeedingProcess }
+        );
+        
         // If any campaign needs processing now, do it and then schedule next check
         await this.checkAllCampaigns();
-        // After processing, reschedule
-        this.scheduleNextCheck();
+        
+        // After processing, reschedule with a short delay to avoid immediate rechecking
+        this.schedulerTimer = setTimeout(() => this.scheduleNextCheck(), 5000);
       } else {
         // Schedule next check at exactly the time needed
         // Add 1 second buffer to ensure we're slightly after the interval
@@ -718,15 +789,43 @@ export class YouTubeApiService {
         
         // Log when the next check will occur
         const nextCheckMinutes = Math.ceil(nextCheckMs / (60 * 1000));
+        const nextCheckTime = new Date(now.getTime() + nextCheckMs);
+        
+        await this.logApiActivity(
+          YouTubeApiLogType.SCHEDULER_CHECK,
+          `Next check scheduled for campaign ${campaignWithShortestTime?.id} in ${nextCheckMinutes} minutes at ${nextCheckTime.toISOString()}`,
+          campaignWithShortestTime?.id ?? null,
+          { 
+            nextCheckMinutes,
+            nextCheckTime: nextCheckTime.toISOString(),
+            campaignInfo: campaignWithShortestTime
+              ? {
+                  id: campaignWithShortestTime.id,
+                  name: campaignWithShortestTime.name,
+                  intervalMinutes: campaignWithShortestTime.youtubeApiIntervalMinutes
+                }
+              : null
+          }
+        );
+        
         logger.info(`[youtube-api-scheduler] Next check scheduled in exactly ${nextCheckMinutes} minutes`);
         
-        // Schedule the next check
-        setTimeout(() => this.scheduleNextCheck(), nextCheckMs);
+        // Schedule the next check with the exact timing
+        this.schedulerTimer = setTimeout(() => this.scheduleNextCheck(), nextCheckMs);
       }
     } catch (error) {
       logger.error('Error scheduling next check:', error);
+      
+      await this.logApiActivity(
+        YouTubeApiLogType.SCHEDULER_CHECK,
+        'Error scheduling next check',
+        null,
+        { error: error instanceof Error ? error.message : String(error) },
+        true
+      );
+      
       // On error, retry in 5 minutes
-      setTimeout(() => this.scheduleNextCheck(), 5 * 60 * 1000);
+      this.schedulerTimer = setTimeout(() => this.scheduleNextCheck(), 5 * 60 * 1000);
     }
   }
   
