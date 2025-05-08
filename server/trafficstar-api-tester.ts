@@ -6,7 +6,7 @@
  */
 
 import axios from 'axios';
-import { trafficStarService } from './trafficstar-service-new';
+import { trafficStarService } from './trafficstar-service';
 import { db } from './db';
 import { trafficstarCredentials } from '../shared/schema';
 

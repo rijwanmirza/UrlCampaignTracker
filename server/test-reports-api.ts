@@ -8,7 +8,7 @@
 import express, { Request, Response } from 'express';
 import axios from 'axios';
 import { getTodayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
-import { trafficStarService } from './trafficstar-service-new';
+import { trafficStarService } from './trafficstar-service';
 
 // Define error detail interface
 interface ErrorDetails {

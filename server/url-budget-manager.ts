@@ -1,6 +1,6 @@
 import { db } from './db';
 import urlBudgetLogger from './url-budget-logger';
-import { trafficStarService } from './trafficstar-service-new';
+import { trafficStarService } from './trafficstar-service';
 
 /**
  * Class that manages URL budget updates after the initial high-spend calculation
