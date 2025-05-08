@@ -7,7 +7,7 @@
 
 import { db } from './db';
 import { campaigns } from '../shared/schema';
-import { eq, and, isNull, not } from 'drizzle-orm';
+import { eq, and, isNull, not, or } from 'drizzle-orm';
 import { trafficStarService } from './trafficstar-service';
 
 /**
@@ -35,7 +35,13 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
     // Find campaigns that:
     // 1. Have TrafficStar integration enabled (trafficstarCampaignId is not null)
     // 2. Have pendingBudgetUpdate set to true OR have budgetUpdateTime matching current time
-    const campaignsToUpdate = await db.select()
+    const campaignsToUpdate = await db.select({
+        id: campaigns.id,
+        name: campaigns.name,
+        trafficstarCampaignId: campaigns.trafficstarCampaignId,
+        budgetUpdateTime: campaigns.budgetUpdateTime,
+        pendingBudgetUpdate: campaigns.pendingBudgetUpdate
+      })
       .from(campaigns)
       .where(
         and(
@@ -106,15 +112,4 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
 function isValidTimeFormat(timeStr: string): boolean {
   // Basic validation for format HH:MM:SS
   return /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.test(timeStr);
-}
-
-// Helper 'or' function for Drizzle filters
-function or(...conditions: any[]): any {
-  if (conditions.length === 0) return true;
-  if (conditions.length === 1) return conditions[0];
-  
-  return {
-    type: 'or',
-    conditions
-  };
 }

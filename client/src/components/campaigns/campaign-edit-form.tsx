@@ -159,30 +159,30 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     // Traffic Sender code removed
   }, 100);
   
-  // Force budget update mutation - will be used when budgetUpdateTime changes
+  // Schedule budget update mutation - will be used when budgetUpdateTime changes
   const forceBudgetUpdateMutation = useMutation({
     mutationFn: async (campaignId: number) => {
-      console.log("Forcing immediate budget update for campaign:", campaignId);
+      console.log("Scheduling budget update for campaign:", campaignId);
       return await apiRequest(
         "POST",
         `/api/trafficstar/campaigns/force-budget-update`,
         { campaignId }
       );
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Show success toast
       toast({
-        title: "Budget Update Triggered",
-        description: "Budget update has been applied immediately.",
+        title: "Budget Update Scheduled",
+        description: "Budget update has been scheduled for the configured time.",
       });
     },
     onError: (error) => {
       toast({
         title: "Budget Update Failed",
-        description: "Failed to trigger immediate budget update. The scheduled update will still apply.",
+        description: "Failed to schedule budget update. Please check your settings.",
         variant: "destructive",
       });
-      console.error("Failed to force budget update:", error);
+      console.error("Failed to schedule budget update:", error);
     }
   });
 
