@@ -23,6 +23,14 @@ async function getCurrentApiKey(): Promise<string> {
   return cachedApiKey;
 }
 
+// Function to explicitly clear the API key cache
+// This will be called when the API key is changed
+export function clearApiKeyCache(): void {
+  cachedApiKey = null;
+  lastCacheTime = 0;
+  log('API key cache cleared', 'auth');
+}
+
 // Middleware to require authentication
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
