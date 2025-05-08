@@ -584,18 +584,68 @@ export class YouTubeApiService {
   }
   
   /**
-   * Schedule YouTube API checks
+   * Schedule YouTube API checks with improved interval handling
+   * Only checks when a campaign's configured interval has fully elapsed
    */
   scheduleChecks(): void {
-    // Run immediately on startup
-    this.checkAllCampaigns();
+    // Initial check just to log status, but won't process unless needed
+    this.logCampaignScheduleStatus();
     
-    // Set interval for regular checks - check every minute which campaigns need processing
+    // Use longer interval (5 minutes) to reduce unnecessary checks
+    // This only logs status and processes campaigns when their FULL interval has elapsed
     setInterval(() => {
-      this.checkAllCampaigns();
-    }, 60000); // Check every minute
+      this.logCampaignScheduleStatus();
+    }, 300000); // Check every 5 minutes instead of every minute
     
-    logger.info('YouTube API checks scheduled');
+    logger.info('YouTube API checks scheduled with improved interval handling');
+  }
+  
+  /**
+   * Only logs campaign schedule status without processing
+   * This reduces unnecessary API activity logging
+   */
+  private async logCampaignScheduleStatus(): Promise<void> {
+    try {
+      // Get all enabled campaigns
+      const enabledCampaigns = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.youtubeApiEnabled, true));
+      
+      if (enabledCampaigns.length === 0) {
+        return; // No campaigns to check
+      }
+      
+      const now = new Date();
+      
+      for (const campaign of enabledCampaigns) {
+        const intervalMinutes = campaign.youtubeApiIntervalMinutes || 60; // Default to 60 minutes if null
+        
+        if (!campaign.youtubeApiLastCheck) {
+          // For initial checks, we'll process through the checkAllCampaigns method
+          this.checkAllCampaigns();
+          return;
+        } else {
+          const elapsedMs = now.getTime() - campaign.youtubeApiLastCheck.getTime();
+          const elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
+          const minutesRemaining = Math.max(0, intervalMinutes - elapsedMinutes);
+          
+          // Only process if the full interval has elapsed
+          const shouldProcess = elapsedMinutes >= intervalMinutes;
+          
+          const message = `Campaign ${campaign.id}: Last check: ${campaign.youtubeApiLastCheck.toISOString()}, Interval: ${intervalMinutes} minutes, Time remaining: ${minutesRemaining} minutes`;
+          logger.info(`[youtube-api-scheduler] ${message}`);
+          
+          // If any campaign needs processing, run the full check
+          if (shouldProcess) {
+            this.checkAllCampaigns();
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Error checking campaign schedule status:', error);
+    }
   }
   
   /**
