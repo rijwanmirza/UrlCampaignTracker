@@ -65,7 +65,7 @@ export default function GmailConfig() {
   
   // Get campaigns for dropdown
   const { data: campaigns, isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
-    queryKey: ["/api/campaigns/list"],
+    queryKey: ["/api/campaigns"],
     staleTime: 5000, // 5 seconds
   });
   
