@@ -42,7 +42,7 @@ export class YouTubeApiService {
     isError: boolean = false
   ): Promise<void> {
     try {
-      // Use DrizzleORM insert instead of raw SQL to avoid parameter binding issues
+      // Use DrizzleORM insert with only the fields that exist in the schema
       await db.insert(youtubeApiLogs).values({
         logType,
         message,

@@ -533,12 +533,11 @@ export const youtubeApiLogs = pgTable("youtube_api_logs", {
   details: jsonb("details"), // Additional structured data about the request
   isError: boolean("is_error").default(false), // Whether this log is an error
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  // createdAt column removed as it doesn't exist in the actual table
 });
 
 export const insertYoutubeApiLogSchema = createInsertSchema(youtubeApiLogs).omit({
   id: true,
-  createdAt: true,
 });
 
 // Types for YouTube API Logs

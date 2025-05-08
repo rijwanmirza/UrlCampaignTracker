@@ -219,8 +219,8 @@ export default function YouTubeApiLogsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Select
-                value={logTypeFilter || ''}
-                onValueChange={(value) => setLogTypeFilter(value || null)}
+                value={logTypeFilter || 'all_types'}
+                onValueChange={(value) => setLogTypeFilter(value === 'all_types' ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Log Type" />
@@ -228,7 +228,7 @@ export default function YouTubeApiLogsPage() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Log Type</SelectLabel>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all_types">All Types</SelectItem>
                     {uniqueLogTypes.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
@@ -241,8 +241,8 @@ export default function YouTubeApiLogsPage() {
             
             <div>
               <Select
-                value={campaignIdFilter?.toString() || ''}
-                onValueChange={(value) => setCampaignIdFilter(value ? Number(value) : null)}
+                value={campaignIdFilter?.toString() || 'all_campaigns'}
+                onValueChange={(value) => setCampaignIdFilter(value === 'all_campaigns' ? null : Number(value))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Campaign ID" />
@@ -250,12 +250,16 @@ export default function YouTubeApiLogsPage() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Campaign ID</SelectLabel>
-                    <SelectItem value="">All Campaigns</SelectItem>
-                    {uniqueCampaignIds.map((id) => (
-                      <SelectItem key={id} value={id?.toString() || ''}>
-                        {id}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all_campaigns">All Campaigns</SelectItem>
+                    {uniqueCampaignIds.map((id) => {
+                      // Skip null IDs to prevent empty value errors
+                      if (id === null) return null;
+                      return (
+                        <SelectItem key={id} value={id.toString()}>
+                          {id}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -263,9 +267,9 @@ export default function YouTubeApiLogsPage() {
             
             <div>
               <Select
-                value={errorFilter === null ? '' : errorFilter ? 'true' : 'false'}
+                value={errorFilter === null ? 'all_statuses' : errorFilter ? 'true' : 'false'}
                 onValueChange={(value) => {
-                  if (value === '') setErrorFilter(null);
+                  if (value === 'all_statuses') setErrorFilter(null);
                   else setErrorFilter(value === 'true');
                 }}
               >
@@ -275,7 +279,7 @@ export default function YouTubeApiLogsPage() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Error Status</SelectLabel>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all_statuses">All Statuses</SelectItem>
                     <SelectItem value="true">Errors Only</SelectItem>
                     <SelectItem value="false">Success Only</SelectItem>
                   </SelectGroup>

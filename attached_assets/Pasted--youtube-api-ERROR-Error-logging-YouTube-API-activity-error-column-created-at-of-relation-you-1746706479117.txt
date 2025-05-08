@@ -1,0 +1,49 @@
+[youtube-api] ERROR: Error logging YouTube API activity: error: column "created_at" of relation "youtube_api_logs" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.checkAllCampaigns (/home/runner/workspace/server/youtube-api-service.ts:613:7) {
+  length: 140,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '113',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+[youtube-api] INFO: [youtube-api-scheduler] Campaign 1: Last check: 2025-05-08T11:16:30.424Z, Interval: 15 minutes, Time remaining: 0 minutes
+[youtube-api] ERROR: Error logging YouTube API activity: error: column "created_at" of relation "youtube_api_logs" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async YouTubeApiService.logApiActivity (/home/runner/workspace/server/youtube-api-service.ts:46:7)
+    at async YouTubeApiService.checkAllCampaigns (/home/runner/workspace/server/youtube-api-service.ts:655:11) {
+  length: 140,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '113',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+[youtube-api] INFO: [youtube-api-scheduler] Campaign 1: Interval elapsed, processing now
+[youtube-api] INFO: Processing YouTube checks for campaign 1
