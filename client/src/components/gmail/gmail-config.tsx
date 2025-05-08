@@ -24,7 +24,12 @@ const gmailConfigSchema = z.object({
   tls: z.boolean().default(true),
   tlsRejectUnauthorized: z.boolean().default(false),
   whitelistSenders: z.string(), // Comma-separated list
+  subjectPattern: z.string().min(1, "Subject pattern is required"),
+  orderIdRegex: z.string().min(1, "Order ID regex is required"),
+  urlRegex: z.string().min(1, "URL regex is required"),
+  quantityRegex: z.string().min(1, "Quantity regex is required"),
   defaultCampaignId: z.coerce.number().int().positive(),
+  checkInterval: z.coerce.number().int().positive().default(60000),
   autoDeleteMinutes: z.coerce.number().int().min(0),
 });
 
@@ -80,7 +85,12 @@ export default function GmailConfig() {
       tls: true,
       tlsRejectUnauthorized: false,
       whitelistSenders: "",
+      subjectPattern: "",
+      orderIdRegex: "",
+      urlRegex: "",
+      quantityRegex: "",
       defaultCampaignId: 1,
+      checkInterval: 60000,
       autoDeleteMinutes: 0,
     },
   });
@@ -101,7 +111,12 @@ export default function GmailConfig() {
         whitelistSenders: status.config.whitelistSenders 
           ? status.config.whitelistSenders.join(", ") 
           : "",
+        subjectPattern: status.config.subjectPattern || "",
+        orderIdRegex: status.config.orderIdRegex || "",
+        urlRegex: status.config.urlRegex || "",
+        quantityRegex: status.config.quantityRegex || "",
         defaultCampaignId: status.config.defaultCampaignId || 1,
+        checkInterval: status.config.checkInterval || 60000,
         autoDeleteMinutes: status.config.autoDeleteMinutes || 0,
       });
     }
@@ -128,10 +143,12 @@ export default function GmailConfig() {
         tlsOptions: {
           rejectUnauthorized: data.tlsRejectUnauthorized
         }
-      };
+      } as any;
       
       // Remove the extracted field to avoid sending it separately
-      delete configData.tlsRejectUnauthorized;
+      if ('tlsRejectUnauthorized' in configData) {
+        delete configData.tlsRejectUnauthorized;
+      }
       
       const res = await apiRequest("POST", "/api/gmail/config", configData);
       return await res.json();
@@ -200,7 +217,7 @@ export default function GmailConfig() {
             </CardDescription>
           </div>
           {status && (
-            <Badge variant={status.isRunning ? "success" : "secondary"}>
+            <Badge variant={status.isRunning ? "default" : "secondary"}>
               {status.isRunning ? "Running" : "Stopped"}
             </Badge>
           )}
@@ -364,6 +381,95 @@ export default function GmailConfig() {
                     />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="subjectPattern"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subject Pattern</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Text pattern to match in email subject line
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="checkInterval"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Check Interval (ms)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min="10000" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              How often to check for new emails (in milliseconds)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="orderIdRegex"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Order ID Regex</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Regular expression to extract order ID
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="urlRegex"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>URL Regex</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Regular expression to extract URL
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="quantityRegex"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quantity Regex</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Regular expression to extract click quantity
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
                       <FormField
                         control={form.control}
                         name="defaultCampaignId"
