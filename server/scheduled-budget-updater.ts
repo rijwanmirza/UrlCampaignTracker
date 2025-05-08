@@ -75,7 +75,7 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
           continue;
         }
         
-        console.log(`Performing scheduled budget update for campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId})`);
+        console.log(`Performing scheduled budget update and pausing campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId})`);
         
         // Update the budget in TrafficStar
         await trafficStarService.updateCampaignBudget(
@@ -84,6 +84,15 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
         );
         
         console.log(`✅ Successfully updated budget for campaign ${campaign.id} to $${DEFAULT_BUDGET_AMOUNT}`);
+        
+        // Also pause the campaign at the same time
+        try {
+          await trafficStarService.pauseCampaign(Number(campaign.trafficstarCampaignId));
+          console.log(`✅ Successfully paused campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId})`);
+        } catch (pauseError) {
+          console.error(`Failed to pause campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId}):`, pauseError);
+          // Continue even if pausing fails, as the budget update was successful
+        }
         
         // Update the campaign in the database to mark the update as complete
         // Using raw SQL to avoid column name mismatch issues

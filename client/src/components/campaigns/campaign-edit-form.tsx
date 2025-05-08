@@ -771,7 +771,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                     
                     return (
                       <FormItem className="mt-4">
-                        <FormLabel>Daily Budget Update Time (UTC)</FormLabel>
+                        <FormLabel>Daily Budget Update & Pause Time (UTC)</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <div className="flex items-center space-x-2">
@@ -825,7 +825,7 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
                         </FormControl>
                         <FormDescription>
                           Set the exact UTC time when the $10.15 budget will be applied daily.
-                          The system will automatically update the campaign budget at this time.
+                          The system will automatically update the campaign budget AND pause the campaign at this time.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
