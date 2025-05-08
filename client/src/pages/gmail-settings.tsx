@@ -69,6 +69,33 @@ export default function GmailSettingsPage() {
     staleTime: 5000,
   });
   
+  // Form definition
+  const form = useForm<GmailSettingsFormValues>({
+    resolver: zodResolver(gmailSettingsSchema),
+    defaultValues: {
+      user: '',
+      password: '',
+      host: 'imap.gmail.com',
+      port: 993,
+      tls: true,
+      whitelistSenders: '',
+      subjectPattern: 'New Order Received (\\d+)',
+      orderIdRegex: 'Order Id\\s*:\\s*(\\d+)',
+      urlRegex: 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
+      quantityRegex: 'Quantity\\s*:\\s*(\\d+)',
+      defaultCampaignId: 0, // Initially set to 0, will be properly set from config when loaded
+      campaignAssignments: [], // Empty campaign assignments array
+      checkInterval: 60000,
+      autoDeleteMinutes: 0
+    }
+  });
+  
+  // Setup field array for campaign assignments
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "campaignAssignments"
+  });
+  
   // Update config when status data is loaded
   useEffect(() => {
     if (statusData) {
@@ -119,33 +146,6 @@ export default function GmailSettingsPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusData, campaigns.length]);
-  
-  // Form definition
-  const form = useForm<GmailSettingsFormValues>({
-    resolver: zodResolver(gmailSettingsSchema),
-    defaultValues: {
-      user: '',
-      password: '',
-      host: 'imap.gmail.com',
-      port: 993,
-      tls: true,
-      whitelistSenders: '',
-      subjectPattern: 'New Order Received (\\d+)',
-      orderIdRegex: 'Order Id\\s*:\\s*(\\d+)',
-      urlRegex: 'Url\\s*:\\s*(https?:\\/\\/[^\\s]+)',
-      quantityRegex: 'Quantity\\s*:\\s*(\\d+)',
-      defaultCampaignId: 0, // Initially set to 0, will be properly set from config when loaded
-      campaignAssignments: [], // Empty campaign assignments array
-      checkInterval: 60000,
-      autoDeleteMinutes: 0
-    }
-  });
-  
-  // Setup field array for campaign assignments
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "campaignAssignments"
-  });
   
   // Update configuration mutation
   const configMutation = useMutation<{message: string, config: any}, Error, GmailSettingsFormValues>({
@@ -504,247 +504,114 @@ export default function GmailSettingsPage() {
                 onClick={() => resetTrackingMutation.mutate()}
                 disabled={resetTrackingMutation.isPending}
               >
-                {resetTrackingMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                )}
+                <RotateCcw className="h-4 w-4 mr-2" />
                 Reset Tracking
               </Button>
-            
+              
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-red-50 text-red-700 border-red-200"
+                className="bg-amber-50 text-amber-700 border-amber-200 mr-2"
                 onClick={() => setFullCleanupDialogOpen(true)}
               >
-                <Trash className="h-4 w-4 mr-2" />
+                <AlertTriangle className="h-4 w-4 mr-2" />
                 Full System Cleanup
               </Button>
               
               {readerStatus?.isRunning ? (
-                <Button 
-                  variant="outline" 
-                  className="bg-red-50 text-red-600 border-red-200"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-red-50 text-red-700 border-red-200"
                   onClick={() => stopMutation.mutate()}
                   disabled={stopMutation.isPending}
                 >
                   {stopMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Power className="h-4 w-4 mr-2" />
+                    <Power className="mr-2 h-4 w-4" />
                   )}
-                  Stop Reader
+                  Stop Gmail Reader
                 </Button>
               ) : (
-                <Button 
+                <Button
                   variant="outline"
-                  className="bg-green-50 text-green-600 border-green-200"
+                  size="sm"
+                  className="bg-green-50 text-green-700 border-green-200"
                   onClick={() => startMutation.mutate()}
                   disabled={startMutation.isPending}
                 >
                   {startMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Play className="h-4 w-4 mr-2" />
+                    <Play className="mr-2 h-4 w-4" />
                   )}
-                  Start Reader
+                  Start Gmail Reader
                 </Button>
               )}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-blue-50 text-blue-700 border-blue-200"
+                onClick={() => refetchStatus()}
+                disabled={isStatusLoading}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${isStatusLoading ? 'animate-spin' : ''}`} />
+                Refresh Status
+              </Button>
             </div>
           </div>
-          
-          {/* Cleanup Logs Dialog */}
-          <Dialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Clean Up Processed Email Logs</DialogTitle>
-                <DialogDescription>
-                  Remove processed email IDs from logs to save storage space.
-                  This will not affect the Gmail inbox, only the local tracking of processed emails.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <div className="col-span-4">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Switch
-                        id="use-custom-date"
-                        checked={useCustomDateRange}
-                        onCheckedChange={setUseCustomDateRange}
-                      />
-                      <label
-                        htmlFor="use-custom-date"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Use Custom Date Range
-                      </label>
-                    </div>
-                  </div>
-                  
-                  {useCustomDateRange ? (
-                    <>
-                      <label htmlFor="before-date" className="col-span-1 text-right text-sm">
-                        Before Date
-                      </label>
-                      <Input
-                        id="before-date"
-                        type="date"
-                        className="col-span-3"
-                        value={beforeDate}
-                        onChange={(e) => setBeforeDate(e.target.value)}
-                      />
-                      
-                      <label htmlFor="after-date" className="col-span-1 text-right text-sm">
-                        After Date
-                      </label>
-                      <Input
-                        id="after-date"
-                        type="date"
-                        className="col-span-3"
-                        value={afterDate}
-                        onChange={(e) => setAfterDate(e.target.value)}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <label htmlFor="days-to-keep" className="col-span-1 text-right text-sm">
-                        Days to Keep
-                      </label>
-                      <Input
-                        id="days-to-keep"
-                        type="number"
-                        className="col-span-3"
-                        value={daysToKeep}
-                        onChange={(e) => setDaysToKeep(e.target.value)}
-                        min="1"
-                      />
-                      <div className="col-span-4 text-xs text-gray-500">
-                        Emails processed in the last {daysToKeep} days will be kept, older ones will be removed.
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setCleanupDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  variant="default" 
-                  onClick={handleCleanupLogs}
-                  disabled={cleanupLogsMutation.isPending}
-                >
-                  {cleanupLogsMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4 mr-2" />
-                  )}
-                  Cleanup Logs
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          {/* Full System Cleanup Dialog */}
-          <Dialog open={fullCleanupDialogOpen} onOpenChange={setFullCleanupDialogOpen}>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle className="text-red-600">⚠️ Full System Cleanup</DialogTitle>
-                <DialogDescription>
-                  This will permanently delete ALL campaigns, URLs, and reset email logs. 
-                  This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="border border-red-200 bg-red-50 p-3 rounded-md text-red-800 text-sm">
-                  <p className="font-semibold mb-2">WARNING: Destructive Action</p>
-                  <p>All campaigns and URLs will be permanently deleted. The system will be reset to its initial state.</p>
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4 mt-2">
-                  <label htmlFor="confirm-text" className="col-span-4 text-sm font-medium">
-                    Type "DELETE ALL DATA" to confirm:
-                  </label>
-                  <Input
-                    id="confirm-text"
-                    type="text"
-                    className="col-span-4"
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    placeholder="DELETE ALL DATA"
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => {
-                  setFullCleanupDialogOpen(false);
-                  setConfirmText("");
-                }}>
-                  Cancel
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={handleFullSystemCleanup}
-                  disabled={fullSystemCleanupMutation.isPending || confirmText !== "DELETE ALL DATA"}
-                >
-                  {fullSystemCleanupMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4 mr-2" />
-                  )}
-                  Delete All Data
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
           
           {/* Status Card */}
           <Card className="mb-6">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center">
-                <Mail className="h-5 w-5 mr-2" />
-                Gmail Reader Status
-              </CardTitle>
+              <CardTitle>Gmail Reader Status</CardTitle>
+              <CardDescription>Current status of the Gmail integration</CardDescription>
             </CardHeader>
             <CardContent>
               {isStatusLoading ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  <div>
-                    <span className="font-semibold text-gray-700">Status:</span>{' '}
-                    {readerStatus?.isRunning ? (
-                      <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                        Running
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
-                        Stopped
-                      </Badge>
+              ) : readerStatus ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={readerStatus.isRunning ? "success" : "destructive"} className="text-xs px-2 py-1">
+                      {readerStatus.isRunning ? "RUNNING" : "STOPPED"}
+                    </Badge>
+                    
+                    {readerStatus.config && (
+                      <span className="text-sm text-gray-500">
+                        Checking every {Math.round(readerStatus.config.checkInterval / 1000)} seconds
+                      </span>
+                    )}
+                    
+                    {readerStatus.config && readerStatus.config.autoDeleteMinutes > 0 && (
+                      <span className="text-sm text-gray-500">
+                        | Auto-delete after {readerStatus.config.autoDeleteMinutes} minutes
+                      </span>
                     )}
                   </div>
-                  {readerStatus?.config?.user && (
-                    <div>
-                      <span className="font-semibold text-gray-700">Email:</span>{' '}
-                      <span className="text-gray-600">{readerStatus.config.user}</span>
-                    </div>
-                  )}
-                  {readerStatus?.config?.defaultCampaignId && (
-                    <div>
-                      <span className="font-semibold text-gray-700">Target Campaign:</span>{' '}
-                      <span className="text-gray-600">
-                        {campaigns.find(c => c.id === readerStatus.config.defaultCampaignId)?.name || readerStatus.config.defaultCampaignId}
-                      </span>
+                  
+                  {readerStatus.config && (
+                    <div className="text-sm mt-2">
+                      <div className="mb-1">
+                        <span className="font-semibold text-gray-700">Email Account:</span>{' '}
+                        <span className="text-gray-600">{readerStatus.config.user || "Not configured"}</span>
+                      </div>
+                      
+                      <div className="mb-1">
+                        <span className="font-semibold text-gray-700">Target Campaign:</span>{' '}
+                        <span className="text-gray-600">
+                          {campaigns.find(c => c.id === readerStatus.config.defaultCampaignId)?.name || readerStatus.config.defaultCampaignId}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">Unable to retrieve status information</div>
               )}
             </CardContent>
           </Card>
@@ -787,19 +654,19 @@ export default function GmailSettingsPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>App Password</FormLabel>
+                          <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••••••••••" {...field} />
+                            <Input type="password" placeholder="App password" {...field} />
                           </FormControl>
                           <FormDescription>
-                            Use an app password (not your regular Gmail password)
+                            Use an app-specific password (not your main Gmail password)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     
-                    {/* IMAP Settings */}
+                    {/* Connection Settings */}
                     <FormField
                       control={form.control}
                       name="host"
@@ -810,7 +677,7 @@ export default function GmailSettingsPage() {
                             <Input {...field} />
                           </FormControl>
                           <FormDescription>
-                            Default: imap.gmail.com
+                            Gmail's IMAP server address
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -831,7 +698,7 @@ export default function GmailSettingsPage() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Default: 993
+                            Gmail's IMAP port (993 for SSL/TLS)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -842,25 +709,24 @@ export default function GmailSettingsPage() {
                       control={form.control}
                       name="tls"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Use TLS
-                            </FormLabel>
-                            <FormDescription>
-                              Use secure TLS connection (recommended)
-                            </FormDescription>
-                          </div>
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                           <FormControl>
                             <Switch
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Use SSL/TLS</FormLabel>
+                            <FormDescription>
+                              Enable secure connection (recommended)
+                            </FormDescription>
+                          </div>
                         </FormItem>
                       )}
                     />
                     
+                    {/* Default Campaign */}
                     <FormField
                       control={form.control}
                       name="defaultCampaignId"
@@ -1200,6 +1066,140 @@ export default function GmailSettingsPage() {
               </Form>
             </CardContent>
           </Card>
+          
+          {/* Email Cleanup Dialog */}
+          <Dialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Clean Up Email Logs</DialogTitle>
+                <DialogDescription>
+                  Remove records of processed emails to free up space
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <Switch 
+                      id="custom-date-range"
+                      checked={useCustomDateRange} 
+                      onCheckedChange={setUseCustomDateRange}
+                      className="mr-2"
+                    />
+                    <label htmlFor="custom-date-range" className="cursor-pointer">
+                      Use custom date range
+                    </label>
+                  </div>
+                  
+                  {useCustomDateRange ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">
+                          After Date (Optional)
+                        </label>
+                        <Input 
+                          type="date"
+                          className="col-span-3"
+                          value={afterDate}
+                          onChange={(e) => setAfterDate(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">
+                          Before Date (Optional)
+                        </label>
+                        <Input 
+                          type="date"
+                          className="col-span-3"
+                          value={beforeDate}
+                          onChange={(e) => setBeforeDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">
+                        Keep Logs For Last N Days
+                      </label>
+                      <Input 
+                        type="number"
+                        min="0"
+                        placeholder="30"
+                        value={daysToKeep}
+                        onChange={(e) => setDaysToKeep(e.target.value)}
+                      />
+                      <p className="text-sm text-gray-500 mt-2">
+                        Logs older than this many days will be removed. Set to 0 to remove all logs.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCleanupDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCleanupLogs}
+                  disabled={cleanupLogsMutation.isPending}
+                >
+                  {cleanupLogsMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Clean Up Logs
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Full System Cleanup Dialog */}
+          <Dialog open={fullCleanupDialogOpen} onOpenChange={setFullCleanupDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-red-600">Full System Cleanup</DialogTitle>
+                <DialogDescription>
+                  This will delete ALL campaigns, URLs, and associated data! This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block text-red-500">
+                      Type DELETE ALL DATA to confirm
+                    </label>
+                    <Input 
+                      type="text"
+                      placeholder="DELETE ALL DATA"
+                      className="border-red-300"
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setFullCleanupDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive"
+                  onClick={handleFullSystemCleanup}
+                  disabled={fullSystemCleanupMutation.isPending}
+                >
+                  {fullSystemCleanupMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                  )}
+                  Delete All Data
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
     </div>
