@@ -616,18 +616,55 @@ class GmailReader {
             Quantity: ${quantity}
           `, 'gmail-reader');
           
-          // Add URL to the campaign
+          // Add URL to the appropriate campaign based on click limits
           try {
-            // SAFETY CHECK: Make sure we have a campaign ID
-            if (!this.config.defaultCampaignId) {
-              log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
-              this.logProcessedEmail(msgId, 'error-no-campaign-id');
-              resolve();
-              return;
-            }
+            // Determine which campaign to use based on click quantity
+            let campaignId: number;
             
-            // Store the campaign ID locally to ensure it never changes
-            const campaignId = this.config.defaultCampaignId;
+            // Check if we have any campaign assignments with click limits
+            if (this.config.campaignAssignments && this.config.campaignAssignments.length > 0) {
+              // Filter to only active campaign assignments
+              const activeAssignments = this.config.campaignAssignments.filter(
+                assignment => assignment.active
+              );
+              
+              // Find a matching campaign based on min/max click limits
+              const matchingAssignment = activeAssignments.find(assignment => {
+                const minMatches = assignment.minClickLimit === undefined || 
+                                  quantity >= assignment.minClickLimit;
+                const maxMatches = assignment.maxClickLimit === undefined || 
+                                  quantity <= assignment.maxClickLimit;
+                
+                return minMatches && maxMatches;
+              });
+              
+              if (matchingAssignment) {
+                log(`Found matching campaign ID ${matchingAssignment.campaignId} for quantity ${quantity} 
+                    (min: ${matchingAssignment.minClickLimit ?? 'unlimited'}, 
+                     max: ${matchingAssignment.maxClickLimit ?? 'unlimited'})`, 'gmail-reader');
+                campaignId = matchingAssignment.campaignId;
+              } else {
+                // Fall back to default campaign if no matching assignment
+                if (!this.config.defaultCampaignId) {
+                  log(`No matching campaign found for quantity ${quantity} and no default campaign configured.`, 'gmail-reader');
+                  this.logProcessedEmail(msgId, 'error-no-campaign-id');
+                  resolve();
+                  return;
+                }
+                campaignId = this.config.defaultCampaignId;
+                log(`No matching campaign assignment found for quantity ${quantity}, using default campaign ID ${campaignId}`, 'gmail-reader');
+              }
+            } else {
+              // No campaign assignments configured, use default campaign
+              if (!this.config.defaultCampaignId) {
+                log(`No default campaign ID configured. Cannot process email.`, 'gmail-reader');
+                this.logProcessedEmail(msgId, 'error-no-campaign-id');
+                resolve();
+                return;
+              }
+              
+              campaignId = this.config.defaultCampaignId;
+            }
             
             // First check if we already have this order ID in the campaign
             // This is our first defense against duplicates

@@ -16,6 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Campaign } from "@shared/schema";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+// Campaign assignment schema for form
+const campaignAssignmentSchema = z.object({
+  campaignId: z.number().int().positive("Please select a campaign"),
+  minClickLimit: z.number().int().optional(),
+  maxClickLimit: z.number().int().optional(),
+  active: z.boolean().default(true)
+});
+
 // Define Gmail settings form schema
 const gmailSettingsSchema = z.object({
   user: z.string().email("Please enter a valid email address"),
@@ -28,12 +36,14 @@ const gmailSettingsSchema = z.object({
   orderIdRegex: z.string().min(1, "Order ID regex is required"),
   urlRegex: z.string().min(1, "URL regex is required"),
   quantityRegex: z.string().min(1, "Quantity regex is required"),
-  defaultCampaignId: z.number().int().positive("Please select a campaign"),
+  defaultCampaignId: z.number().int().positive("Please select a default campaign"),
+  campaignAssignments: z.array(campaignAssignmentSchema).default([]),
   checkInterval: z.number().int().positive().default(60000),
   autoDeleteMinutes: z.number().int().min(0).default(0)
 });
 
 type GmailSettingsFormValues = z.infer<typeof gmailSettingsSchema>;
+type CampaignAssignmentValues = z.infer<typeof campaignAssignmentSchema>;
 
 export default function GmailSettingsPage() {
   const { toast } = useToast();
