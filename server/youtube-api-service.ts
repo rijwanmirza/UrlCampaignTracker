@@ -645,11 +645,12 @@ export class YouTubeApiService {
         } else {
           const elapsedMs = now.getTime() - campaign.youtubeApiLastCheck.getTime();
           const elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
-          minutesRemaining = intervalMinutes - elapsedMinutes;
+          minutesRemaining = Math.max(0, intervalMinutes - elapsedMinutes);
           
-          shouldProcess = minutesRemaining <= 0;
+          // Only process if the full interval has elapsed (strictly greater than or equal)
+          shouldProcess = elapsedMinutes >= intervalMinutes;
           
-          const message = `Campaign ${campaign.id}: Last check: ${campaign.youtubeApiLastCheck.toISOString()}, Interval: ${intervalMinutes} minutes, Time remaining: ${minutesRemaining > 0 ? minutesRemaining : 0} minutes`;
+          const message = `Campaign ${campaign.id}: Last check: ${campaign.youtubeApiLastCheck.toISOString()}, Interval: ${intervalMinutes} minutes, Time remaining: ${minutesRemaining} minutes`;
           logger.info(`[youtube-api-scheduler] ${message}`);
           
           await this.logApiActivity(
@@ -691,11 +692,15 @@ export class YouTubeApiService {
   
   /**
    * Check if the configured interval has elapsed since the last check
+   * This ensures we strictly respect the interval timing
    */
   private hasIntervalElapsed(lastCheck: Date, intervalMinutes: number, now: Date): boolean {
-    // Convert to milliseconds
-    const interval = intervalMinutes * 60 * 1000;
-    return (now.getTime() - lastCheck.getTime()) >= interval;
+    // Calculate elapsed minutes (more precise than millisecond comparison)
+    const elapsedMs = now.getTime() - lastCheck.getTime();
+    const elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
+    
+    // Only return true if the full interval has elapsed (strictly greater than or equal)
+    return elapsedMinutes >= intervalMinutes;
   }
 }
 
