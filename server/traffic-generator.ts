@@ -321,16 +321,29 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       // Handle campaign with $10 or more spent
       console.log(`🟢 HIGH SPEND ($${spentValue.toFixed(4)} >= $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent $${THRESHOLD.toFixed(2)} or more`);
       
-      // Mark this in the database
-      await db.update(campaigns)
-        .set({
-          lastTrafficSenderStatus: 'high_spend',
-          lastTrafficSenderAction: new Date(),
-          updatedAt: new Date()
-        })
-        .where(eq(campaigns.id, campaignId));
+      // Check if the campaign is already in high_spend state
+      const existingCampaign = await db.query.campaigns.findFirst({
+        where: (c, { eq, and }) => and(
+          eq(c.id, campaignId),
+          eq(c.lastTrafficSenderStatus, 'high_spend')
+        )
+      });
       
-      console.log(`✅ Marked campaign ${campaignId} as 'high_spend' in database`);
+      if (existingCampaign) {
+        // Campaign is already in high_spend state, just log this
+        console.log(`ℹ️ Campaign ${campaignId} is already in 'high_spend' state - continuing monitoring`);
+      } else {
+        // First time high spend detected - mark this in the database
+        await db.update(campaigns)
+          .set({
+            lastTrafficSenderStatus: 'high_spend',
+            lastTrafficSenderAction: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(campaigns.id, campaignId));
+        
+        console.log(`✅ Marked campaign ${campaignId} as 'high_spend' in database for the first time`);
+      }
     }
   } catch (error) {
     console.error(`Error handling campaign ${trafficstarCampaignId} by spent value:`, error);
