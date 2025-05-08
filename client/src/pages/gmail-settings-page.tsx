@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import GmailConfigNew from "@/components/gmail/gmail-config-new";
+import GmailConfigExact from "@/components/gmail/gmail-config-exact";
 import GmailCampaignAssignments from "@/components/gmail/campaign-assignments";
 
 export default function GmailSettingsPage() {
@@ -19,7 +19,7 @@ export default function GmailSettingsPage() {
         </TabsList>
         
         <TabsContent value="config" className="space-y-4">
-          <GmailConfigNew />
+          <GmailConfigExact />
         </TabsContent>
         
         <TabsContent value="assignments" className="space-y-4">
