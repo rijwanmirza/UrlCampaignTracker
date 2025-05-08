@@ -10,6 +10,14 @@ import fs from 'fs';
 import path from 'path';
 import { gmailService } from './gmail-service';
 
+// Campaign assignment with click quantity limits
+interface CampaignAssignment {
+  campaignId: number;
+  minClickLimit?: number;
+  maxClickLimit?: number;
+  active: boolean;
+}
+
 interface GmailConfigOptions {
   user: string;
   password: string;
@@ -25,6 +33,7 @@ interface GmailConfigOptions {
     quantityRegex: RegExp;
   };
   defaultCampaignId: number;
+  campaignAssignments: CampaignAssignment[]; // Multiple campaign assignments with click limits
   autoDeleteMinutes: number; // Time in minutes after which processed emails should be deleted (0 = disabled)
 }
 
@@ -46,6 +55,7 @@ const defaultGmailConfig: GmailConfigOptions = {
     quantityRegex: /(\d+)/i,  // Any number can be a quantity
   },
   defaultCampaignId: 0,
+  campaignAssignments: [], // Default is empty array of campaign assignments
   autoDeleteMinutes: 60 // Default is 60 minutes (1 hour)
 };
 

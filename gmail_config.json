@@ -17,6 +17,7 @@
     "quantityRegex": "object Object"
   },
   "defaultCampaignId": 1,
+  "campaignAssignments": [],
   "autoDeleteMinutes": 2,
   "checkInterval": 60000
 }
