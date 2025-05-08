@@ -1757,11 +1757,21 @@ export function initializeTrafficGeneratorScheduler() {
     pauseTrafficStarForEmptyCampaigns();
   }, 10 * 1000);
   
-  // Set up a periodic job to run the traffic generator every 5 minutes
-  setInterval(() => {
-    console.log('Running scheduled Traffic Generator check');
-    runTrafficGeneratorForAllCampaigns();
-  }, 5 * 60 * 1000); // 5 minutes
+  // Run the traffic generator continuously in a loop
+  const runContinuousTrafficGenerator = async () => {
+    try {
+      console.log('Running continuous Traffic Generator check (24/7 mode)');
+      await runTrafficGeneratorForAllCampaigns();
+    } catch (error) {
+      console.error('Error in continuous traffic generator:', error);
+    } finally {
+      // Immediately schedule the next run with a small delay to prevent resource exhaustion
+      setTimeout(runContinuousTrafficGenerator, 1000); // 1 second delay between runs
+    }
+  };
+  
+  // Start the continuous process
+  runContinuousTrafficGenerator();
   
   // Set up a periodic job to check for empty campaigns every 3 minutes
   setInterval(() => {
