@@ -1,0 +1,53 @@
+TRAFFIC-GENERATOR: Handling campaign 1000866 by spent value - current spent: $0.0000
+🔵 LOW SPEND ($0.0000 < $10.00): Campaign 1000866 has spent less than $10.00
+✅ Rebuilt active log after clearing campaign 1
+🧹 Cleared URL budget logs for campaign 1 - spent value dropped below threshold
+🔍 DEBUG: Checking remaining clicks for 22 URLs in campaign 1000866
+🔍 URL ID: 13, status: deleted, clickLimit: 270000, clicks: 0
+❌ Skipping URL ID: 13 with status: deleted
+🔍 URL ID: 16, status: deleted, clickLimit: 45000, clicks: 0
+❌ Skipping URL ID: 16 with status: deleted
+🔍 URL ID: 2, status: deleted, clickLimit: 450, clicks: 4
+❌ Skipping URL ID: 2 with status: deleted
+🔍 URL ID: 3, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 3 with status: deleted
+🔍 URL ID: 4, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 4 with status: deleted
+🔍 URL ID: 5, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 5 with status: deleted
+🔍 URL ID: 8, status: deleted, clickLimit: 2250, clicks: 0
+❌ Skipping URL ID: 8 with status: deleted
+🔍 URL ID: 9, status: deleted, clickLimit: 3150, clicks: 0
+❌ Skipping URL ID: 9 with status: deleted
+🔍 URL ID: 10, status: deleted, clickLimit: 14400, clicks: 0
+❌ Skipping URL ID: 10 with status: deleted
+🔍 URL ID: 6, status: deleted, clickLimit: 45000, clicks: 0
+❌ Skipping URL ID: 6 with status: deleted
+🔍 URL ID: 7, status: deleted, clickLimit: 22500, clicks: 0
+❌ Skipping URL ID: 7 with status: deleted
+🔍 URL ID: 11, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 11
+🔍 URL ID: 12, status: active, clickLimit: 1575, clicks: 0
+✅ Adding 1575 remaining clicks from URL ID: 12
+🔍 URL ID: 14, status: active, clickLimit: 45000, clicks: 0
+✅ Adding 45000 remaining clicks from URL ID: 14
+🔍 URL ID: 15, status: active, clickLimit: 40500, clicks: 0
+✅ Adding 40500 remaining clicks from URL ID: 15
+🔍 URL ID: 17, status: active, clickLimit: 495, clicks: 0
+✅ Adding 495 remaining clicks from URL ID: 17
+🔍 URL ID: 18, status: active, clickLimit: 9000, clicks: 0
+✅ Adding 9000 remaining clicks from URL ID: 18
+🔍 URL ID: 19, status: active, clickLimit: 450, clicks: 0
+✅ Adding 450 remaining clicks from URL ID: 19
+🔍 URL ID: 20, status: active, clickLimit: 22500, clicks: 0
+✅ Adding 22500 remaining clicks from URL ID: 20
+🔍 URL ID: 21, status: active, clickLimit: 45000, clicks: 0
+✅ Adding 45000 remaining clicks from URL ID: 21
+🔍 URL ID: 22, status: active, clickLimit: 135, clicks: 0
+✅ Adding 135 remaining clicks from URL ID: 22
+🔍 URL ID: 25, status: active, clickLimit: 4500, clicks: 0
+✅ Adding 4500 remaining clicks from URL ID: 25
+📊 Campaign 1000866 has 169605 total remaining clicks across all active URLs
+TRAFFIC-GENERATOR: Getting REAL-TIME status for campaign 1000866
+Getting campaign 1000866 details
+TRAFFIC-GENERATOR: TrafficStar campaign 1000866 REAL status is enabled, active=true

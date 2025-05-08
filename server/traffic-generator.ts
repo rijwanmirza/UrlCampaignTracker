@@ -112,10 +112,13 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
       console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
       
       // Get the campaign details to check URLs and remaining clicks
+      // Only fetch active URLs for the campaign to improve performance
       const campaign = await db.query.campaigns.findFirst({
         where: (campaign, { eq }) => eq(campaign.id, campaignId),
         with: {
-          urls: true
+          urls: {
+            where: (urls, { eq }) => eq(urls.status, 'active')
+          }
         }
       }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
       

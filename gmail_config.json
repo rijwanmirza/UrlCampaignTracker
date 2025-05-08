@@ -1,6 +1,6 @@
 {
   "user": "compaignwalabhai@gmail.com",
-  "password": "vsbjtgddrvfshkfi",
+  "password": "hciuemplthdkwfho",
   "host": "imap.gmail.com",
   "port": 993,
   "tls": true,
@@ -19,9 +19,15 @@
   "defaultCampaignId": 1,
   "campaignAssignments": [
     {
-      "campaignId": 2,
+      "campaignId": 1,
       "minClickLimit": 1,
       "maxClickLimit": 1000,
+      "active": true
+    },
+    {
+      "campaignId": 2,
+      "minClickLimit": 1001,
+      "maxClickLimit": 10000000000,
       "active": true
     }
   ],
