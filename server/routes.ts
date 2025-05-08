@@ -2372,6 +2372,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Gmail Reader API endpoints
+  // Define campaign assignment schema for validation
+  const campaignAssignmentSchema = z.object({
+    campaignId: z.number().int().positive(),
+    minClickLimit: z.number().int().nonnegative().optional(),
+    maxClickLimit: z.number().int().nonnegative().optional(),
+    active: z.boolean().default(true)
+  });
+
   const gmailConfigSchema = z.object({
     user: z.string().email(),
     password: z.string().min(1),
@@ -2389,6 +2397,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       quantityRegex: z.string()
     }),
     defaultCampaignId: z.number().int().positive(),
+    // Add campaign assignments array to schema
+    campaignAssignments: z.array(campaignAssignmentSchema).default([]),
     checkInterval: z.number().int().positive().default(60000),
     // Make sure auto-delete minutes is properly typed and validated
     autoDeleteMinutes: z.number().int().nonnegative().default(0).transform(val => 
