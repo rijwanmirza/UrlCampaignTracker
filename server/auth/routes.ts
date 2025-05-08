@@ -2,7 +2,8 @@ import { Express, Request, Response } from 'express';
 import { validateApiKey, requireAuth } from './middleware';
 import { log } from '../vite';
 import { saveApiKeyToDatabase } from './key-manager';
-import { storeApiKeyInSession } from '../access-control';
+import { getAccessCode as getStoredAccessCode, saveAccessCodeToDatabase } from './access-code-manager';
+import { storeApiKeyInSession, getAccessCode as getCurrentAccessCode } from '../access-control';
 
 // Register authentication routes
 export function registerAuthRoutes(app: Express) {
@@ -166,6 +167,68 @@ export function registerAuthRoutes(app: Express) {
     } catch (error) {
       console.error('Error changing API key:', error);
       res.status(500).json({ message: 'An error occurred while changing the API key' });
+    }
+  });
+  
+  // Get the current access code
+  app.get('/api/auth/access-code', requireAuth, async (_req: Request, res: Response) => {
+    try {
+      // Get the access code from the database
+      const accessCode = await getStoredAccessCode();
+      
+      // Return just a masked version for security
+      const maskedCode = accessCode.substring(0, 2) + '*'.repeat(accessCode.length - 4) + accessCode.substring(accessCode.length - 2);
+      
+      res.json({ 
+        accessCode: maskedCode,
+        success: true 
+      });
+    } catch (error) {
+      console.error('Error getting access code:', error);
+      res.status(500).json({ message: 'An error occurred while retrieving the access code' });
+    }
+  });
+  
+  // Update the access code
+  app.post('/api/auth/change-access-code', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { currentCode, newCode, confirmNewCode } = req.body;
+      
+      // Validate input
+      if (!currentCode || !newCode || !confirmNewCode) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+      
+      // Check if new code and confirm code match
+      if (newCode !== confirmNewCode) {
+        return res.status(400).json({ message: 'New code and confirmation do not match' });
+      }
+      
+      // Validate current code matches the stored code
+      const currentAccessCode = getCurrentAccessCode();
+      if (currentCode !== currentAccessCode) {
+        return res.status(401).json({ message: 'Current access code is incorrect' });
+      }
+      
+      try {
+        // Save new access code to database for persistence
+        await saveAccessCodeToDatabase(newCode);
+        
+        log(`Access code successfully changed and saved to database`, 'auth');
+        res.json({ 
+          message: 'Access code successfully updated',
+          success: true 
+        });
+      } catch (dbError) {
+        console.error('Error saving access code to database:', dbError);
+        return res.status(500).json({ 
+          message: 'Access code was changed but could not be saved permanently. It may revert on server restart.',
+          success: false
+        });
+      }
+    } catch (error) {
+      console.error('Error changing access code:', error);
+      res.status(500).json({ message: 'An error occurred while changing the access code' });
     }
   });
 }

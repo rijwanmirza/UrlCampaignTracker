@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { log } from './vite';
 import { validateApiKey } from './auth/middleware';
 
+// Export helper functions for use in other modules
+export { isSessionValid, isValidTemporaryLoginPath };
+
 // Store sessions for access tokens
 const activeSessions = new Map<string, { timestamp: number, apiKey?: string }>();
 const SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -12,9 +15,22 @@ const TEMP_LOGIN_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
 const TEMP_LOGIN_PREFIX = 'login_'; // Prefix for temporary login paths
 
 // Access configuration
-const SECRET_ACCESS_CODE = 'ABCD123'; // You can change this to your preferred access code
+let SECRET_ACCESS_CODE = 'ABCD123'; // Default code, will be overridden by system settings if available
 // Set to true to log more detailed debugging information
 const DEBUG_MODE = true;
+
+// Function to update the access code from system settings
+export function updateAccessCode(newCode: string): void {
+  if (newCode && newCode.trim() !== '') {
+    SECRET_ACCESS_CODE = newCode.trim();
+    log(`Access code updated to: ${SECRET_ACCESS_CODE}`, 'access');
+  }
+}
+
+// Function to get the current access code
+export function getAccessCode(): string {
+  return SECRET_ACCESS_CODE;
+}
 
 /**
  * Check if a session is valid and not expired
@@ -162,69 +178,7 @@ export function handleAccessRoutes(req: Request, res: Response, next: NextFuncti
   if (path.startsWith('/access/')) {
     const parts = path.split('/access/');
     if (parts.length < 2) {
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Invalid Access URL</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body {
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-              background-color: #f1f5f9;
-              background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
-              margin: 0;
-              padding: 0;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              min-height: 100vh;
-              text-align: center;
-            }
-            .container {
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-              width: 100%;
-              max-width: 500px;
-              padding: 2rem;
-              border: 1px solid rgba(0, 0, 0, 0.05);
-            }
-            h1 {
-              color: #1e293b;
-              margin-top: 0;
-            }
-            p {
-              color: #475569;
-              line-height: 1.6;
-              margin-bottom: 1.5rem;
-            }
-            .url-example {
-              background-color: #f1f5f9;
-              padding: 0.75rem 1rem;
-              border-radius: 0.375rem;
-              font-family: monospace;
-              margin: 1rem 0;
-              word-break: break-all;
-            }
-            .warning-icon {
-              font-size: 3rem;
-              margin-bottom: 1rem;
-              color: #f59e0b;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="warning-icon">⚠️</div>
-            <h1>Invalid Access URL</h1>
-            <p>The access URL you provided is incomplete. Please use the correct format:</p>
-            <div class="url-example">[YOUR_DOMAIN]/access/ABCD123</div>
-            <p>If you're experiencing issues, please contact your system administrator.</p>
-          </div>
-        </body>
-        </html>
-      `);
+      return res.status(404).send('Page not found');
     }
     
     const code = parts[1];
@@ -570,72 +524,9 @@ export function handleAccessRoutes(req: Request, res: Response, next: NextFuncti
     return;
   }
   
-  // Otherwise, display a detailed 404 page with access instructions
+  // Otherwise, display blank page with 404
   log(`Access denied for path: ${path} - no valid session or API key`, 'access');
-  return res.status(404).send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Access Restricted</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body {
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          background-color: #f1f5f9;
-          background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
-          margin: 0;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          text-align: center;
-        }
-        .container {
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-          width: 100%;
-          max-width: 500px;
-          padding: 2rem;
-          border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        h1 {
-          color: #1e293b;
-          margin-top: 0;
-        }
-        p {
-          color: #475569;
-          line-height: 1.6;
-          margin-bottom: 1.5rem;
-        }
-        .url-example {
-          background-color: #f1f5f9;
-          padding: 0.75rem 1rem;
-          border-radius: 0.375rem;
-          font-family: monospace;
-          margin: 1rem 0;
-          word-break: break-all;
-        }
-        .lock-icon {
-          font-size: 3rem;
-          margin-bottom: 1rem;
-          color: #64748b;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="lock-icon">🔒</div>
-        <h1>Access Restricted</h1>
-        <p>This URL Campaign Manager instance requires special access. To gain access, please use the special access URL:</p>
-        <div class="url-example">[YOUR_DOMAIN]/access/ABCD123</div>
-        <p>This will generate a temporary login URL where you can enter your API key for authentication.</p>
-        <p>If you're experiencing issues, please contact your system administrator.</p>
-      </div>
-    </body>
-    </html>
-  `);
+  return res.status(404).send('Page not found');
 }
 
 /**

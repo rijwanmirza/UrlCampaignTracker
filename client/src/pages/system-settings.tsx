@@ -27,6 +27,7 @@ import DecimalMultiplierMigration from "@/components/system/decimal-multiplier-m
 import TrafficSenderMigration from "@/components/system/traffic-sender-migration";
 import ApiKeyManager from "@/components/system/api-key-manager";
 import { ServerMonitor } from "@/components/server-monitor/server-stats";
+import AccessCodeManager from "@/components/system/access-code-manager";
 
 export default function SystemSettings() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -115,6 +116,7 @@ export default function SystemSettings() {
       <div className="mb-10">
         <h2 className="text-xl font-bold mb-4">Security Settings</h2>
         <ApiKeyManager />
+        <AccessCodeManager />
       </div>
       
       {/* Migration section */}

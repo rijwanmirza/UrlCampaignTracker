@@ -12,7 +12,8 @@ import { registerAuthRoutes } from "./auth/routes";
 import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
 import { youtubeApiService } from "./youtube-api-service";
 import { initKeyManager } from "./auth/key-manager";
-import { handleAccessRoutes } from "./access-control";
+import { initAccessCodeManager } from "./auth/access-code-manager";
+import { handleAccessRoutes, isValidTemporaryLoginPath, isSessionValid } from "./access-control";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -103,6 +104,28 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Create a custom 404 middleware for any route not matched by the API
+  app.use("*", (req, res, next) => {
+    // If we've already set headers from API routes, continue
+    if (res.headersSent) {
+      return next();
+    }
+    
+    // Handle access control first - if the path is not /access/* or a valid temp login path
+    // and the request doesn't have a valid session, return 404
+    const path = req.path;
+    const sessionId = req.cookies.session_id;
+    const apiKey = req.cookies.apiKey;
+    
+    if (path !== '/access' && !path.startsWith('/access/') && !isValidTemporaryLoginPath(path) && 
+        (!sessionId || !apiKey || !isSessionValid(sessionId))) {
+      return res.status(404).send('Page not found');
+    }
+    
+    // Otherwise, continue to Vite middleware
+    next();
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
@@ -128,6 +151,10 @@ app.use((req, res, next) => {
       // Initialize API key manager to load key from database
       await initKeyManager();
       log('API key manager initialized successfully');
+      
+      // Initialize access code manager to load special access code from database
+      await initAccessCodeManager();
+      log('Access code manager initialized successfully');
       
       // Check if there are campaigns but DON'T override defaultCampaignId
       // This prevents setting first campaign as default which could change user settings
