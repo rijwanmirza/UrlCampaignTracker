@@ -30,8 +30,7 @@ export default function AccessCodeManager() {
   const fetchAccessCode = async () => {
     try {
       setIsLoading(true);
-      const response = await apiRequest("GET", "/api/auth/access-code");
-      const data = await response.json();
+      const data = await apiRequest("GET", "/api/auth/access-code");
       
       if (data.success) {
         setMaskedAccessCode(data.accessCode);
@@ -87,13 +86,11 @@ export default function AccessCodeManager() {
     try {
       setIsSaving(true);
       
-      const response = await apiRequest("POST", "/api/auth/change-access-code", {
+      const data = await apiRequest("POST", "/api/auth/change-access-code", {
         currentCode,
         newCode,
         confirmNewCode,
       });
-      
-      const data = await response.json();
       
       if (data.success) {
         toast({
