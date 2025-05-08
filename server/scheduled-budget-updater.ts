@@ -5,7 +5,7 @@
  * at the specific time configured for each campaign.
  */
 
-import { db } from './db';
+import { db, pool } from './db';
 import { campaigns } from '../shared/schema';
 import { eq, and, isNull, not, or } from 'drizzle-orm';
 import { trafficStarService } from './trafficstar-service';
@@ -35,25 +35,22 @@ export async function processScheduledBudgetUpdates(): Promise<void> {
     // Find campaigns that:
     // 1. Have TrafficStar integration enabled (trafficstarCampaignId is not null)
     // 2. Have pendingBudgetUpdate set to true OR have budgetUpdateTime matching current time
-    const campaignsToUpdate = await db.select({
-        id: campaigns.id,
-        name: campaigns.name,
-        trafficstarCampaignId: campaigns.trafficstarCampaignId,
-        budgetUpdateTime: campaigns.budgetUpdateTime,
-        pendingBudgetUpdate: campaigns.pendingBudgetUpdate
-      })
-      .from(campaigns)
-      .where(
-        and(
-          not(isNull(campaigns.trafficstarCampaignId)),
-          // Either pending update is true or budget update time matches current time
-          // This also handles cases where budgetUpdateTime is null
-          or(
-            eq(campaigns.pendingBudgetUpdate, true),
-            eq(campaigns.budgetUpdateTime, currentTimeStr)
-          )
+    // Using SQL directly to avoid circular structure issues
+    const { rows: campaignsToUpdate } = await pool.query(`
+      SELECT 
+        id, 
+        name, 
+        "trafficstarCampaignId", 
+        "budgetUpdateTime", 
+        "pendingBudgetUpdate"
+      FROM campaigns
+      WHERE 
+        "trafficstarCampaignId" IS NOT NULL
+        AND (
+          "pendingBudgetUpdate" IS TRUE
+          OR "budgetUpdateTime" = $1
         )
-      );
+    `, [currentTimeStr]);
     
     if (campaignsToUpdate.length === 0) {
       console.log('No campaigns need budget updates at this time.');
