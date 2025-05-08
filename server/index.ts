@@ -12,6 +12,7 @@ import { registerAuthRoutes } from "./auth/routes";
 import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
 import { youtubeApiService } from "./youtube-api-service";
 import { initKeyManager } from "./auth/key-manager";
+import { handleAccessRoutes } from "./access-control";
 import * as spdy from 'spdy';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -37,6 +38,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Apply access control to all routes
+app.use(handleAccessRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();

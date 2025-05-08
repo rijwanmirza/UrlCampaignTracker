@@ -2,6 +2,7 @@ import { Express, Request, Response } from 'express';
 import { validateApiKey, requireAuth } from './middleware';
 import { log } from '../vite';
 import { saveApiKeyToDatabase } from './key-manager';
+import { storeApiKeyInSession } from '../access-control';
 
 // Register authentication routes
 export function registerAuthRoutes(app: Express) {
@@ -33,6 +34,28 @@ export function registerAuthRoutes(app: Express) {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         sameSite: 'lax'
       });
+      
+      // Also store API key in access session if a session exists
+      const sessionId = req.cookies?.session_id;
+      if (sessionId) {
+        log(`Storing API key in existing session: ${sessionId}`, 'auth');
+        storeApiKeyInSession(sessionId, apiKey);
+      } else {
+        // No session exists yet, create one to ensure access control works
+        const newSessionId = Math.random().toString(36).substring(2, 15);
+        log(`Creating new session for authentication: ${newSessionId}`, 'auth');
+        
+        // Set session cookie
+        res.cookie('session_id', newSessionId, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          sameSite: 'lax'
+        });
+        
+        // Store API key in the new session
+        storeApiKeyInSession(newSessionId, apiKey);
+      }
       
       log(`API key verification successful`, 'auth');
       
@@ -71,8 +94,17 @@ export function registerAuthRoutes(app: Express) {
   
   // Clear API key cookie (logout)
   app.post('/api/auth/logout', (req: Request, res: Response) => {
+    // Clear API key cookie
     res.clearCookie('apiKey');
-    res.json({ message: 'API key cleared' });
+    
+    // Also clear the session cookie to end the access session
+    const sessionId = req.cookies?.session_id;
+    if (sessionId) {
+      log(`Clearing session on logout: ${sessionId}`, 'auth');
+      res.clearCookie('session_id');
+    }
+    
+    res.json({ message: 'Logout successful' });
   });
   
   // Test route to verify auth is working

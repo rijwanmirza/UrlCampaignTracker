@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Logout function - clears the API key cookie
+  // Logout function - clears the API key cookie and session
   const logout = async () => {
     // In development mode, logout is a no-op
     if (BYPASS_AUTH) {
@@ -88,6 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await axios.post('/api/auth/logout');
       setIsAuthenticated(false);
+      
+      // Redirect to login page (will hit access control) after logout
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
