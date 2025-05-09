@@ -857,7 +857,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.SCHEDULER_CHECK,
         'Error scheduling next check',
-        null,
+        undefined,
         { error: error instanceof Error ? error.message : String(error) },
         true
       );
@@ -930,7 +930,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.INTERVAL_CHECK,
         `Scheduler checking ${enabledCampaigns.length} campaigns with YouTube API enabled`,
-        null,
+        undefined,
         { campaignIds: enabledCampaigns.map(c => c.id) }
       );
       
@@ -1000,7 +1000,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.INTERVAL_CHECK,
         'Error checking campaigns for YouTube API processing',
-        null,
+        undefined,
         { error: error instanceof Error ? error.message : String(error) },
         true
       );
