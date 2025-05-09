@@ -1,0 +1,50 @@
+root@viralplayer:/var/www/UrlCampaignTracker# ^C
+root@viralplayer:/var/www/UrlCampaignTracker# nano /var/www/UrlCampaignTracker/fix-websocket.cjs
+root@viralplayer:/var/www/UrlCampaignTracker# chmod +x /var/www/UrlCampaignTracker/fix-websocket.cjs
+cd /var/www/UrlCampaignTracker
+node fix-websocket.cjs
+Searching for WebSocket files...
+Found 0 files with WebSocket connections
+Completed WebSocket fixes
+root@viralplayer:/var/www/UrlCampaignTracker# ^C
+root@viralplayer:/var/www/UrlCampaignTracker# nano /var/www/UrlCampaignTracker/direct-protocol-fix.cjs
+root@viralplayer:/var/www/UrlCampaignTracker# chmod +x /var/www/UrlCampaignTracker/direct-protocol-fix.cjs
+cd /var/www/UrlCampaignTracker
+node direct-protocol-fix.cjs
+Starting WebSocket protocol fix...
+Found 2 JavaScript files
+WebSocket protocol fix completed
+root@viralplayer:/var/www/UrlCampaignTracker# /var/www/UrlCampaignTracker/fix-websocket-urls.sh^C
+root@viralplayer:/var/www/UrlCampaignTracker# nano /var/www/UrlCampaignTracker/fix-websocket-urls.sh
+root@viralplayer:/var/www/UrlCampaignTracker# rm /var/www/UrlCampaignTracker/fix-websocket-urls.sh
+root@viralplayer:/var/www/UrlCampaignTracker# nano /var/www/UrlCampaignTracker/fix-websocket-urls.sh
+root@viralplayer:/var/www/UrlCampaignTracker# chmod +x /var/www/UrlCampaignTracker/fix-websocket-urls.sh
+cd /var/www/UrlCampaignTracker
+bash fix-websocket-urls.sh
+Starting WebSocket URL fix...
+Found 1 files with WebSocket references
+WebSocket URL fix completed
+root@viralplayer:/var/www/UrlCampaignTracker# # Restart the application
+pm2 stop urlcampaigntracker
+pm2 delete urlcampaigntracker
+pm2 start /var/www/UrlCampaignTracker/start-fixed.sh --name urlcampaigntracker
+[PM2] Applying action stopProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Applying action deleteProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Starting /var/www/UrlCampaignTracker/start-fixed.sh in fork_mode (1 instance)
+[PM2] Done.
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 11479    │ 0s     │ 0    │ online    │ 0%       │ 3.5mb    │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@viralplayer:/var/www/UrlCampaignTracker#

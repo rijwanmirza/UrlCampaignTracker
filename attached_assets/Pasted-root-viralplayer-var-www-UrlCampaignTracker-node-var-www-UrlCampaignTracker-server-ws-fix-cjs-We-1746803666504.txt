@@ -1,0 +1,29 @@
+root@viralplayer:/var/www/UrlCampaignTracker# node /var/www/UrlCampaignTracker/server-ws-fix.cjs
+WebSocket fix complete. Modified 0 files.
+root@viralplayer:/var/www/UrlCampaignTracker# node /var/www/UrlCampaignTracker/server-ws-direct-fix.cjs
+Looking for WebSocket file at: /var/www/UrlCampaignTracker/dist/server/routes.js
+WebSocket file not found!
+WebSocket fixes completed.
+root@viralplayer:/var/www/UrlCampaignTracker# pm2 stop urlcampaigntracker
+pm2 delete urlcampaigntracker
+pm2 start /var/www/UrlCampaignTracker/start-fixed.sh --name urlcampaigntracker
+[PM2] Applying action stopProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Applying action deleteProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Starting /var/www/UrlCampaignTracker/start-fixed.sh in fork_mode (1 instance)
+[PM2] Done.
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 7499     │ 0s     │ 0    │ online    │ 0%       │ 3.5mb    │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@viralplayer:/var/www/UrlCampaignTracker#

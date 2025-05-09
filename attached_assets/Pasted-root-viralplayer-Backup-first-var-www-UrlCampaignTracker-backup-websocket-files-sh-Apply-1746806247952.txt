@@ -1,0 +1,38 @@
+root@viralplayer:~# # Backup first
+/var/www/UrlCampaignTracker/backup-websocket-files.sh
+
+# Apply fixes
+/var/www/UrlCampaignTracker/fix-websocket-urls.sh
+/var/www/UrlCampaignTracker/fix-websocket-server.sh
+
+# Restart the application
+pm2 stop urlcampaigntracker
+pm2 delete urlcampaigntracker
+pm2 start /var/www/UrlCampaignTracker/start-fixed.sh --name urlcampaigntracker
+Creating backup of WebSocket files in /var/www/UrlCampaignTracker/websocket-back                                                                             up-20250509155708
+Finding WebSocket client code files...
+Found 1 potential WebSocket files
+Fixed WebSocket URLs
+Finding WebSocket server code files...
+Found 1 potential WebSocket server files
+Fixed WebSocket server code
+[PM2] Applying action stopProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker │ fork     │ 0    │ stopped   │ 0%       │ 0b       │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Applying action deleteProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Starting /var/www/UrlCampaignTracker/start-fixed.sh in fork_mode (1 instan                                                                             ce)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker │ fork     │ 0    │ online    │ 0%       │ 3.5mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@viralplayer:~#

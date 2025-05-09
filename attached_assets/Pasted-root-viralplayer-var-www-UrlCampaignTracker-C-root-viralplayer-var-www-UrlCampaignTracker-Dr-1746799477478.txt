@@ -1,0 +1,352 @@
+root@viralplayer:/var/www/UrlCampaignTracker# ^C
+root@viralplayer:/var/www/UrlCampaignTracker# # Drop and recreate the database
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS neondb WITH (FORCE);"
+sudo -u postgres psql -c "CREATE DATABASE neondb OWNER neondb_owner;"
+
+# Import the database dump
+PGPASSWORD=npg_U8evoXZz0WOB psql -h localhost -U neondb_owner -d neondb < /var/www/UrlCampaignTracker/database_dump.sql
+
+# Restart the application
+pm2 restart urlcampaigntracker
+DROP DATABASE
+CREATE DATABASE
+SET
+SET
+SET
+SET
+SET
+ set_config
+------------
+
+(1 row)
+
+SET
+SET
+SET
+SET
+CREATE TYPE
+ALTER TYPE
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+CREATE FUNCTION
+ALTER FUNCTION
+SET
+SET
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+CREATE TABLE
+ALTER TABLE
+CREATE SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COPY 16
+COPY 18
+COPY 1
+COPY 109
+COPY 2
+COPY 0
+COPY 4
+COPY 2
+COPY 161
+COPY 1
+COPY 0
+COPY 3
+COPY 4
+COPY 0
+COPY 1
+COPY 0
+COPY 0
+COPY 157
+COPY 1
+COPY 602
+COPY 16
+ setval
+--------
+     16
+(1 row)
+
+ setval
+--------
+     18
+(1 row)
+
+ setval
+--------
+      1
+(1 row)
+
+ setval
+--------
+    109
+(1 row)
+
+ setval
+--------
+      2
+(1 row)
+
+ setval
+--------
+   8710
+(1 row)
+
+ setval
+--------
+      4
+(1 row)
+
+ setval
+--------
+      2
+(1 row)
+
+ setval
+--------
+    160
+(1 row)
+
+ setval
+--------
+      3
+(1 row)
+
+ setval
+--------
+      4
+(1 row)
+
+ setval
+--------
+      1
+(1 row)
+
+ setval
+--------
+      1
+(1 row)
+
+ setval
+--------
+     33
+(1 row)
+
+ setval
+--------
+      1
+(1 row)
+
+ setval
+--------
+    158
+(1 row)
+
+ setval
+--------
+      3
+(1 row)
+
+ setval
+--------
+    653
+(1 row)
+
+ setval
+--------
+     16
+(1 row)
+
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ERROR:  role "neon_superuser" does not exist
+ERROR:  role "neon_superuser" does not exist
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [urlcampaigntracker](ids: [ 0, 1 ])
+[PM2] [urlcampaigntracker](0) ✓
+[PM2] [urlcampaigntracker](1) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 2476     │ 1s     │ 1    │ online    │ 0%       │ 179.9mb  │ root     │ disabled │
+│ 1  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 2493     │ 0s     │ 1    │ online    │ 0%       │ 3.4mb    │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@viralplayer:/var/www/UrlCampaignTracker#

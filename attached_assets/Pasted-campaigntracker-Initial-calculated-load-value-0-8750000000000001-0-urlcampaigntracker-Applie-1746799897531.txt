@@ -1,0 +1,104 @@
+campaigntracker  | Initial calculated load value: 0.8750000000000001
+0|urlcampaigntracker  | Applied minimum scaling factor for visibility: 2.8000000000000003
+0|urlcampaigntracker  | Final system load calculation (before fallbacks): 3
+0|urlcampaigntracker  | FINAL SYSTEM LOAD VALUE TO DISPLAY: 3
+0|urlcampaigntracker  | ===========================================
+0|urlcampaigntracker  | Final CPU details being set: {
+0|urlcampaigntracker  |   "manufacturer": "AMD",
+0|urlcampaigntracker  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |   "speed": 2.878,
+0|urlcampaigntracker  |   "cores": 16,
+0|urlcampaigntracker  |   "physicalCores": 8
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | OS information: {
+0|urlcampaigntracker  |   "platform": "linux",
+0|urlcampaigntracker  |   "distro": "Ubuntu",
+0|urlcampaigntracker  |   "release": "22.04.5 LTS",
+0|urlcampaigntracker  |   "codename": "jammy",
+0|urlcampaigntracker  |   "kernel": "6.8.0-59-generic",
+0|urlcampaigntracker  |   "arch": "x64",
+0|urlcampaigntracker  |   "hostname": "viralplayer.xyz",
+0|urlcampaigntracker  |   "fqdn": "viralplayer.xyz",
+0|urlcampaigntracker  |   "codepage": "UTF-8",
+0|urlcampaigntracker  |   "logofile": "ubuntu",
+0|urlcampaigntracker  |   "serial": "8243b13606a047b9bb0f86e690d11c1f",
+0|urlcampaigntracker  |   "build": "",
+0|urlcampaigntracker  |   "servicepack": "",
+0|urlcampaigntracker  |   "uefi": true
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | 2:10:53 PM [access] Access check for path: /access/ABCD123
+0|urlcampaigntracker  | 2:10:53 PM [access] Generated temporary login path: /login_49kcz6d6qer for session: xfb10syia8o
+0|urlcampaigntracker  | 2:10:53 PM [access] Access granted with secret code, redirecting to temporary login path: login_49kcz6d6qer with session: xfb10syia8o
+0|urlcampaigntracker  | 2:10:54 PM [access] Access check for path: /login_49kcz6d6qer
+0|urlcampaigntracker  | 2:10:54 PM [access] Temporary login path accessed: /login_49kcz6d6qer
+0|urlcampaigntracker  | 2:10:54 PM [access] Serving login form for temporary path: /login_49kcz6d6qer with session: xfb10syia8o
+0|urlcampaigntracker  | 2:10:58 PM [access] Access check for path: /api/auth/verify-key
+0|urlcampaigntracker  | Error getting API key: ErrorEvent {
+0|urlcampaigntracker  |   [Symbol(kTarget)]: WebSocket {
+0|urlcampaigntracker  |     _events: [Object: null prototype] {
+0|urlcampaigntracker  |       error: [Function],
+0|urlcampaigntracker  |       message: [Function],
+0|urlcampaigntracker  |       close: [Function],
+0|urlcampaigntracker  |       open: [Function]
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     _eventsCount: 4,
+0|urlcampaigntracker  |     _maxListeners: undefined,
+0|urlcampaigntracker  |     _binaryType: 'arraybuffer',
+0|urlcampaigntracker  |     _closeCode: 1006,
+0|urlcampaigntracker  |     _closeFrameReceived: false,
+0|urlcampaigntracker  |     _closeFrameSent: false,
+0|urlcampaigntracker  |     _closeMessage: <Buffer >,
+0|urlcampaigntracker  |     _closeTimer: null,
+0|urlcampaigntracker  |     _errorEmitted: true,
+0|urlcampaigntracker  |     _extensions: {},
+0|urlcampaigntracker  |     _paused: false,
+0|urlcampaigntracker  |     _protocol: '',
+0|urlcampaigntracker  |     _readyState: 3,
+0|urlcampaigntracker  |     _receiver: null,
+0|urlcampaigntracker  |     _sender: null,
+0|urlcampaigntracker  |     _socket: null,
+0|urlcampaigntracker  |     _bufferedAmount: 0,
+0|urlcampaigntracker  |     _isServer: false,
+0|urlcampaigntracker  |     _redirects: 0,
+0|urlcampaigntracker  |     _autoPong: true,
+0|urlcampaigntracker  |     _url: 'wss://localhost/v2',
+0|urlcampaigntracker  |     _req: null,
+0|urlcampaigntracker  |     [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |     [Symbol(kCapture)]: false
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kType)]: 'error',
+0|urlcampaigntracker  |   [Symbol(kError)]: Error [ERR_TLS_CERT_ALTNAME_INVALID]: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz
+0|urlcampaigntracker  |       at Object.checkServerIdentity (node:tls:316:12)
+0|urlcampaigntracker  |       at TLSSocket.onConnectSecure (node:_tls_wrap:1687:27)
+0|urlcampaigntracker  |       at TLSSocket.emit (node:events:518:28)
+0|urlcampaigntracker  |       at TLSSocket._finishInit (node:_tls_wrap:1076:8)
+0|urlcampaigntracker  |       at ssl.onhandshakedone (node:_tls_wrap:862:12) {
+0|urlcampaigntracker  |     code: 'ERR_TLS_CERT_ALTNAME_INVALID',
+0|urlcampaigntracker  |     reason: "Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz",
+0|urlcampaigntracker  |     host: 'localhost',
+0|urlcampaigntracker  |     cert: {
+0|urlcampaigntracker  |       subject: [Object: null prototype],
+0|urlcampaigntracker  |       issuer: [Object: null prototype],
+0|urlcampaigntracker  |       subjectaltname: 'DNS:viralplayer.xyz, DNS:www.viralplayer.xyz',
+0|urlcampaigntracker  |       infoAccess: [Object: null prototype],
+0|urlcampaigntracker  |       ca: false,
+0|urlcampaigntracker  |       modulus: 'B7EC165EFB4C2A68F5EAC7527F3CEFF7BD8516C7B6D8660ABC5B3C81B7C9995E57F8FA98694340BD18DBDA62D2D6845C165F430B11C1DD6FC25E4A26727C090C7A8C8E1B56CAC40F15DBDBB385E5B4D99E55126D9CBE14BC75DD8B19C92403A0688A938344BC1980F64585A7384A966A8E06F617DA8FCA74C3E223182B0AC250A045BF329FE10BD22CB4057B667533F4C320C9845ECA29154ACE29E13CBC8AA4479C4B1ADD79EF562430942002C99A7E632EA1D2DB140FA08B590B45D0FDB60FE45922580FFC791E973C6BE8F8CAC908A2427652BF1F07C844B232507F9154D99958CBB75DA54B947FF78EA03AF75CB51CFDB5F40708BA4277178CA566203631',
+0|urlcampaigntracker  |       bits: 2048,
+0|urlcampaigntracker  |       exponent: '0x10001',
+0|urlcampaigntracker  |       pubkey: <Buffer 30 82 01 22 30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00 03 82 01 0f 00 30 82 01 0a 02 82 01 01 00 b7 ec 16 5e fb 4c 2a 68 f5 ea c7 52 7f 3c ef f7 bd ... 244 more bytes>,
+0|urlcampaigntracker  |       valid_from: 'May  9 12:41:28 2025 GMT',
+0|urlcampaigntracker  |       valid_to: 'Aug  7 12:41:27 2025 GMT',
+0|urlcampaigntracker  |       fingerprint: 'A3:06:88:FF:9B:97:51:DB:2B:B4:7A:3D:AA:6F:A3:F0:55:97:12:68',
+0|urlcampaigntracker  |       fingerprint256: '23:C8:12:03:8D:FB:37:A7:C3:95:A8:A2:8B:D7:64:9C:84:FA:B2:76:D2:6E:63:73:3A:59:FA:AB:DF:AB:26:29',
+0|urlcampaigntracker  |       fingerprint512: '80:13:E0:BA:09:89:3F:A5:E1:59:4F:FA:C8:90:C3:F9:D4:4F:1A:E5:09:CA:DA:2D:C5:B1:09:71:FA:4A:7C:6B:82:4D:65:A8:61:AB:01:18:DE:C6:F2:A3:3E:F4:B5:44:8F:7B:4A:24:DD:69:C2:B6:31:D7:62:16:64:71:AD:C1',
+0|urlcampaigntracker  |       ext_key_usage: [Array],
+0|urlcampaigntracker  |       serialNumber: '0698350F16DD7358D66A36DCB1819BCF2E5B',
+0|urlcampaigntracker  |       raw: <Buffer 30 82 05 10 30 82 03 f8 a0 03 02 01 02 02 12 06 98 35 0f 16 dd 73 58 d6 6a 36 dc b1 81 9b cf 2e 5b 30 0d 06 09 2a 86 48 86 f7 0d 01 01 0b 05 00 30 33 ... 1250 more bytes>,
+0|urlcampaigntracker  |       issuerCertificate: [Object]
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kMessage)]: "Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz"
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | 2:10:58 PM [auth] API key verification failed - invalid key provided
+0|urlcampaigntracker  | 2:10:58 PM [express] POST /api/auth/verify-key 401 in 4ms :: {"message":"Invalid API key","authentic…
+

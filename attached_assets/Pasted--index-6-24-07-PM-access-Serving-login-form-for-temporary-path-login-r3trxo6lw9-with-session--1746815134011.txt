@@ -1,0 +1,500 @@
+|index  | 6:24:07 PM [access] Serving login form for temporary path: /login_r3trxo6lw9 with session: 1stacvtcnat
+0|index  | 6:24:20 PM [access] Access check for path: /api/auth/verify-key
+0|index  | 6:24:20 PM [access] Access check for path: /v2
+0|index  | 6:24:20 PM [access] Access denied for path: /v2 - no valid session or API key
+0|index  | Error getting API key: ErrorEvent {
+0|index  |   [Symbol(kTarget)]: WebSocket {
+0|index  |     _events: [Object: null prototype] {
+0|index  |       error: [Function],
+0|index  |       message: [Function],
+0|index  |       close: [Function],
+0|index  |       open: [Function]
+0|index  |     },
+0|index  |     _eventsCount: 4,
+0|index  |     _maxListeners: undefined,
+0|index  |     _binaryType: 'arraybuffer',
+0|index  |     _closeCode: 1006,
+0|index  |     _closeFrameReceived: false,
+0|index  |     _closeFrameSent: false,
+0|index  |     _closeMessage: <Buffer >,
+0|index  |     _closeTimer: null,
+0|index  |     _errorEmitted: true,
+0|index  |     _extensions: {},
+0|index  |     _paused: false,
+0|index  |     _protocol: '',
+0|index  |     _readyState: 3,
+0|index  |     _receiver: null,
+0|index  |     _sender: null,
+0|index  |     _socket: null,
+0|index  |     _bufferedAmount: 0,
+0|index  |     _isServer: false,
+0|index  |     _redirects: 0,
+0|index  |     _autoPong: true,
+0|index  |     _url: 'wss://localhost/v2',
+0|index  |     _req: ClientRequest {
+0|index  |       _events: [Object: null prototype],
+0|index  |       _eventsCount: 4,
+0|index  |       _maxListeners: undefined,
+0|index  |       outputData: [],
+0|index  |       outputSize: 0,
+0|index  |       writable: true,
+0|index  |       destroyed: true,
+0|index  |       _last: true,
+0|index  |       chunkedEncoding: false,
+0|index  |       shouldKeepAlive: true,
+0|index  |       maxRequestsOnConnectionReached: false,
+0|index  |       _defaultKeepAlive: true,
+0|index  |       useChunkedEncodingByDefault: false,
+0|index  |       sendDate: false,
+0|index  |       _removedConnection: false,
+0|index  |       _removedContLen: false,
+0|index  |       _removedTE: false,
+0|index  |       strictContentLength: false,
+0|index  |       _contentLength: 0,
+0|index  |       _hasBody: true,
+0|index  |       _trailer: '',
+0|index  |       finished: true,
+0|index  |       _headerSent: true,
+0|index  |       _closed: true,
+0|index  |       socket: [TLSSocket],
+0|index  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|index  |         'Sec-WebSocket-Version: 13\r\n' +
+0|index  |         'Sec-WebSocket-Key: CEI3KOicgTq4v+BLhpWqWQ==\r\n' +
+0|index  |         'Connection: Upgrade\r\n' +
+0|index  |         'Upgrade: websocket\r\n' +
+0|index  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|index  |         'Host: localhost\r\n' +
+0|index  |         '\r\n',
+0|index  |       _keepAliveTimeout: 0,
+0|index  |       _onPendingData: [Function: nop],
+0|index  |       agent: undefined,
+0|index  |       socketPath: undefined,
+0|index  |       method: 'GET',
+0|index  |       maxHeaderSize: undefined,
+0|index  |       insecureHTTPParser: undefined,
+0|index  |       joinDuplicateHeaders: undefined,
+0|index  |       path: '/v2',
+0|index  |       _ended: true,
+0|index  |       res: [IncomingMessage],
+0|index  |       aborted: true,
+0|index  |       timeoutCb: null,
+0|index  |       upgradeOrConnect: false,
+0|index  |       parser: null,
+0|index  |       maxHeadersCount: null,
+0|index  |       reusedSocket: false,
+0|index  |       host: 'localhost',
+0|index  |       protocol: 'https:',
+0|index  |       [Symbol(shapeMode)]: false,
+0|index  |       [Symbol(kCapture)]: false,
+0|index  |       [Symbol(kBytesWritten)]: 0,
+0|index  |       [Symbol(kNeedDrain)]: false,
+0|index  |       [Symbol(corked)]: 0,
+0|index  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|index  |       [Symbol(errored)]: null,
+0|index  |       [Symbol(kHighWaterMark)]: 16384,
+0|index  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|index  |       [Symbol(kUniqueHeaders)]: null,
+0|index  |       [Symbol(kAborted)]: true,
+0|index  |       [Symbol(kError)]: undefined
+0|index  |     },
+0|index  |     [Symbol(shapeMode)]: false,
+0|index  |     [Symbol(kCapture)]: false
+0|index  |   },
+0|index  |   [Symbol(kType)]: 'error',
+0|index  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|index  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|index  |       at ClientRequest.emit (node:events:524:28)
+0|index  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|index  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|index  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|index  |       at TLSSocket.emit (node:events:524:28)
+0|index  |       at addChunk (node:internal/streams/readable:561:12)
+0|index  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|index  |       at Readable.push (node:internal/streams/readable:392:5)
+0|index  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|index  |   [Symbol(kMessage)]: 'Unexpected server response: 404'
+0|index  | }
+0|index  | 6:24:20 PM [auth] Storing API key in existing session: 1stacvtcnat
+0|index  | 6:24:20 PM [access] Attempting to store API key for session ID: 1stacvtcnat
+0|index  | 6:24:20 PM [access] API key successfully stored in session: 1stacvtcnat
+0|index  | 6:24:20 PM [auth] API key verification successful
+0|index  | 6:24:20 PM [express] POST /api/auth/verify-key 200 in 7ms :: {"message":"API key verified","authenti…
+0|index  | 6:24:20 PM [access] Access check for path: /campaigns
+0|index  | 6:24:20 PM [access] Access check for path: /v2
+0|index  | 6:24:20 PM [access] Access denied for path: /v2 - no valid session or API key
+0|index  | Error getting API key: ErrorEvent {
+0|index  |   [Symbol(kTarget)]: WebSocket {
+0|index  |     _events: [Object: null prototype] {
+0|index  |       error: [Function],
+0|index  |       message: [Function],
+0|index  |       close: [Function],
+0|index  |       open: [Function]
+0|index  |     },
+0|index  |     _eventsCount: 4,
+0|index  |     _maxListeners: undefined,
+0|index  |     _binaryType: 'arraybuffer',
+0|index  |     _closeCode: 1006,
+0|index  |     _closeFrameReceived: false,
+0|index  |     _closeFrameSent: false,
+0|index  |     _closeMessage: <Buffer >,
+0|index  |     _closeTimer: null,
+0|index  |     _errorEmitted: true,
+0|index  |     _extensions: {},
+0|index  |     _paused: false,
+0|index  |     _protocol: '',
+0|index  |     _readyState: 3,
+0|index  |     _receiver: null,
+0|index  |     _sender: null,
+0|index  |     _socket: null,
+0|index  |     _bufferedAmount: 0,
+0|index  |     _isServer: false,
+0|index  |     _redirects: 0,
+0|index  |     _autoPong: true,
+0|index  |     _url: 'wss://localhost/v2',
+0|index  |     _req: ClientRequest {
+0|index  |       _events: [Object: null prototype],
+0|index  |       _eventsCount: 4,
+0|index  |       _maxListeners: undefined,
+0|index  |       outputData: [],
+0|index  |       outputSize: 0,
+0|index  |       writable: true,
+0|index  |       destroyed: true,
+0|index  |       _last: true,
+0|index  |       chunkedEncoding: false,
+0|index  |       shouldKeepAlive: true,
+0|index  |       maxRequestsOnConnectionReached: false,
+0|index  |       _defaultKeepAlive: true,
+0|index  |       useChunkedEncodingByDefault: false,
+0|index  |       sendDate: false,
+0|index  |       _removedConnection: false,
+0|index  |       _removedContLen: false,
+0|index  |       _removedTE: false,
+0|index  |       strictContentLength: false,
+0|index  |       _contentLength: 0,
+0|index  |       _hasBody: true,
+0|index  |       _trailer: '',
+0|index  |       finished: true,
+0|index  |       _headerSent: true,
+0|index  |       _closed: true,
+0|index  |       socket: [TLSSocket],
+0|index  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|index  |         'Sec-WebSocket-Version: 13\r\n' +
+0|index  |         'Sec-WebSocket-Key: 0IAXzKRJeFf9/EmnYMbttQ==\r\n' +
+0|index  |         'Connection: Upgrade\r\n' +
+0|index  |         'Upgrade: websocket\r\n' +
+0|index  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|index  |         'Host: localhost\r\n' +
+0|index  |         '\r\n',
+0|index  |       _keepAliveTimeout: 0,
+0|index  |       _onPendingData: [Function: nop],
+0|index  |       agent: undefined,
+0|index  |       socketPath: undefined,
+0|index  |       method: 'GET',
+0|index  |       maxHeaderSize: undefined,
+0|index  |       insecureHTTPParser: undefined,
+0|index  |       joinDuplicateHeaders: undefined,
+0|index  |       path: '/v2',
+0|index  |       _ended: true,
+0|index  |       res: [IncomingMessage],
+0|index  |       aborted: true,
+0|index  |       timeoutCb: null,
+0|index  |       upgradeOrConnect: false,
+0|index  |       parser: null,
+0|index  |       maxHeadersCount: null,
+0|index  |       reusedSocket: false,
+0|index  |       host: 'localhost',
+0|index  |       protocol: 'https:',
+0|index  |       [Symbol(shapeMode)]: false,
+0|index  |       [Symbol(kCapture)]: false,
+0|index  |       [Symbol(kBytesWritten)]: 0,
+0|index  |       [Symbol(kNeedDrain)]: false,
+0|index  |       [Symbol(corked)]: 0,
+0|index  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|index  |       [Symbol(errored)]: null,
+0|index  |       [Symbol(kHighWaterMark)]: 16384,
+0|index  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|index  |       [Symbol(kUniqueHeaders)]: null,
+0|index  |       [Symbol(kAborted)]: true,
+0|index  |       [Symbol(kError)]: undefined
+0|index  |     },
+0|index  |     [Symbol(shapeMode)]: false,
+0|index  |     [Symbol(kCapture)]: false
+0|index  |   },
+0|index  |   [Symbol(kType)]: 'error',
+0|index  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|index  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|index  |       at ClientRequest.emit (node:events:524:28)
+0|index  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|index  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|index  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|index  |       at TLSSocket.emit (node:events:524:28)
+0|index  |       at addChunk (node:internal/streams/readable:561:12)
+0|index  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|index  |       at Readable.push (node:internal/streams/readable:392:5)
+0|index  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|index  |   [Symbol(kMessage)]: 'Unexpected server response: 404'
+0|index  | }
+0|index  | 6:24:20 PM [access] Access granted for path: /campaigns with valid API key
+0|index  | 6:24:20 PM [access] Access check for path: /assets/index-D0AL69SA.js
+0|index  | 6:24:21 PM [access] Access check for path: /assets/index-Dfa5Xv9c.css
+0|index  | 6:24:21 PM [access] Access check for path: /api/auth/status
+0|index  | 6:24:21 PM [access] Access check for path: /v2
+0|index  | 6:24:21 PM [access] Access denied for path: /v2 - no valid session or API key
+0|index  | Error getting API key: ErrorEvent {
+0|index  |   [Symbol(kTarget)]: WebSocket {
+0|index  |     _events: [Object: null prototype] {
+0|index  |       error: [Function],
+0|index  |       message: [Function],
+0|index  |       close: [Function],
+0|index  |       open: [Function]
+0|index  |     },
+0|index  |     _eventsCount: 4,
+0|index  |     _maxListeners: undefined,
+0|index  |     _binaryType: 'arraybuffer',
+0|index  |     _closeCode: 1006,
+0|index  |     _closeFrameReceived: false,
+0|index  |     _closeFrameSent: false,
+0|index  |     _closeMessage: <Buffer >,
+0|index  |     _closeTimer: null,
+0|index  |     _errorEmitted: true,
+0|index  |     _extensions: {},
+0|index  |     _paused: false,
+0|index  |     _protocol: '',
+0|index  |     _readyState: 3,
+0|index  |     _receiver: null,
+0|index  |     _sender: null,
+0|index  |     _socket: null,
+0|index  |     _bufferedAmount: 0,
+0|index  |     _isServer: false,
+0|index  |     _redirects: 0,
+0|index  |     _autoPong: true,
+0|index  |     _url: 'wss://localhost/v2',
+0|index  |     _req: ClientRequest {
+0|index  |       _events: [Object: null prototype],
+0|index  |       _eventsCount: 4,
+0|index  |       _maxListeners: undefined,
+0|index  |       outputData: [],
+0|index  |       outputSize: 0,
+0|index  |       writable: true,
+0|index  |       destroyed: true,
+0|index  |       _last: true,
+0|index  |       chunkedEncoding: false,
+0|index  |       shouldKeepAlive: true,
+0|index  |       maxRequestsOnConnectionReached: false,
+0|index  |       _defaultKeepAlive: true,
+0|index  |       useChunkedEncodingByDefault: false,
+0|index  |       sendDate: false,
+0|index  |       _removedConnection: false,
+0|index  |       _removedContLen: false,
+0|index  |       _removedTE: false,
+0|index  |       strictContentLength: false,
+0|index  |       _contentLength: 0,
+0|index  |       _hasBody: true,
+0|index  |       _trailer: '',
+0|index  |       finished: true,
+0|index  |       _headerSent: true,
+0|index  |       _closed: true,
+0|index  |       socket: [TLSSocket],
+0|index  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|index  |         'Sec-WebSocket-Version: 13\r\n' +
+0|index  |         'Sec-WebSocket-Key: ti9e8IXLa57cNIntTsWvnA==\r\n' +
+0|index  |         'Connection: Upgrade\r\n' +
+0|index  |         'Upgrade: websocket\r\n' +
+0|index  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|index  |         'Host: localhost\r\n' +
+0|index  |         '\r\n',
+0|index  |       _keepAliveTimeout: 0,
+0|index  |       _onPendingData: [Function: nop],
+0|index  |       agent: undefined,
+0|index  |       socketPath: undefined,
+0|index  |       method: 'GET',
+0|index  |       maxHeaderSize: undefined,
+0|index  |       insecureHTTPParser: undefined,
+0|index  |       joinDuplicateHeaders: undefined,
+0|index  |       path: '/v2',
+0|index  |       _ended: true,
+0|index  |       res: [IncomingMessage],
+0|index  |       aborted: true,
+0|index  |       timeoutCb: null,
+0|index  |       upgradeOrConnect: false,
+0|index  |       parser: null,
+0|index  |       maxHeadersCount: null,
+0|index  |       reusedSocket: false,
+0|index  |       host: 'localhost',
+0|index  |       protocol: 'https:',
+0|index  |       [Symbol(shapeMode)]: false,
+0|index  |       [Symbol(kCapture)]: false,
+0|index  |       [Symbol(kBytesWritten)]: 0,
+0|index  |       [Symbol(kNeedDrain)]: false,
+0|index  |       [Symbol(corked)]: 0,
+0|index  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|index  |       [Symbol(errored)]: null,
+0|index  |       [Symbol(kHighWaterMark)]: 16384,
+0|index  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|index  |       [Symbol(kUniqueHeaders)]: null,
+0|index  |       [Symbol(kAborted)]: true,
+0|index  |       [Symbol(kError)]: undefined
+0|index  |     },
+0|index  |     [Symbol(shapeMode)]: false,
+0|index  |     [Symbol(kCapture)]: false
+0|index  |   },
+0|index  |   [Symbol(kType)]: 'error',
+0|index  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|index  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|index  |       at ClientRequest.emit (node:events:524:28)
+0|index  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|index  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|index  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|index  |       at TLSSocket.emit (node:events:524:28)
+0|index  |       at addChunk (node:internal/streams/readable:561:12)
+0|index  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|index  |       at Readable.push (node:internal/streams/readable:392:5)
+0|index  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|index  |   [Symbol(kMessage)]: 'Unexpected server response: 404'
+0|index  | }
+0|index  | 6:24:21 PM [express] GET /api/auth/status 200 in 6ms :: {"authenticated":true}
+0|index  | 6:24:21 PM [access] Access check for path: /api/campaigns
+0|index  | 6:24:22 PM [access] Access check for path: /api/trafficstar/saved-campaigns
+0|index  | Fetching saved TrafficStar campaigns
+0|index  | Error refreshing token: Error: TrafficStar API key not set in environment variables
+0|index  |     at TrafficStarService.refreshToken (file:///var/www/UrlCampaignTracker/dist/index.js:1787:19)
+0|index  |     at TrafficStarService.getAccessToken (file:///var/www/UrlCampaignTracker/dist/index.js:1778:21)
+0|index  |     at TrafficStarService.getAuthHeaders (file:///var/www/UrlCampaignTracker/dist/index.js:1814:34)
+0|index  |     at TrafficStarService.getSavedCampaigns (file:///var/www/UrlCampaignTracker/dist/index.js:2037:38)
+0|index  |     at file:///var/www/UrlCampaignTracker/dist/index.js:12314:51
+0|index  |     at Layer.handle [as handle_request] (/var/www/UrlCampaignTracker/node_modules/express/lib/router/layer.js:95:5)
+0|index  |     at next (/var/www/UrlCampaignTracker/node_modules/express/lib/router/route.js:149:13)
+0|index  |     at Route.dispatch (/var/www/UrlCampaignTracker/node_modules/express/lib/router/route.js:119:3)
+0|index  |     at Layer.handle [as handle_request] (/var/www/UrlCampaignTracker/node_modules/express/lib/router/layer.js:95:5)
+0|index  |     at /var/www/UrlCampaignTracker/node_modules/express/lib/router/index.js:284:15
+0|index  | Error fetching saved TrafficStar campaigns: Error: Failed to refresh token
+0|index  |     at TrafficStarService.refreshToken (file:///var/www/UrlCampaignTracker/dist/index.js:1807:17)
+0|index  |     at TrafficStarService.getAccessToken (file:///var/www/UrlCampaignTracker/dist/index.js:1778:21)
+0|index  |     at TrafficStarService.getAuthHeaders (file:///var/www/UrlCampaignTracker/dist/index.js:1814:34)
+0|index  |     at TrafficStarService.getSavedCampaigns (file:///var/www/UrlCampaignTracker/dist/index.js:2037:38)
+0|index  |     at file:///var/www/UrlCampaignTracker/dist/index.js:12314:51
+0|index  |     at Layer.handle [as handle_request] (/var/www/UrlCampaignTracker/node_modules/express/lib/router/layer.js:95:5)
+0|index  |     at next (/var/www/UrlCampaignTracker/node_modules/express/lib/router/route.js:149:13)
+0|index  |     at Route.dispatch (/var/www/UrlCampaignTracker/node_modules/express/lib/router/route.js:119:3)
+0|index  |     at Layer.handle [as handle_request] (/var/www/UrlCampaignTracker/node_modules/express/lib/router/layer.js:95:5)
+0|index  |     at /var/www/UrlCampaignTracker/node_modules/express/lib/router/index.js:284:15
+0|index  | Error fetching saved TrafficStar campaigns: Error: Failed to fetch saved TrafficStar campaigns
+0|index  |     at TrafficStarService.getSavedCampaigns (file:///var/www/UrlCampaignTracker/dist/index.js:2047:17)
+0|index  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|index  |     at async file:///var/www/UrlCampaignTracker/dist/index.js:12314:26
+0|index  | 6:24:22 PM [express] GET /api/trafficstar/saved-campaigns 500 in 1ms :: {"message":"Failed to fetch …
+0|index  | 6:24:22 PM [access] Access check for path: /v2
+0|index  | 6:24:22 PM [access] Access denied for path: /v2 - no valid session or API key
+0|index  | Error fetching campaigns: ErrorEvent {
+0|index  |   [Symbol(kTarget)]: WebSocket {
+0|index  |     _events: [Object: null prototype] {
+0|index  |       error: [Function],
+0|index  |       message: [Function],
+0|index  |       close: [Function],
+0|index  |       open: [Function]
+0|index  |     },
+0|index  |     _eventsCount: 4,
+0|index  |     _maxListeners: undefined,
+0|index  |     _binaryType: 'arraybuffer',
+0|index  |     _closeCode: 1006,
+0|index  |     _closeFrameReceived: false,
+0|index  |     _closeFrameSent: false,
+0|index  |     _closeMessage: <Buffer >,
+0|index  |     _closeTimer: null,
+0|index  |     _errorEmitted: true,
+0|index  |     _extensions: {},
+0|index  |     _paused: false,
+0|index  |     _protocol: '',
+0|index  |     _readyState: 3,
+0|index  |     _receiver: null,
+0|index  |     _sender: null,
+0|index  |     _socket: null,
+0|index  |     _bufferedAmount: 0,
+0|index  |     _isServer: false,
+0|index  |     _redirects: 0,
+0|index  |     _autoPong: true,
+0|index  |     _url: 'wss://localhost/v2',
+0|index  |     _req: ClientRequest {
+0|index  |       _events: [Object: null prototype],
+0|index  |       _eventsCount: 4,
+0|index  |       _maxListeners: undefined,
+0|index  |       outputData: [],
+0|index  |       outputSize: 0,
+0|index  |       writable: true,
+0|index  |       destroyed: true,
+0|index  |       _last: true,
+0|index  |       chunkedEncoding: false,
+0|index  |       shouldKeepAlive: true,
+0|index  |       maxRequestsOnConnectionReached: false,
+0|index  |       _defaultKeepAlive: true,
+0|index  |       useChunkedEncodingByDefault: false,
+0|index  |       sendDate: false,
+0|index  |       _removedConnection: false,
+0|index  |       _removedContLen: false,
+0|index  |       _removedTE: false,
+0|index  |       strictContentLength: false,
+0|index  |       _contentLength: 0,
+0|index  |       _hasBody: true,
+0|index  |       _trailer: '',
+0|index  |       finished: true,
+0|index  |       _headerSent: true,
+0|index  |       _closed: true,
+0|index  |       socket: [TLSSocket],
+0|index  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|index  |         'Sec-WebSocket-Version: 13\r\n' +
+0|index  |         'Sec-WebSocket-Key: IWAKXtyr4Iaet9zgqQILzQ==\r\n' +
+0|index  |         'Connection: Upgrade\r\n' +
+0|index  |         'Upgrade: websocket\r\n' +
+0|index  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|index  |         'Host: localhost\r\n' +
+0|index  |         '\r\n',
+0|index  |       _keepAliveTimeout: 0,
+0|index  |       _onPendingData: [Function: nop],
+0|index  |       agent: undefined,
+0|index  |       socketPath: undefined,
+0|index  |       method: 'GET',
+0|index  |       maxHeaderSize: undefined,
+0|index  |       insecureHTTPParser: undefined,
+0|index  |       joinDuplicateHeaders: undefined,
+0|index  |       path: '/v2',
+0|index  |       _ended: true,
+0|index  |       res: [IncomingMessage],
+0|index  |       aborted: true,
+0|index  |       timeoutCb: null,
+0|index  |       upgradeOrConnect: false,
+0|index  |       parser: null,
+0|index  |       maxHeadersCount: null,
+0|index  |       reusedSocket: false,
+0|index  |       host: 'localhost',
+0|index  |       protocol: 'https:',
+0|index  |       [Symbol(shapeMode)]: false,
+0|index  |       [Symbol(kCapture)]: false,
+0|index  |       [Symbol(kBytesWritten)]: 0,
+0|index  |       [Symbol(kNeedDrain)]: false,
+0|index  |       [Symbol(corked)]: 0,
+0|index  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|index  |       [Symbol(errored)]: null,
+0|index  |       [Symbol(kHighWaterMark)]: 16384,
+0|index  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|index  |       [Symbol(kUniqueHeaders)]: null,
+0|index  |       [Symbol(kAborted)]: true,
+0|index  |       [Symbol(kError)]: undefined
+0|index  |     },
+0|index  |     [Symbol(shapeMode)]: false,
+0|index  |     [Symbol(kCapture)]: false
+0|index  |   },
+0|index  |   [Symbol(kType)]: 'error',
+0|index  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|index  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|index  |       at ClientRequest.emit (node:events:524:28)
+0|index  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|index  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|index  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|index  |       at TLSSocket.emit (node:events:524:28)
+0|index  |       at addChunk (node:internal/streams/readable:561:12)
+0|index  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|index  |       at Readable.push (node:internal/streams/readable:392:5)
+0|index  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|index  |   [Symbol(kMessage)]: 'Unexpected server response: 404'
+0|index  | }
+0|index  | 6:24:22 PM [express] GET /api/campaigns 500 in 7ms :: {"message":"Failed to fetch campaigns","error"…

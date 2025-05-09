@@ -1,0 +1,1153 @@
+48 86 f7 0d 01 01 0b 05 00 30 33 ... 1250 more bytes>,
+0|urlcampaigntracker  |       issuerCertificate: [Object]
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kMessage)]: "Hostname/IP does not match certif                                                                             icate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplaye                                                                             r.xyz, DNS:www.viralplayer.xyz"
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | Error in automatic multiplier verification: ErrorEvent {
+0|urlcampaigntracker  |   [Symbol(kTarget)]: WebSocket {
+0|urlcampaigntracker  |     _events: [Object: null prototype] {
+0|urlcampaigntracker  |       error: [Function],
+0|urlcampaigntracker  |       message: [Function],
+0|urlcampaigntracker  |       close: [Function],
+0|urlcampaigntracker  |       open: [Function]
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     _eventsCount: 4,
+0|urlcampaigntracker  |     _maxListeners: undefined,
+0|urlcampaigntracker  |     _binaryType: 'arraybuffer',
+0|urlcampaigntracker  |     _closeCode: 1006,
+0|urlcampaigntracker  |     _closeFrameReceived: false,
+0|urlcampaigntracker  |     _closeFrameSent: false,
+0|urlcampaigntracker  |     _closeMessage: <Buffer >,
+0|urlcampaigntracker  |     _closeTimer: null,
+0|urlcampaigntracker  |     _errorEmitted: true,
+0|urlcampaigntracker  |     _extensions: {},
+0|urlcampaigntracker  |     _paused: false,
+0|urlcampaigntracker  |     _protocol: '',
+0|urlcampaigntracker  |     _readyState: 3,
+0|urlcampaigntracker  |     _receiver: null,
+0|urlcampaigntracker  |     _sender: null,
+0|urlcampaigntracker  |     _socket: null,
+0|urlcampaigntracker  |     _bufferedAmount: 0,
+0|urlcampaigntracker  |     _isServer: false,
+0|urlcampaigntracker  |     _redirects: 0,
+0|urlcampaigntracker  |     _autoPong: true,
+0|urlcampaigntracker  |     _url: 'wss://localhost/v2',
+0|urlcampaigntracker  |     _req: null,
+0|urlcampaigntracker  |     [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |     [Symbol(kCapture)]: false
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kType)]: 'error',
+0|urlcampaigntracker  |   [Symbol(kError)]: Error [ERR_TLS_CERT_ALTNAME_INVALID]                                                                             : Hostname/IP does not match certificate's altnames: Host: localhost. is not in                                                                              the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz
+0|urlcampaigntracker  |       at Object.checkServerIdentity (node:tls:316:12)
+0|urlcampaigntracker  |       at TLSSocket.onConnectSecure (node:_tls_wrap:1687:                                                                             27)
+0|urlcampaigntracker  |       at TLSSocket.emit (node:events:518:28)
+0|urlcampaigntracker  |       at TLSSocket._finishInit (node:_tls_wrap:1076:8)
+0|urlcampaigntracker  |       at ssl.onhandshakedone (node:_tls_wrap:862:12) {
+0|urlcampaigntracker  |     code: 'ERR_TLS_CERT_ALTNAME_INVALID',
+0|urlcampaigntracker  |     reason: "Host: localhost. is not in the cert's altna                                                                             mes: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz",
+0|urlcampaigntracker  |     host: 'localhost',
+0|urlcampaigntracker  |     cert: {
+0|urlcampaigntracker  |       subject: [Object: null prototype],
+0|urlcampaigntracker  |       issuer: [Object: null prototype],
+0|urlcampaigntracker  |       subjectaltname: 'DNS:viralplayer.xyz, DNS:www.vira                                                                             lplayer.xyz',
+0|urlcampaigntracker  |       infoAccess: [Object: null prototype],
+0|urlcampaigntracker  |       ca: false,
+0|urlcampaigntracker  |       modulus: 'B7EC165EFB4C2A68F5EAC7527F3CEFF7BD8516C7                                                                             B6D8660ABC5B3C81B7C9995E57F8FA98694340BD18DBDA62D2D6845C165F430B11C1DD6FC25E4A26                                                                             727C090C7A8C8E1B56CAC40F15DBDBB385E5B4D99E55126D9CBE14BC75DD8B19C92403A0688A9383                                                                             44BC1980F64585A7384A966A8E06F617DA8FCA74C3E223182B0AC250A045BF329FE10BD22CB4057B                                                                             667533F4C320C9845ECA29154ACE29E13CBC8AA4479C4B1ADD79EF562430942002C99A7E632EA1D2                                                                             DB140FA08B590B45D0FDB60FE45922580FFC791E973C6BE8F8CAC908A2427652BF1F07C844B23250                                                                             7F9154D99958CBB75DA54B947FF78EA03AF75CB51CFDB5F40708BA4277178CA566203631',
+0|urlcampaigntracker  |       bits: 2048,
+0|urlcampaigntracker  |       exponent: '0x10001',
+0|urlcampaigntracker  |       pubkey: <Buffer 30 82 01 22 30 0d 06 09 2a 86 48 8                                                                             6 f7 0d 01 01 01 05 00 03 82 01 0f 00 30 82 01 0a 02 82 01 01 00 b7 ec 16 5e fb                                                                              4c 2a 68 f5 ea c7 52 7f 3c ef f7 bd ... 244 more bytes>,
+0|urlcampaigntracker  |       valid_from: 'May  9 12:41:28 2025 GMT',
+0|urlcampaigntracker  |       valid_to: 'Aug  7 12:41:27 2025 GMT',
+0|urlcampaigntracker  |       fingerprint: 'A3:06:88:FF:9B:97:51:DB:2B:B4:7A:3D:                                                                             AA:6F:A3:F0:55:97:12:68',
+0|urlcampaigntracker  |       fingerprint256: '23:C8:12:03:8D:FB:37:A7:C3:95:A8:                                                                             A2:8B:D7:64:9C:84:FA:B2:76:D2:6E:63:73:3A:59:FA:AB:DF:AB:26:29',
+0|urlcampaigntracker  |       fingerprint512: '80:13:E0:BA:09:89:3F:A5:E1:59:4F:                                                                             FA:C8:90:C3:F9:D4:4F:1A:E5:09:CA:DA:2D:C5:B1:09:71:FA:4A:7C:6B:82:4D:65:A8:61:AB                                                                             :01:18:DE:C6:F2:A3:3E:F4:B5:44:8F:7B:4A:24:DD:69:C2:B6:31:D7:62:16:64:71:AD:C1',
+0|urlcampaigntracker  |       ext_key_usage: [Array],
+0|urlcampaigntracker  |       serialNumber: '0698350F16DD7358D66A36DCB1819BCF2E5                                                                             B',
+0|urlcampaigntracker  |       raw: <Buffer 30 82 05 10 30 82 03 f8 a0 03 02 01 0                                                                             2 02 12 06 98 35 0f 16 dd 73 58 d6 6a 36 dc b1 81 9b cf 2e 5b 30 0d 06 09 2a 86                                                                              48 86 f7 0d 01 01 0b 05 00 30 33 ... 1250 more bytes>,
+0|urlcampaigntracker  |       issuerCertificate: [Object]
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kMessage)]: "Hostname/IP does not match certif                                                                             icate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplaye                                                                             r.xyz, DNS:www.viralplayer.xyz"
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | OS module CPU info: {
+0|urlcampaigntracker  |   "cpus": [
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 2908,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 800,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1050,
+0|urlcampaigntracker  |         "idle": 1621970,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 2914,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 5570,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 4720,
+0|urlcampaigntracker  |         "idle": 1611610,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 3281,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1050,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1090,
+0|urlcampaigntracker  |         "idle": 1622530,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 300,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 340,
+0|urlcampaigntracker  |         "idle": 1624210,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1600,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1130,
+0|urlcampaigntracker  |         "idle": 1622210,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 4637,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 4780,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 3190,
+0|urlcampaigntracker  |         "idle": 1615640,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 4875,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 980,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 960,
+0|urlcampaigntracker  |         "idle": 1623220,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 300,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 700,
+0|urlcampaigntracker  |         "idle": 1623800,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 470,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 310,
+0|urlcampaigntracker  |         "idle": 1624580,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 4121,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1120,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1000,
+0|urlcampaigntracker  |         "idle": 1621960,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 210,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 350,
+0|urlcampaigntracker  |         "idle": 1625010,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 2914,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 140,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 290,
+0|urlcampaigntracker  |         "idle": 1624630,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 120,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 280,
+0|urlcampaigntracker  |         "idle": 1625380,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 5146,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1940,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1770,
+0|urlcampaigntracker  |         "idle": 1621040,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 190,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 400,
+0|urlcampaigntracker  |         "idle": 1624420,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Gr                                                                             aphics",
+0|urlcampaigntracker  |       "speed": 2920,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 70,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 160,
+0|urlcampaigntracker  |         "idle": 1625530,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   ],
+0|urlcampaigntracker  |   "cpuCount": 16,
+0|urlcampaigntracker  |   "arch": "x64",
+0|urlcampaigntracker  |   "platform": "linux",
+0|urlcampaigntracker  |   "osType": "Linux",
+0|urlcampaigntracker  |   "totalMemory": 66491027456,
+0|urlcampaigntracker  |   "freeMemory": 65371140096
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | Using OS module CPU info: {
+0|urlcampaigntracker  |   "manufacturer": "AMD",
+0|urlcampaigntracker  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphi                                                                             cs",
+0|urlcampaigntracker  |   "speed": 2.903,
+0|urlcampaigntracker  |   "cores": 16,
+0|urlcampaigntracker  |   "physicalCores": 8
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | Load average data: {
+0|urlcampaigntracker  |   "avgLoad": 0,
+0|urlcampaigntracker  |   "currentLoad": 0.028134378126042015,
+0|urlcampaigntracker  |   "currentLoadUser": 0.012504168056018674,
+0|urlcampaigntracker  |   "currentLoadSystem": 0.01563021007002334,
+0|urlcampaigntracker  |   "currentLoadNice": 0,
+0|urlcampaigntracker  |   "currentLoadIdle": 99.97186562187396,
+0|urlcampaigntracker  |   "currentLoadIrq": 0,
+0|urlcampaigntracker  |   "currentLoadSteal": 0,
+0|urlcampaigntracker  |   "currentLoadGuest": 0,
+0|urlcampaigntracker  |   "rawCurrentLoad": 270,
+0|urlcampaigntracker  |   "rawCurrentLoadUser": 120,
+0|urlcampaigntracker  |   "rawCurrentLoadSystem": 150,
+0|urlcampaigntracker  |   "rawCurrentLoadNice": 0,
+0|urlcampaigntracker  |   "rawCurrentLoadIdle": 959410,
+0|urlcampaigntracker  |   "rawCurrentLoadIrq": 0,
+0|urlcampaigntracker  |   "rawCurrentLoadSteal": 0,
+0|urlcampaigntracker  |   "rawCurrentLoadGuest": 0,
+0|urlcampaigntracker  |   "cpus": [
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.01667222407469156,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.01667222407469156,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98332777592532,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59970,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.15017520440513932,
+0|urlcampaigntracker  |       "loadUser": 0.05005840146837978,
+0|urlcampaigntracker  |       "loadSystem": 0.10011680293675956,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.84982479559487,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 90,
+0|urlcampaigntracker  |       "rawLoadUser": 30,
+0|urlcampaigntracker  |       "rawLoadSystem": 60,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59840,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59990,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.016663889351774704,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.016663889351774704,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98333611064822,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 60000,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.016677785190126748,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.016677785190126748,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98332221480987,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59950,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.0833472245374229,
+0|urlcampaigntracker  |       "loadUser": 0.050008334722453744,
+0|urlcampaigntracker  |       "loadSystem": 0.03333888981496916,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.91665277546258,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 50,
+0|urlcampaigntracker  |       "rawLoadUser": 30,
+0|urlcampaigntracker  |       "rawLoadSystem": 20,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59940,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.01666944490748458,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.01666944490748458,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98333055509252,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59980,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59970,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59980,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.1167250291812573,
+0|urlcampaigntracker  |       "loadUser": 0.10005002501250625,
+0|urlcampaigntracker  |       "loadSystem": 0.01667500416875104,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.88327497081875,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 70,
+0|urlcampaigntracker  |       "rawLoadUser": 60,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59900,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.016666666666666666,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.016666666666666666,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98333333333333,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59990,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.01667222407469156,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.01667222407469156,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98332777592532,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59970,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 60000,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59960,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59980,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59990,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   ]
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | OS load averages: linux [ 0.05, 0.05, 0 ]
+0|urlcampaigntracker  | ========== SYSTEM LOAD CALCULATION ==========
+0|urlcampaigntracker  | Raw OS load averages: [0.05,0.05,0]
+0|urlcampaigntracker  | Using 1-minute load average: 0.05
+0|urlcampaigntracker  | CPU Info raw length: 16
+0|urlcampaigntracker  | Number of CPUs detected: 16
+0|urlcampaigntracker  | SI current load data: {"avgLoad":0,"currentLoad":0.02813                                                                             4378126042015,"currentLoadUser":0.012504168056018674,"currentLoadSystem":0.01563                                                                             021007002334,"currentLoadNice":0,"currentLoadIdle":99.97186562187396,"currentLoa                                                                             dIrq":0,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":270,"rawCurre                                                                             ntLoadUser":120,"rawCurrentLoadSystem":150,"rawCurrentLoadNice":0,"rawCurrentLoa                                                                             dIdle":959410,"rawCurrentLoadIrq":0,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest                                                                             ":0,"cpus":[{"load":0.01667222407469156,"loadUser":0,"loadSystem":0.016672224074                                                                             69156,"loadNice":0,"loadIdle":99.98332777592532,"loadIrq":0,"rawLoad":10,"rawLoa                                                                             dUser":0,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59970,"rawLoadIrq":0,"                                                                             rawLoadSteal":0,"rawLoadGuest":0},{"load":0.15017520440513932,"loadUser":0.05005                                                                             840146837978,"loadSystem":0.10011680293675956,"loadNice":0,"loadIdle":99.8498247                                                                             9559487,"loadIrq":0,"rawLoad":90,"rawLoadUser":30,"rawLoadSystem":60,"rawLoadNic                                                                             e":0,"rawLoadIdle":59840,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"loa                                                                             d":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoa                                                                             d":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59990,"rawL                                                                             oadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.016663889351774704,"loadU                                                                             ser":0,"loadSystem":0.016663889351774704,"loadNice":0,"loadIdle":99.983336110648                                                                             22,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNice":0,"                                                                             rawLoadIdle":60000,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.0                                                                             16677785190126748,"loadUser":0,"loadSystem":0.016677785190126748,"loadNice":0,"l                                                                             oadIdle":99.98332221480987,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSyst                                                                             em":10,"rawLoadNice":0,"rawLoadIdle":59950,"rawLoadIrq":0,"rawLoadSteal":0,"rawL                                                                             oadGuest":0},{"load":0.0833472245374229,"loadUser":0.050008334722453744,"loadSys                                                                             tem":0.03333888981496916,"loadNice":0,"loadIdle":99.91665277546258,"loadIrq":0,"                                                                             rawLoad":50,"rawLoadUser":30,"rawLoadSystem":20,"rawLoadNice":0,"rawLoadIdle":59                                                                             940,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.0166694449074845                                                                             8,"loadUser":0,"loadSystem":0.01666944490748458,"loadNice":0,"loadIdle":99.98333                                                                             055509252,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNi                                                                             ce":0,"rawLoadIdle":59980,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"lo                                                                             ad":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLo                                                                             ad":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59970,"raw                                                                             LoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0,"loadUser":0,"loadSystem                                                                             ":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoad                                                                             System":0,"rawLoadNice":0,"rawLoadIdle":59980,"rawLoadIrq":0,"rawLoadSteal":0,"r                                                                             awLoadGuest":0},{"load":0.1167250291812573,"loadUser":0.10005002501250625,"loadS                                                                             ystem":0.01667500416875104,"loadNice":0,"loadIdle":99.88327497081875,"loadIrq":0                                                                             ,"rawLoad":70,"rawLoadUser":60,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":                                                                             59900,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01666666666666                                                                             6666,"loadUser":0,"loadSystem":0.016666666666666666,"loadNice":0,"loadIdle":99.9                                                                             8333333333333,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLo                                                                             adNice":0,"rawLoadIdle":59990,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},                                                                             {"load":0.01667222407469156,"loadUser":0,"loadSystem":0.01667222407469156,"loadN                                                                             ice":0,"loadIdle":99.98332777592532,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"ra                                                                             wLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59970,"rawLoadIrq":0,"rawLoadSteal                                                                             ":0,"rawLoadGuest":0},{"load":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadId                                                                             le":100,"loadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":                                                                             0,"rawLoadIdle":60000,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":                                                                             0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoad":                                                                             0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59960,"rawLoad                                                                             Irq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0,"loadUser":0,"loadSystem":0,                                                                             "loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoadSyst                                                                             em":0,"rawLoadNice":0,"rawLoadIdle":59980,"rawLoadIrq":0,"rawLoadSteal":0,"rawLo                                                                             adGuest":0},{"load":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"l                                                                             oadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoad                                                                             Idle":59990,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0}]}
+0|urlcampaigntracker  | Initial calculated load value: 0.3125
+0|urlcampaigntracker  | Applied minimum scaling factor for visibility: 1
+0|urlcampaigntracker  | Final system load calculation (before fallbacks): 1
+0|urlcampaigntracker  | FINAL SYSTEM LOAD VALUE TO DISPLAY: 1
+0|urlcampaigntracker  | ===========================================
+0|urlcampaigntracker  | Final CPU details being set: {
+0|urlcampaigntracker  |   "manufacturer": "AMD",
+0|urlcampaigntracker  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphi                                                                             cs",
+0|urlcampaigntracker  |   "speed": 2.903,
+0|urlcampaigntracker  |   "cores": 16,
+0|urlcampaigntracker  |   "physicalCores": 8
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | OS information: {
+0|urlcampaigntracker  |   "platform": "linux",
+0|urlcampaigntracker  |   "distro": "Ubuntu",
+0|urlcampaigntracker  |   "release": "22.04.5 LTS",
+0|urlcampaigntracker  |   "codename": "jammy",
+0|urlcampaigntracker  |   "kernel": "6.8.0-59-generic",
+0|urlcampaigntracker  |   "arch": "x64",
+0|urlcampaigntracker  |   "hostname": "viralplayer.xyz",
+0|urlcampaigntracker  |   "fqdn": "viralplayer.xyz",
+0|urlcampaigntracker  |   "codepage": "UTF-8",
+0|urlcampaigntracker  |   "logofile": "ubuntu",
+0|urlcampaigntracker  |   "serial": "8243b13606a047b9bb0f86e690d11c1f",
+0|urlcampaigntracker  |   "build": "",
+0|urlcampaigntracker  |   "servicepack": "",
+0|urlcampaigntracker  |   "uefi": true
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | 2:17:03 PM [access] Access check for path: /api/auth/verify-key
+0|urlcampaigntracker  | Error getting API key: ErrorEvent {
+0|urlcampaigntracker  |   [Symbol(kTarget)]: WebSocket {
+0|urlcampaigntracker  |     _events: [Object: null prototype] {
+0|urlcampaigntracker  |       error: [Function],
+0|urlcampaigntracker  |       message: [Function],
+0|urlcampaigntracker  |       close: [Function],
+0|urlcampaigntracker  |       open: [Function]
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     _eventsCount: 4,
+0|urlcampaigntracker  |     _maxListeners: undefined,
+0|urlcampaigntracker  |     _binaryType: 'arraybuffer',
+0|urlcampaigntracker  |     _closeCode: 1006,
+0|urlcampaigntracker  |     _closeFrameReceived: false,
+0|urlcampaigntracker  |     _closeFrameSent: false,
+0|urlcampaigntracker  |     _closeMessage: <Buffer >,
+0|urlcampaigntracker  |     _closeTimer: null,
+0|urlcampaigntracker  |     _errorEmitted: true,
+0|urlcampaigntracker  |     _extensions: {},
+0|urlcampaigntracker  |     _paused: false,
+0|urlcampaigntracker  |     _protocol: '',
+0|urlcampaigntracker  |     _readyState: 3,
+0|urlcampaigntracker  |     _receiver: null,
+0|urlcampaigntracker  |     _sender: null,
+0|urlcampaigntracker  |     _socket: null,
+0|urlcampaigntracker  |     _bufferedAmount: 0,
+0|urlcampaigntracker  |     _isServer: false,
+0|urlcampaigntracker  |     _redirects: 0,
+0|urlcampaigntracker  |     _autoPong: true,
+0|urlcampaigntracker  |     _url: 'wss://localhost/v2',
+0|urlcampaigntracker  |     _req: null,
+0|urlcampaigntracker  |     [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |     [Symbol(kCapture)]: false
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kType)]: 'error',
+0|urlcampaigntracker  |   [Symbol(kError)]: Error [ERR_TLS_CERT_ALTNAME_INVALID]: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz
+0|urlcampaigntracker  |       at Object.checkServerIdentity (node:tls:316:12)
+0|urlcampaigntracker  |       at TLSSocket.onConnectSecure (node:_tls_wrap:1687:27)
+0|urlcampaigntracker  |       at TLSSocket.emit (node:events:518:28)
+0|urlcampaigntracker  |       at TLSSocket._finishInit (node:_tls_wrap:1076:8)
+0|urlcampaigntracker  |       at ssl.onhandshakedone (node:_tls_wrap:862:12) {
+0|urlcampaigntracker  |     code: 'ERR_TLS_CERT_ALTNAME_INVALID',
+0|urlcampaigntracker  |     reason: "Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz",
+0|urlcampaigntracker  |     host: 'localhost',
+0|urlcampaigntracker  |     cert: {
+0|urlcampaigntracker  |       subject: [Object: null prototype],
+0|urlcampaigntracker  |       issuer: [Object: null prototype],
+0|urlcampaigntracker  |       subjectaltname: 'DNS:viralplayer.xyz, DNS:www.viralplayer.xyz',
+0|urlcampaigntracker  |       infoAccess: [Object: null prototype],
+0|urlcampaigntracker  |       ca: false,
+0|urlcampaigntracker  |       modulus: 'B7EC165EFB4C2A68F5EAC7527F3CEFF7BD8516C7B6D8660ABC5B3C81B7C9995E57F8FA98694340BD18DBDA62D2D6845C165F430B11C1DD6FC25E4A26727C090C7A8C8E1B56CAC40F15DBDBB385E5B4D99E55126D9CBE14BC75DD8B19C92403A0688A938344BC1980F64585A7384A966A8E06F617DA8FCA74C3E223182B0AC250A045BF329FE10BD22CB4057B667533F4C320C9845ECA29154ACE29E13CBC8AA4479C4B1ADD79EF562430942002C99A7E632EA1D2DB140FA08B590B45D0FDB60FE45922580FFC791E973C6BE8F8CAC908A2427652BF1F07C844B232507F9154D99958CBB75DA54B947FF78EA03AF75CB51CFDB5F40708BA4277178CA566203631',
+0|urlcampaigntracker  |       bits: 2048,
+0|urlcampaigntracker  |       exponent: '0x10001',
+0|urlcampaigntracker  |       pubkey: <Buffer 30 82 01 22 30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00 03 82 01 0f 00 30 82 01 0a 02 82 01 01 00 b7 ec 16 5e fb 4c 2a 68 f5 ea c7 52 7f 3c ef f7 bd ... 244 more bytes>,
+0|urlcampaigntracker  |       valid_from: 'May  9 12:41:28 2025 GMT',
+0|urlcampaigntracker  |       valid_to: 'Aug  7 12:41:27 2025 GMT',
+0|urlcampaigntracker  |       fingerprint: 'A3:06:88:FF:9B:97:51:DB:2B:B4:7A:3D:AA:6F:A3:F0:55:97:12:68',
+0|urlcampaigntracker  |       fingerprint256: '23:C8:12:03:8D:FB:37:A7:C3:95:A8:A2:8B:D7:64:9C:84:FA:B2:76:D2:6E:63:73:3A:59:FA:AB:DF:AB:26:29',
+0|urlcampaigntracker  |       fingerprint512: '80:13:E0:BA:09:89:3F:A5:E1:59:4F:FA:C8:90:C3:F9:D4:4F:1A:E5:09:CA:DA:2D:C5:B1:09:71:FA:4A:7C:6B:82:4D:65:A8:61:AB:01:18:DE:C6:F2:A3:3E:F4:B5:44:8F:7B:4A:24:DD:69:C2:B6:31:D7:62:16:64:71:AD:C1',
+0|urlcampaigntracker  |       ext_key_usage: [Array],
+0|urlcampaigntracker  |       serialNumber: '0698350F16DD7358D66A36DCB1819BCF2E5B',
+0|urlcampaigntracker  |       raw: <Buffer 30 82 05 10 30 82 03 f8 a0 03 02 01 02 02 12 06 98 35 0f 16 dd 73 58 d6 6a 36 dc b1 81 9b cf 2e 5b 30 0d 06 09 2a 86 48 86 f7 0d 01 01 0b 05 00 30 33 ... 1250 more bytes>,
+0|urlcampaigntracker  |       issuerCertificate: [Object]
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kMessage)]: "Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz"
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | 2:17:03 PM [auth] API key verification failed - invalid key provided
+0|urlcampaigntracker  | 2:17:03 PM [express] POST /api/auth/verify-key 401 in 4ms :: {"message":"Invalid API key","authentic…
+0|urlcampaigntracker  | 2:17:08 PM [access] Access check for path: /login_49kcz6d6qer
+0|urlcampaigntracker  | 2:17:08 PM [access] Path login_49kcz6d6qer matches prefix but not found in temporary paths map. Keys:
+0|urlcampaigntracker  | 2:17:08 PM [access] Access denied for path: /login_49kcz6d6qer - no valid session or API key
+0|urlcampaigntracker  | OS module CPU info: {
+0|urlcampaigntracker  |   "cpus": [
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 2913,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 800,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1080,
+0|urlcampaigntracker  |         "idle": 1679580,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 2953,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 5600,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 4880,
+0|urlcampaigntracker  |         "idle": 1652160,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1060,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1140,
+0|urlcampaigntracker  |         "idle": 1680640,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 310,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 340,
+0|urlcampaigntracker  |         "idle": 1684200,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1600,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1160,
+0|urlcampaigntracker  |         "idle": 1681590,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 5097,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 4790,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 3350,
+0|urlcampaigntracker  |         "idle": 1674910,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 990,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1010,
+0|urlcampaigntracker  |         "idle": 1683050,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 2989,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 300,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 710,
+0|urlcampaigntracker  |         "idle": 1683480,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 470,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 310,
+0|urlcampaigntracker  |         "idle": 1684570,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1130,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1000,
+0|urlcampaigntracker  |         "idle": 1681920,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 220,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 360,
+0|urlcampaigntracker  |         "idle": 1684850,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 140,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 290,
+0|urlcampaigntracker  |         "idle": 1684590,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 120,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 280,
+0|urlcampaigntracker  |         "idle": 1685370,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 5024,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 1960,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 1780,
+0|urlcampaigntracker  |         "idle": 1680920,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 5096,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 200,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 410,
+0|urlcampaigntracker  |         "idle": 1684390,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |       "speed": 400,
+0|urlcampaigntracker  |       "times": {
+0|urlcampaigntracker  |         "user": 70,
+0|urlcampaigntracker  |         "nice": 0,
+0|urlcampaigntracker  |         "sys": 170,
+0|urlcampaigntracker  |         "idle": 1685520,
+0|urlcampaigntracker  |         "irq": 0
+0|urlcampaigntracker  |       }
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   ],
+0|urlcampaigntracker  |   "cpuCount": 16,
+0|urlcampaigntracker  |   "arch": "x64",
+0|urlcampaigntracker  |   "platform": "linux",
+0|urlcampaigntracker  |   "osType": "Linux",
+0|urlcampaigntracker  |   "totalMemory": 66491027456,
+0|urlcampaigntracker  |   "freeMemory": 65369600000
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | Using OS module CPU info: {
+0|urlcampaigntracker  |   "manufacturer": "AMD",
+0|urlcampaigntracker  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |   "speed": 2.718,
+0|urlcampaigntracker  |   "cores": 16,
+0|urlcampaigntracker  |   "physicalCores": 8
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | Load average data: {
+0|urlcampaigntracker  |   "avgLoad": 0.04,
+0|urlcampaigntracker  |   "currentLoad": 0.07060938034919548,
+0|urlcampaigntracker  |   "currentLoadUser": 0.01390790825059911,
+0|urlcampaigntracker  |   "currentLoadSystem": 0.05670147209859638,
+0|urlcampaigntracker  |   "currentLoadNice": 0,
+0|urlcampaigntracker  |   "currentLoadIdle": 99.9293906196508,
+0|urlcampaigntracker  |   "currentLoadIrq": 0,
+0|urlcampaigntracker  |   "currentLoadSteal": 0,
+0|urlcampaigntracker  |   "currentLoadGuest": 0,
+0|urlcampaigntracker  |   "rawCurrentLoad": 660,
+0|urlcampaigntracker  |   "rawCurrentLoadUser": 130,
+0|urlcampaigntracker  |   "rawCurrentLoadSystem": 530,
+0|urlcampaigntracker  |   "rawCurrentLoadNice": 0,
+0|urlcampaigntracker  |   "rawCurrentLoadIdle": 934060,
+0|urlcampaigntracker  |   "rawCurrentLoadIrq": 0,
+0|urlcampaigntracker  |   "rawCurrentLoadSteal": 0,
+0|urlcampaigntracker  |   "rawCurrentLoadGuest": 0,
+0|urlcampaigntracker  |   "cpus": [
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.05203816131830009,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.05203816131830009,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.94796183868169,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 30,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 30,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 57620,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.4662576687116564,
+0|urlcampaigntracker  |       "loadUser": 0.0736196319018405,
+0|urlcampaigntracker  |       "loadSystem": 0.39263803680981596,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.53374233128834,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 190,
+0|urlcampaigntracker  |       "rawLoadUser": 30,
+0|urlcampaigntracker  |       "rawLoadSystem": 160,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 40560,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.1031459515214028,
+0|urlcampaigntracker  |       "loadUser": 0.017190991920233798,
+0|urlcampaigntracker  |       "loadSystem": 0.08595495960116899,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.8968540484786,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 60,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 50,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 58110,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.016666666666666666,
+0|urlcampaigntracker  |       "loadUser": 0.016666666666666666,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98333333333333,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59990,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.05049654940245749,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.05049654940245749,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.94950345059755,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 30,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 30,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59380,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.28600269179004034,
+0|urlcampaigntracker  |       "loadUser": 0.016823687752355317,
+0|urlcampaigntracker  |       "loadSystem": 0.2691790040376851,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.71399730820995,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 170,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 160,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59270,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.10016694490818029,
+0|urlcampaigntracker  |       "loadUser": 0.01669449081803005,
+0|urlcampaigntracker  |       "loadSystem": 0.08347245409015025,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.89983305509182,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 60,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 50,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59840,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.016753224995811694,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.016753224995811694,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98324677500419,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59680,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59990,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.01667500416875104,
+0|urlcampaigntracker  |       "loadUser": 0.01667500416875104,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98332499583125,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59960,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.03341129301703976,
+0|urlcampaigntracker  |       "loadUser": 0.01670564650851988,
+0|urlcampaigntracker  |       "loadSystem": 0.01670564650851988,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.96658870698296,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 20,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59840,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.01667500416875104,
+0|urlcampaigntracker  |       "loadUser": 0.01667500416875104,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98332499583125,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59960,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 100,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 0,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 60000,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.06674453529117304,
+0|urlcampaigntracker  |       "loadUser": 0.03337226764558652,
+0|urlcampaigntracker  |       "loadSystem": 0.03337226764558652,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.93325546470882,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 40,
+0|urlcampaigntracker  |       "rawLoadUser": 20,
+0|urlcampaigntracker  |       "rawLoadSystem": 20,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59890,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.01666944490748458,
+0|urlcampaigntracker  |       "loadUser": 0.01666944490748458,
+0|urlcampaigntracker  |       "loadSystem": 0,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98333055509252,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 10,
+0|urlcampaigntracker  |       "rawLoadSystem": 0,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59980,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     {
+0|urlcampaigntracker  |       "load": 0.016666666666666666,
+0|urlcampaigntracker  |       "loadUser": 0,
+0|urlcampaigntracker  |       "loadSystem": 0.016666666666666666,
+0|urlcampaigntracker  |       "loadNice": 0,
+0|urlcampaigntracker  |       "loadIdle": 99.98333333333333,
+0|urlcampaigntracker  |       "loadIrq": 0,
+0|urlcampaigntracker  |       "rawLoad": 10,
+0|urlcampaigntracker  |       "rawLoadUser": 0,
+0|urlcampaigntracker  |       "rawLoadSystem": 10,
+0|urlcampaigntracker  |       "rawLoadNice": 0,
+0|urlcampaigntracker  |       "rawLoadIdle": 59990,
+0|urlcampaigntracker  |       "rawLoadIrq": 0,
+0|urlcampaigntracker  |       "rawLoadSteal": 0,
+0|urlcampaigntracker  |       "rawLoadGuest": 0
+0|urlcampaigntracker  |     }
+0|urlcampaigntracker  |   ]
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | OS load averages: linux [ 0.7, 0.2, 0.05 ]
+0|urlcampaigntracker  | ========== SYSTEM LOAD CALCULATION ==========
+0|urlcampaigntracker  | Raw OS load averages: [0.7,0.2,0.05]
+0|urlcampaigntracker  | Using 1-minute load average: 0.7
+0|urlcampaigntracker  | CPU Info raw length: 16
+0|urlcampaigntracker  | Number of CPUs detected: 16
+0|urlcampaigntracker  | SI current load data: {"avgLoad":0.04,"currentLoad":0.07060938034919548,"currentLoadUser":0.01390790825059911,"currentLoadSystem":0.05670147209859638,"currentLoadNice":0,"currentLoadIdle":99.9293906196508,"currentLoadIrq":0,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":660,"rawCurrentLoadUser":130,"rawCurrentLoadSystem":530,"rawCurrentLoadNice":0,"rawCurrentLoadIdle":934060,"rawCurrentLoadIrq":0,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":0.05203816131830009,"loadUser":0,"loadSystem":0.05203816131830009,"loadNice":0,"loadIdle":99.94796183868169,"loadIrq":0,"rawLoad":30,"rawLoadUser":0,"rawLoadSystem":30,"rawLoadNice":0,"rawLoadIdle":57620,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.4662576687116564,"loadUser":0.0736196319018405,"loadSystem":0.39263803680981596,"loadNice":0,"loadIdle":99.53374233128834,"loadIrq":0,"rawLoad":190,"rawLoadUser":30,"rawLoadSystem":160,"rawLoadNice":0,"rawLoadIdle":40560,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.1031459515214028,"loadUser":0.017190991920233798,"loadSystem":0.08595495960116899,"loadNice":0,"loadIdle":99.8968540484786,"loadIrq":0,"rawLoad":60,"rawLoadUser":10,"rawLoadSystem":50,"rawLoadNice":0,"rawLoadIdle":58110,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.016666666666666666,"loadUser":0.016666666666666666,"loadSystem":0,"loadNice":0,"loadIdle":99.98333333333333,"loadIrq":0,"rawLoad":10,"rawLoadUser":10,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59990,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.05049654940245749,"loadUser":0,"loadSystem":0.05049654940245749,"loadNice":0,"loadIdle":99.94950345059755,"loadIrq":0,"rawLoad":30,"rawLoadUser":0,"rawLoadSystem":30,"rawLoadNice":0,"rawLoadIdle":59380,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.28600269179004034,"loadUser":0.016823687752355317,"loadSystem":0.2691790040376851,"loadNice":0,"loadIdle":99.71399730820995,"loadIrq":0,"rawLoad":170,"rawLoadUser":10,"rawLoadSystem":160,"rawLoadNice":0,"rawLoadIdle":59270,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.10016694490818029,"loadUser":0.01669449081803005,"loadSystem":0.08347245409015025,"loadNice":0,"loadIdle":99.89983305509182,"loadIrq":0,"rawLoad":60,"rawLoadUser":10,"rawLoadSystem":50,"rawLoadNice":0,"rawLoadIdle":59840,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.016753224995811694,"loadUser":0,"loadSystem":0.016753224995811694,"loadNice":0,"loadIdle":99.98324677500419,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59680,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59990,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01667500416875104,"loadUser":0.01667500416875104,"loadSystem":0,"loadNice":0,"loadIdle":99.98332499583125,"loadIrq":0,"rawLoad":10,"rawLoadUser":10,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59960,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.03341129301703976,"loadUser":0.01670564650851988,"loadSystem":0.01670564650851988,"loadNice":0,"loadIdle":99.96658870698296,"loadIrq":0,"rawLoad":20,"rawLoadUser":10,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59840,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01667500416875104,"loadUser":0.01667500416875104,"loadSystem":0,"loadNice":0,"loadIdle":99.98332499583125,"loadIrq":0,"rawLoad":10,"rawLoadUser":10,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59960,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":60000,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.06674453529117304,"loadUser":0.03337226764558652,"loadSystem":0.03337226764558652,"loadNice":0,"loadIdle":99.93325546470882,"loadIrq":0,"rawLoad":40,"rawLoadUser":20,"rawLoadSystem":20,"rawLoadNice":0,"rawLoadIdle":59890,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01666944490748458,"loadUser":0.01666944490748458,"loadSystem":0,"loadNice":0,"loadIdle":99.98333055509252,"loadIrq":0,"rawLoad":10,"rawLoadUser":10,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59980,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.016666666666666666,"loadUser":0,"loadSystem":0.016666666666666666,"loadNice":0,"loadIdle":99.98333333333333,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59990,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0}]}
+0|urlcampaigntracker  | Initial calculated load value: 4.375
+0|urlcampaigntracker  | Final system load calculation (before fallbacks): 4
+0|urlcampaigntracker  | FINAL SYSTEM LOAD VALUE TO DISPLAY: 4
+0|urlcampaigntracker  | ===========================================
+0|urlcampaigntracker  | Final CPU details being set: {
+0|urlcampaigntracker  |   "manufacturer": "AMD",
+0|urlcampaigntracker  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+0|urlcampaigntracker  |   "speed": 2.718,
+0|urlcampaigntracker  |   "cores": 16,
+0|urlcampaigntracker  |   "physicalCores": 8
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | OS information: {
+0|urlcampaigntracker  |   "platform": "linux",
+0|urlcampaigntracker  |   "distro": "Ubuntu",
+0|urlcampaigntracker  |   "release": "22.04.5 LTS",
+0|urlcampaigntracker  |   "codename": "jammy",
+0|urlcampaigntracker  |   "kernel": "6.8.0-59-generic",
+0|urlcampaigntracker  |   "arch": "x64",
+0|urlcampaigntracker  |   "hostname": "viralplayer.xyz",
+0|urlcampaigntracker  |   "fqdn": "viralplayer.xyz",
+0|urlcampaigntracker  |   "codepage": "UTF-8",
+0|urlcampaigntracker  |   "logofile": "ubuntu",
+0|urlcampaigntracker  |   "serial": "8243b13606a047b9bb0f86e690d11c1f",
+0|urlcampaigntracker  |   "build": "",
+0|urlcampaigntracker  |   "servicepack": "",
+0|urlcampaigntracker  |   "uefi": true
+0|urlcampaigntracker  | }

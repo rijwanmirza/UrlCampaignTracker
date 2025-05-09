@@ -1,0 +1,50 @@
+root@viralplayer:/var/www/UrlCampaignTracker# # Check application logs
+pm2 logs urlcampaigntracker --lines 20
+
+# Test the website response
+curl -I http://localhost:5000
+[TAILING] Tailing last 20 lines for [urlcampaigntracker] process (change the value with --lines option)
+/root/.pm2/logs/urlcampaigntracker-error.log last 20 lines:
+0|urlcampa |       exponent: '0x10001',
+0|urlcampa |       pubkey: <Buffer 30 82 01 22 30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00 03 82 01 0f 00 30 82 01 0a 02 82 01 01 00 b7 ec 16 5e fb 4c 2a 68 f5 ea c7 52 7f 3c ef f7 bd ... 244 more bytes>,
+0|urlcampa |       valid_from: 'May  9 12:41:28 2025 GMT',
+0|urlcampa |       valid_to: 'Aug  7 12:41:27 2025 GMT',
+0|urlcampa |       fingerprint: 'A3:06:88:FF:9B:97:51:DB:2B:B4:7A:3D:AA:6F:A3:F0:55:97:12:68',
+0|urlcampa |       fingerprint256: '23:C8:12:03:8D:FB:37:A7:C3:95:A8:A2:8B:D7:64:9C:84:FA:B2:76:D2:6E:63:73:3A:59:FA:AB:DF:AB:26:29',
+0|urlcampa |       fingerprint512: '80:13:E0:BA:09:89:3F:A5:E1:59:4F:FA:C8:90:C3:F9:D4:4F:1A:E5:09:CA:DA:2D:C5:B1:09:71:FA:4A:7C:6B:82:4D:65:A8:61:AB:01:18:DE:C6:F2:A3:3E:F4:B5:44:8F:7B:4A:24:DD:69:C2:B6:31:D7:62:16:64:71:AD:C1',
+0|urlcampa |       ext_key_usage: [Array],
+0|urlcampa |       serialNumber: '0698350F16DD7358D66A36DCB1819BCF2E5B',
+0|urlcampa |       raw: <Buffer 30 82 05 10 30 82 03 f8 a0 03 02 01 02 02 12 06 98 35 0f 16 dd 73 58 d6 6a 36 dc b1 81 9b cf 2e 5b 30 0d 06 09 2a 86 48 86 f7 0d 01 01 0b 05 00 30 33 ... 1250 more bytes>,
+0|urlcampa |       issuerCertificate: [Object]
+0|urlcampa |     }
+0|urlcampa |   },
+0|urlcampa |   [Symbol(kMessage)]: "Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz"
+0|urlcampa | }
+0|urlcampa | Error initializing access code manager: Error: Cannot retrieve access code from database
+0|urlcampa |     at getAccessCode2 (file:///var/www/UrlCampaignTracker/dist/index.js:14372:11)
+0|urlcampa |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|urlcampa |     at async initAccessCodeManager (file:///var/www/UrlCampaignTracker/dist/index.js:14398:24)
+0|urlcampa |     at async Server.<anonymous> (file:///var/www/UrlCampaignTracker/dist/index.js:14733:7)
+
+/root/.pm2/logs/urlcampaigntracker-out.log last 20 lines:
+0|urlcampa |   "speed": 0.4,
+0|urlcampa |   "cores": 16,
+0|urlcampa |   "physicalCores": 8
+0|urlcampa | }
+0|urlcampa | OS information: {
+0|urlcampa |   "platform": "linux",
+0|urlcampa |   "distro": "Ubuntu",
+0|urlcampa |   "release": "22.04.5 LTS",
+0|urlcampa |   "codename": "jammy",
+0|urlcampa |   "kernel": "6.8.0-59-generic",
+0|urlcampa |   "arch": "x64",
+0|urlcampa |   "hostname": "viralplayer.xyz",
+0|urlcampa |   "fqdn": "viralplayer.xyz",
+0|urlcampa |   "codepage": "UTF-8",
+0|urlcampa |   "logofile": "ubuntu",
+0|urlcampa |   "serial": "8243b13606a047b9bb0f86e690d11c1f",
+0|urlcampa |   "build": "",
+0|urlcampa |   "servicepack": "",
+0|urlcampa |   "uefi": true
+0|urlcampa | }
+

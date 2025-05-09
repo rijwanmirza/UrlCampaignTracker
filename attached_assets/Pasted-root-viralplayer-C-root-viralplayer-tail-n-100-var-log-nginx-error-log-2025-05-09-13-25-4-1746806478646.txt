@@ -1,0 +1,44 @@
+root@viralplayer:~# ^C
+root@viralplayer:~# tail -n 100 /var/log/nginx/error.log
+2025/05/09 13:25:42 [notice] 36983#36983: using inherited sockets from "6;7;"
+2025/05/09 13:25:47 [emerg] 37101#37101: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:17
+2025/05/09 13:25:47 [emerg] 37105#37105: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:17
+2025/05/09 13:26:01 [emerg] 37124#37124: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:17
+2025/05/09 13:26:01 [emerg] 37127#37127: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:17
+2025/05/09 13:26:09 [emerg] 37139#37139: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:17
+2025/05/09 13:26:52 [emerg] 37810#37810: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:17
+2025/05/09 13:30:16 [emerg] 37918#37918: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:30:16 [emerg] 37921#37921: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:30:21 [emerg] 37932#37932: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:30:34 [emerg] 37945#37945: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:31:17 [emerg] 37975#37975: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:32:17 [emerg] 37984#37984: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:32:17 [emerg] 37987#37987: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:34:04 [emerg] 686#686: unknown directive "http2" in /etc/nginx/sites-enabled/viralplayer.xyz:20
+2025/05/09 13:37:42 [emerg] 1165#1165: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:37:42 [emerg] 1168#1168: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:37:43 [emerg] 1179#1179: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:39:46 [emerg] 1301#1301: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:40:00 [emerg] 1324#1324: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:40:22 [emerg] 1357#1357: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:40:22 [emerg] 1360#1360: no "ssl_certificate" is defined for the "listen ... ssl" directive in /etc/nginx/sites-enabled/viralplayer.xyz:1
+2025/05/09 13:43:53 [error] 1524#1524: *10 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 13:43:54 [error] 1524#1524: *10 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET /favicon.ico HTTP/2.0", upstream: "http://127.0.0.1:5000/favicon.ico", host: "78.46.85.93", referrer: "https://78.46.85.93/"
+2025/05/09 13:49:45 [error] 741#741: *3 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 13:49:46 [error] 741#741: *3 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET /favicon.ico HTTP/2.0", upstream: "http://127.0.0.1:5000/favicon.ico", host: "78.46.85.93", referrer: "https://78.46.85.93/"
+2025/05/09 13:50:11 [error] 741#741: *3 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 13:50:12 [error] 741#741: *3 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET /favicon.ico HTTP/2.0", upstream: "http://127.0.0.1:5000/favicon.ico", host: "78.46.85.93", referrer: "https://78.46.85.93/"
+2025/05/09 13:53:56 [notice] 1547#1547: signal process started
+2025/05/09 14:06:51 [notice] 2825#2825: signal process started
+2025/05/09 14:07:13 [error] 2829#2829: *167 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "POST /api/auth/verify-key HTTP/2.0", upstream: "http://127.0.0.1:5000/api/auth/verify-key", host: "78.46.85.93", referrer: "https://78.46.85.93/login_jzkptd91r8n"
+2025/05/09 14:07:16 [error] 2829#2829: *167 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET /login_jzkptd91r8n HTTP/2.0", upstream: "http://127.0.0.1:5000/login_jzkptd91r8n", host: "78.46.85.93", referrer: "https://78.46.85.93/access/ABCD123"
+2025/05/09 14:07:19 [error] 2829#2829: *167 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 14:54:15 [error] 2829#2829: *540 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET /campaigns HTTP/2.0", upstream: "http://127.0.0.1:5000/campaigns", host: "78.46.85.93", referrer: "https://78.46.85.93/login_q1dx5vhe4r9"
+2025/05/09 14:54:17 [error] 2829#2829: *540 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 14:54:25 [error] 2829#2829: *540 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 14:54:26 [error] 2829#2829: *540 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 14:54:26 [error] 2829#2829: *540 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 14:54:28 [error] 2829#2829: *540 connect() failed (111: Unknown error) while connecting to upstream, client: 152.59.46.225, server: viralplayer.xyz, request: "GET / HTTP/2.0", upstream: "http://127.0.0.1:5000/", host: "78.46.85.93"
+2025/05/09 15:07:02 [notice] 6812#6812: signal process started
+2025/05/09 15:21:51 [notice] 7999#7999: signal process started
+root@viralplayer:~#

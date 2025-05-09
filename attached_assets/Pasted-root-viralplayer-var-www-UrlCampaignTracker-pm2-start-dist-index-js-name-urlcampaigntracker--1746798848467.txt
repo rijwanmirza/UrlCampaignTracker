@@ -1,0 +1,82 @@
+root@viralplayer:/var/www/UrlCampaignTracker# pm2 start dist/index.js --name urlcampaigntracker \
+  --env DATABASE_URL="postgresql://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb" \
+  --env API_SECRET_KEY="TraffiCS10928" \
+  --env TRAFFICSTAR_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8" \
+  --env PORT="5000" \
+  --env NODE_ENV="production"
+# Save the PM2 configuration
+pm2 save
+[PM2] Applying action restartProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+[PM2] Process successfully started
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 1371     │ 0s     │ 1    │ online    │ 0%       │ 18.5mb   │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@viralplayer:/var/www/UrlCampaignTracker# ^C
+root@viralplayer:/var/www/UrlCampaignTracker# # Create a startup wrapper script
+cat > /var/www/UrlCampaignTracker/start.sh << 'EOF'
+#!/bin/bash
+export DATABASE_URL="postgresql://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export API_SECRET_KEY="TraffiCS10928"
+export TRAFFICSTAR_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8"
+export PORT="5000"
+export NODE_ENV="production"
+
+node dist/index.js
+EOF
+
+# Make it executable
+chmod +x /var/www/UrlCampaignTracker/start.sh
+
+# Run the application with PM2 using the wrapper script
+pm2 stop urlcampaigntracker
+pm2 start /var/www/UrlCampaignTracker/start.sh --name urlcampaigntracker
+pm2 save
+[PM2] Applying action stopProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 1    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Starting /var/www/UrlCampaignTracker/start.sh in fork_mode (1 instance)
+[PM2] Done.
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 1    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 1  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 1446     │ 0s     │ 0    │ online    │ 0%       │ 3.4mb    │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@viralplayer:/var/www/UrlCampaignTracker# # Set correct permissions on .env file
+chmod 644 /var/www/UrlCampaignTracker/.env
+root@viralplayer:/var/www/UrlCampaignTracker# # Make sure PostgreSQL is running
+systemctl status postgresql
+
+# Try connecting to PostgreSQL directly
+PGPASSWORD=npg_U8evoXZz0WOB psql -h localhost -U neondb_owner -d neondb -c "SELECT 'Database connection successful' as status;"
+
+# Restart PostgreSQL if needed
+systemctl restart postgresql
+● postgresql.service - PostgreSQL RDBMS
+     Loaded: loaded (/lib/systemd/system/postgresql.service; enabled; vendor preset: enabled)
+     Active: active (exited) since Fri 2025-05-09 13:49:46 UTC; 4min 0s ago
+    Process: 824 ExecStart=/bin/true (code=exited, status=0/SUCCESS)
+   Main PID: 824 (code=exited, status=0/SUCCESS)
+        CPU: 967us
+
+May 09 13:49:46 viralplayer.xyz systemd[1]: Starting PostgreSQL RDBMS...
+May 09 13:49:46 viralplayer.xyz systemd[1]: Finished PostgreSQL RDBMS.
+             status
+--------------------------------
+ Database connection successful
+(1 row)
+
+root@viralplayer:/var/www/UrlCampaignTracker# # Reload Nginx to pick up any configuration changes
+systemctl reload nginx
+root@viralplayer:/var/www/UrlCampaignTracker#

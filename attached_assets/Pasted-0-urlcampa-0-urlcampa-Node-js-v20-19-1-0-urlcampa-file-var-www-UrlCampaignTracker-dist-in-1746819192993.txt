@@ -1,0 +1,51 @@
+0|urlcampa |
+0|urlcampa | Node.js v20.19.1
+0|urlcampa | file:///var/www/UrlCampaignTracker/dist/index.js:14675
+0|urlcampa | const expressApiDebug = (req, res, next) => {
+0|urlcampa |       ^
+0|urlcampa |
+0|urlcampa | SyntaxError: Identifier 'expressApiDebug' has already been declared
+0|urlcampa |     at compileSourceTextModule (node:internal/modules/esm/utils:340:16)
+0|urlcampa |     at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+0|urlcampa |     at #translate (node:internal/modules/esm/loader:431:12)
+0|urlcampa |     at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:478:27)
+0|urlcampa |     at async ModuleJob._link (node:internal/modules/esm/module_job:110:19)
+0|urlcampa |
+0|urlcampa | Node.js v20.19.1
+0|urlcampa | file:///var/www/UrlCampaignTracker/dist/index.js:14675
+0|urlcampa | const expressApiDebug = (req, res, next) => {
+0|urlcampa |       ^
+0|urlcampa |
+0|urlcampa | SyntaxError: Identifier 'expressApiDebug' has already been declared
+0|urlcampa |     at compileSourceTextModule (node:internal/modules/esm/utils:340:16)
+0|urlcampa |     at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+0|urlcampa |     at #translate (node:internal/modules/esm/loader:431:12)
+0|urlcampa |     at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:478:27)
+0|urlcampa |     at async ModuleJob._link (node:internal/modules/esm/module_job:110:19)
+0|urlcampa |
+0|urlcampa | Node.js v20.19.1
+0|urlcampa | file:///var/www/UrlCampaignTracker/dist/index.js:14675
+0|urlcampa | const expressApiDebug = (req, res, next) => {
+0|urlcampa |       ^
+0|urlcampa |
+0|urlcampa | SyntaxError: Identifier 'expressApiDebug' has already been declared
+0|urlcampa |     at compileSourceTextModule (node:internal/modules/esm/utils:340:16)
+0|urlcampa |     at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+0|urlcampa |     at #translate (node:internal/modules/esm/loader:431:12)
+0|urlcampa |     at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:478:27)
+0|urlcampa |     at async ModuleJob._link (node:internal/modules/esm/module_job:110:19)
+0|urlcampa |
+0|urlcampa | Node.js v20.19.1
+0|urlcampa | file:///var/www/UrlCampaignTracker/dist/index.js:14675
+0|urlcampa | const expressApiDebug = (req, res, next) => {
+0|urlcampa |       ^
+0|urlcampa |
+0|urlcampa | SyntaxError: Identifier 'expressApiDebug' has already been declared
+0|urlcampa |     at compileSourceTextModule (node:internal/modules/esm/utils:340:16)
+0|urlcampa |     at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+0|urlcampa |     at #translate (node:internal/modules/esm/loader:431:12)
+0|urlcampa |     at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:478:27)
+0|urlcampa |     at async ModuleJob._link (node:internal/modules/esm/module_job:110:19)
+0|urlcampa |
+0|urlcampa | Node.js v20.19.1
+

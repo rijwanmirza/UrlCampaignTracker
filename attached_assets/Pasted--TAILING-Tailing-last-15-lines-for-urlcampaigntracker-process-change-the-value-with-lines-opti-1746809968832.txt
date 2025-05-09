@@ -1,0 +1,74 @@
+[TAILING] Tailing last 15 lines for [urlcampaigntracker] process (change the value with --lines option)
+/root/.pm2/logs/urlcampaigntracker-out-0.log last 15 lines:
+0|urlcampa | vite v5.4.14 building for production...
+0|urlcampa | transforming...
+0|urlcampa | ✓ 3573 modules transformed.
+0|urlcampa | rendering chunks...
+0|urlcampa | computing gzip size...
+0|urlcampa | ../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+0|urlcampa | ../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+0|urlcampa | ../dist/public/assets/index-D0AL69SA.js   1,336.06 kB │ gzip: 371.49 kB
+0|urlcampa | ✓ built in 4.36s
+0|urlcampa |
+0|urlcampa | > rest-express@1.0.0 build
+0|urlcampa | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|urlcampa |
+0|urlcampa | vite v5.4.14 building for production...
+0|urlcampa | transforming...
+
+/root/.pm2/logs/urlcampaigntracker-error-0.log last 15 lines:
+0|urlcampa |     at internalRequire (node:internal/modules/cjs/loader:216:19)
+0|urlcampa |     at Module._preloadModules (node:internal/modules/cjs/loader:1775:5)
+0|urlcampa |     at loadPreloadModules (node:internal/process/pre_execution:747:5)
+0|urlcampa |     at setupUserModules (node:internal/process/pre_execution:208:5)
+0|urlcampa |     at prepareExecution (node:internal/process/pre_execution:161:5)
+0|urlcampa |     at prepareMainThreadExecution (node:internal/process/pre_execution:54:10)
+0|urlcampa |     at node:internal/main/run_main_module:11:19 {
+0|urlcampa |   code: 'MODULE_NOT_FOUND',
+0|urlcampa |   requireStack: [ 'internal/preload' ]
+0|urlcampa | }
+0|urlcampa |
+0|urlcampa | Node.js v20.19.1
+0|urlcampa | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|urlcampa |   npx update-browserslist-db@latest
+0|urlcampa |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+0|urlcampaigntracker  | ✓ 3573 modules transformed.
+0|urlcampaigntracker  | rendering chunks...
+0|urlcampaigntracker  | computing gzip size...
+0|urlcampaigntracker  | ../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+0|urlcampaigntracker  | ../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+0|urlcampaigntracker  | ../dist/public/assets/index-D0AL69SA.js   1,336.06 kB │ gzip: 371.49 kB
+0|urlcampaigntracker  | (!) Some chunks are larger than 500 kB after minification. Consider:
+0|urlcampaigntracker  | - Using dynamic import() to code-split the application
+0|urlcampaigntracker  | - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+0|urlcampaigntracker  | - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+0|urlcampaigntracker  | ✓ built in 4.42s
+0|urlcampaigntracker  |   dist/index.js  621.1kb
+0|urlcampaigntracker  | ⚡ Done in 31ms
+0|urlcampaigntracker  | node:internal/modules/cjs/loader:1215
+0|urlcampaigntracker  |   throw err;
+0|urlcampaigntracker  |   ^
+0|urlcampaigntracker  | Error: Cannot find module 'dotenv/config'
+0|urlcampaigntracker  | Require stack:
+0|urlcampaigntracker  | - internal/preload
+0|urlcampaigntracker  |     at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+0|urlcampaigntracker  |     at Module._load (node:internal/modules/cjs/loader:1043:27)
+0|urlcampaigntracker  |     at internalRequire (node:internal/modules/cjs/loader:216:19)
+0|urlcampaigntracker  |     at Module._preloadModules (node:internal/modules/cjs/loader:1775:5)
+0|urlcampaigntracker  |     at loadPreloadModules (node:internal/process/pre_execution:747:5)
+0|urlcampaigntracker  |     at setupUserModules (node:internal/process/pre_execution:208:5)
+0|urlcampaigntracker  |     at prepareExecution (node:internal/process/pre_execution:161:5)
+0|urlcampaigntracker  |     at prepareMainThreadExecution (node:internal/process/pre_execution:54:10)
+0|urlcampaigntracker  |     at node:internal/main/run_main_module:11:19 {
+0|urlcampaigntracker  |   code: 'MODULE_NOT_FOUND',
+0|urlcampaigntracker  |   requireStack: [ 'internal/preload' ]
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | Node.js v20.19.1
+0|urlcampaigntracker  | > rest-express@1.0.0 build
+0|urlcampaigntracker  | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|urlcampaigntracker  | vite v5.4.14 building for production...
+0|urlcampaigntracker  | transforming...
+0|urlcampaigntracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|urlcampaigntracker  |   npx update-browserslist-db@latest
+0|urlcampaigntracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme

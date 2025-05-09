@@ -1,0 +1,347 @@
+0|urlcampaigntracker  | Error fetching campaigns: ErrorEvent {
+0|urlcampaigntracker  |   [Symbol(kTarget)]: WebSocket {
+0|urlcampaigntracker  |     _events: [Object: null prototype] {
+0|urlcampaigntracker  |       error: [Function],
+0|urlcampaigntracker  |       message: [Function],
+0|urlcampaigntracker  |       close: [Function],
+0|urlcampaigntracker  |       open: [Function]
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     _eventsCount: 4,
+0|urlcampaigntracker  |     _maxListeners: undefined,
+0|urlcampaigntracker  |     _binaryType: 'arraybuffer',
+0|urlcampaigntracker  |     _closeCode: 1006,
+0|urlcampaigntracker  |     _closeFrameReceived: false,
+0|urlcampaigntracker  |     _closeFrameSent: false,
+0|urlcampaigntracker  |     _closeMessage: <Buffer >,
+0|urlcampaigntracker  |     _closeTimer: null,
+0|urlcampaigntracker  |     _errorEmitted: true,
+0|urlcampaigntracker  |     _extensions: {},
+0|urlcampaigntracker  |     _paused: false,
+0|urlcampaigntracker  |     _protocol: '',
+0|urlcampaigntracker  |     _readyState: 3,
+0|urlcampaigntracker  |     _receiver: null,
+0|urlcampaigntracker  |     _sender: null,
+0|urlcampaigntracker  |     _socket: null,
+0|urlcampaigntracker  |     _bufferedAmount: 0,
+0|urlcampaigntracker  |     _isServer: false,
+0|urlcampaigntracker  |     _redirects: 0,
+0|urlcampaigntracker  |     _autoPong: true,
+0|urlcampaigntracker  |     _url: 'wss://localhost/v2',
+0|urlcampaigntracker  |     _req: ClientRequest {
+0|urlcampaigntracker  |       _events: [Object: null prototype],
+0|urlcampaigntracker  |       _eventsCount: 4,
+0|urlcampaigntracker  |       _maxListeners: undefined,
+0|urlcampaigntracker  |       outputData: [],
+0|urlcampaigntracker  |       outputSize: 0,
+0|urlcampaigntracker  |       writable: true,
+0|urlcampaigntracker  |       destroyed: true,
+0|urlcampaigntracker  |       _last: true,
+0|urlcampaigntracker  |       chunkedEncoding: false,
+0|urlcampaigntracker  |       shouldKeepAlive: true,
+0|urlcampaigntracker  |       maxRequestsOnConnectionReached: false,
+0|urlcampaigntracker  |       _defaultKeepAlive: true,
+0|urlcampaigntracker  |       useChunkedEncodingByDefault: false,
+0|urlcampaigntracker  |       sendDate: false,
+0|urlcampaigntracker  |       _removedConnection: false,
+0|urlcampaigntracker  |       _removedContLen: false,
+0|urlcampaigntracker  |       _removedTE: false,
+0|urlcampaigntracker  |       strictContentLength: false,
+0|urlcampaigntracker  |       _contentLength: 0,
+0|urlcampaigntracker  |       _hasBody: true,
+0|urlcampaigntracker  |       _trailer: '',
+0|urlcampaigntracker  |       finished: true,
+0|urlcampaigntracker  |       _headerSent: true,
+0|urlcampaigntracker  |       _closed: true,
+0|urlcampaigntracker  |       socket: [TLSSocket],
+0|urlcampaigntracker  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Version: 13\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Key: NLDgLMXxUQnj6WEvnO79Ag==\r\n' +
+0|urlcampaigntracker  |         'Connection: Upgrade\r\n' +
+0|urlcampaigntracker  |         'Upgrade: websocket\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|urlcampaigntracker  |         'Host: localhost\r\n' +
+0|urlcampaigntracker  |         '\r\n',
+0|urlcampaigntracker  |       _keepAliveTimeout: 0,
+0|urlcampaigntracker  |       _onPendingData: [Function: nop],
+0|urlcampaigntracker  |       agent: undefined,
+0|urlcampaigntracker  |       socketPath: undefined,
+0|urlcampaigntracker  |       method: 'GET',
+0|urlcampaigntracker  |       maxHeaderSize: undefined,
+0|urlcampaigntracker  |       insecureHTTPParser: undefined,
+0|urlcampaigntracker  |       joinDuplicateHeaders: undefined,
+0|urlcampaigntracker  |       path: '/v2',
+0|urlcampaigntracker  |       _ended: true,
+0|urlcampaigntracker  |       res: [IncomingMessage],
+0|urlcampaigntracker  |       aborted: true,
+0|urlcampaigntracker  |       timeoutCb: null,
+0|urlcampaigntracker  |       upgradeOrConnect: false,
+0|urlcampaigntracker  |       parser: null,
+0|urlcampaigntracker  |       maxHeadersCount: null,
+0|urlcampaigntracker  |       reusedSocket: false,
+0|urlcampaigntracker  |       host: 'localhost',
+0|urlcampaigntracker  |       protocol: 'https:',
+0|urlcampaigntracker  |       [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |       [Symbol(kCapture)]: false,
+0|urlcampaigntracker  |       [Symbol(kBytesWritten)]: 0,
+0|urlcampaigntracker  |       [Symbol(kNeedDrain)]: false,
+0|urlcampaigntracker  |       [Symbol(corked)]: 0,
+0|urlcampaigntracker  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|urlcampaigntracker  |       [Symbol(errored)]: null,
+0|urlcampaigntracker  |       [Symbol(kHighWaterMark)]: 16384,
+0|urlcampaigntracker  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|urlcampaigntracker  |       [Symbol(kUniqueHeaders)]: null,
+0|urlcampaigntracker  |       [Symbol(kAborted)]: true,
+0|urlcampaigntracker  |       [Symbol(kError)]: undefined
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |     [Symbol(kCapture)]: false
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kType)]: 'error',
+0|urlcampaigntracker  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|urlcampaigntracker  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|urlcampaigntracker  |       at ClientRequest.emit (node:events:518:28)
+0|urlcampaigntracker  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|urlcampaigntracker  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|urlcampaigntracker  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|urlcampaigntracker  |       at TLSSocket.emit (node:events:518:28)
+0|urlcampaigntracker  |       at addChunk (node:internal/streams/readable:561:12)
+0|urlcampaigntracker  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|urlcampaigntracker  |       at Readable.push (node:internal/streams/readable:392:5)
+0|urlcampaigntracker  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|urlcampaigntracker  |   [Symbol(kMessage)]: 'Unexpected server response: 404'
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | 3:24:16 PM [express] GET /api/campaigns 500 in 6ms :: {"message":"Failed to fetch campaigns","error"…
+0|urlcampaigntracker  | 3:24:19 PM [access] Access check for path: /api/youtube-api-logs
+0|urlcampaigntracker  | 3:24:19 PM [access] Access check for path: /v2
+0|urlcampaigntracker  | 3:24:19 PM [access] Access denied for path: /v2 - no valid session or API key
+0|urlcampaigntracker  | Error fetching YouTube API logs: ErrorEvent {
+0|urlcampaigntracker  |   [Symbol(kTarget)]: WebSocket {
+0|urlcampaigntracker  |     _events: [Object: null prototype] {
+0|urlcampaigntracker  |       error: [Function],
+0|urlcampaigntracker  |       message: [Function],
+0|urlcampaigntracker  |       close: [Function],
+0|urlcampaigntracker  |       open: [Function]
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     _eventsCount: 4,
+0|urlcampaigntracker  |     _maxListeners: undefined,
+0|urlcampaigntracker  |     _binaryType: 'arraybuffer',
+0|urlcampaigntracker  |     _closeCode: 1006,
+0|urlcampaigntracker  |     _closeFrameReceived: false,
+0|urlcampaigntracker  |     _closeFrameSent: false,
+0|urlcampaigntracker  |     _closeMessage: <Buffer >,
+0|urlcampaigntracker  |     _closeTimer: null,
+0|urlcampaigntracker  |     _errorEmitted: true,
+0|urlcampaigntracker  |     _extensions: {},
+0|urlcampaigntracker  |     _paused: false,
+0|urlcampaigntracker  |     _protocol: '',
+0|urlcampaigntracker  |     _readyState: 3,
+0|urlcampaigntracker  |     _receiver: null,
+0|urlcampaigntracker  |     _sender: null,
+0|urlcampaigntracker  |     _socket: null,
+0|urlcampaigntracker  |     _bufferedAmount: 0,
+0|urlcampaigntracker  |     _isServer: false,
+0|urlcampaigntracker  |     _redirects: 0,
+0|urlcampaigntracker  |     _autoPong: true,
+0|urlcampaigntracker  |     _url: 'wss://localhost/v2',
+0|urlcampaigntracker  |     _req: ClientRequest {
+0|urlcampaigntracker  |       _events: [Object: null prototype],
+0|urlcampaigntracker  |       _eventsCount: 4,
+0|urlcampaigntracker  |       _maxListeners: undefined,
+0|urlcampaigntracker  |       outputData: [],
+0|urlcampaigntracker  |       outputSize: 0,
+0|urlcampaigntracker  |       writable: true,
+0|urlcampaigntracker  |       destroyed: true,
+0|urlcampaigntracker  |       _last: true,
+0|urlcampaigntracker  |       chunkedEncoding: false,
+0|urlcampaigntracker  |       shouldKeepAlive: true,
+0|urlcampaigntracker  |       maxRequestsOnConnectionReached: false,
+0|urlcampaigntracker  |       _defaultKeepAlive: true,
+0|urlcampaigntracker  |       useChunkedEncodingByDefault: false,
+0|urlcampaigntracker  |       sendDate: false,
+0|urlcampaigntracker  |       _removedConnection: false,
+0|urlcampaigntracker  |       _removedContLen: false,
+0|urlcampaigntracker  |       _removedTE: false,
+0|urlcampaigntracker  |       strictContentLength: false,
+0|urlcampaigntracker  |       _contentLength: 0,
+0|urlcampaigntracker  |       _hasBody: true,
+0|urlcampaigntracker  |       _trailer: '',
+0|urlcampaigntracker  |       finished: true,
+0|urlcampaigntracker  |       _headerSent: true,
+0|urlcampaigntracker  |       _closed: true,
+0|urlcampaigntracker  |       socket: [TLSSocket],
+0|urlcampaigntracker  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Version: 13\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Key: +nBczrzC+fY8aRiKL6G8WQ==\r\n' +
+0|urlcampaigntracker  |         'Connection: Upgrade\r\n' +
+0|urlcampaigntracker  |         'Upgrade: websocket\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|urlcampaigntracker  |         'Host: localhost\r\n' +
+0|urlcampaigntracker  |         '\r\n',
+0|urlcampaigntracker  |       _keepAliveTimeout: 0,
+0|urlcampaigntracker  |       _onPendingData: [Function: nop],
+0|urlcampaigntracker  |       agent: undefined,
+0|urlcampaigntracker  |       socketPath: undefined,
+0|urlcampaigntracker  |       method: 'GET',
+0|urlcampaigntracker  |       maxHeaderSize: undefined,
+0|urlcampaigntracker  |       insecureHTTPParser: undefined,
+0|urlcampaigntracker  |       joinDuplicateHeaders: undefined,
+0|urlcampaigntracker  |       path: '/v2',
+0|urlcampaigntracker  |       _ended: true,
+0|urlcampaigntracker  |       res: [IncomingMessage],
+0|urlcampaigntracker  |       aborted: true,
+0|urlcampaigntracker  |       timeoutCb: null,
+0|urlcampaigntracker  |       upgradeOrConnect: false,
+0|urlcampaigntracker  |       parser: null,
+0|urlcampaigntracker  |       maxHeadersCount: null,
+0|urlcampaigntracker  |       reusedSocket: false,
+0|urlcampaigntracker  |       host: 'localhost',
+0|urlcampaigntracker  |       protocol: 'https:',
+0|urlcampaigntracker  |       [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |       [Symbol(kCapture)]: false,
+0|urlcampaigntracker  |       [Symbol(kBytesWritten)]: 0,
+0|urlcampaigntracker  |       [Symbol(kNeedDrain)]: false,
+0|urlcampaigntracker  |       [Symbol(corked)]: 0,
+0|urlcampaigntracker  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|urlcampaigntracker  |       [Symbol(errored)]: null,
+0|urlcampaigntracker  |       [Symbol(kHighWaterMark)]: 16384,
+0|urlcampaigntracker  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|urlcampaigntracker  |       [Symbol(kUniqueHeaders)]: null,
+0|urlcampaigntracker  |       [Symbol(kAborted)]: true,
+0|urlcampaigntracker  |       [Symbol(kError)]: undefined
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |     [Symbol(kCapture)]: false
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kType)]: 'error',
+0|urlcampaigntracker  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|urlcampaigntracker  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|urlcampaigntracker  |       at ClientRequest.emit (node:events:518:28)
+0|urlcampaigntracker  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|urlcampaigntracker  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|urlcampaigntracker  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|urlcampaigntracker  |       at TLSSocket.emit (node:events:518:28)
+0|urlcampaigntracker  |       at addChunk (node:internal/streams/readable:561:12)
+0|urlcampaigntracker  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|urlcampaigntracker  |       at Readable.push (node:internal/streams/readable:392:5)
+0|urlcampaigntracker  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|urlcampaigntracker  |   [Symbol(kMessage)]: 'Unexpected server response: 404'
+0|urlcampaigntracker  | }
+0|urlcampaigntracker  | 3:24:19 PM [express] GET /api/youtube-api-logs 500 in 5ms :: {"message":"Failed to fetch YouTube API…
+0|urlcampaigntracker  | 3:24:28 PM [access] Access check for path: /api/gmail-reader/status
+0|urlcampaigntracker  | 🔍 DEBUG: Getting Gmail status, autoDeleteMinutes: 2
+0|urlcampaigntracker  | 🔍 DEBUG: Returning Gmail status with autoDeleteMinutes: 2
+0|urlcampaigntracker  | 3:24:28 PM [express] GET /api/gmail-reader/status 200 in 1ms :: {"isRunning":true,"config":{"user":"…
+0|urlcampaigntracker  | 3:24:28 PM [access] Access check for path: /api/campaigns
+0|urlcampaigntracker  | 3:24:28 PM [access] Access check for path: /v2
+0|urlcampaigntracker  | 3:24:28 PM [access] Access denied for path: /v2 - no valid session or API key
+0|urlcampaigntracker  | Error fetching campaigns: ErrorEvent {
+0|urlcampaigntracker  |   [Symbol(kTarget)]: WebSocket {
+0|urlcampaigntracker  |     _events: [Object: null prototype] {
+0|urlcampaigntracker  |       error: [Function],
+0|urlcampaigntracker  |       message: [Function],
+0|urlcampaigntracker  |       close: [Function],
+0|urlcampaigntracker  |       open: [Function]
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     _eventsCount: 4,
+0|urlcampaigntracker  |     _maxListeners: undefined,
+0|urlcampaigntracker  |     _binaryType: 'arraybuffer',
+0|urlcampaigntracker  |     _closeCode: 1006,
+0|urlcampaigntracker  |     _closeFrameReceived: false,
+0|urlcampaigntracker  |     _closeFrameSent: false,
+0|urlcampaigntracker  |     _closeMessage: <Buffer >,
+0|urlcampaigntracker  |     _closeTimer: null,
+0|urlcampaigntracker  |     _errorEmitted: true,
+0|urlcampaigntracker  |     _extensions: {},
+0|urlcampaigntracker  |     _paused: false,
+0|urlcampaigntracker  |     _protocol: '',
+0|urlcampaigntracker  |     _readyState: 3,
+0|urlcampaigntracker  |     _receiver: null,
+0|urlcampaigntracker  |     _sender: null,
+0|urlcampaigntracker  |     _socket: null,
+0|urlcampaigntracker  |     _bufferedAmount: 0,
+0|urlcampaigntracker  |     _isServer: false,
+0|urlcampaigntracker  |     _redirects: 0,
+0|urlcampaigntracker  |     _autoPong: true,
+0|urlcampaigntracker  |     _url: 'wss://localhost/v2',
+0|urlcampaigntracker  |     _req: ClientRequest {
+0|urlcampaigntracker  |       _events: [Object: null prototype],
+0|urlcampaigntracker  |       _eventsCount: 4,
+0|urlcampaigntracker  |       _maxListeners: undefined,
+0|urlcampaigntracker  |       outputData: [],
+0|urlcampaigntracker  |       outputSize: 0,
+0|urlcampaigntracker  |       writable: true,
+0|urlcampaigntracker  |       destroyed: true,
+0|urlcampaigntracker  |       _last: true,
+0|urlcampaigntracker  |       chunkedEncoding: false,
+0|urlcampaigntracker  |       shouldKeepAlive: true,
+0|urlcampaigntracker  |       maxRequestsOnConnectionReached: false,
+0|urlcampaigntracker  |       _defaultKeepAlive: true,
+0|urlcampaigntracker  |       useChunkedEncodingByDefault: false,
+0|urlcampaigntracker  |       sendDate: false,
+0|urlcampaigntracker  |       _removedConnection: false,
+0|urlcampaigntracker  |       _removedContLen: false,
+0|urlcampaigntracker  |       _removedTE: false,
+0|urlcampaigntracker  |       strictContentLength: false,
+0|urlcampaigntracker  |       _contentLength: 0,
+0|urlcampaigntracker  |       _hasBody: true,
+0|urlcampaigntracker  |       _trailer: '',
+0|urlcampaigntracker  |       finished: true,
+0|urlcampaigntracker  |       _headerSent: true,
+0|urlcampaigntracker  |       _closed: true,
+0|urlcampaigntracker  |       socket: [TLSSocket],
+0|urlcampaigntracker  |       _header: 'GET /v2 HTTP/1.1\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Version: 13\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Key: w/WmqK5+ZIdAUNVV9e8ecA==\r\n' +
+0|urlcampaigntracker  |         'Connection: Upgrade\r\n' +
+0|urlcampaigntracker  |         'Upgrade: websocket\r\n' +
+0|urlcampaigntracker  |         'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+0|urlcampaigntracker  |         'Host: localhost\r\n' +
+0|urlcampaigntracker  |         '\r\n',
+0|urlcampaigntracker  |       _keepAliveTimeout: 0,
+0|urlcampaigntracker  |       _onPendingData: [Function: nop],
+0|urlcampaigntracker  |       agent: undefined,
+0|urlcampaigntracker  |       socketPath: undefined,
+0|urlcampaigntracker  |       method: 'GET',
+0|urlcampaigntracker  |       maxHeaderSize: undefined,
+0|urlcampaigntracker  |       insecureHTTPParser: undefined,
+0|urlcampaigntracker  |       joinDuplicateHeaders: undefined,
+0|urlcampaigntracker  |       path: '/v2',
+0|urlcampaigntracker  |       _ended: true,
+0|urlcampaigntracker  |       res: [IncomingMessage],
+0|urlcampaigntracker  |       aborted: true,
+0|urlcampaigntracker  |       timeoutCb: null,
+0|urlcampaigntracker  |       upgradeOrConnect: false,
+0|urlcampaigntracker  |       parser: null,
+0|urlcampaigntracker  |       maxHeadersCount: null,
+0|urlcampaigntracker  |       reusedSocket: false,
+0|urlcampaigntracker  |       host: 'localhost',
+0|urlcampaigntracker  |       protocol: 'https:',
+0|urlcampaigntracker  |       [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |       [Symbol(kCapture)]: false,
+0|urlcampaigntracker  |       [Symbol(kBytesWritten)]: 0,
+0|urlcampaigntracker  |       [Symbol(kNeedDrain)]: false,
+0|urlcampaigntracker  |       [Symbol(corked)]: 0,
+0|urlcampaigntracker  |       [Symbol(kOutHeaders)]: [Object: null prototype],
+0|urlcampaigntracker  |       [Symbol(errored)]: null,
+0|urlcampaigntracker  |       [Symbol(kHighWaterMark)]: 16384,
+0|urlcampaigntracker  |       [Symbol(kRejectNonStandardBodyWrites)]: false,
+0|urlcampaigntracker  |       [Symbol(kUniqueHeaders)]: null,
+0|urlcampaigntracker  |       [Symbol(kAborted)]: true,
+0|urlcampaigntracker  |       [Symbol(kError)]: undefined
+0|urlcampaigntracker  |     },
+0|urlcampaigntracker  |     [Symbol(shapeMode)]: false,
+0|urlcampaigntracker  |     [Symbol(kCapture)]: false
+0|urlcampaigntracker  |   },
+0|urlcampaigntracker  |   [Symbol(kType)]: 'error',
+0|urlcampaigntracker  |   [Symbol(kError)]: Error: Unexpected server response: 404
+0|urlcampaigntracker  |       at ClientRequest.<anonymous> (/var/www/UrlCampaignTracker/node_modules/ws/lib/websocket.js:913:7)
+0|urlcampaigntracker  |       at ClientRequest.emit (node:events:518:28)
+0|urlcampaigntracker  |       at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+0|urlcampaigntracker  |       at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+0|urlcampaigntracker  |       at TLSSocket.socketOnData (node:_http_client:544:22)
+0|urlcampaigntracker  |       at TLSSocket.emit (node:events:518:28)
+0|urlcampaigntracker  |       at addChunk (node:internal/streams/readable:561:12)
+0|urlcampaigntracker  |       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+0|urlcampaigntracker  |       at Readable.push (node:internal/streams/readable:392:5)
+0|urlcampaigntracker  |       at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+0|urlcampaigntracker  |   [Symbol(kMessage)]: 'Unexpected server response: 404'

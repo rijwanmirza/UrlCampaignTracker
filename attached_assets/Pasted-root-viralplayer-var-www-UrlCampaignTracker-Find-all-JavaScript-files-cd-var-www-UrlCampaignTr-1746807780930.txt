@@ -1,0 +1,70 @@
+root@viralplayer:/var/www/UrlCampaignTracker# # Find all JavaScript files
+cd /var/www/UrlCampaignTracker
+find dist -name "*.js" > js_files.txt
+
+# Create a very direct sed replacement for all JavaScript files
+cat > /var/www/UrlCampaignTracker/final-ws-fix.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Starting FINAL WebSocket fix..."
+
+while IFS= read -r file; do
+  echo "Fixing $file..."
+
+  # Backup the file
+  cp "$file" "$file.bak"
+
+  # Replace WebSocket connection strings directly
+  sed -i 's|wss://localhost/v2|wss://viralplayer.xyz/v2|g' "$file"
+  sed -i 's|ws://localhost/v2|wss://viralplayer.xyz/v2|g' "$file"
+  sed -i 's|wss://localhost|wss://viralplayer.xyz/v2|g' "$file"
+  sed -i 's|ws://localhost|wss://viralplayer.xyz/v2|g' "$file"
+
+  # Force host header to be viralplayer.xyz
+  sed -i 's|Host: localhost|Host: viralplayer.xyz|g' "$file"
+
+  # Add missing Authorization header to WebSocket connection
+  sed -i 's|new WebSocket("wss://viralplayer.xyz/v2")|new WebSocket("wss://viralplayer.xyz/v2", {headers: {"Authorization": "TraffiCS10928"}})|g' "$file"
+
+  echo "Fixed $file"
+done < js_files.txt
+
+# Start the standalone WebSocket server
+node create-ws-server.cjs &
+
+echo "FINAL WebSocket fix completed"
+EOF
+
+# Make it executable and run it
+chmod +x /var/www/UrlCampaignTracker/final-ws-fix.sh
+cd /var/www/UrlCampaignTracker
+bash final-ws-fix.sh
+Starting FINAL WebSocket fix...
+Fixing dist/public/assets/index-D0AL69SA.js...
+Fixed dist/public/assets/index-D0AL69SA.js
+Fixing dist/index.js...
+Fixed dist/index.js
+FINAL WebSocket fix completed
+root@viralplayer:/var/www/UrlCampaignTracker# node:internal/modules/cjs/loader:1228
+  throw err;
+  ^
+
+Error: Cannot find module './server/config'
+Require stack:
+- /var/www/UrlCampaignTracker/create-ws-server.cjs
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Module._load (node:internal/modules/cjs/loader:1051:27)
+    at Module.require (node:internal/modules/cjs/loader:1311:19)
+    at require (node:internal/modules/helpers:179:18)
+    at Object.<anonymous> (/var/www/UrlCampaignTracker/create-ws-server.cjs:5:20)
+    at Module._compile (node:internal/modules/cjs/loader:1469:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at Module.load (node:internal/modules/cjs/loader:1288:32)
+    at Module._load (node:internal/modules/cjs/loader:1104:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:173:12) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/var/www/UrlCampaignTracker/create-ws-server.cjs' ]
+}
+
+Node.js v20.18.1

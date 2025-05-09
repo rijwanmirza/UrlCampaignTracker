@@ -1,0 +1,40 @@
+ue with --lines option)
+/root/.pm2/logs/urlcampaigntracker-out.log last 30 lines:
+/root/.pm2/logs/urlcampaigntracker-error.log last 30 lines:
+0|urlcampa | Error: DATABASE_URL must be set. Did you forget to provision a data                                                                             base?
+0|urlcampa |     at server/db.ts (file:///var/www/UrlCampaignTracker/dist/index.                                                                             js:646:13)
+0|urlcampa |     at __init (file:///var/www/UrlCampaignTracker/dist/index.js:4:5                                                                             6)
+0|urlcampa |     at file:///var/www/UrlCampaignTracker/dist/index.js:5154:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:                                                                             473:24)
+0|urlcampa | Error: DATABASE_URL must be set. Did you forget to provision a data                                                                             base?
+0|urlcampa |     at server/db.ts (file:///var/www/UrlCampaignTracker/dist/index.                                                                             js:646:13)
+0|urlcampa |     at __init (file:///var/www/UrlCampaignTracker/dist/index.js:4:5                                                                             6)
+0|urlcampa |     at file:///var/www/UrlCampaignTracker/dist/index.js:5154:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:                                                                             473:24)
+0|urlcampa | Error: DATABASE_URL must be set. Did you forget to provision a data                                                                             base?
+0|urlcampa |     at server/db.ts (file:///var/www/UrlCampaignTracker/dist/index.                                                                             js:646:13)
+0|urlcampa |     at __init (file:///var/www/UrlCampaignTracker/dist/index.js:4:5                                                                             6)
+0|urlcampa |     at file:///var/www/UrlCampaignTracker/dist/index.js:5154:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:                                                                             473:24)
+0|urlcampa | Error: DATABASE_URL must be set. Did you forget to provision a data                                                                             base?
+0|urlcampa |     at server/db.ts (file:///var/www/UrlCampaignTracker/dist/index.                                                                             js:646:13)
+0|urlcampa |     at __init (file:///var/www/UrlCampaignTracker/dist/index.js:4:5                                                                             6)
+0|urlcampa |     at file:///var/www/UrlCampaignTracker/dist/index.js:5154:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:                                                                             473:24)
+0|urlcampa | Error: DATABASE_URL must be set. Did you forget to provision a data                                                                             base?
+0|urlcampa |     at server/db.ts (file:///var/www/UrlCampaignTracker/dist/index.                                                                             js:646:13)
+0|urlcampa |     at __init (file:///var/www/UrlCampaignTracker/dist/index.js:4:5                                                                             6)
+0|urlcampa |     at file:///var/www/UrlCampaignTracker/dist/index.js:5154:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:                                                                             473:24)
+
+0|urlcampaigntracker  | Error: DATABASE_URL must be set. Did you forget to provi                                                                             sion a database?
+0|urlcampaigntracker  |     at server/db.ts (file:///var/www/UrlCampaignTracker/                                                                             dist/index.js:646:13)
+0|urlcampaigntracker  |     at __init (file:///var/www/UrlCampaignTracker/dist/i                                                                             ndex.js:4:56)
+0|urlcampaigntracker  |     at file:///var/www/UrlCampaignTracker/dist/index.js:                                                                             5154:1
+0|urlcampaigntracker  |     at ModuleJob.run (node:internal/modules/esm/module_j                                                                             ob:234:25)
+0|urlcampaigntracker  |     at async ModuleLoader.import (node:internal/modules/                                                                             esm/loader:473:24)

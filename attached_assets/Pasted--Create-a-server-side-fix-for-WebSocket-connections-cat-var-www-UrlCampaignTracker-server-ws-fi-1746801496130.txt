@@ -1,0 +1,191 @@
+# Create a server-side fix for WebSocket connections
+cat > /var/www/UrlCampaignTracker/server-ws-fix.js << 'EOF'
+const fs = require('fs');
+const path = require('path');
+
+// Domain to use
+const DOMAIN = 'viralplayer.xyz';
+
+// Search for WebSocket client files
+function fixWebSocketFiles() {
+  const distDir = path.join(__dirname, 'dist');
+  
+  // Find all JS files
+  function findJsFiles(dir, fileList = []) {
+    const files = fs.readdirSync(dir);
+    
+    files.forEach(file => {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+      
+      if (stat.isDirectory()) {
+        findJsFiles(filePath, fileList);
+      } else if (file.endsWith('.js')) {
+        fileList.push(filePath);
+      }
+    });
+    
+    return fileList;
+  }
+  
+  const jsFiles = findJsFiles(distDir);
+  console.log(`Found ${jsFiles.length} JavaScript files to check`);
+  
+  let fixedFiles = 0;
+  
+  // Process each file
+  jsFiles.forEach(filePath => {
+    let content = fs.readFileSync(filePath, 'utf8');
+    const originalContent = content;
+    
+    // Replace WebSocket URLs
+    content = content.replace(/['"]wss:\/\/localhost['"]/g, `"wss://${DOMAIN}"`);
+    content = content.replace(/['"]ws:\/\/localhost['"]/g, `"wss://${DOMAIN}"`);
+    content = content.replace(/wss:\/\/localhost\//g, `wss://${DOMAIN}/`);
+    content = content.replace(/ws:\/\/localhost\//g, `wss://${DOMAIN}/`);
+    
+    // More aggressive replacement if needed
+    if (content.includes('localhost') && (content.includes('WebSocket') || content.includes('ws:'))) {
+      content = content.replace(/localhost/g, DOMAIN);
+    }
+    
+    // Save changes if the file was modified
+    if (content !== originalContent) {
+      fs.writeFileSync(filePath, content);
+      console.log(`Fixed WebSocket URLs in ${filePath}`);
+      fixedFiles++;
+    }
+  });
+  
+  console.log(`Fixed WebSocket URLs in ${fixedFiles} files`);
+  return fixedFiles > 0;
+}
+
+// Create a client-side WebSocket fix
+function createClientSideFix() {
+  const fixContent = `
+// WebSocket URL Fix
+(function() {
+  const originalWebSocket = window.WebSocket;
+  window.WebSocket = function(url, protocols) {
+    let newUrl = url;
+    if (url && url.includes('localhost')) {
+      console.log('WebSocket URL patched from:', url);
+      newUrl = url.replace(/localhost/g, '${DOMAIN}');
+      console.log('WebSocket URL patched to:', newUrl);
+    }
+    return new originalWebSocket(newUrl, protocols);
+  };
+  window.WebSocket.prototype = originalWebSocket.prototype;
+})();
+  `;
+  
+  // Save to a JavaScript file
+  fs.writeFileSync(path.join(__dirname, 'dist', 'ws-fix.js'), fixContent);
+  console.log('Created client-side WebSocket fix');
+  
+  // Find index.html and inject the script
+  try {
+    const indexPath = path.join(__dirname, 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      let html = fs.readFileSync(indexPath, 'utf8');
+      
+      if (!html.includes('ws-fix.js')) {
+        html = html.replace('<head>', '<head>\n  <script src="/ws-fix.js"></script>');
+        fs.writeFileSync(indexPath, html);
+        console.log('Injected WebSocket fix into index.html');
+      }
+    }
+  } catch (err) {
+    console.error('Error injecting WebSocket fix:', err);
+  }
+}
+
+// Fix the server code to use the correct WebSocket URL
+function fixServerCode() {
+  const serverFiles = [
+    path.join(__dirname, 'dist', 'index.js'),
+    path.join(__dirname, 'server.js'),
+    path.join(__dirname, 'routes.js')
+  ];
+  
+  let serverFixed = false;
+  
+  serverFiles.forEach(filePath => {
+    if (fs.existsSync(filePath)) {
+      let content = fs.readFileSync(filePath, 'utf8');
+      const originalContent = content;
+      
+      // Replace WebSocket server setup
+      if (content.includes('WebSocketServer') || content.includes('ws.Server')) {
+        content = content.replace(/host:\s*['"]localhost['"]/g, `host: '${DOMAIN}'`);
+        
+        // If we can't find a direct host setting, try more general replacements
+        if (content === originalContent) {
+          content = content.replace(/localhost/g, DOMAIN);
+        }
+        
+        if (content !== originalContent) {
+          fs.writeFileSync(filePath, content);
+          console.log(`Fixed server WebSocket config in ${filePath}`);
+          serverFixed = true;
+        }
+      }
+    }
+  });
+  
+  return serverFixed;
+}
+
+// Run all fixes
+const filesFixed = fixWebSocketFiles();
+const serverFixed = fixServerCode();
+createClientSideFix();
+
+console.log('WebSocket fix completed!');
+EOF
+
+# Run the fix
+node /var/www/UrlCampaignTracker/server-ws-fix.js
+
+# Update the start script to use the domain in environment variables
+cat > /var/www/UrlCampaignTracker/start.sh << 'EOF'
+#!/bin/bash
+export DATABASE_URL="postgresql://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export API_SECRET_KEY="TraffiCS10928"
+export TRAFFICSTAR_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8"
+export PORT="5000"
+export NODE_ENV="production"
+export HOST="0.0.0.0"
+export WS_HOST="viralplayer.xyz"
+export HOSTNAME="viralplayer.xyz"
+export DOMAIN="viralplayer.xyz"
+
+# Create access_codes table if it doesn't exist
+PGPASSWORD=npg_U8evoXZz0WOB psql -h localhost -U neondb_owner -d neondb << 'EOQ'
+CREATE TABLE IF NOT EXISTS access_codes (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO access_codes (code)
+SELECT 'TraffiCS10928'
+WHERE NOT EXISTS (SELECT 1 FROM access_codes LIMIT 1);
+EOQ
+
+# Start the application
+node dist/index.js
+EOF
+
+chmod +x /var/www/UrlCampaignTracker/start.sh
+
+# Add script to disable certificate verification (last resort solution)
+cat > /var/www/UrlCampaignTracker/disable-cert-check.js << 'EOF'
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+// This is a patch to be applied at the start of your application
+// It will disable certificate verification, which is a security risk
+// but will allow your WebSocket connections to work in the meantime
+console.log("⚠️ T

@@ -1,0 +1,162 @@
+root@viralplayer:/var/www/UrlCampaignTracker# cat > /var/www/UrlCampaignTracker/server-ws-fix.cjs << 'EOF'
+// CommonJS format to avoid ESM issues
+const fs = require('fs');
+const path = require('path');
+
+// Find server files containing WebSocket code
+const serverDir = path.join(__dirname, 'dist');
+const searchTerms = ['WebSocket', 'websocket', 'ws://localhost', 'ws://', 'WS_HOST'];
+
+// Find all JavaScript files in the dist directory recursively
+function findFiles(dir, fileList = []) {
+  const files = fs.readdirSync(dir);
+
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    if (fs.statSync(filePath).isDirectory()) {
+      findFiles(filePath, fileList);
+    } else if (file.endsWith('.js')) {
+      fileList.push(filePath);
+    }
+  });
+
+  return fileList;
+}
+
+// Search for WebSocket terms in files
+const jsFiles = findFiles(serverDir);
+let modifiedFiles = 0;
+
+jsFiles.forEach(file => {
+  let fileContent = fs.readFileSync(file, 'utf8');
+  let needsUpdate = false;
+
+  // Fix WebSocket connection URLs
+  if (fileContent.includes('ws://localhost') || fileContent.includes('ws://127.0.0.1')) {
+    console.log(`Fixing localhost WebSocket references in ${file}`);
+    fileContent = fileContent.replace(/ws:\/\/localhost/g, 'wss://viralplayer.xyz');
+    fileContent = fileContent.replace(/ws:\/\/127\.0\.0\.1/g, 'wss://viralplayer.xyz');
+    needsUpdate = true;
+  }
+
+  // Add API key to WebSocket connections
+  if (fileContent.includes('new WebSocket(') && !fileContent.includes('Authorization')) {
+    console.log(`Adding API key header to WebSocket in ${file}`);
+    console.log(`Setting NODE_TLS_REJECT_UNAUTHORIZED=0 in ${file^CContent.includes('NODE_TLS_REJECT_UNAUTHORIZED = "0"')) {
+root@viralplayer:/var/www/UrlCampaignTracker# nano /var/www/UrlCampaignTracker/server-ws-fix.cjs
+root@viralplayer:/var/www/UrlCampaignTracker# chmod +x /var/www/UrlCampaignTracker/server-ws-fix.cjs
+root@viralplayer:/var/www/UrlCampaignTracker# cat > /etc/nginx/sites-available/viralplayer.xyz << 'EOF'
+server {                                      cat > /etc/nginx/sites-available/viralplayer.xyz << 'EOF'
+server {en 80;
+    listen 80;]:80;
+    listen [::]:80;alplayer.xyz www.viralplayer.xyz;
+    server_name viralplayer.xyz www.viralplayer.xyz;
+    location / {
+    location / {01 https://$host$request_uri;
+        return 301 https://$host$request_uri;
+    }
+}
+server {
+server {en 443 ssl;
+    listen 443 ssl; ssl;
+    listen [::]:443 ssl;yer.xyz www.viralplayer.xyz;
+    server_name viralplayer.xyz www.viralplayer.xyz;
+    ssl_certificate /etc/letsencrypt/live/viralplayer.xyz/fullchain.pem;
+    ssl_certificate /etc/letsencrypt/live/viralplayer.xyz/fullchain.pem;m;
+    ssl_certificate_key /etc/letsencrypt/live/viralplayer.xyz/privkey.pem;
+    # WebSocket configuration
+    # WebSocket configuration
+    location /ws { http://127.0.0.1:5000/ws;
+        proxy_pass http://127.0.0.1:5000/ws;
+        proxy_http_version 1.1;e $http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;28";
+        proxy_set_header Authorization "TraffiCS10928";
+    }
+    # Main application
+    # Main application
+    location / {ss http://127.0.0.1:5000;
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;e $http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}OF
+EOF
+root@viralplayer:/var/www/UrlCampaignTracker# cat > /var/www/UrlCampaignTracker/start-fixed.sh << 'EOF'
+#!/bin/bash
+# Set environment variables
+export DATABASE_URL="postgresql://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export API_SECRET_KEY="TraffiCS10928"
+export TRAFFICSTAR_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8"
+export PORT="5000"
+export NODE_ENV="production"
+export HOST="0.0.0.0"
+export WS_HOST="viralplayer.xyz"
+export HOSTNAME="viralplayer.xyz"
+export DOMAIN="viralplayer.xyz"
+export NODE_TLS_REJECT_UNAUTHORIZED="0"
+
+# Ensure log directories exist with proper permissions
+mkdir -p /var/www/UrlCampaignTracker/url_click_logs
+mkdir -p /var/www/UrlCampaignTracker/Active_Url_Budget_Logs
+mkdir -p /var/www/UrlCampaignTracker/redirect_logs
+mkdir -p /var/www/UrlCampaignTracker/url_budget_logs
+
+chmod -R 777 /var/www/UrlCampaignTracker/url_click_logs
+chmod -R 777 /var/www/UrlCampaignTracker/Active_Url_Budget_Logs
+chmod -R 777 /var/www/UrlCampaignTracker/redirect_logs
+chmod -R 777 /var/www/UrlCampaignTracker/url_budget_logs
+
+# Apply WebSocket fixes
+node /var/www/UrlCampaignTracker/server-ws-fix.cjs
+
+# Set up database access_codes table
+PGPASSWORD=npg_U8evoXZz0WOB psql -h localhost -U neondb_owner -d neondb << 'EOQ'
+CREATE TABLE IF NOT EXISTS access_codes (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+DELETE FROM access_codes WHERE code='TraffiCS10928';
+INSERT INTO access_codes (code) VALUES ('TraffiCS10928');
+chmod +x /var/www/UrlCampaignTracker/start-fixed.sh
+root@viralplayer:/var/www/UrlCampaignTracker# node /var/www/UrlCampaignTracker/server-ws-fix.cjs
+WebSocket fix complete. Modified 0 files.
+root@viralplayer:/var/www/UrlCampaignTracker# nginx -t
+systemctl reload nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@viralplayer:/var/www/UrlCampaignTracker# pm2 stop urlcampaigntracker
+pm2 delete urlcampaigntracker
+pm2 start /var/www/UrlCampaignTracker/start-fixed.sh --name urlcampaigntracker
+[PM2] Applying action stopProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Applying action deleteProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Starting /var/www/UrlCampaignTracker/start-fixed.sh in fork_mode (1 instance)
+[PM2] Done.
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 6888     │ 0s     │ 0    │ online    │ 0%       │ 3.4mb    │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@viralplayer:/var/www/UrlCampaignTracker#
