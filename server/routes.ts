@@ -1427,33 +1427,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`URL created in campaign ${campaignId} with TrafficStar campaign ID ${campaign.trafficstarCampaignId}`);
           
-          // Get the current spent value to provide clearer messaging
-          const spentValue = await trafficStarService.getCampaignSpentValue(campaign.trafficstarCampaignId);
-          
-          // Parse price as number to ensure it's valid
-          const pricePerThousand = typeof campaign.pricePerThousand === 'string' 
-            ? parseFloat(campaign.pricePerThousand) 
-            : (campaign.pricePerThousand || 1000);
-          
-          // Add to the pending URL budgets tracking
-          await trafficStarService.trackNewUrlForBudgetUpdate(
-            url.id,
-            campaignId,
-            campaign.trafficstarCampaignId,
-            calculatedClickLimit,
-            pricePerThousand
-          );
-          
-          // Provide clearer messaging based on spent value
-          // Make sure spent value is a valid number before calling toFixed
-          const spentValueNumber = typeof spentValue === 'string' 
-            ? parseFloat(spentValue) 
-            : (spentValue || 0);
-          
-          if (spentValueNumber !== null && spentValueNumber >= 10) {
-            console.log(`⚠️ HIGH SPEND STATE ($${spentValueNumber.toFixed(2)} >= $10.00): Scheduling actual budget update for this URL in 10 minutes`);
-          } else {
-            console.log(`ℹ️ LOW SPEND STATE ($${spentValueNumber.toFixed(2)} < $10.00): URL tracked but budget won't be updated until high spend threshold is reached`);
+          try {
+            // Get the current spent value to provide clearer messaging
+            const spentValue = await trafficStarService.getCampaignSpentValue(campaign.trafficstarCampaignId);
+            
+            // Parse price as number to ensure it's valid
+            const pricePerThousand = typeof campaign.pricePerThousand === 'string' 
+              ? parseFloat(campaign.pricePerThousand) 
+              : (campaign.pricePerThousand || 1000);
+            
+            // Ensure we have a valid number for spent value
+            let spentValueNumber = 0;
+            if (typeof spentValue === 'string') {
+              spentValueNumber = parseFloat(spentValue) || 0;
+            } else if (typeof spentValue === 'number') {
+              spentValueNumber = spentValue;
+            } else if (spentValue && typeof spentValue === 'object' && 'totalSpent' in spentValue) {
+              spentValueNumber = spentValue.totalSpent;
+            }
+            
+            // Add to the pending URL budgets tracking
+            await trafficStarService.trackNewUrlForBudgetUpdate(
+              url.id,
+              campaignId,
+              campaign.trafficstarCampaignId,
+              calculatedClickLimit,
+              pricePerThousand
+            );
+            
+            // Provide clearer messaging based on spent value
+            if (spentValueNumber >= 10) {
+              console.log(`⚠️ HIGH SPEND STATE ($${spentValueNumber.toFixed(2)} >= $10.00): Scheduling actual budget update for this URL in 10 minutes`);
+            } else {
+              console.log(`ℹ️ LOW SPEND STATE ($${spentValueNumber.toFixed(2)} < $10.00): URL tracked but budget won't be updated until high spend threshold is reached`);
+            }
+          } catch (error) {
+            console.error('Error getting spent value:', error);
+            
+            // Parse price as number to ensure it's valid even in error case
+            const pricePerThousand = typeof campaign.pricePerThousand === 'string' 
+              ? parseFloat(campaign.pricePerThousand) 
+              : (campaign.pricePerThousand || 1000);
+            
+            // Still track the URL even if we couldn't get the spent value
+            await trafficStarService.trackNewUrlForBudgetUpdate(
+              url.id,
+              campaignId,
+              campaign.trafficstarCampaignId,
+              calculatedClickLimit,
+              pricePerThousand
+            );
+            
+            console.log(`🔄 URL tracked for budget update but spent value couldn't be determined. URL will be processed based on actual spend value when update runs.`);
           }
           
           console.log(`🔄 Tracking URL ID ${url.id} for campaign ${campaignId}`);
@@ -1528,25 +1553,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 : (campaign.pricePerThousand || 1000);
               
               // Get the current spent value to provide clearer messaging
-              const spentValue = await trafficStarService.getCampaignSpentValue(campaign.trafficstarCampaignId);
-              const spentValueNumber = typeof spentValue === 'string' 
-                ? parseFloat(spentValue) 
-                : (spentValue || 0);
-              
-              // Add to the pending URL budgets tracking using only the difference
-              await trafficStarService.trackNewUrlForBudgetUpdate(
-                url.id,
-                existingUrl.campaignId,
-                campaign.trafficstarCampaignId,
-                clickDifference, // Only track the additional clicks
-                pricePerThousand
-              );
-              
-              // Provide clearer messaging based on current spent value
-              if (spentValueNumber !== null && spentValueNumber >= 10) {
-                console.log(`⚠️ HIGH SPEND STATE ($${spentValueNumber.toFixed(2)} >= $10.00): Scheduling actual budget update for this URL in 10 minutes`);
-              } else {
-                console.log(`ℹ️ LOW SPEND STATE ($${spentValueNumber.toFixed(2)} < $10.00): URL tracked but budget won't be updated until high spend threshold is reached`);
+              try {
+                const spentValue = await trafficStarService.getCampaignSpentValue(campaign.trafficstarCampaignId);
+                
+                // Ensure we have a valid number for spent value
+                let spentValueNumber = 0;
+                if (typeof spentValue === 'string') {
+                  spentValueNumber = parseFloat(spentValue) || 0;
+                } else if (typeof spentValue === 'number') {
+                  spentValueNumber = spentValue;
+                } else if (spentValue && typeof spentValue === 'object' && 'totalSpent' in spentValue) {
+                  spentValueNumber = spentValue.totalSpent;
+                }
+                
+                // Add to the pending URL budgets tracking using only the difference
+                await trafficStarService.trackNewUrlForBudgetUpdate(
+                  url.id,
+                  existingUrl.campaignId,
+                  campaign.trafficstarCampaignId,
+                  clickDifference, // Only track the additional clicks
+                  pricePerThousand
+                );
+                
+                // Provide clearer messaging based on current spent value
+                if (spentValueNumber >= 10) {
+                  console.log(`⚠️ HIGH SPEND STATE ($${spentValueNumber.toFixed(2)} >= $10.00): Scheduling actual budget update for this URL in 10 minutes`);
+                } else {
+                  console.log(`ℹ️ LOW SPEND STATE ($${spentValueNumber.toFixed(2)} < $10.00): URL tracked but budget won't be updated until high spend threshold is reached`);
+                }
+              } catch (error) {
+                console.error('Error getting spent value:', error);
+                
+                // Still track the URL even if we couldn't get the spent value
+                await trafficStarService.trackNewUrlForBudgetUpdate(
+                  url.id,
+                  existingUrl.campaignId,
+                  campaign.trafficstarCampaignId,
+                  clickDifference, // Only track the additional clicks
+                  pricePerThousand
+                );
+                
+                console.log(`🔄 URL tracked for budget update but spent value couldn't be determined. URL will be processed based on actual spend value when update runs.`);
               }
               
               console.log(`🔄 Tracking URL ID ${url.id} with ${clickDifference} additional clicks for campaign ${existingUrl.campaignId}`);
