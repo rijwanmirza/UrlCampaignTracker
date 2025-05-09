@@ -261,17 +261,84 @@ export async function processUrlBudgetsForCampaign(campaignId: number): Promise<
   console.log(`🔄 Processing URL budgets for campaign ${campaignId}`);
   
   try {
-    await urlBudgetManager.processUrlBudgets(campaignId);
-    
-    // After budget is updated, add campaign to active status monitoring
+    // Process the URL budgets directly here instead of calling a non-existent method
     const campaign = await db.select({
-      trafficstarCampaignId: campaigns.trafficstarCampaignId
+      trafficstarCampaignId: campaigns.trafficstarCampaignId,
+      id: campaigns.id
     })
     .from(campaigns)
     .where(eq(campaigns.id, campaignId))
     .then(records => records[0]);
     
-    if (campaign && campaign.trafficstarCampaignId) {
+    if (!campaign || !campaign.trafficstarCampaignId) {
+      console.log(`⚠️ Campaign ${campaignId} not found or has no TrafficStar ID - skipping budget update`);
+      return;
+    }
+    
+    const trafficstarCampaignId = Number(campaign.trafficstarCampaignId);
+    
+    // Get all URL budget logs for this campaign
+    const urlBudgetLogs = await urlBudgetLogger.getCampaignUrlBudgetLogs(campaignId);
+    
+    if (urlBudgetLogs.length === 0) {
+      console.log(`⚠️ No URL budget logs found for campaign ${campaignId} - skipping budget update`);
+      return;
+    }
+    
+    console.log(`📊 Found ${urlBudgetLogs.length} URL budget logs for campaign ${campaignId}`);
+    
+    // Calculate total budget across all URLs
+    let totalBudget = 0;
+    
+    for (const log of urlBudgetLogs) {
+      const urlBudget = parseFloat(log.price);
+      if (!isNaN(urlBudget)) {
+        totalBudget += urlBudget;
+        console.log(`📊 Including $${urlBudget.toFixed(4)} for URL ${log.urlId} (${log.urlName}) in budget calculation`);
+      }
+    }
+    
+    if (totalBudget <= 0) {
+      console.log(`⚠️ Total budget calculation is $${totalBudget.toFixed(4)} - skipping budget update`);
+      return;
+    }
+    
+    console.log(`💰 Total budget calculation: $${totalBudget.toFixed(4)} for ${urlBudgetLogs.length} URLs`);
+    
+    // Execute the TrafficStar budget update with the calculated total
+    await trafficStarService.updateCampaignBudget(trafficstarCampaignId, totalBudget);
+    
+    // Update the end time to ensure the campaign runs until the end of the day
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    const endTimeStr = `${todayStr} 23:59:00`;
+    
+    await trafficStarService.updateCampaignEndTime(trafficstarCampaignId, endTimeStr);
+    console.log(`✅ Updated campaign ${trafficstarCampaignId} end time to ${endTimeStr}`);
+    
+    // Make sure the campaign is active
+    const statusResult = await trafficStarService.getCampaignStatus(trafficstarCampaignId);
+    if (!statusResult.active || statusResult.status !== 'enabled') {
+      // Activate the campaign if it's not already active
+      await trafficStarService.activateCampaign(trafficstarCampaignId);
+      console.log(`✅ Activated campaign ${trafficstarCampaignId} after budget update`);
+    } else {
+      console.log(`✅ Campaign ${trafficstarCampaignId} is already active - no need to activate`);
+    }
+    
+    // Update the campaign status to indicate budget has been updated
+    await db.update(campaigns)
+      .set({
+        lastTrafficSenderStatus: 'high_spend_budget_updated',
+        lastTrafficSenderAction: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+    
+    console.log(`✅ Successfully processed URL budgets for campaign ${campaignId} with total budget: $${totalBudget.toFixed(4)}`);
+    
+    // After budget is updated, add campaign to active status monitoring
+    if (campaign.trafficstarCampaignId) {
       // Add to active status monitoring
       await campaignMonitoringManager.addCampaignToMonitoring(
         campaignId,
@@ -343,12 +410,34 @@ export async function checkForNewUrlsAfterBudgetCalculation(
       console.log(`⏱️ Wait period of ${waitMinutes} minutes has elapsed - adding new URLs to budget calculation`);
       
       // Add new URLs to budget log
-      for (const url of newUrls) {
-        await urlBudgetManager.addUrlBudget(url);
+      const campaign = await db.select({
+        pricePerThousand: campaigns.pricePerThousand
+      })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId))
+      .then(records => records[0]);
+      
+      if (!campaign) {
+        console.log(`⚠️ Campaign ${campaignId} not found - skipping budget update for new URLs`);
+        return;
       }
       
-      // Process the budget update
-      await urlBudgetManager.processUrlBudgets(campaignId);
+      const pricePerThousand = parseFloat(campaign.pricePerThousand || '0');
+      if (isNaN(pricePerThousand) || pricePerThousand <= 0) {
+        console.log(`⚠️ Campaign ${campaignId} has invalid price per thousand: ${campaign.pricePerThousand} - skipping budget update for new URLs`);
+        return;
+      }
+      
+      for (const url of newUrls) {
+        // Calculate budget based on click limit
+        const urlBudget = (url.clickLimit / 1000) * pricePerThousand;
+        // Log the URL budget
+        await urlBudgetLogger.logUrlBudget(url.id, urlBudget, campaignId);
+        console.log(`📝 Logged budget for new URL ${url.id}: $${urlBudget.toFixed(4)}`);
+      }
+      
+      // Process the budget update directly instead of using non-existent method
+      await processUrlBudgetsForCampaign(campaignId);
       
       console.log(`✅ Processed budget update for ${newUrls.length} new URLs`);
     } else {
