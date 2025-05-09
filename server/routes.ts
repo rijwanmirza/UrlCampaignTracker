@@ -1426,7 +1426,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (campaign.trafficstarCampaignId) {
         try {
           console.log(`URL created in campaign ${campaignId} with TrafficStar campaign ID ${campaign.trafficstarCampaignId}`);
-          console.log(`Scheduling budget update for this URL in 10 minutes`);
+          
+          // Get the current spent value to provide clearer messaging
+          const spentValue = await trafficStarService.getCampaignSpentValue(campaign.trafficstarCampaignId);
           
           // Add to the pending URL budgets tracking
           await trafficStarService.trackNewUrlForBudgetUpdate(
@@ -1437,7 +1439,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             campaign.pricePerThousand || 1000
           );
           
-          console.log(`URL budget tracking scheduled for URL ID ${url.id}`);
+          // Provide clearer messaging based on spent value
+          if (spentValue !== null && spentValue >= 10) {
+            console.log(`⚠️ HIGH SPEND STATE ($${spentValue.toFixed(2)} >= $10.00): Scheduling actual budget update for this URL in 10 minutes`);
+          } else {
+            console.log(`ℹ️ LOW SPEND STATE ($${spentValue?.toFixed(2) || '0.00'} < $10.00): URL tracked but budget won't be updated until high spend threshold is reached`);
+          }
+          
+          console.log(`🔄 Tracking URL ID ${url.id} for campaign ${campaignId}`);
         } catch (error) {
           console.error(`Error scheduling URL budget update:`, error);
           // Don't fail the request - just log the error
