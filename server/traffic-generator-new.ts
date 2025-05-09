@@ -14,6 +14,41 @@ import { parseSpentValue } from './trafficstar-spent-helper';
 import axios from 'axios';
 import urlBudgetLogger from './url-budget-logger';
 
+// Global threshold values with defaults (will be updated from database)
+let GLOBAL_MINIMUM_CLICKS_THRESHOLD = 5000; // Threshold to pause campaign when remaining clicks fall below this value
+let GLOBAL_REMAINING_CLICKS_THRESHOLD = 15000; // Threshold for auto-activation if campaign has low spend
+
+/**
+ * Get threshold values from the database and update global variables
+ * @returns Object containing the threshold values
+ */
+async function getThresholdValues() {
+  try {
+    // Import the thresholds module
+    const { getThresholds } = await import('./system/thresholds');
+    const thresholds = await getThresholds();
+    
+    // Update the global threshold values
+    GLOBAL_MINIMUM_CLICKS_THRESHOLD = thresholds.minimumClicksThreshold;
+    GLOBAL_REMAINING_CLICKS_THRESHOLD = thresholds.remainingClicksThreshold;
+    
+    console.log(`📊 USING CONFIGURABLE THRESHOLDS: Auto-Pause=${GLOBAL_MINIMUM_CLICKS_THRESHOLD} clicks, Auto-Activate=${GLOBAL_REMAINING_CLICKS_THRESHOLD} clicks`);
+    
+    return {
+      minimumClicksThreshold: GLOBAL_MINIMUM_CLICKS_THRESHOLD,
+      remainingClicksThreshold: GLOBAL_REMAINING_CLICKS_THRESHOLD
+    };
+  } catch (error) {
+    console.error('Error getting threshold values from database:', error);
+    console.log(`📊 USING DEFAULT THRESHOLDS: Auto-Pause=${GLOBAL_MINIMUM_CLICKS_THRESHOLD} clicks, Auto-Activate=${GLOBAL_REMAINING_CLICKS_THRESHOLD} clicks`);
+    
+    return {
+      minimumClicksThreshold: GLOBAL_MINIMUM_CLICKS_THRESHOLD,
+      remainingClicksThreshold: GLOBAL_REMAINING_CLICKS_THRESHOLD
+    };
+  }
+}
+
 // Extended URL type with active status
 interface UrlWithActiveStatus extends Url {
   isActive: boolean;
@@ -191,8 +226,14 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
  */
 export async function handleCampaignBySpentValue(campaignId: number, trafficstarCampaignId: string, spentValue: number) {
   const THRESHOLD = 10.0; // $10 threshold for different handling
-  const REMAINING_CLICKS_THRESHOLD = 15000; // Threshold for auto-activation if campaign has low spend
-  const MINIMUM_CLICKS_THRESHOLD = 5000; // Threshold to pause campaign when remaining clicks fall below this value
+  
+  // Get the configured threshold values from the system settings
+  const { getThresholds } = await import('./system/thresholds');
+  const thresholds = await getThresholds();
+  
+  // Use the configured values with fallbacks to defaults
+  const REMAINING_CLICKS_THRESHOLD = thresholds.remainingClicksThreshold; // Configured threshold for auto-activation
+  const MINIMUM_CLICKS_THRESHOLD = thresholds.minimumClicksThreshold; // Configured threshold for auto-pause
   
   try {
     console.log(`TRAFFIC-GENERATOR: Handling campaign ${trafficstarCampaignId} by spent value - current spent: $${spentValue.toFixed(4)}`);
@@ -335,7 +376,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
           }
         } else if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD && currentStatus === 'active') {
           // Case 3: High remaining clicks and already active - CONTINUE MONITORING
-          console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks and is already active - continuing monitoring`);
+          console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) and is already active - continuing monitoring`);
           
           // Ensure we're monitoring this campaign
           startMinutelyStatusCheck(campaignId, trafficstarCampaignId);
@@ -369,7 +410,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
           return;
         } else {
           // Case 5: Remaining clicks between thresholds - maintain current status
-          console.log(`⏸️ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (between thresholds) - maintaining current status`);
+          console.log(`⏸️ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (between ${MINIMUM_CLICKS_THRESHOLD} and ${REMAINING_CLICKS_THRESHOLD}) - maintaining current status`);
           
           // Mark status in database
           await db.update(campaigns)

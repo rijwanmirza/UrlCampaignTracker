@@ -46,6 +46,8 @@ export const campaigns = pgTable("campaigns", {
   trafficGeneratorEnabled: boolean("traffic_generator_enabled").default(false), // Enable/disable traffic generator
   postPauseCheckMinutes: integer("post_pause_check_minutes").default(2), // Minutes to wait after pause before checking spent value
   highSpendWaitMinutes: integer("high_spend_wait_minutes").default(11), // Minutes to wait after pause for high-spend campaigns ($10+)
+  minimumClicksThreshold: integer("minimum_clicks_threshold").default(5000), // Threshold for minimum clicks (default: 5000)
+  remainingClicksThreshold: integer("remaining_clicks_threshold").default(15000), // Threshold for remaining clicks to reactivate (default: 15000)
   // DEPRECATED: Traffic Sender feature has been removed
   // Keeping these fields in the schema for backward compatibility but they are no longer used
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
@@ -117,6 +119,8 @@ export const updateCampaignSchema = z.object({
   trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
   postPauseCheckMinutes: z.number().int().min(1).max(30).optional(), // Minutes to wait after pause before checking spent value (1-30)
   highSpendWaitMinutes: z.number().int().min(1).max(30).optional(), // Minutes to wait after pause for high-spend campaigns ($10+)
+  minimumClicksThreshold: z.number().int().min(100).max(100000).optional(), // Minimum clicks threshold for auto-pause (default: 5000)
+  remainingClicksThreshold: z.number().int().min(1000).max(1000000).optional(), // Remaining clicks threshold for auto-reactivation (default: 15000)
   // DEPRECATED: Traffic Sender fields - no longer in use
   trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED

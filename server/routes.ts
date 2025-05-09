@@ -5074,6 +5074,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoints for traffic generator threshold settings
+  app.get("/api/system/thresholds", async (_req: Request, res: Response) => {
+    try {
+      const { getThresholds } = await import('./system/thresholds');
+      const thresholds = await getThresholds();
+      res.json(thresholds);
+    } catch (error) {
+      console.error("Error getting threshold settings:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to get threshold settings",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/system/thresholds", async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        minimumClicksThreshold: z.number().positive(),
+        remainingClicksThreshold: z.number().positive()
+      });
+      
+      try {
+        const data = schema.parse(req.body);
+        const { saveThresholds } = await import('./system/thresholds');
+        await saveThresholds(data.minimumClicksThreshold, data.remainingClicksThreshold);
+        
+        // Log the update for debugging
+        console.log(`✅ Threshold values updated: minimum=${data.minimumClicksThreshold}, remaining=${data.remainingClicksThreshold}`);
+        
+        res.json({ 
+          success: true,
+          message: "Threshold settings updated successfully" 
+        });
+      } catch (error) {
+        if (error instanceof ZodError) {
+          const validationError = fromZodError(error);
+          res.status(400).json({ 
+            success: false,
+            message: validationError.message 
+          });
+        } else {
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error("Error updating threshold settings:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to update threshold settings", 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Test endpoint to show current thresholds and debug info
+  app.get("/api/system/thresholds/debug", async (_req: Request, res: Response) => {
+    try {
+      // Get thresholds from system settings
+      const { getThresholds } = await import('./system/thresholds');
+      const systemThresholds = await getThresholds();
+      
+      // Get all active campaigns to check their threshold values
+      const activeCampaigns = await db.query.campaigns.findMany({
+        where: (c, { eq }) => eq(c.trafficGeneratorEnabled, true),
+        columns: {
+          id: true,
+          name: true,
+          trafficstarCampaignId: true,
+          minimum_clicks_threshold: true,
+          remaining_clicks_threshold: true
+        }
+      });
+      
+      res.json({
+        success: true,
+        systemThresholds,
+        activeCampaigns,
+        defaults: {
+          minimumClicksThreshold: 5000,
+          remainingClicksThreshold: 15000
+        }
+      });
+    } catch (error) {
+      console.error("Error in threshold debug endpoint:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get threshold debug information",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // API endpoint to generate test click data for analytics
   app.post("/api/system/generate-test-clicks", async (_req: Request, res: Response) => {
     try {
