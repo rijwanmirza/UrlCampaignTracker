@@ -673,16 +673,16 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
   try {
     console.log(`🔍 Checking for new URLs added after budget calculation for campaign ${campaignId}`);
     
-    // OPTIMIZATION: Only fetch required columns and use a more efficient query with direct filtering
-    // This reduces memory usage and speeds up execution
+    // Get the campaign with its budget calculation timestamp
+    // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (c, { eq }) => eq(c.id, campaignId),
-      columns: {
-        id: true,
-        highSpendBudgetCalcTime: true,
-        pricePerThousand: true
+      with: { 
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        } 
       }
-    });
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
     if (!campaign || !campaign.highSpendBudgetCalcTime) {
       console.log(`Campaign ${campaignId} doesn't have a high-spend budget calculation timestamp - skipping new URL check`);
@@ -692,17 +692,11 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
     const calcTime = campaign.highSpendBudgetCalcTime;
     console.log(`Campaign ${campaignId} budget calculation time: ${calcTime.toISOString()}`);
     
-    // OPTIMIZATION: Use a dedicated query to find new URLs instead of fetching all and filtering
-    // This significantly reduces data transfer and processing time
-    const newUrls = await db.select()
-      .from(urls)
-      .where(
-        and(
-          eq(urls.campaignId, campaignId),
-          eq(urls.status, 'active'),
-          sql`created_at > ${calcTime.toISOString()}`
-        )
-      );
+    // Find URLs added after budget calculation time
+    const newUrls = campaign.urls.filter(url => {
+      // For each URL, check if it was created after the budget calculation
+      return url.status === 'active' && url.createdAt > calcTime;
+    });
     
     if (newUrls.length === 0) {
       console.log(`No new URLs found added after budget calculation for campaign ${campaignId}`);
@@ -816,17 +810,18 @@ async function checkForNewUrlsAfterBudgetCalculation(campaignId: number, traffic
  */
 async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampaignId: string) {
   try {
-    console.log(`⚡ [OPTIMIZED] Checking for URLs added after high-spend budget calculation for campaign ${campaignId}`);
+    console.log(`Checking for URLs added after high-spend budget calculation for campaign ${campaignId}`);
     
-    // OPTIMIZATION: Get campaign details with only needed columns to reduce memory usage
+    // Get the campaign with its budget calculation timestamp
+    // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (c, { eq }) => eq(c.id, campaignId),
-      columns: {
-        id: true,
-        highSpendBudgetCalcTime: true,
-        pricePerThousand: true
+      with: { 
+        urls: {
+          where: (urls, { eq }) => eq(urls.status, 'active')
+        } 
       }
-    });
+    }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
     if (!campaign || !campaign.highSpendBudgetCalcTime) {
       console.log(`Campaign ${campaignId} doesn't have a high-spend budget calculation timestamp - skipping new URL check`);
@@ -836,17 +831,11 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
     const calcTime = campaign.highSpendBudgetCalcTime;
     console.log(`Campaign ${campaignId} budget calculation time: ${calcTime.toISOString()}`);
     
-    // OPTIMIZATION: More efficient query for finding new URLs
-    // This reduces memory usage and database load by only fetching URLs we need
-    const newUrls = await db.select()
-      .from(urls)
-      .where(
-        and(
-          eq(urls.campaignId, campaignId),
-          eq(urls.status, 'active'),
-          sql`created_at > ${calcTime.toISOString()}`
-        )
-      );
+    // Find URLs added after budget calculation time
+    const newUrls = campaign.urls.filter(url => {
+      // For each URL, check if it was created after the budget calculation
+      return url.status === 'active' && url.createdAt > calcTime;
+    });
     
     if (newUrls.length === 0) {
       console.log(`No new URLs found added after budget calculation for campaign ${campaignId}`);
@@ -869,19 +858,14 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
     if (waitMinutes < DELAY_MINUTES) {
       console.log(`⏱️ Waiting period not elapsed yet (${waitMinutes}/${DELAY_MINUTES} minutes) - will check again later`);
       
-      // OPTIMIZATION: Use batch update instead of individual sequential updates
-      // This significantly reduces database load and execution time
-      const urlIds = newUrls.map(url => url.id);
-      
-      if (urlIds.length > 0) {
+      // Mark these URLs as pending in the database
+      for (const url of newUrls) {
         await db.update(urls)
           .set({
-            pendingBudgetUpdate: true as boolean,
+            pendingBudgetUpdate: true as boolean, // Cast to boolean to fix TypeScript error
             updatedAt: new Date()
           })
-          .where(sql`id IN (${urlIds.join(',')})`);
-        
-        console.log(`✅ Performance optimization: Marked ${urlIds.length} URLs as pending in a single batch operation`);
+          .where(eq(urls.id, url.id));
       }
       
       return;
@@ -903,9 +887,8 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
     
     console.log(`Processing new URLs for campaign ${campaignId} with current spent value: $${updatedSpentValue.toFixed(4)}`);
     
-    // OPTIMIZATION: Process URL budget calculation and logging in parallel batches
-    // First, calculate all budgets in memory (this is very fast)
-    const urlBudgets: {url: typeof newUrls[0], budget: number}[] = newUrls.map(url => {
+    for (const url of newUrls) {
+      // For newly added URLs, use total click limit instead of remaining clicks
       const totalClicks = url.clickLimit;
       totalNewClicks += totalClicks;
       
@@ -915,42 +898,17 @@ async function handleNewUrlsAfterBudgetCalc(campaignId: number, trafficstarCampa
       
       console.log(`URL ID ${url.id}: ${totalClicks} clicks = $${urlBudget.toFixed(4)} additional budget`);
       
-      return {url, budget: urlBudget};
-    });
-    
-    // OPTIMIZATION: Process budget logging in controlled parallel batches
-    // This significantly reduces processing time while preventing resource exhaustion
-    const BATCH_SIZE = 5; // Process up to 5 URLs at once
-    
-    for (let i = 0; i < urlBudgets.length; i += BATCH_SIZE) {
-      const batch = urlBudgets.slice(i, i + BATCH_SIZE);
+      // Log this URL's budget calculation to the campaign-specific URL budget log file
+      await urlBudgetLogger.logUrlBudget(url.id, urlBudget, campaignId);
       
-      // Log URL budgets in parallel
-      await Promise.all(batch.map(({url, budget}) => 
-        urlBudgetLogger.logUrlBudget(url.id, budget, campaignId)
-      ));
-      
-      console.log(`✅ Processed budget logging for batch of ${batch.length} URLs (${i+1} to ${Math.min(i+BATCH_SIZE, urlBudgets.length)} of ${urlBudgets.length})`);
-      
-      // Small breather to prevent overloading the event loop
-      if (urlBudgets.length > BATCH_SIZE) {
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-    }
-    
-    // OPTIMIZATION: Update URLs with batch update
-    const urlIds = newUrls.map(url => url.id);
-    
-    if (urlIds.length > 0) {
+      // Update the URL to mark it as processed
       await db.update(urls)
         .set({
-          pendingBudgetUpdate: false as boolean,
-          budgetCalculated: true as boolean,
+          pendingBudgetUpdate: false as boolean, // Cast to boolean to fix TypeScript error
+          budgetCalculated: true as boolean, // Cast to boolean to fix TypeScript error
           updatedAt: new Date()
         })
-        .where(sql`id IN (${urlIds.join(',')})`);
-      
-      console.log(`✅ Performance optimization: Marked ${urlIds.length} URLs as processed in a single batch operation`);
+        .where(eq(urls.id, url.id));
     }
     
     // Calculate new total campaign budget
