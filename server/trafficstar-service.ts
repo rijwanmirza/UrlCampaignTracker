@@ -600,14 +600,11 @@ class TrafficStarService {
   ): Promise<boolean> {
     try {
       console.log(`🔄 Tracking URL ID ${urlId} for budget update in campaign ${campaignId} (TrafficStar ID: ${trafficstarCampaignId})`);
-      
-      // Ensure pricePerThousand is a number before calling toFixed
-      const pricePerThousandNumber = parseFloat(String(pricePerThousand));
-      console.log(`📊 URL requires ${clickLimit} clicks at $${pricePerThousandNumber.toFixed(4)} per thousand clicks`);
+      console.log(`📊 URL requires ${clickLimit} clicks at $${pricePerThousand.toFixed(4)} per thousand clicks`);
       
       // Calculate the budget for this URL
       // Budget = (clickLimit / 1000) * pricePerThousand
-      const urlBudget = (clickLimit / 1000) * pricePerThousandNumber;
+      const urlBudget = (clickLimit / 1000) * pricePerThousand;
       console.log(`💰 Calculated URL budget: $${urlBudget.toFixed(4)}`);
       
       // Use the URL budget manager to track this URL for a future budget update
@@ -616,7 +613,7 @@ class TrafficStarService {
         trafficstarCampaignId.toString(),
         urlId,
         clickLimit,
-        pricePerThousandNumber // Use the parsed number value
+        pricePerThousand
       );
       
       if (tracked) {
