@@ -21,6 +21,7 @@ const BATCH_SIZE = 50; // Maximum videos to fetch in a single API call
  */
 export class YouTubeApiService {
   private youtube: youtube_v3.Youtube;
+  private schedulerTimer: NodeJS.Timeout | null = null;
   
   constructor() {
     this.youtube = google.youtube({
@@ -357,8 +358,25 @@ export class YouTubeApiService {
       
       logger.info(`Found ${enabledCampaigns.length} campaigns with YouTube API enabled`);
       
-      for (const campaign of enabledCampaigns) {
-        await this.processCampaign(campaign.id);
+      // Process campaigns in parallel with a concurrency limit
+      const CONCURRENCY_LIMIT = 2;
+      const chunks = [];
+      
+      // Split campaigns into chunks to control concurrency
+      for (let i = 0; i < enabledCampaigns.length; i += CONCURRENCY_LIMIT) {
+        chunks.push(enabledCampaigns.slice(i, i + CONCURRENCY_LIMIT));
+      }
+      
+      // Process each chunk in parallel
+      for (const chunk of chunks) {
+        await Promise.all(
+          chunk.map(campaign => this.processCampaign(campaign.id))
+        );
+        
+        // Add a short break between chunks to prevent rate limiting
+        if (chunks.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
     } catch (error) {
       logger.error('Error processing YouTube API enabled campaigns:', error);
@@ -473,7 +491,10 @@ export class YouTubeApiService {
         }
       });
       
-      // Check each URL
+      // Create an array of promised operations for each URL
+      const urlOperations: Promise<void>[] = [];
+      
+      // Process each URL
       for (const url of urlsWithVideoIds) {
         if (!url.videoId) continue;
         
@@ -482,9 +503,11 @@ export class YouTubeApiService {
         if (!video) {
           // Video not found - this means it's deleted/unavailable
           if (campaign.youtubeCheckDeleted) {
-            await this.deleteUrl(url, campaign, 'Video not found (deleted or unavailable)', {
-              deletedVideo: true
-            });
+            urlOperations.push(
+              this.deleteUrl(url, campaign, 'Video not found (deleted or unavailable)', {
+                deletedVideo: true
+              })
+            );
           }
           continue;
         }
@@ -492,36 +515,44 @@ export class YouTubeApiService {
         // Check for country restrictions (India)
         if (campaign.youtubeCheckCountryRestriction && 
             video.contentDetails?.regionRestriction?.blocked?.includes('IN')) {
-          await this.deleteUrl(url, campaign, 'Video restricted in India', {
-            countryRestricted: true
-          });
+          urlOperations.push(
+            this.deleteUrl(url, campaign, 'Video restricted in India', {
+              countryRestricted: true
+            })
+          );
           continue;
         }
         
         // Check for private video
         if (campaign.youtubeCheckPrivate && 
             video.status?.privacyStatus === 'private') {
-          await this.deleteUrl(url, campaign, 'Private video', {
-            privateVideo: true
-          });
+          urlOperations.push(
+            this.deleteUrl(url, campaign, 'Private video', {
+              privateVideo: true
+            })
+          );
           continue;
         }
         
         // Check for age restriction
         const ageRestricted = video.contentDetails?.contentRating?.ytRating === 'ytAgeRestricted';
         if (campaign.youtubeCheckAgeRestricted && ageRestricted) {
-          await this.deleteUrl(url, campaign, 'Age restricted video', {
-            ageRestricted: true
-          });
+          urlOperations.push(
+            this.deleteUrl(url, campaign, 'Age restricted video', {
+              ageRestricted: true
+            })
+          );
           continue;
         }
         
         // Check for made for kids
         const madeForKids = video.status?.madeForKids === true;
         if (campaign.youtubeCheckMadeForKids && madeForKids) {
-          await this.deleteUrl(url, campaign, 'Video made for kids', {
-            madeForKids: true
-          });
+          urlOperations.push(
+            this.deleteUrl(url, campaign, 'Video made for kids', {
+              madeForKids: true
+            })
+          );
           continue;
         }
         
@@ -531,12 +562,19 @@ export class YouTubeApiService {
           const maxDurationMinutes = campaign.youtubeMaxDurationMinutes || 30; // Default to 30 minutes
           
           if (durationMinutes > maxDurationMinutes) {
-            await this.deleteUrl(url, campaign, `Video exceeds maximum duration (${Math.floor(durationMinutes)} minutes)`, {
-              exceededDuration: true
-            });
+            urlOperations.push(
+              this.deleteUrl(url, campaign, `Video exceeds maximum duration (${Math.floor(durationMinutes)} minutes)`, {
+                exceededDuration: true
+              })
+            );
             continue;
           }
         }
+      }
+      
+      // Execute all URL operations in parallel for better performance
+      if (urlOperations.length > 0) {
+        await Promise.all(urlOperations);
       }
     } catch (error) {
       logger.error('Error processing YouTube video batch:', error);
@@ -690,7 +728,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.SCHEDULER,
         `Calculating next check time for ${enabledCampaigns.length} campaigns`,
-        null,
+        undefined,
         { campaignCount: enabledCampaigns.length }
       );
       
@@ -760,7 +798,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.SCHEDULER,
         `Campaign timing details`,
-        null,
+        undefined,
         { campaignTimings }
       );
       
@@ -773,7 +811,7 @@ export class YouTubeApiService {
         await this.logApiActivity(
           YouTubeApiLogType.SCHEDULER,
           `Processing ${campaignsNeedingProcess.length} campaigns now: ${campaignsNeedingProcess.join(', ')}`,
-          null,
+          undefined,
           { campaignsNeedingProcess }
         );
         
@@ -819,7 +857,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.SCHEDULER_CHECK,
         'Error scheduling next check',
-        null,
+        undefined,
         { error: error instanceof Error ? error.message : String(error) },
         true
       );
@@ -892,7 +930,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.INTERVAL_CHECK,
         `Scheduler checking ${enabledCampaigns.length} campaigns with YouTube API enabled`,
-        null,
+        undefined,
         { campaignIds: enabledCampaigns.map(c => c.id) }
       );
       
@@ -962,7 +1000,7 @@ export class YouTubeApiService {
       await this.logApiActivity(
         YouTubeApiLogType.INTERVAL_CHECK,
         'Error checking campaigns for YouTube API processing',
-        null,
+        undefined,
         { error: error instanceof Error ? error.message : String(error) },
         true
       );
