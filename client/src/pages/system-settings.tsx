@@ -28,7 +28,6 @@ import TrafficSenderMigration from "@/components/system/traffic-sender-migration
 import ApiKeyManager from "@/components/system/api-key-manager";
 import { ServerMonitor } from "@/components/server-monitor/server-stats";
 import AccessCodeManager from "@/components/system/access-code-manager";
-import ThresholdManager from "@/components/system/threshold-manager";
 
 export default function SystemSettings() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -118,12 +117,6 @@ export default function SystemSettings() {
         <h2 className="text-xl font-bold mb-4">Security Settings</h2>
         <ApiKeyManager />
         <AccessCodeManager />
-      </div>
-      
-      {/* Traffic Generator Settings */}
-      <div className="mb-10">
-        <h2 className="text-xl font-bold mb-4">Traffic Generator Settings</h2>
-        <ThresholdManager />
       </div>
       
       {/* Migration section */}

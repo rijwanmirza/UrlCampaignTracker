@@ -5074,69 +5074,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API endpoints for traffic generator threshold settings
+  // Global system threshold configuration (API) - Now deprecated in favor of campaign-specific thresholds
   app.get("/api/system/thresholds", async (_req: Request, res: Response) => {
-    try {
-      const { getThresholds } = await import('./system/thresholds');
-      const thresholds = await getThresholds();
-      res.json(thresholds);
-    } catch (error) {
-      console.error("Error getting threshold settings:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Failed to get threshold settings",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
+    console.log("⚠️ Global thresholds API accessed - now deprecated");
+    res.json({
+      message: "Global thresholds have been deprecated. Please use campaign-specific thresholds instead.",
+      minimumClicksThreshold: 5000, // Default values for backward compatibility
+      remainingClicksThreshold: 15000
+    });
   });
 
-  app.post("/api/system/thresholds", async (req: Request, res: Response) => {
-    try {
-      const schema = z.object({
-        minimumClicksThreshold: z.number().positive(),
-        remainingClicksThreshold: z.number().positive()
-      });
-      
-      try {
-        const data = schema.parse(req.body);
-        const { saveThresholds } = await import('./system/thresholds');
-        await saveThresholds(data.minimumClicksThreshold, data.remainingClicksThreshold);
-        
-        // Log the update for debugging
-        console.log(`✅ Threshold values updated: minimum=${data.minimumClicksThreshold}, remaining=${data.remainingClicksThreshold}`);
-        
-        res.json({ 
-          success: true,
-          message: "Threshold settings updated successfully" 
-        });
-      } catch (error) {
-        if (error instanceof ZodError) {
-          const validationError = fromZodError(error);
-          res.status(400).json({ 
-            success: false,
-            message: validationError.message 
-          });
-        } else {
-          throw error;
-        }
-      }
-    } catch (error) {
-      console.error("Error updating threshold settings:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Failed to update threshold settings", 
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
+  app.post("/api/system/thresholds", async (_req: Request, res: Response) => {
+    console.log("⚠️ Attempt to update global thresholds - functionality has been removed");
+    res.status(410).json({ 
+      success: false,
+      message: "Global thresholds have been deprecated. Please use campaign-specific thresholds in the campaign edit form instead." 
+    });
   });
   
   // Test endpoint to show current thresholds and debug info
   app.get("/api/system/thresholds/debug", async (_req: Request, res: Response) => {
     try {
-      // Get thresholds from system settings
-      const { getThresholds } = await import('./system/thresholds');
-      const systemThresholds = await getThresholds();
-      
       // Get all active campaigns to check their threshold values
       const activeCampaigns = await db.query.campaigns.findMany({
         where: (c, { eq }) => eq(c.trafficGeneratorEnabled, true),
@@ -5144,17 +5102,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: true,
           name: true,
           trafficstarCampaignId: true,
-          minimum_clicks_threshold: true,
-          remaining_clicks_threshold: true
+          minimumClicksThreshold: true,
+          remainingClicksThreshold: true
         }
       });
       
       res.json({
         success: true,
-        systemThresholds,
+        message: "Global thresholds have been deprecated. Using campaign-specific thresholds only.",
         activeCampaigns,
         defaults: {
-          minimumClicksThreshold: 5000,
+          minimumClicksThreshold: 5000, // Default values used for new campaigns
           remainingClicksThreshold: 15000
         }
       });
