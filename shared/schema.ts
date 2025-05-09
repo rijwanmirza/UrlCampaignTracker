@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -591,3 +591,41 @@ export const updateSystemSettingSchema = createInsertSchema(systemSettings).omit
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type UpdateSystemSetting = z.infer<typeof updateSystemSettingSchema>;
+
+// Campaign Monitoring table for tracking independent worker monitoring state
+export const campaignMonitoring = pgTable("campaign_monitoring", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  trafficstarCampaignId: text("trafficstar_campaign_id").notNull(),
+  type: text("type").notNull(), // 'active_status', 'pause_status', 'empty_url'
+  isActive: boolean("is_active").default(true).notNull(),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    campaignTypeUnique: unique().on(table.campaignId, table.type)
+  };
+});
+
+export const insertCampaignMonitoringSchema = createInsertSchema(campaignMonitoring).omit({
+  id: true,
+  addedAt: true,
+  updatedAt: true,
+}).extend({
+  type: z.enum(['active_status', 'pause_status', 'empty_url']),
+});
+
+export const updateCampaignMonitoringSchema = createInsertSchema(campaignMonitoring).omit({
+  id: true,
+  addedAt: true,
+  updatedAt: true,
+}).extend({
+  campaignId: z.number().int().optional(),
+  trafficstarCampaignId: z.string().optional(),
+  type: z.enum(['active_status', 'pause_status', 'empty_url']).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export type CampaignMonitoring = typeof campaignMonitoring.$inferSelect;
+export type InsertCampaignMonitoring = z.infer<typeof insertCampaignMonitoringSchema>;
+export type UpdateCampaignMonitoring = z.infer<typeof updateCampaignMonitoringSchema>;
