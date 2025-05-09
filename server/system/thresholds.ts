@@ -58,13 +58,13 @@ export async function updateCampaignThresholds(
  */
 export async function getCampaignThresholds(campaignId: number) {
   try {
-    const campaign = await db.query.campaigns.findFirst({
-      where: eq(campaigns.id, campaignId),
-      columns: {
-        minimumClicksThreshold: true,
-        remainingClicksThreshold: true
-      }
-    });
+    const campaign = await db.select({
+      minimumClicksThreshold: campaigns.minimumClicksThreshold,
+      remainingClicksThreshold: campaigns.remainingClicksThreshold
+    })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+    .then(records => records[0]);
 
     if (!campaign) {
       console.warn(`Campaign ${campaignId} not found, returning default values`);

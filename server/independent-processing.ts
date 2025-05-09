@@ -11,7 +11,7 @@ import { campaigns, urls, campaignMonitoring } from '@shared/schema';
 import { trafficStarService } from './trafficstar-service';
 import urlBudgetManager from './url-budget-manager';
 import urlBudgetLogger from './url-budget-logger';
-import { updateCampaignThresholds, DEFAULT_MINIMUM_CLICKS_THRESHOLD, DEFAULT_REMAINING_CLICKS_THRESHOLD } from './system/thresholds';
+import { getCampaignThresholds } from './system/thresholds';
 import campaignMonitoringManager from './campaign-monitoring-manager';
 
 // Constants
@@ -27,23 +27,19 @@ export async function processSpentValueChecks(): Promise<void> {
   console.log('🔍 Running independent spent value checks for all campaigns');
   
   try {
-    // Get all campaigns with TrafficStar IDs
-    const campaignsWithTrafficStar = await db.select({
-      id: campaigns.id,
-      trafficstarCampaignId: campaigns.trafficstarCampaignId,
-      trafficGeneratorEnabled: campaigns.trafficGeneratorEnabled,
-      highSpendFirstTime: campaigns.lastTrafficSenderStatus,
-      highSpendWaitMinutes: campaigns.highSpendWaitMinutes,
-    })
-      .from(campaigns)
-      .where(
-        and(
-          // Must have a TrafficStar ID
-          sql`${campaigns.trafficstarCampaignId} IS NOT NULL`,
-          // And must have Traffic Generator enabled
-          eq(campaigns.trafficGeneratorEnabled, true)
-        )
-      );
+    // Using raw SQL to avoid Drizzle query builder issues
+    const result = await db.execute(
+      sql`SELECT id, trafficstar_campaign_id as "trafficstarCampaignId",
+          traffic_generator_enabled as "trafficGeneratorEnabled",
+          last_traffic_sender_status as "highSpendFirstTime",
+          high_spend_wait_minutes as "highSpendWaitMinutes"
+          FROM campaigns 
+          WHERE trafficstar_campaign_id IS NOT NULL 
+          AND traffic_generator_enabled = true`
+    );
+    
+    // Safely extract campaigns from result
+    const campaignsWithTrafficStar = result.rows || [];
       
     console.log(`📊 Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
     
@@ -69,17 +65,17 @@ export async function processSpentValueChecks(): Promise<void> {
  */
 export async function processSpentValueForCampaign(campaignId: number): Promise<void> {
   // Get the campaign details
-  const campaign = await db.query.campaigns.findFirst({
-    where: (campaign, { eq }) => eq(campaign.id, campaignId),
-    columns: {
-      id: true,
-      trafficstarCampaignId: true,
-      dailySpent: true,
-      lastTrafficSenderStatus: true,
-      highSpendWaitMinutes: true,
-      highSpendBudgetCalcTime: true,
-    }
-  });
+  const campaign = await db.select({
+    id: campaigns.id,
+    trafficstarCampaignId: campaigns.trafficstarCampaignId,
+    dailySpent: campaigns.dailySpent,
+    lastTrafficSenderStatus: campaigns.lastTrafficSenderStatus,
+    highSpendWaitMinutes: campaigns.highSpendWaitMinutes,
+    highSpendBudgetCalcTime: campaigns.highSpendBudgetCalcTime
+  })
+  .from(campaigns)
+  .where(eq(campaigns.id, campaignId))
+  .then(records => records[0]);
   
   if (!campaign || !campaign.trafficstarCampaignId) {
     console.log(`⚠️ Campaign ${campaignId} not found or has no TrafficStar ID`);
@@ -92,21 +88,21 @@ export async function processSpentValueForCampaign(campaignId: number): Promise<
     
     // Get the spent value from TrafficStar API
     const today = new Date().toISOString().substring(0, 10);
-    const spentData = await trafficStarService.getSpentValueForCampaign(campaign.trafficstarCampaignId, today);
+    const { totalSpent } = await trafficStarService.getCampaignSpentValue(parseInt(campaign.trafficstarCampaignId));
     
-    if (!spentData) {
+    if (totalSpent === undefined) {
       console.log(`⚠️ No spent data returned for campaign ${campaignId}`);
       return;
     }
     
-    const spentValue = parseFloat(spentData.spent);
+    const spentValue = totalSpent;
     console.log(`💲 Campaign ${campaignId} spent: $${spentValue.toFixed(4)} (on ${today})`);
     
     // Update the database with the latest spent value
     await db.update(campaigns)
       .set({
         dailySpent: spentValue.toString(),
-        dailySpentDate: today as any,
+        dailySpentDate: new Date(today), // Convert string date to actual Date object
         lastSpentCheck: new Date(),
         updatedAt: new Date()
       })
@@ -139,13 +135,13 @@ async function handleHighSpendCampaign(
 ): Promise<void> {
   console.log(`🔶 HIGH SPEND ($${spentValue.toFixed(4)} >= $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent at least $${THRESHOLD.toFixed(2)}`);
   
-  const campaignRecord = await db.query.campaigns.findFirst({
-    where: (campaign, { eq }) => eq(campaign.id, campaignId),
-    columns: {
-      highSpendWaitMinutes: true,
-      lastTrafficSenderStatus: true
-    }
-  });
+  const campaignRecord = await db.select({
+    highSpendWaitMinutes: campaigns.highSpendWaitMinutes,
+    lastTrafficSenderStatus: campaigns.lastTrafficSenderStatus
+  })
+  .from(campaigns)
+  .where(eq(campaigns.id, campaignId))
+  .then(records => records[0]);
   
   if (!campaignRecord) {
     console.log(`⚠️ Campaign record not found for campaign ${campaignId}`);
@@ -216,12 +212,12 @@ async function handleLowSpendCampaign(
   console.log(`🔵 LOW SPEND ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): Campaign ${trafficstarCampaignId} has spent less than $${THRESHOLD.toFixed(2)}`);
   
   // Check if the campaign was previously in high spend state
-  const campaignRecord = await db.query.campaigns.findFirst({
-    where: (campaign, { eq }) => eq(campaign.id, campaignId),
-    columns: {
-      lastTrafficSenderStatus: true
-    }
-  });
+  const campaignRecord = await db.select({
+    lastTrafficSenderStatus: campaigns.lastTrafficSenderStatus
+  })
+  .from(campaigns)
+  .where(eq(campaigns.id, campaignId))
+  .then(records => records[0]);
   
   if (!campaignRecord) {
     console.log(`⚠️ Campaign record not found for campaign ${campaignId}`);
@@ -268,12 +264,12 @@ export async function processUrlBudgetsForCampaign(campaignId: number): Promise<
     await urlBudgetManager.processUrlBudgets(campaignId);
     
     // After budget is updated, add campaign to active status monitoring
-    const campaign = await db.query.campaigns.findFirst({
-      where: (campaign, { eq }) => eq(campaign.id, campaignId),
-      columns: {
-        trafficstarCampaignId: true
-      }
-    });
+    const campaign = await db.select({
+      trafficstarCampaignId: campaigns.trafficstarCampaignId
+    })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+    .then(records => records[0]);
     
     if (campaign && campaign.trafficstarCampaignId) {
       // Add to active status monitoring
@@ -303,12 +299,12 @@ export async function checkForNewUrlsAfterBudgetCalculation(
 ): Promise<void> {
   console.log(`🔍 Checking for URLs added after high-spend budget calculation for campaign ${campaignId}`);
   
-  const campaign = await db.query.campaigns.findFirst({
-    where: (campaign, { eq }) => eq(campaign.id, campaignId),
-    columns: {
-      highSpendBudgetCalcTime: true
-    }
-  });
+  const campaign = await db.select({
+    highSpendBudgetCalcTime: campaigns.highSpendBudgetCalcTime
+  })
+  .from(campaigns)
+  .where(eq(campaigns.id, campaignId))
+  .then(records => records[0]);
   
   if (!campaign || !campaign.highSpendBudgetCalcTime) {
     console.log(`⚠️ Campaign ${campaignId} has no budget calculation time recorded`);
@@ -373,30 +369,30 @@ export async function processUrlThresholdChecks(): Promise<void> {
   console.log('🔍 Running independent URL threshold checks for all campaigns');
   
   try {
-    // Get all campaigns with TrafficStar IDs
-    const campaignsWithTrafficStar = await db.select({
-      id: campaigns.id,
-      trafficstarCampaignId: campaigns.trafficstarCampaignId,
-      dailyBudgetUpdateTime: campaigns.dailyBudgetUpdateTime
-    })
-      .from(campaigns)
-      .where(
-        and(
-          // Must have a TrafficStar ID
-          sql`${campaigns.trafficstarCampaignId} IS NOT NULL`,
-          // And must have Traffic Generator enabled
-          eq(campaigns.trafficGeneratorEnabled, true)
-        )
-      );
+    // Get all campaigns with TrafficStar IDs - using raw SQL to avoid Drizzle query builder issues
+    const result = await db.execute(
+      sql`SELECT id, trafficstar_campaign_id as "trafficstarCampaignId", 
+          budget_update_time as "budgetUpdateTime"
+          FROM campaigns 
+          WHERE trafficstar_campaign_id IS NOT NULL 
+          AND traffic_generator_enabled = true`
+    );
+    
+    // Safely extract campaigns from result
+    const campaignsWithTrafficStar = result.rows || [];
       
     console.log(`📊 Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
     
     // Process each campaign's URL thresholds
     for (const campaign of campaignsWithTrafficStar) {
       try {
-        await processUrlThresholdsForCampaign(campaign.id);
+        if (campaign && campaign.id) {
+          await processUrlThresholdsForCampaign(campaign.id);
+        } else {
+          console.log(`⚠️ Skipping campaign with invalid ID`);
+        }
       } catch (error) {
-        console.error(`❌ Error processing URL thresholds for campaign ${campaign.id}:`, error);
+        console.error(`❌ Error processing URL thresholds for campaign ${campaign?.id || 'unknown'}:`, error);
       }
     }
   } catch (error) {
@@ -414,15 +410,15 @@ export async function processUrlThresholdChecks(): Promise<void> {
 export async function processUrlThresholdsForCampaign(campaignId: number): Promise<void> {
   try {
     // Get the campaign details
-    const campaignRecord = await db.query.campaigns.findFirst({
-      where: (campaign, { eq }) => eq(campaign.id, campaignId),
-      columns: {
-        id: true,
-        trafficstarCampaignId: true,
-        minimumClicksThreshold: true,
-        remainingClicksThreshold: true
-      }
-    });
+    const campaignRecord = await db.select({
+      id: campaigns.id,
+      trafficstarCampaignId: campaigns.trafficstarCampaignId,
+      minimumClicksThreshold: campaigns.minimumClicksThreshold,
+      remainingClicksThreshold: campaigns.remainingClicksThreshold
+    })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+    .then(records => records[0]);
     
     if (!campaignRecord || !campaignRecord.trafficstarCampaignId) {
       console.log(`⚠️ Campaign ${campaignId} not found or has no TrafficStar ID`);
@@ -430,8 +426,9 @@ export async function processUrlThresholdsForCampaign(campaignId: number): Promi
     }
     
     // Get campaign-specific thresholds or use defaults
-    const minimumClicksThreshold = campaignRecord.minimumClicksThreshold || DEFAULT_MINIMUM_CLICKS_THRESHOLD;
-    const remainingClicksThreshold = campaignRecord.remainingClicksThreshold || DEFAULT_REMAINING_CLICKS_THRESHOLD;
+    const thresholds = await getCampaignThresholds(campaignId);
+    const minimumClicksThreshold = campaignRecord.minimumClicksThreshold || thresholds.minimumClicksThreshold;
+    const remainingClicksThreshold = campaignRecord.remainingClicksThreshold || thresholds.remainingClicksThreshold;
     
     console.log(`📊 Using campaign-specific thresholds for campaign ${campaignId}: Auto-Pause=${minimumClicksThreshold} clicks, Auto-Activate=${remainingClicksThreshold} clicks`);
     
@@ -479,7 +476,6 @@ export async function processUrlThresholdsForCampaign(campaignId: number): Promi
         // Update the campaign status in our database
         await db.update(campaigns)
           .set({
-            lastThresholdCheck: new Date(),
             updatedAt: new Date()
           })
           .where(eq(campaigns.id, campaignId));
@@ -506,20 +502,16 @@ export async function processEmptyUrlChecks(): Promise<void> {
   try {
     console.log('Checking for campaigns with no active URLs to pause TrafficStar campaigns');
     
-    // Get all campaigns with TrafficStar IDs
-    const campaignsWithTrafficStar = await db.select({
-      id: campaigns.id,
-      trafficstarCampaignId: campaigns.trafficstarCampaignId
-    })
-      .from(campaigns)
-      .where(
-        and(
-          // Must have a TrafficStar ID
-          sql`${campaigns.trafficstarCampaignId} IS NOT NULL`,
-          // And must have Traffic Generator enabled
-          eq(campaigns.trafficGeneratorEnabled, true)
-        )
-      );
+    // Using raw SQL to avoid Drizzle query builder issues
+    const result = await db.execute(
+      sql`SELECT id, trafficstar_campaign_id as "trafficstarCampaignId"
+          FROM campaigns 
+          WHERE trafficstar_campaign_id IS NOT NULL 
+          AND traffic_generator_enabled = true`
+    );
+    
+    // Safely extract campaigns from result
+    const campaignsWithTrafficStar = result.rows || [];
       
     console.log(`Found ${campaignsWithTrafficStar.length} campaigns with TrafficStar integration`);
     
@@ -527,9 +519,7 @@ export async function processEmptyUrlChecks(): Promise<void> {
     for (const campaign of campaignsWithTrafficStar) {
       try {
         // Get active URL count for the campaign
-        const urlCount = await db.select({
-          count: db.fn.count()
-        })
+        const urlCount = await db.select()
           .from(urls)
           .where(
             and(
@@ -538,7 +528,7 @@ export async function processEmptyUrlChecks(): Promise<void> {
             )
           );
           
-        const activeUrlCount = Number(urlCount[0].count);
+        const activeUrlCount = urlCount.length;
         console.log(`Campaign ${campaign.id} (TrafficStar ID: ${campaign.trafficstarCampaignId}) has ${activeUrlCount} active URLs`);
         
         if (activeUrlCount === 0) {
@@ -703,9 +693,7 @@ async function monitorEmptyUrl(campaignId: number, trafficstarCampaignId: string
   
   try {
     // Check if campaign still has no active URLs
-    const urlCount = await db.select({
-      count: db.fn.count()
-    })
+    const urlCount = await db.select()
       .from(urls)
       .where(
         and(
@@ -714,7 +702,7 @@ async function monitorEmptyUrl(campaignId: number, trafficstarCampaignId: string
         )
       );
       
-    const activeUrlCount = Number(urlCount[0].count);
+    const activeUrlCount = urlCount.length;
     
     if (activeUrlCount === 0) {
       // Campaign still has no active URLs, ensure it's paused
@@ -753,12 +741,12 @@ async function checkIfCampaignShouldBeReactivated(campaignId: number, trafficsta
   
   try {
     // Get the campaign details
-    const campaignRecord = await db.query.campaigns.findFirst({
-      where: (campaign, { eq }) => eq(campaign.id, campaignId),
-      columns: {
-        remainingClicksThreshold: true
-      }
-    });
+    const campaignRecord = await db.select({
+      remainingClicksThreshold: campaigns.remainingClicksThreshold
+    })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+    .then(records => records[0]);
     
     if (!campaignRecord) {
       console.log(`⚠️ Campaign record not found for campaign ${campaignId}`);
@@ -766,7 +754,8 @@ async function checkIfCampaignShouldBeReactivated(campaignId: number, trafficsta
     }
     
     // Get the reactivation threshold
-    const reactivationThreshold = campaignRecord.remainingClicksThreshold || DEFAULT_REMAINING_CLICKS_THRESHOLD;
+    const thresholds = await getCampaignThresholds(campaignId);
+    const reactivationThreshold = campaignRecord.remainingClicksThreshold || thresholds.remainingClicksThreshold;
     
     // Get all active URLs for the campaign
     const activeUrls = await db.select()
