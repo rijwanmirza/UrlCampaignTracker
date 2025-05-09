@@ -476,7 +476,7 @@ export async function handleCampaignBySpentValue(campaignId: number, trafficstar
                   console.log(`💰 URL ${url.id} price for ${validRemaining} remaining clicks: $${urlPrice.toFixed(2)}`);
                   
                   // Log this URL's budget calculation to the campaign-specific URL budget log file
-                  await urlBudgetLogger.logUrlBudget(url.id, urlPrice, campaign.id);
+                  await urlBudgetLogger.logUrlBudget(campaign.id, url.id, url.name || 'Unknown', urlPrice);
                 }
               } else {
                 console.log(`❌ Skipping URL ID: ${url.id} with status: ${url.status}`);
