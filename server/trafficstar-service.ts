@@ -617,25 +617,10 @@ class TrafficStarService {
       );
       
       if (tracked) {
-        // Check the campaign's current spent value to determine if we're in high spend state
-        const campaign = await db.query.campaigns.findFirst({
-          where: (c, { eq }) => eq(c.id, campaignId),
-        });
-        
-        // Get the spent value (default to 0 if not available)
-        const spentValue = campaign?.dailySpent ? parseFloat(campaign.dailySpent) : 0;
-        const THRESHOLD = 10.00; // $10 threshold
-        
-        if (spentValue >= THRESHOLD) {
-          // HIGH SPEND STATE - budget updates will be scheduled
-          console.log(`🟢 HIGH SPEND STATE ($${spentValue.toFixed(4)} >= $${THRESHOLD.toFixed(2)}): URL has been tracked and scheduled for budget update`);
-        } else {
-          // LOW SPEND STATE - only tracking occurs
-          console.log(`🔵 LOW SPEND STATE ($${spentValue.toFixed(4)} < $${THRESHOLD.toFixed(2)}): URL has been tracked but budget won't be updated until high spend threshold is reached`);
-        }
+        console.log(`✅ Successfully scheduled URL ID ${urlId} for budget update`);
         return true;
       } else {
-        console.log(`⚠️ URL ID ${urlId} is already being tracked in the budget system`);
+        console.log(`⚠️ URL ID ${urlId} is already being tracked for budget update`);
         return false;
       }
     } catch (error) {
