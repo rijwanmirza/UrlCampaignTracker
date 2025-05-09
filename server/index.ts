@@ -10,7 +10,6 @@ import { trafficStarService } from "./trafficstar-service";
 import { requireAuth } from "./auth/middleware";
 import { registerAuthRoutes } from "./auth/routes";
 import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
-import { initializeIndependentWorkerSystem } from "./integrate-independent-workers";
 import { youtubeApiService } from "./youtube-api-service";
 import { initKeyManager } from "./auth/key-manager";
 import { initAccessCodeManager } from "./auth/access-code-manager";
@@ -201,10 +200,6 @@ app.use((req, res, next) => {
         // Initialize Traffic Generator scheduler
         initializeTrafficGeneratorScheduler();
         log('Traffic Generator scheduler initialized successfully');
-        
-        // Initialize the independent worker system
-        initializeIndependentWorkerSystem();
-        log('Independent worker system initialized successfully');
         
         // Set up a scheduler for budget updates - check every minute
         setInterval(() => {

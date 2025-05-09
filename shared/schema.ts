@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum, numeric, json, boolean, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -46,8 +46,6 @@ export const campaigns = pgTable("campaigns", {
   trafficGeneratorEnabled: boolean("traffic_generator_enabled").default(false), // Enable/disable traffic generator
   postPauseCheckMinutes: integer("post_pause_check_minutes").default(2), // Minutes to wait after pause before checking spent value
   highSpendWaitMinutes: integer("high_spend_wait_minutes").default(11), // Minutes to wait after pause for high-spend campaigns ($10+)
-  minimumClicksThreshold: integer("minimum_clicks_threshold").default(5000), // Threshold for minimum clicks (default: 5000)
-  remainingClicksThreshold: integer("remaining_clicks_threshold").default(15000), // Threshold for remaining clicks to reactivate (default: 15000)
   // DEPRECATED: Traffic Sender feature has been removed
   // Keeping these fields in the schema for backward compatibility but they are no longer used
   trafficSenderEnabled: boolean("traffic_sender_enabled").default(false), // DEPRECATED: Traffic Sender removed
@@ -119,8 +117,6 @@ export const updateCampaignSchema = z.object({
   trafficGeneratorEnabled: z.boolean().optional(), // Traffic generator toggle
   postPauseCheckMinutes: z.number().int().min(1).max(30).optional(), // Minutes to wait after pause before checking spent value (1-30)
   highSpendWaitMinutes: z.number().int().min(1).max(30).optional(), // Minutes to wait after pause for high-spend campaigns ($10+)
-  minimumClicksThreshold: z.number().int().min(100).max(100000).optional(), // Minimum clicks threshold for auto-pause (default: 5000)
-  remainingClicksThreshold: z.number().int().min(1000).max(1000000).optional(), // Remaining clicks threshold for auto-reactivation (default: 15000)
   // DEPRECATED: Traffic Sender fields - no longer in use
   trafficSenderEnabled: z.boolean().optional(), // DEPRECATED
   lastTrafficSenderAction: z.date().optional().nullable(), // DEPRECATED
@@ -591,41 +587,3 @@ export const updateSystemSettingSchema = createInsertSchema(systemSettings).omit
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type UpdateSystemSetting = z.infer<typeof updateSystemSettingSchema>;
-
-// Campaign Monitoring table for tracking independent worker monitoring state
-export const campaignMonitoring = pgTable("campaign_monitoring", {
-  id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").notNull(),
-  trafficstarCampaignId: text("trafficstar_campaign_id").notNull(),
-  type: text("type").notNull(), // 'active_status', 'pause_status', 'empty_url'
-  isActive: boolean("is_active").default(true).notNull(),
-  addedAt: timestamp("added_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => {
-  return {
-    campaignTypeUnique: unique().on(table.campaignId, table.type)
-  };
-});
-
-export const insertCampaignMonitoringSchema = createInsertSchema(campaignMonitoring).omit({
-  id: true,
-  addedAt: true,
-  updatedAt: true,
-}).extend({
-  type: z.enum(['active_status', 'pause_status', 'empty_url']),
-});
-
-export const updateCampaignMonitoringSchema = createInsertSchema(campaignMonitoring).omit({
-  id: true,
-  addedAt: true,
-  updatedAt: true,
-}).extend({
-  campaignId: z.number().int().optional(),
-  trafficstarCampaignId: z.string().optional(),
-  type: z.enum(['active_status', 'pause_status', 'empty_url']).optional(),
-  isActive: z.boolean().optional(),
-});
-
-export type CampaignMonitoring = typeof campaignMonitoring.$inferSelect;
-export type InsertCampaignMonitoring = z.infer<typeof insertCampaignMonitoringSchema>;
-export type UpdateCampaignMonitoring = z.infer<typeof updateCampaignMonitoringSchema>;

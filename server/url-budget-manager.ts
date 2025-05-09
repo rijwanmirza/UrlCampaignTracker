@@ -1,8 +1,6 @@
 import { db } from './db';
 import urlBudgetLogger from './url-budget-logger';
 import { trafficStarService } from './trafficstar-service';
-import { campaigns } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 
 /**
  * Class that manages URL budget updates after the initial high-spend calculation
@@ -267,80 +265,6 @@ export class UrlBudgetManager {
     } catch (error) {
       console.error(`❌ Error processing immediate budget update for campaign ${campaignId}:`, error);
       return false;
-    }
-  }
-  
-  /**
-   * Add all active URLs for a campaign to URL budget logs
-   * This is called when a campaign first reaches high spend ($10+)
-   * 
-   * @param campaignId The ID of the campaign
-   * @returns Number of URLs successfully added to budget logs
-   */
-  public async addAllActiveCampaignUrls(campaignId: number): Promise<number> {
-    try {
-      console.log(`📋 Adding all active URLs for campaign ${campaignId} to budget logs`);
-      
-      // First get campaign information to check if it has TrafficStar integration
-      const campaign = await db.select({
-        trafficstarCampaignId: campaigns.trafficstarCampaignId,
-        pricePerThousand: campaigns.pricePerThousand,
-        id: campaigns.id
-      })
-      .from(campaigns)
-      .where(eq(campaigns.id, campaignId))
-      .then(records => records[0]);
-      
-      if (!campaign || !campaign.trafficstarCampaignId) {
-        console.log(`⚠️ Campaign ${campaignId} not found or has no TrafficStar ID - skipping budget logging`);
-        return 0;
-      }
-      
-      const pricePerThousand = parseFloat(campaign.pricePerThousand || '0');
-      if (isNaN(pricePerThousand) || pricePerThousand <= 0) {
-        console.log(`⚠️ Campaign ${campaignId} has invalid price per thousand: ${campaign.pricePerThousand} - skipping budget logging`);
-        return 0;
-      }
-      
-      console.log(`💰 Campaign ${campaignId} price per thousand: $${pricePerThousand.toFixed(4)}`);
-      
-      // Get all active URLs for this campaign using the urlBudgetLogger helper
-      const activeUrls = await urlBudgetLogger.getActiveUrlsForCampaign(campaignId);
-      
-      if (activeUrls.length === 0) {
-        console.log(`⚠️ No active URLs found for campaign ${campaignId} - skipping budget logging`);
-        return 0;
-      }
-      
-      console.log(`🔍 Found ${activeUrls.length} active URLs for campaign ${campaignId} to log budgets for`);
-      
-      // Record this budget calculation time
-      await db.update(campaigns)
-        .set({
-          highSpendBudgetCalcTime: new Date(),
-          updatedAt: new Date()
-        })
-        .where(eq(campaigns.id, campaignId));
-      
-      // Process each URL and log its budget
-      let successCount = 0;
-      for (const url of activeUrls) {
-        // Calculate budget based on remaining clicks
-        const clickLimit = url.clickLimit;
-        const urlBudget = (clickLimit / 1000) * pricePerThousand;
-        
-        // Log this URL's budget
-        const success = await urlBudgetLogger.logUrlBudget(url.id, urlBudget, campaignId);
-        if (success) {
-          successCount++;
-        }
-      }
-      
-      console.log(`✅ Successfully logged budgets for ${successCount} active URLs in campaign ${campaignId}`);
-      return successCount;
-    } catch (error) {
-      console.error(`❌ Error adding active URLs for campaign ${campaignId} to budget logs:`, error);
-      return 0;
     }
   }
 }

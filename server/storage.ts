@@ -434,9 +434,6 @@ export class DatabaseStorage implements IStorage {
         String(insertCampaign.multiplier) : "1",
       // Format price with 4 decimal places
       pricePerThousand: priceValue.toFixed(4),
-      // Set default threshold values for campaign
-      minimumClicksThreshold: 5000, // Default value
-      remainingClicksThreshold: 15000, // Default value
       createdAt: now,
       updatedAt: now
     };
@@ -636,39 +633,6 @@ export class DatabaseStorage implements IStorage {
       
       updateData.youtubeMaxDurationMinutes = minutes;
       console.log('🔍 DEBUG: Setting youtubeMaxDurationMinutes to:', updateData.youtubeMaxDurationMinutes);
-    }
-    
-    // Handle campaign-specific threshold settings
-    if (updateCampaign.minimumClicksThreshold !== undefined) {
-      // Ensure value is within valid range (100-100000)
-      let threshold = updateCampaign.minimumClicksThreshold;
-      if (threshold < 100) threshold = 100;
-      if (threshold > 100000) threshold = 100000;
-      
-      updateData.minimumClicksThreshold = threshold;
-      console.log('🔍 DEBUG: Setting minimumClicksThreshold to:', updateData.minimumClicksThreshold);
-    }
-    
-    if (updateCampaign.remainingClicksThreshold !== undefined) {
-      // Ensure value is within valid range (1000-1000000)
-      let threshold = updateCampaign.remainingClicksThreshold;
-      if (threshold < 1000) threshold = 1000;
-      if (threshold > 1000000) threshold = 1000000;
-      
-      // Make sure remaining is greater than minimum
-      if (updateData.minimumClicksThreshold !== undefined && 
-          threshold <= updateData.minimumClicksThreshold) {
-        threshold = updateData.minimumClicksThreshold + 1000;
-        console.log('🔍 DEBUG: Adjusting remainingClicksThreshold to be greater than minimumClicksThreshold:', threshold);
-      } else if (updateCampaign.minimumClicksThreshold === undefined && 
-                existing.minimumClicksThreshold !== undefined && 
-                threshold <= existing.minimumClicksThreshold) {
-        threshold = existing.minimumClicksThreshold + 1000;
-        console.log('🔍 DEBUG: Adjusting remainingClicksThreshold to be greater than existing minimumClicksThreshold:', threshold);
-      }
-      
-      updateData.remainingClicksThreshold = threshold;
-      console.log('🔍 DEBUG: Setting remainingClicksThreshold to:', updateData.remainingClicksThreshold);
     }
     
     // Always record the time if a TrafficStar campaign ID is set

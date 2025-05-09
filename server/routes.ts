@@ -5074,58 +5074,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Global system threshold configuration (API) - Now deprecated in favor of campaign-specific thresholds
-  app.get("/api/system/thresholds", async (_req: Request, res: Response) => {
-    console.log("⚠️ Global thresholds API accessed - now deprecated");
-    res.json({
-      message: "Global thresholds have been deprecated. Please use campaign-specific thresholds instead.",
-      minimumClicksThreshold: 5000, // Default values for backward compatibility
-      remainingClicksThreshold: 15000
-    });
-  });
-
-  app.post("/api/system/thresholds", async (_req: Request, res: Response) => {
-    console.log("⚠️ Attempt to update global thresholds - functionality has been removed");
-    res.status(410).json({ 
-      success: false,
-      message: "Global thresholds have been deprecated. Please use campaign-specific thresholds in the campaign edit form instead." 
-    });
-  });
-  
-  // Test endpoint to show current thresholds and debug info
-  app.get("/api/system/thresholds/debug", async (_req: Request, res: Response) => {
-    try {
-      // Get all active campaigns to check their threshold values
-      const activeCampaigns = await db.query.campaigns.findMany({
-        where: (c, { eq }) => eq(c.trafficGeneratorEnabled, true),
-        columns: {
-          id: true,
-          name: true,
-          trafficstarCampaignId: true,
-          minimumClicksThreshold: true,
-          remainingClicksThreshold: true
-        }
-      });
-      
-      res.json({
-        success: true,
-        message: "Global thresholds have been deprecated. Using campaign-specific thresholds only.",
-        activeCampaigns,
-        defaults: {
-          minimumClicksThreshold: 5000, // Default values used for new campaigns
-          remainingClicksThreshold: 15000
-        }
-      });
-    } catch (error) {
-      console.error("Error in threshold debug endpoint:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to get threshold debug information",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
   // API endpoint to generate test click data for analytics
   app.post("/api/system/generate-test-clicks", async (_req: Request, res: Response) => {
     try {
