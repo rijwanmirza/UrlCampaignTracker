@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { systemSettings } from '@shared/schema';
+import { systemSettings, campaigns } from '@shared/schema';
 import { eq, sql } from 'drizzle-orm';
 
 // Constants for the setting names
@@ -54,6 +54,86 @@ export async function getThresholds() {
  * @param remainingClicksThreshold The remaining clicks threshold value
  * @returns Success status
  */
+/**
+ * Update thresholds for a specific campaign
+ * @param campaignId The ID of the campaign to update
+ * @param minimumClicksThreshold The minimum clicks threshold value
+ * @param remainingClicksThreshold The remaining clicks threshold value
+ * @returns Success status
+ */
+export async function updateCampaignThresholds(
+  campaignId: number, 
+  minimumClicksThreshold: number, 
+  remainingClicksThreshold: number
+) {
+  try {
+    // Validate inputs
+    if (isNaN(minimumClicksThreshold) || minimumClicksThreshold <= 0) {
+      throw new Error('Minimum clicks threshold must be a positive number');
+    }
+
+    if (isNaN(remainingClicksThreshold) || remainingClicksThreshold <= 0) {
+      throw new Error('Remaining clicks threshold must be a positive number');
+    }
+
+    if (remainingClicksThreshold <= minimumClicksThreshold) {
+      throw new Error('Remaining clicks threshold must be greater than minimum clicks threshold');
+    }
+
+    console.log(`Updating thresholds for campaign ${campaignId}: minimum=${minimumClicksThreshold}, remaining=${remainingClicksThreshold}`);
+
+    // Update the campaign
+    await db.update(campaigns)
+      .set({
+        minimumClicksThreshold,
+        remainingClicksThreshold,
+        updatedAt: new Date()
+      })
+      .where(eq(campaigns.id, campaignId));
+
+    console.log(`✅ Updated thresholds for campaign ${campaignId}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`Error updating thresholds for campaign ${campaignId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get thresholds for a specific campaign
+ * @param campaignId The ID of the campaign
+ * @returns Object containing the campaign-specific threshold values or global defaults
+ */
+export async function getCampaignThresholds(campaignId: number) {
+  try {
+    const campaign = await db.query.campaigns.findFirst({
+      where: eq(campaigns.id, campaignId),
+      columns: {
+        minimumClicksThreshold: true,
+        remainingClicksThreshold: true
+      }
+    });
+
+    if (!campaign) {
+      console.warn(`Campaign ${campaignId} not found, returning global defaults`);
+      // Return global defaults
+      const globalDefaults = await getThresholds();
+      return globalDefaults;
+    }
+
+    // Campaign exists, return its specific thresholds
+    return {
+      minimumClicksThreshold: campaign.minimumClicksThreshold,
+      remainingClicksThreshold: campaign.remainingClicksThreshold
+    };
+  } catch (error) {
+    console.error(`Error getting thresholds for campaign ${campaignId}:`, error);
+    // Return global defaults
+    const globalDefaults = await getThresholds();
+    return globalDefaults;
+  }
+}
+
 export async function saveThresholds(minimumClicksThreshold: number, remainingClicksThreshold: number) {
   try {
     // Validate inputs
@@ -129,11 +209,9 @@ export async function saveThresholds(minimumClicksThreshold: number, remainingCl
     
     // Also update campaign defaults for new campaigns
     try {
-      await db.execute(sql`
-        ALTER TABLE campaigns 
-        ALTER COLUMN minimum_clicks_threshold SET DEFAULT ${minimumClicksThreshold},
-        ALTER COLUMN remaining_clicks_threshold SET DEFAULT ${remainingClicksThreshold}
-      `);
+      // Use separate statements for each column to avoid SQL syntax errors
+      await db.execute(sql`ALTER TABLE campaigns ALTER COLUMN minimum_clicks_threshold SET DEFAULT ${minimumClicksThreshold}`);
+      await db.execute(sql`ALTER TABLE campaigns ALTER COLUMN remaining_clicks_threshold SET DEFAULT ${remainingClicksThreshold}`);
       
       console.log(`✅ Updated campaign defaults for new campaigns`);
     } catch (error) {

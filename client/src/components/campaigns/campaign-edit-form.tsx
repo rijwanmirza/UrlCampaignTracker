@@ -53,6 +53,9 @@ const campaignEditSchema = z.object({
   trafficGeneratorEnabled: z.boolean().default(false),
   postPauseCheckMinutes: z.number().int().min(1, "Minutes must be at least 1").max(30, "Minutes can't exceed 30").default(2), 
   highSpendWaitMinutes: z.number().int().min(1, "Minutes must be at least 1").max(30, "Minutes can't exceed 30").default(11),
+  // Campaign-specific threshold settings
+  minimumClicksThreshold: z.number().int().min(100, "Threshold must be at least 100").max(100000, "Threshold can't exceed 100,000").default(5000),
+  remainingClicksThreshold: z.number().int().min(1000, "Threshold must be at least 1,000").max(1000000, "Threshold can't exceed 1,000,000").default(15000),
   // YouTube API fields
   youtubeApiEnabled: z.boolean().default(false),
   youtubeApiIntervalMinutes: z.number().int().min(15, "Minutes must be at least 15").max(1440, "Minutes can't exceed 1440").default(60),
@@ -100,6 +103,9 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
       trafficGeneratorEnabled: campaign.trafficGeneratorEnabled || false,
       postPauseCheckMinutes: campaign.postPauseCheckMinutes || 2, // Default to 2 minutes
       highSpendWaitMinutes: campaign.highSpendWaitMinutes || 11, // Default to 11 minutes
+      // Campaign-specific threshold settings
+      minimumClicksThreshold: campaign.minimumClicksThreshold || 5000, // Default to 5000
+      remainingClicksThreshold: campaign.remainingClicksThreshold || 15000, // Default to 15000
       // YouTube API settings
       youtubeApiEnabled: campaign.youtubeApiEnabled || false,
       youtubeApiIntervalMinutes: campaign.youtubeApiIntervalMinutes || 60, // Default to 60 minutes
@@ -258,6 +264,43 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
     // Log form highSpendWaitMinutes value specifically
     console.log("BEFORE SUBMIT - highSpendWaitMinutes value:", values.highSpendWaitMinutes);
     console.log("BEFORE SUBMIT - youtubeApiEnabled value:", values.youtubeApiEnabled);
+    
+    // Validate threshold values
+    // Ensure minimum clicks threshold is valid
+    if (values.minimumClicksThreshold === undefined) {
+      values.minimumClicksThreshold = campaign.minimumClicksThreshold || 5000;
+      console.log("Setting default minimumClicksThreshold value:", values.minimumClicksThreshold);
+    }
+    
+    // Ensure it's a number between 100-100000
+    let minimumClicksValue = Number(values.minimumClicksThreshold);
+    if (isNaN(minimumClicksValue) || minimumClicksValue < 100) {
+      minimumClicksValue = 100;
+    } else if (minimumClicksValue > 100000) {
+      minimumClicksValue = 100000;
+    }
+    values.minimumClicksThreshold = minimumClicksValue;
+    
+    // Ensure remaining clicks threshold is valid
+    if (values.remainingClicksThreshold === undefined) {
+      values.remainingClicksThreshold = campaign.remainingClicksThreshold || 15000;
+      console.log("Setting default remainingClicksThreshold value:", values.remainingClicksThreshold);
+    }
+    
+    // Ensure it's a number between 1000-1000000
+    let remainingClicksValue = Number(values.remainingClicksThreshold);
+    if (isNaN(remainingClicksValue) || remainingClicksValue < 1000) {
+      remainingClicksValue = 1000;
+    } else if (remainingClicksValue > 1000000) {
+      remainingClicksValue = 1000000;
+    }
+    values.remainingClicksThreshold = remainingClicksValue;
+    
+    // Make sure remaining is greater than minimum
+    if (values.remainingClicksThreshold <= values.minimumClicksThreshold) {
+      values.remainingClicksThreshold = values.minimumClicksThreshold + 1000;
+      console.log("Adjusted remainingClicksThreshold to be greater than minimumClicksThreshold:", values.remainingClicksThreshold);
+    }
     
     // Make sure highSpendWaitMinutes is included and is a valid number
     if (values.highSpendWaitMinutes === undefined) {
@@ -835,6 +878,66 @@ export default function CampaignEditForm({ campaign, onSuccess }: CampaignEditFo
               )}
               
               {/* Traffic Sender section removed */}
+            </div>
+
+            {/* Threshold Settings Section */}
+            <div className="rounded-lg border p-3 mt-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Campaign Threshold Settings</h4>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Configure campaign-specific thresholds for automatic campaign management.
+                </p>
+                
+                {/* Minimum Clicks Threshold */}
+                <FormField
+                  control={form.control}
+                  name="minimumClicksThreshold"
+                  render={({ field }) => (
+                    <FormItem className="mt-3 pt-3 border-t border-gray-100">
+                      <FormLabel>Minimum Clicks Threshold</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="100"
+                          max="100000"
+                          {...field}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        The minimum remaining clicks that will trigger campaign pause. Lower values mean campaigns will pause with fewer clicks remaining.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Remaining Clicks Threshold */}
+                <FormField
+                  control={form.control}
+                  name="remainingClicksThreshold"
+                  render={({ field }) => (
+                    <FormItem className="mt-2">
+                      <FormLabel>Remaining Clicks Threshold</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1000"
+                          max="1000000"
+                          {...field}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        The minimum number of remaining clicks required for campaign auto-reactivation. Must be higher than the minimum clicks threshold.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
             
             {/* YouTube API Section */}

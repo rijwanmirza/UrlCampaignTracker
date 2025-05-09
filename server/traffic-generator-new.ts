@@ -227,13 +227,30 @@ export async function getTrafficStarCampaignSpentValue(campaignId: number, traff
 export async function handleCampaignBySpentValue(campaignId: number, trafficstarCampaignId: string, spentValue: number) {
   const THRESHOLD = 10.0; // $10 threshold for different handling
   
-  // Get the configured threshold values from the system settings
-  const { getThresholds } = await import('./system/thresholds');
-  const thresholds = await getThresholds();
+  // Get the campaign details with threshold settings
+  const campaign = await db.query.campaigns.findFirst({
+    where: (campaign, { eq }) => eq(campaign.id, campaignId),
+    columns: {
+      id: true,
+      minimumClicksThreshold: true,
+      remainingClicksThreshold: true
+    }
+  });
   
-  // Use the configured values with fallbacks to defaults
-  const REMAINING_CLICKS_THRESHOLD = thresholds.remainingClicksThreshold; // Configured threshold for auto-activation
-  const MINIMUM_CLICKS_THRESHOLD = thresholds.minimumClicksThreshold; // Configured threshold for auto-pause
+  // Get the system-level threshold values as fallback
+  const { getThresholds, getCampaignThresholds } = await import('./system/thresholds');
+  const systemThresholds = await getThresholds();
+  
+  // Use campaign-specific thresholds if available, otherwise use system defaults
+  const MINIMUM_CLICKS_THRESHOLD = campaign?.minimumClicksThreshold || systemThresholds.minimumClicksThreshold;
+  const REMAINING_CLICKS_THRESHOLD = campaign?.remainingClicksThreshold || systemThresholds.remainingClicksThreshold;
+  
+  // Log which thresholds we're using (campaign-specific or global)
+  if (campaign?.minimumClicksThreshold) {
+    console.log(`📊 Using CAMPAIGN-SPECIFIC thresholds for campaign ${campaignId}: Auto-Pause=${MINIMUM_CLICKS_THRESHOLD} clicks, Auto-Activate=${REMAINING_CLICKS_THRESHOLD} clicks`);
+  } else {
+    console.log(`📊 Using GLOBAL thresholds for campaign ${campaignId}: Auto-Pause=${MINIMUM_CLICKS_THRESHOLD} clicks, Auto-Activate=${REMAINING_CLICKS_THRESHOLD} clicks`);
+  }
   
   try {
     console.log(`TRAFFIC-GENERATOR: Handling campaign ${trafficstarCampaignId} by spent value - current spent: $${spentValue.toFixed(4)}`);
@@ -994,8 +1011,22 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
             }
           }
           
-          // If remaining clicks fell below threshold, pause the campaign
-          const MINIMUM_CLICKS_THRESHOLD = 5000;
+          // Get campaign-specific threshold values
+          const campaignDetails = await db.query.campaigns.findFirst({
+            where: (campaign, { eq }) => eq(campaign.id, campaignId),
+            columns: {
+              minimumClicksThreshold: true,
+              remainingClicksThreshold: true
+            }
+          });
+
+          // Get system thresholds as fallback
+          const { getThresholds } = await import('./system/thresholds');
+          const systemThresholds = await getThresholds();
+          
+          // Use campaign-specific threshold or fall back to global value
+          const MINIMUM_CLICKS_THRESHOLD = campaignDetails?.minimumClicksThreshold || systemThresholds.minimumClicksThreshold;
+          
           if (totalRemainingClicks <= MINIMUM_CLICKS_THRESHOLD) {
             console.log(`⏹️ During monitoring: Campaign ${trafficstarCampaignId} remaining clicks (${totalRemainingClicks}) fell below threshold (${MINIMUM_CLICKS_THRESHOLD}) - pausing campaign`);
             
@@ -1079,8 +1110,22 @@ function startMinutelyStatusCheck(campaignId: number, trafficstarCampaignId: str
               }
             }
             
-            // Only reactivate if there are enough remaining clicks
-            const REMAINING_CLICKS_THRESHOLD = 15000;
+            // Get campaign-specific threshold values
+            const campaignDetails = await db.query.campaigns.findFirst({
+              where: (campaign, { eq }) => eq(campaign.id, campaignId),
+              columns: {
+                minimumClicksThreshold: true,
+                remainingClicksThreshold: true
+              }
+            });
+
+            // Get system thresholds as fallback
+            const { getThresholds } = await import('./system/thresholds');
+            const systemThresholds = await getThresholds();
+            
+            // Use campaign-specific threshold or fall back to global value
+            const REMAINING_CLICKS_THRESHOLD = campaignDetails?.remainingClicksThreshold || systemThresholds.remainingClicksThreshold;
+            
             if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD) {
               console.log(`✅ Campaign ${trafficstarCampaignId} has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) - will attempt reactivation during monitoring`);
               
@@ -1222,8 +1267,22 @@ function startMinutelyPauseStatusCheck(campaignId: number, trafficstarCampaignId
                 }
               }
               
-              // Check if clicks have been replenished
-              const REMAINING_CLICKS_THRESHOLD = 15000;
+              // Get campaign-specific threshold values
+              const campaignDetails = await db.query.campaigns.findFirst({
+                where: (campaign, { eq }) => eq(campaign.id, campaignId),
+                columns: {
+                  minimumClicksThreshold: true,
+                  remainingClicksThreshold: true
+                }
+              });
+
+              // Get system thresholds as fallback
+              const { getThresholds } = await import('./system/thresholds');
+              const systemThresholds = await getThresholds();
+              
+              // Use campaign-specific threshold or fall back to global value
+              const REMAINING_CLICKS_THRESHOLD = campaignDetails?.remainingClicksThreshold || systemThresholds.remainingClicksThreshold;
+              
               if (totalRemainingClicks >= REMAINING_CLICKS_THRESHOLD) {
                 console.log(`✅ Campaign ${trafficstarCampaignId} now has ${totalRemainingClicks} remaining clicks (>= ${REMAINING_CLICKS_THRESHOLD}) - will attempt reactivation after pause period`);
                 
@@ -1493,7 +1552,7 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
   try {
     console.log(`Processing Traffic Generator for campaign ${campaignId}`);
     
-    // Get the campaign details with URLs
+    // Get the campaign details with URLs and threshold settings
     // Only fetch active URLs for the campaign to improve performance
     const campaign = await db.query.campaigns.findFirst({
       where: (campaign, { eq }) => eq(campaign.id, campaignId),
@@ -1501,6 +1560,18 @@ export async function processTrafficGenerator(campaignId: number, forceMode?: st
         urls: {
           where: (urls, { eq }) => eq(urls.status, 'active')
         }
+      },
+      columns: {
+        // Include all required fields
+        id: true,
+        name: true,
+        trafficGeneratorEnabled: true,
+        trafficstarCampaignId: true,
+        minimumClicksThreshold: true,
+        remainingClicksThreshold: true,
+        dailySpent: true,
+        highSpendWaitMinutes: true,
+        postPauseCheckMinutes: true
       }
     }) as (Campaign & { urls: UrlWithActiveStatus[] }) | null;
     
@@ -1898,8 +1969,10 @@ export async function debugProcessCampaign(campaignId: number) {
       },
       thresholds: {
         spentThreshold: 10.0,
-        minimumClicksThreshold: 5000,
-        remainingClicksThreshold: 15000
+        minimumClicksThreshold: campaign.minimumClicksThreshold || 
+          (await import('./system/thresholds')).getThresholds().then(t => t.minimumClicksThreshold),
+        remainingClicksThreshold: campaign.remainingClicksThreshold || 
+          (await import('./system/thresholds')).getThresholds().then(t => t.remainingClicksThreshold)
       }
     };
   } catch (error) {
