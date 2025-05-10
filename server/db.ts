@@ -1,5 +1,5 @@
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -16,7 +16,7 @@ if (!process.env.DATABASE_URL) {
 
 console.log("Connecting to database:", process.env.DATABASE_URL.replace(/:[^:@]+@/, ":***@"));
 
-// Create PostgreSQL pool with local connection
+// Create PostgreSQL pool with standard node-postgres
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL 
 });
@@ -27,4 +27,4 @@ pool.query('SELECT 1')
   .catch(err => console.error('❌ Database connection error:', err));
 
 // Create drizzle orm instance
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle(pool, { schema });

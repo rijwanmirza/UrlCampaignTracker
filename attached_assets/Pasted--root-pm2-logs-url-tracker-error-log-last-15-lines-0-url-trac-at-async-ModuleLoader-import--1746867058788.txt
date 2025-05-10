@@ -1,0 +1,101 @@
+/root/.pm2/logs/url-tracker-error.log last 15 lines:
+0|url-trac |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-trac |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-trac |
+0|url-trac | Node.js v20.19.1
+0|url-trac | /var/www/UrlCampaignTracker/server/redirect-logs-manager.ts:6
+0|url-trac | import { db } from './db';
+0|url-trac |          ^
+0|url-trac |
+0|url-trac | SyntaxError: The requested module './db' does not provide an export named 'db'
+0|url-trac |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-trac |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-trac |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-trac |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-trac |
+0|url-trac | Node.js v20.19.1
+
+/root/.pm2/logs/url-tracker-out.log last 15 lines:
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 dev
+0|url-trac | > NODE_ENV=development tsx server/index.ts
+0|url-trac |
+0|url-trac | Starting the URL Campaign Tracker...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 dev
+0|url-trac | > NODE_ENV=development tsx server/index.ts
+0|url-trac |
+0|url-trac | Starting the URL Campaign Tracker...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 dev
+0|url-trac | > NODE_ENV=development tsx server/index.ts
+0|url-trac |
+0|url-trac | Starting URL Campaign Tracker...
+
+0|url-tracker  | Created redirect logs directory: /var/www/UrlCampaignTracker/redirect_logs
+0|url-tracker  | URL Budget Manager initialized
+0|url-tracker  | TrafficStar API Service initialized
+0|url-tracker  | [youtube-api] INFO: YouTube API Service initialized
+0|url-tracker  | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+0|url-tracker  | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+0|url-tracker  | 8:50:43 AM [gmail-reader] No processed emails log file found, creating a new one
+0|url-tracker  | TrafficStar Reports API test routes registered
+0|url-tracker  | Server monitoring initialized - collecting stats every minute
+0|url-tracker  | /var/www/UrlCampaignTracker/server/vite.ts:74
+0|url-tracker  |     throw new Error(
+0|url-tracker  |           ^
+0|url-tracker  | Error: Could not find the build directory: /var/www/UrlCampaignTracker/server/public, make sure to build the client first
+0|url-tracker  |     at serveStatic (/var/www/UrlCampaignTracker/server/vite.ts:74:11)
+0|url-tracker  |     at <anonymous> (/var/www/UrlCampaignTracker/server/index.ts:136:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | URL Budget Manager initialized
+0|url-tracker  | TrafficStar API Service initialized
+0|url-tracker  | [youtube-api] INFO: YouTube API Service initialized
+0|url-tracker  | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+0|url-tracker  | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+0|url-tracker  | 8:50:45 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-tracker  | TrafficStar Reports API test routes registered
+0|url-tracker  | Server monitoring initialized - collecting stats every minute
+0|url-tracker  | /var/www/UrlCampaignTracker/server/vite.ts:74
+0|url-tracker  |     throw new Error(
+0|url-tracker  |           ^
+0|url-tracker  | Error: Could not find the build directory: /var/www/UrlCampaignTracker/server/public, make sure to build the client first
+0|url-tracker  |     at serveStatic (/var/www/UrlCampaignTracker/server/vite.ts:74:11)
+0|url-tracker  |     at <anonymous> (/var/www/UrlCampaignTracker/server/index.ts:136:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | URL Budget Manager initialized
+0|url-tracker  | TrafficStar API Service initialized
+0|url-tracker  | [youtube-api] INFO: YouTube API Service initialized
+0|url-tracker  | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+0|url-tracker  | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+0|url-tracker  | 8:50:46 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-tracker  | TrafficStar Reports API test routes registered
+0|url-tracker  | Server monitoring initialized - collecting stats every minute
+0|url-tracker  | /var/www/UrlCampaignTracker/server/vite.ts:74
+0|url-tracker  |     throw new Error(
+0|url-tracker  |           ^
+0|url-tracker  | Error: Could not find the build directory: /var/www/UrlCampaignTracker/server/public, make sure to build the client first
+0|url-tracker  |     at serveStatic (/var/www/UrlCampaignTracker/server/vite.ts:74:11)
+0|url-tracker  |     at <anonymous> (/var/www/UrlCampaignTracker/server/index.ts:136:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | URL Budget Manager initialized
+0|url-tracker  | TrafficStar API Service initialized
+0|url-tracker  | [youtube-api] INFO: YouTube API Service initialized
+0|url-tracker  | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+0|url-tracker  | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+0|url-tracker  | 8:50:48 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-tracker  | TrafficStar Reports API test routes registered
+0|url-tracker  | Server monitoring initialized - collecting stats every minute
+0|url-tracker  | /var/www/UrlCampaignTracker/server/vite.ts:74
+0|url-tracker  |     throw new Error(
+0|url-tracker  |           ^
+0|url-tracker  | Error: Could not find the build directory: /var/www/UrlCampaignTracker/server/public, make sure to build the client first
+0|url-tracker  |     at serveStatic (/var/www/UrlCampaignTracker/server/vite.ts:74:11)
+0|url-tracker  |     at <anonymous> (/var/www/UrlCampaignTracker/server/index.ts:136:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker...
+^C
+root@d026e9724:/var/www/UrlCampaignTracker#

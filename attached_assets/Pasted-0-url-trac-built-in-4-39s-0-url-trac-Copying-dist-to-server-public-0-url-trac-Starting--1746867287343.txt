@@ -1,0 +1,103 @@
+0|url-trac | ✓ built in 4.39s
+0|url-trac | Copying dist to server/public...
+0|url-trac | Starting URL Campaign Tracker...
+0|url-trac | Building the client...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 build
+0|url-trac | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-trac |
+0|url-trac | vite v5.4.14 building for production...
+0|url-trac | transforming...
+0|url-trac | Building the client...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 build
+0|url-trac | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-trac |
+
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+0|url-tracker  | ✓ 3573 modules transformed.
+0|url-tracker  | rendering chunks...
+0|url-tracker  | computing gzip size...
+0|url-tracker  | ../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+0|url-tracker  | ../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+0|url-tracker  | ../dist/public/assets/index-D0AL69SA.js   1,336.06 kB │ gzip: 371.49 kB
+0|url-tracker  | (!) Some chunks are larger than 500 kB after minification. Consider:
+0|url-tracker  | - Using dynamic import() to code-split the application
+0|url-tracker  | - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+0|url-tracker  | - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+0|url-tracker  | ✓ built in 4.34s
+0|url-tracker  |   dist/index.js  621.2kb
+0|url-tracker  | ⚡ Done in 28ms
+0|url-tracker  | Copying dist to server/public...
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | node:internal/modules/run_main:123
+0|url-tracker  |     triggerUncaughtException(
+0|url-tracker  |     ^
+0|url-tracker  | Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './pg' is not defined by "exports" in /var/www/UrlCampaignTracker/node_modules/drizzle-orm/package.json imported from /var/www/UrlCampaignTracker/server/db.ts
+0|url-tracker  |     at exportsNotFound (node:internal/modules/esm/resolve:322:10)
+0|url-tracker  |     at packageExportsResolve (node:internal/modules/esm/resolve:670:9)
+0|url-tracker  |     at packageResolve (node:internal/modules/esm/resolve:856:14)
+0|url-tracker  |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+0|url-tracker  |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+0|url-tracker  |     at nextResolve (node:internal/modules/esm/hooks:864:28)
+0|url-tracker  |     at resolveBase (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867266394:2:3212)
+0|url-tracker  |     at resolveDirectory (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867266394:2:3584)
+0|url-tracker  |     at resolveTsPaths (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867266394:2:4073)
+0|url-tracker  |     at async resolve (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867266394:2:4441) {
+0|url-tracker  |   code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+0|url-tracker  | }
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Building the client...
+0|url-tracker  | > rest-express@1.0.0 build
+0|url-tracker  | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+0|url-tracker  | ✓ 3573 modules transformed.
+0|url-tracker  | rendering chunks...
+0|url-tracker  | computing gzip size...
+0|url-tracker  | ../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+0|url-tracker  | ../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+0|url-tracker  | ../dist/public/assets/index-D0AL69SA.js   1,336.06 kB │ gzip: 371.49 kB
+0|url-tracker  | (!) Some chunks are larger than 500 kB after minification. Consider:
+0|url-tracker  | - Using dynamic import() to code-split the application
+0|url-tracker  | - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+0|url-tracker  | - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+0|url-tracker  | ✓ built in 4.38s
+0|url-tracker  |   dist/index.js  621.2kb
+0|url-tracker  | ⚡ Done in 20ms
+0|url-tracker  | Copying dist to server/public...
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | node:internal/modules/run_main:123
+0|url-tracker  |     triggerUncaughtException(
+0|url-tracker  |     ^
+0|url-tracker  | Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './pg' is not defined by "exports" in /var/www/UrlCampaignTracker/node_modules/drizzle-orm/package.json imported from /var/www/UrlCampaignTracker/server/db.ts
+0|url-tracker  |     at exportsNotFound (node:internal/modules/esm/resolve:322:10)
+0|url-tracker  |     at packageExportsResolve (node:internal/modules/esm/resolve:670:9)
+0|url-tracker  |     at packageResolve (node:internal/modules/esm/resolve:856:14)
+0|url-tracker  |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+0|url-tracker  |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+0|url-tracker  |     at nextResolve (node:internal/modules/esm/hooks:864:28)
+0|url-tracker  |     at resolveBase (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867271474:2:3212)
+0|url-tracker  |     at resolveDirectory (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867271474:2:3584)
+0|url-tracker  |     at resolveTsPaths (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867271474:2:4073)
+0|url-tracker  |     at async resolve (file:///var/www/UrlCampaignTracker/node_modules/tsx/dist/esm/index.mjs?1746867271474:2:4441) {
+0|url-tracker  |   code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+0|url-tracker  | }
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Building the client...
+0|url-tracker  | > rest-express@1.0.0 build
+0|url-tracker  | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+^C
+root@d026e9724:/var/www/UrlCampaignTracker#

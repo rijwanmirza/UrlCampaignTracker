@@ -1,0 +1,130 @@
+root@d026e9724:/var/www/UrlCampaignTracker# pm2 delete all
+# Backup the current directory in case we need it
+cd /var/www
+mv UrlCampaignTracker UrlCampaignTracker_bak
+# Clone your repository
+git clone https://github.com/rijwanmirza/UrlCampaignTracker.git
+[PM2] Applying action deleteProcessId on app [all](ids: [ 0 ])
+[PM2] [url-tracker](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+Cloning into 'UrlCampaignTracker'...
+remote: Enumerating objects: 8079, done.
+remote: Counting objects: 100% (1062/1062), done.
+remote: Compressing objects: 100% (386/386), done.
+remote: Total 8079 (delta 706), reused 996 (delta 664), pack-reused 7017 (from 1)
+Receiving objects: 100% (8079/8079), 104.58 MiB | 41.83 MiB/s, done.
+Resolving deltas: 100% (5684/5684), done.
+root@d026e9724:/var/www# # Create a build directory if needed
+cd /var/www              # Create a build directory if needed
+cd /var/wwwlCampaignTracker
+mkdir -p UrlCampaignTracker
+cd UrlCampaignTracker
+# Install Node.js and npm if needed
+# Install Node.js and npm if needed
+apt-get updatel -y nodejs npm
+apt-get install -y nodejs npm
+# Install necessary packages
+# Install necessary packages@neondatabase/serverless ws drizzle-orm
+npm install express pg cors @neondatabase/serverless ws drizzle-orm
+# Create a proper start script
+# Create a proper start scriptker/start-production.sh << 'EOF'
+cat > /var/www/UrlCampaignTracker/start-production.sh << 'EOF'
+#!/bin/bash
+# Set environment variables
+# Set environment variableses://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export DATABASE_URL="postgres://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export API_SECRET_KEY="TraffiCS10928"c87jhkGXDe02jgn2eyV0qr-9YA"
+export YOUTUBE_API_KEY="AIzaSyBB2nPAhc87jhkGXDe02jgn2eyV0qr-9YA"Iiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImexport TRAFFICSTAR_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8"sAuMDbDZwoFG/5pyP/43tbnRIpwoQ=="
+export SESSION_SECRET="2DcFsEodeYl7m0bq35CxJiW/hZI/J4dZhv9xrKiH186cZUKQ4tQEQLwDesAuMDbDZwoFG/5pyP/43tbnRIpwoQ=="
+export PGHOST="localhost"
+export PGPORT="5432"b_owner"
+export PGUSER="neondb_owner"XZz0WOB"
+export PGPASSWORD="npg_U8evoXZz0WOB"
+export PGDATABASE="neondb"n"
+export NODE_ENV="production"
+export PORT="5000".0"
+export HOST="0.0.0.0""
+export CORS_ORIGIN="*"paignwalabhai@gmail.com"
+export GMAIL_USER="compaignwalabhai@gmail.com"
+export GMAIL_PASSWORD="hciuemplthdkwfho"
+cd /var/www/UrlCampaignTracker
+cd /var/www/UrlCampaignTracker
+echo "Starting URL Campaign Tracker with npm start..."
+echo "Starting URL Campaign Tracker with npm start..."
+npm start
+EOF
+chmod +x /var/www/UrlCampaignTracker/start-production.sh
+chmod +x /var/www/UrlCampaignTracker/start-production.sh
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble InRelease
+Get:4 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Hit:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Get:6 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1,066 kB]
+Get:7 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1,062 kB]
+Fetched 2,255 kB in 1s (2,011 kB/s)
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+nodejs is already the newest version (20.19.1-1nodesource1).
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ nodejs : Conflicts: npm
+ npm : Depends: node-agent-base but it is not going to be installed
+       Depends: node-archy but it is not going to be installed
+       Depends: node-cacache (>= 17) but it is not going to be installed
+       Depends: node-chalk (>= 5.1.2-2~) but it is not going to be installed
+       Depends: node-cli-table3
+       Depends: node-columnify but it is not going to be installed
+       Depends: node-cssesc
+       Depends: node-debug but it is not going to be installed
+       Depends: node-emoji-regex
+       Depends: node-gyp but it is not going to be installed
+       Depends: node-http-proxy-agent but it is not going to be installed
+       Depends: node-https-proxy-agent but it is not going to be installed
+       Depends: node-mkdirp but it is not going to be installed
+       Depends: node-ms but it is not going to be installed
+       Depends: node-nopt but it is not going to be installed
+       Depends: node-normalize-package-data but it is not going to be installed
+       Depends: node-npm-bundled but it is not going to be installed
+       Depends: node-npm-normalize-package-bin
+       Depends: node-npm-package-arg (>= 10) but it is not going to be installed
+       Depends: node-npmlog but it is not going to be installed
+       Depends: node-postcss-selector-parser
+       Depends: node-read-package-json but it is not going to be installed
+       Depends: node-rimraf but it is not going to be installed
+       Depends: node-semver but it is not going to be installed
+       Depends: node-string-width but it is not going to be installed
+       Depends: node-strip-ansi but it is not going to be installed
+       Depends: node-tar but it is not going to be installed
+       Depends: node-validate-npm-package-name but it is not going to be installed
+       Depends: node-which but it is not going to be installed
+       Depends: nodejs:any
+       Recommends: node-tap but it is not going to be installed
+E: Unable to correct problems, you have held broken packages.
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 638 packages, and audited 639 packages in 9s
+
+81 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (7 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+root@d026e9724:/var/www/UrlCampaignTracker#

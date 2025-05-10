@@ -1,0 +1,107 @@
+0|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-mana | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-mana |          ^
+0|url-mana |
+0|url-mana | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-mana | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-mana |          ^
+0|url-mana |
+0|url-mana | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-mana | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-mana |          ^
+0|url-mana |
+0|url-mana | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-mana | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-mana |          ^
+0|url-mana |
+0|url-mana | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-mana |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-mana |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+
+0|url-management  | changed 1 package, and audited 558 packages in 2s
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | sh: 1: tsx: not found
+0|url-management  | up to date, audited 558 packages in 2s
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | sh: 1: tsx: not found
+0|url-management  | up to date, audited 558 packages in 2s
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | sh: 1: tsx: not found
+0|url-management  | up to date, audited 558 packages in 2s
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | sh: 1: tsx: not found
+0|url-management  | up to date, audited 558 packages in 2s
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | sh: 1: tsx: not found
+^C

@@ -1,0 +1,168 @@
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-management  | > rest-express@1.0.0 dev
+0|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | /var/www/UrlCampaignTracker/server/db.ts:2
+0|url-management  | import { drizzle } from 'drizzle-orm/pg-core';
+0|url-management  |          ^
+0|url-management  | SyntaxError: The requested module 'drizzle-orm/pg-core' does not provide an export named 'drizzle'
+0|url-management  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-management  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-management  | Node.js v20.19.1
+0|url-management  | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+^C
+root@d026e9724:/var/www/UrlCampaignTracker#

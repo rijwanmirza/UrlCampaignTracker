@@ -1,0 +1,97 @@
+root/.pm2/logs/url-tracker-out.log last 15 lines:
+0|url-trac | Building the client...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 build
+0|url-trac | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-trac |
+0|url-trac | vite v5.4.14 building for production...
+0|url-trac | transforming...
+0|url-trac | ✓ 3475 modules transformed.
+0|url-trac | Copying dist to server/public...
+0|url-trac | Starting URL Campaign Tracker...
+0|url-trac | Building the client...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 build
+0|url-trac | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-trac |
+
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+0|url-tracker  | ✓ 3475 modules transformed.
+0|url-tracker  | x Build failed in 2.17s
+0|url-tracker  | error during build:
+0|url-tracker  | node_modules/drizzle-zod/index.mjs (1:35): "getViewSelectedFields" is not exported by "node_modules/drizzle-orm/index.mjs", imported by "node_modules/drizzle-zod/index.mjs".
+0|url-tracker  | file: /var/www/UrlCampaignTracker/node_modules/drizzle-zod/index.mjs:1:35
+0|url-tracker  | 1: import { isTable, getTableColumns, getViewSelectedFields, is, Column, SQL, isView } from 'drizzle-orm';
+0|url-tracker  |                                       ^
+0|url-tracker  | 2: import { z } from 'zod';
+0|url-tracker  |     at getRollupError (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/parseAst.js:396:41)
+0|url-tracker  |     at error (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/parseAst.js:392:42)
+0|url-tracker  |     at Module.error (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:15588:16)
+0|url-tracker  |     at Module.traceVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:16037:29)
+0|url-tracker  |     at ModuleScope.findVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:13820:39)
+0|url-tracker  |     at FunctionScope.findVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+0|url-tracker  |     at FunctionBodyScope.findVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+0|url-tracker  |     at Identifier.bind (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:5066:40)
+0|url-tracker  |     at CallExpression.bind (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:2653:23)
+0|url-tracker  |     at CallExpression.bind (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:11284:15)
+0|url-tracker  | Copying dist to server/public...
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/node_modules/drizzle-zod/index.mjs:1
+0|url-tracker  | import { isTable, getTableColumns, getViewSelectedFields, is, Column, SQL, isView } from 'drizzle-orm';
+0|url-tracker  |                                    ^^^^^^^^^^^^^^^^^^^^^
+0|url-tracker  | SyntaxError: The requested module 'drizzle-orm' does not provide an export named 'getViewSelectedFields'
+0|url-tracker  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-tracker  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Building the client...
+0|url-tracker  | > rest-express@1.0.0 build
+0|url-tracker  | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+0|url-tracker  | ✓ 3475 modules transformed.
+0|url-tracker  | x Build failed in 2.20s
+0|url-tracker  | error during build:
+0|url-tracker  | node_modules/drizzle-zod/index.mjs (1:35): "getViewSelectedFields" is not exported by "node_modules/drizzle-orm/index.mjs", imported by "node_modules/drizzle-zod/index.mjs".
+0|url-tracker  | file: /var/www/UrlCampaignTracker/node_modules/drizzle-zod/index.mjs:1:35
+0|url-tracker  | 1: import { isTable, getTableColumns, getViewSelectedFields, is, Column, SQL, isView } from 'drizzle-orm';
+0|url-tracker  |                                       ^
+0|url-tracker  | 2: import { z } from 'zod';
+0|url-tracker  |     at getRollupError (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/parseAst.js:396:41)
+0|url-tracker  |     at error (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/parseAst.js:392:42)
+0|url-tracker  |     at Module.error (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:15588:16)
+0|url-tracker  |     at Module.traceVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:16037:29)
+0|url-tracker  |     at ModuleScope.findVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:13820:39)
+0|url-tracker  |     at FunctionScope.findVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+0|url-tracker  |     at FunctionBodyScope.findVariable (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+0|url-tracker  |     at Identifier.bind (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:5066:40)
+0|url-tracker  |     at CallExpression.bind (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:2653:23)
+0|url-tracker  |     at CallExpression.bind (file:///var/www/UrlCampaignTracker/node_modules/rollup/dist/es/shared/node-entry.js:11284:15)
+0|url-tracker  | Copying dist to server/public...
+0|url-tracker  | Starting URL Campaign Tracker...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/node_modules/drizzle-zod/index.mjs:1
+0|url-tracker  | import { isTable, getTableColumns, getViewSelectedFields, is, Column, SQL, isView } from 'drizzle-orm';
+0|url-tracker  |                                    ^^^^^^^^^^^^^^^^^^^^^
+0|url-tracker  | SyntaxError: The requested module 'drizzle-orm' does not provide an export named 'getViewSelectedFields'
+0|url-tracker  |     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+0|url-tracker  |     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Building the client...
+0|url-tracker  | > rest-express@1.0.0 build
+0|url-tracker  | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+^C

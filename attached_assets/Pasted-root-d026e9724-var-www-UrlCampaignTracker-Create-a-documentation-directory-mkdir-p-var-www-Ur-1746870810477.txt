@@ -1,0 +1,48 @@
+root@d026e9724:/var/www/UrlCampaignTracker# # Create a documentation directory
+mkdir -p /var/www/UrlCampaignTracker/docs
+
+# Document system information
+echo "## System Information" > /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "Date: $(date)" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "Hostname: $(hostname)" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "Linux Version: $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2)" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "Node Version: $(node -v)" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "NPM Version: $(npm -v)" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+root@d026e9724:/var/www/UrlCampaignTracker# # Document application dependencies
+echo -e "\n## Application Dependencies" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "```" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+npm list --depth=0 >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "```" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+
+# Document the startup script
+echo -e "\n## Application Startup Script" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "```bash" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+cat /var/www/UrlCampaignTracker/start.sh >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "```" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+
+# Document PM2 configuration
+echo -e "\n## PM2 Configuration" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "```" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+pm2 list >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo "```" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+
+# Document Nginx configuration if it exists
+if [ -f /etc/nginx/sites-available/viralplayer.xyz ]; then
+  echo -e "\n## Nginx Configuration" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+  echo "```nginx" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+  cat /etc/nginx/sites-available/viralplayer.xyz >> /var/www/UrlCampaignTracker/docs/server_setup.md
+  echo "```" >> /var/www/UrlCampaignTracker/docs/server_setup.md
+fi
+-bash:  >> /var/www/UrlCampaignTracker/docs/server_setup.md
+npm list --depth=0 >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo : No such file or directory
+-bash: bash >> /var/www/UrlCampaignTracker/docs/server_setup.md
+cat /var/www/UrlCampaignTracker/start.sh >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo : No such file or directory
+-bash:  >> /var/www/UrlCampaignTracker/docs/server_setup.md
+pm2 list >> /var/www/UrlCampaignTracker/docs/server_setup.md
+echo : No such file or directory
+-bash: nginx >> /var/www/UrlCampaignTracker/docs/server_setup.md
+  cat /etc/nginx/sites-available/viralplayer.xyz >> /var/www/UrlCampaignTracker/docs/server_setup.md
+  echo : No such file or directory
+root@d026e9724:/var/www/UrlCampaignTracker#

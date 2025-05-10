@@ -1,0 +1,325 @@
+pm2 logs url-management --lines 50
+[PM2] Applying action stopProcessId on app [url-management](ids: [ 0, 1 ])
+[PM2] [url-management](0) ✓
+[PM2] [url-management](1) ✓
+┌────┬───────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name              │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-management    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 2    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 1  │ url-management    │ default     │ N/A     │ fork    │ 0        │ 0      │ 15   │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴───────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Applying action restartProcessId on app [url-management](ids: [ 0, 1 ])
+[PM2] [url-management](0) ✓
+[PM2] [url-management](1) ✓
+[PM2] Process successfully started
+┌────┬───────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name              │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-management    │ default     │ 1.0.0   │ fork    │ 25295    │ 0s     │ 2    │ online    │ 0%       │ 3.7mb    │ root     │ disabled │
+│ 1  │ url-management    │ default     │ N/A     │ fork    │ 25297    │ 0s     │ 15   │ online    │ 0%       │ 16.1mb   │ root     │ disabled │
+└────┴───────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[TAILING] Tailing last 50 lines for [url-management] process (change the value with --lines option)
+/root/.pm2/logs/url-management-error.log last 50 lines:
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:7
+0|url-mana |   throw new Error(
+0|url-mana |         ^
+0|url-mana |
+0|url-mana |
+0|url-mana | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|url-mana |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:7:9)
+0|url-mana |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:7
+0|url-mana |   throw new Error(
+0|url-mana |         ^
+0|url-mana |
+0|url-mana |
+0|url-mana | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|url-mana |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:7:9)
+0|url-mana |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:7
+0|url-mana |   throw new Error(
+0|url-mana |         ^
+0|url-mana |
+0|url-mana |
+0|url-mana | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|url-mana |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:7:9)
+0|url-mana |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+0|url-mana | /var/www/UrlCampaignTracker/server/db.ts:7
+0|url-mana |   throw new Error(
+0|url-mana |         ^
+0|url-mana |
+0|url-mana |
+0|url-mana | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|url-mana |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:7:9)
+0|url-mana |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-mana |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-mana |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-mana |
+0|url-mana | Node.js v20.19.1
+
+/root/.pm2/logs/url-management-out.log last 50 lines:
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+0|url-mana |
+0|url-mana | > rest-express@1.0.0 dev
+0|url-mana | > NODE_ENV=development tsx server/index.ts
+0|url-mana |
+
+1|url-management  | > rest-express@1.0.0 dev
+1|url-management  | > NODE_ENV=development tsx server/index.ts
+1|url-management  | /var/www/UrlCampaignTracker/server/db.ts:9
+1|url-management  |   throw new Error(
+1|url-management  |         ^
+1|url-management  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+1|url-management  |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:9:9)
+1|url-management  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+1|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+1|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|url-management  | Node.js v20.19.1
+1|url-management  | > rest-express@1.0.0 dev
+1|url-management  | > NODE_ENV=development tsx server/index.ts
+0|url-management  | URL Budget Manager initialized
+0|url-management  | TrafficStar API Service initialized
+0|url-management  | [youtube-api] INFO: YouTube API Service initialized
+0|url-management  | 🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+0|url-management  | 🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+0|url-management  | 8:22:17 AM [gmail-reader] Loaded 0 previously processed email IDs
+0|url-management  | TrafficStar Reports API test routes registered
+0|url-management  | Server monitoring initialized - collecting stats every minute
+0|url-management  | Re-optimizing dependencies because lockfile has changed
+0|url-management  | 🔄 Running fix for missing URL click logs...
+0|url-management  | ❌ Error during auto-fix for URL click logs: ErrorEvent {
+0|url-management  |   [Symbol(kTarget)]: WebSocket {
+0|url-management  |     _events: [Object: null prototype] {
+0|url-management  |       error: [Function],
+0|url-management  |       message: [Function],
+0|url-management  |       close: [Function],
+0|url-management  |       open: [Function]
+0|url-management  |     },
+0|url-management  |     _eventsCount: 4,
+0|url-management  |     _maxListeners: undefined,
+0|url-management  |     _binaryType: 'arraybuffer',
+0|url-management  |     _closeCode: 1006,
+0|url-management  |     _closeFrameReceived: false,
+0|url-management  |     _closeFrameSent: false,
+0|url-management  |     _closeMessage: <Buffer >,
+0|url-management  |     _closeTimer: null,
+0|url-management  |     _errorEmitted: true,
+0|url-management  |     _extensions: {},
+0|url-management  |     _paused: false,
+0|url-management  |     _protocol: '',
+0|url-management  |     _readyState: 3,
+0|url-management  |     _receiver: null,
+0|url-management  |     _sender: null,
+0|url-management  |     _socket: null,
+0|url-management  |     _bufferedAmount: 0,
+0|url-management  |     _isServer: false,
+0|url-management  |     _redirects: 0,
+0|url-management  |     _autoPong: true,
+0|url-management  |     _url: 'wss://localhost/v2',
+0|url-management  |     _req: null,
+0|url-management  |     [Symbol(shapeMode)]: false,
+0|url-management  |     [Symbol(kCapture)]: false
+0|url-management  |   },
+0|url-management  |   [Symbol(kType)]: 'error',
+0|url-management  |   [Symbol(kError)]: Error: connect ECONNREFUSED 127.0.0.1:443
+0|url-management  |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+0|url-management  |     errno: -111,
+0|url-management  |     code: 'ECONNREFUSED',
+0|url-management  |     syscall: 'connect',
+0|url-management  |     address: '127.0.0.1',
+0|url-management  |     port: 443
+0|url-management  |   },
+0|url-management  |   [Symbol(kMessage)]: 'connect ECONNREFUSED 127.0.0.1:443'
+0|url-management  | }
+0|url-management  | 8:22:17 AM [express] serving on port 5000
+0|url-management  | Error getting API key: ErrorEvent {
+0|url-management  |   [Symbol(kTarget)]: WebSocket {
+0|url-management  |     _events: [Object: null prototype] {
+0|url-management  |       error: [Function],
+0|url-management  |       message: [Function],
+0|url-management  |       close: [Function],
+0|url-management  |       open: [Function]
+0|url-management  |     },
+0|url-management  |     _eventsCount: 4,
+0|url-management  |     _maxListeners: undefined,
+0|url-management  |     _binaryType: 'arraybuffer',
+0|url-management  |     _closeCode: 1006,
+0|url-management  |     _closeFrameReceived: false,
+0|url-management  |     _closeFrameSent: false,
+0|url-management  |     _closeMessage: <Buffer >,
+0|url-management  |     _closeTimer: null,
+0|url-management  |     _errorEmitted: true,
+0|url-management  |     _extensions: {},
+0|url-management  |     _paused: false,
+0|url-management  |     _protocol: '',
+0|url-management  |     _readyState: 3,
+0|url-management  |     _receiver: null,
+0|url-management  |     _sender: null,
+0|url-management  |     _socket: null,
+0|url-management  |     _bufferedAmount: 0,
+0|url-management  |     _isServer: false,
+0|url-management  |     _redirects: 0,
+0|url-management  |     _autoPong: true,
+0|url-management  |     _url: 'wss://localhost/v2',
+0|url-management  |     _req: null,
+0|url-management  |     [Symbol(shapeMode)]: false,
+0|url-management  |     [Symbol(kCapture)]: false
+0|url-management  |   },
+0|url-management  |   [Symbol(kType)]: 'error',
+0|url-management  |   [Symbol(kError)]: Error: connect ECONNREFUSED 127.0.0.1:443
+0|url-management  |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+0|url-management  |     errno: -111,
+0|url-management  |     code: 'ECONNREFUSED',
+0|url-management  |     syscall: 'connect',
+0|url-management  |     address: '127.0.0.1',
+0|url-management  |     port: 443
+0|url-management  |   },
+0|url-management  |   [Symbol(kMessage)]: 'connect ECONNREFUSED 127.0.0.1:443'
+0|url-management  | }
+0|url-management  | 8:22:17 AM [key-manager] API key manager initialized
+0|url-management  | 8:22:17 AM [express] API key manager initialized successfully
+0|url-management  | Error getting access code: ErrorEvent {
+0|url-management  |   [Symbol(kTarget)]: WebSocket {
+0|url-management  |     _events: [Object: null prototype] {
+0|url-management  |       error: [Function],
+0|url-management  |       message: [Function],
+0|url-management  |       close: [Function],
+0|url-management  |       open: [Function]
+0|url-management  |     },
+0|url-management  |     _eventsCount: 4,
+0|url-management  |     _maxListeners: undefined,
+0|url-management  |     _binaryType: 'arraybuffer',
+0|url-management  |     _closeCode: 1006,
+0|url-management  |     _closeFrameReceived: false,
+0|url-management  |     _closeFrameSent: false,
+0|url-management  |     _closeMessage: <Buffer >,
+0|url-management  |     _closeTimer: null,
+0|url-management  |     _errorEmitted: true,
+0|url-management  |     _extensions: {},
+0|url-management  |     _paused: false,
+0|url-management  |     _protocol: '',
+0|url-management  |     _readyState: 3,
+0|url-management  |     _receiver: null,
+0|url-management  |     _sender: null,
+0|url-management  |     _socket: null,
+0|url-management  |     _bufferedAmount: 0,
+0|url-management  |     _isServer: false,
+0|url-management  |     _redirects: 0,
+0|url-management  |     _autoPong: true,
+0|url-management  |     _url: 'wss://localhost/v2',
+0|url-management  |     _req: null,
+0|url-management  |     [Symbol(shapeMode)]: false,
+0|url-management  |     [Symbol(kCapture)]: false
+0|url-management  |   },
+0|url-management  |   [Symbol(kType)]: 'error',
+0|url-management  |   [Symbol(kError)]: Error: connect ECONNREFUSED 127.0.0.1:443
+0|url-management  |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+0|url-management  |     errno: -111,
+0|url-management  |     code: 'ECONNREFUSED',
+0|url-management  |     syscall: 'connect',
+0|url-management  |     address: '127.0.0.1',
+0|url-management  |     port: 443
+0|url-management  |   },
+0|url-management  |   [Symbol(kMessage)]: 'connect ECONNREFUSED 127.0.0.1:443'
+0|url-management  | }
+0|url-management  | Error initializing access code manager: Error: Cannot retrieve access code from database
+0|url-management  |     at getAccessCode (/var/www/UrlCampaignTracker/server/auth/access-code-manager.ts:35:11)
+0|url-management  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|url-management  |     at async initAccessCodeManager (/var/www/UrlCampaignTracker/server/auth/access-code-manager.ts:86:24)
+0|url-management  |     at async Server.<anonymous> (/var/www/UrlCampaignTracker/server/index.ts:159:7)
+0|url-management  | 8:22:17 AM [express] Access code manager initialized successfully
+0|url-management  | 8:22:17 AM [startup] Error auto-configuring integrations: [object Object]
+1|url-management  | /var/www/UrlCampaignTracker/server/db.ts:9
+1|url-management  |   throw new Error(
+1|url-management  |         ^
+1|url-management  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+1|url-management  |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:9:9)
+1|url-management  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+1|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+1|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|url-management  | Node.js v20.19.1
+1|url-management  | > rest-express@1.0.0 dev
+1|url-management  | > NODE_ENV=development tsx server/index.ts
+1|url-management  | /var/www/UrlCampaignTracker/server/db.ts:9
+1|url-management  |   throw new Error(
+1|url-management  |         ^
+1|url-management  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+1|url-management  |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:9:9)
+1|url-management  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+1|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+1|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|url-management  | Node.js v20.19.1
+1|url-management  | > rest-express@1.0.0 dev
+1|url-management  | > NODE_ENV=development tsx server/index.ts
+1|url-management  | /var/www/UrlCampaignTracker/server/db.ts:9
+1|url-management  |   throw new Error(
+1|url-management  |         ^
+1|url-management  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+1|url-management  |     at <anonymous> (/var/www/UrlCampaignTracker/server/db.ts:9:9)
+1|url-management  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+1|url-management  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+1|url-management  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|url-management  | Node.js v20.19.1
+1|url-management  | > rest-express@1.0.0 dev
+1|url-management  | > NODE_ENV=development tsx server/index.ts
+^C
+root@d026e9724:/var/www/UrlCampaignTracker#

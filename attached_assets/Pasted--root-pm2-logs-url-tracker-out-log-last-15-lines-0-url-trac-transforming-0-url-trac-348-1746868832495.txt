@@ -1,0 +1,39 @@
+/root/.pm2/logs/url-tracker-out.log last 15 lines:
+0|url-trac | transforming...
+0|url-trac | ✓ 3480 modules transformed.
+0|url-trac | rendering chunks...
+0|url-trac | computing gzip size...
+0|url-trac | ../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+0|url-trac | ../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+0|url-trac | ../dist/public/assets/index-C622hAsT.js   1,336.52 kB │ gzip: 370.54 kB
+0|url-trac | ✓ built in 4.33s
+0|url-trac | 📂 Found static files in: /var/www/UrlCampaignTracker/dist/public
+0|url-trac | 🚀 Server running at http://0.0.0.0:5000
+0|url-trac | ✅ Database connected at: 2025-05-10T09:19:41.053Z
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 build
+0|url-trac | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-trac |
+
+0|url-tracker  | vite v5.4.14 building for production...
+0|url-tracker  | transforming...
+0|url-tracker  | Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+0|url-tracker  |   npx update-browserslist-db@latest
+0|url-tracker  |   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+0|url-tracker  | ✓ 3480 modules transformed.
+0|url-tracker  | rendering chunks...
+0|url-tracker  | computing gzip size...
+0|url-tracker  | ../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+0|url-tracker  | ../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+0|url-tracker  | ../dist/public/assets/index-C622hAsT.js   1,336.52 kB │ gzip: 370.54 kB
+0|url-tracker  | (!) Some chunks are larger than 500 kB after minification. Consider:
+0|url-tracker  | - Using dynamic import() to code-split the application
+0|url-tracker  | - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+0|url-tracker  | - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+0|url-tracker  | ✓ built in 4.36s
+0|url-tracker  |   dist/index.js  621.2kb
+0|url-tracker  | ⚡ Done in 11ms
+0|url-tracker  | Starting URL Campaign Tracker with ES module server...
+0|url-tracker  | 📂 Found static files in: /var/www/UrlCampaignTracker/dist/public
+0|url-tracker  | 🚀 Server running at http://0.0.0.0:5000
+0|url-tracker  | ✅ Database connected at: 2025-05-10T09:19:51.317Z

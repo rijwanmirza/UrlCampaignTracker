@@ -1,0 +1,18 @@
+0|url-tracker  | 9:28:57 AM [access] Access granted for path: /campaigns with valid API key
+0|url-tracker  | Error: ENOENT: no such file or directory, stat '/var/www/UrlCampaignTracker/server/public/index.html'
+0|url-tracker  | 9:29:02 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:02 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 9:29:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 9:29:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key

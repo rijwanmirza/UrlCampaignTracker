@@ -1992,14 +1992,6 @@ export class DatabaseStorage implements IStorage {
         console.log(`ℹ️ SYSTEM RESET: No trafficstar_campaigns table found or nothing to delete`);
       }
       
-      // First delete gmail_campaign_assignments to resolve foreign key constraints
-      try {
-        await db.execute(sql`DELETE FROM gmail_campaign_assignments`);
-        console.log(`✅ SYSTEM RESET: Deleted all Gmail campaign assignments`);
-      } catch (error) {
-        console.log(`ℹ️ SYSTEM RESET: No gmail_campaign_assignments table found or nothing to delete`);
-      }
-      
       // 8. Delete all campaigns
       await db.delete(campaigns);
       console.log(`✅ SYSTEM RESET: Deleted all campaigns (${allCampaigns.length} records)`);

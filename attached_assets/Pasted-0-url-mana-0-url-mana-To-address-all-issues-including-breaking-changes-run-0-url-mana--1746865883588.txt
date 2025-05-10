@@ -1,0 +1,88 @@
+0|url-mana |
+0|url-mana | To address all issues (including breaking changes), run:
+0|url-mana |   npm audit fix --force
+0|url-mana |
+0|url-mana | Run `npm audit` for details.
+0|url-mana | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-mana | Starting the server with Node.js directly
+0|url-mana |
+0|url-mana | up to date, audited 558 packages in 2s
+0|url-mana |
+0|url-mana | 73 packages are looking for funding
+0|url-mana |   run `npm fund` for details
+0|url-mana |
+0|url-mana | 7 vulnerabilities (3 high, 4 critical)
+0|url-mana |
+0|url-mana | To address all issues (including breaking changes), run:
+0|url-mana |   npm audit fix --force
+0|url-mana |
+0|url-mana | Run `npm audit` for details.
+0|url-mana | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-mana | Starting the server with Node.js directly
+0|url-mana |
+0|url-mana | up to date, audited 558 packages in 2s
+0|url-mana |
+0|url-mana | 73 packages are looking for funding
+0|url-mana |   run `npm fund` for details
+0|url-mana |
+0|url-mana | 7 vulnerabilities (3 high, 4 critical)
+0|url-mana |
+0|url-mana | To address all issues (including breaking changes), run:
+0|url-mana |   npm audit fix --force
+0|url-mana |
+0|url-mana | Run `npm audit` for details.
+0|url-mana | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-mana | Starting the server with Node.js directly
+0|url-mana |
+0|url-mana | up to date, audited 558 packages in 2s
+0|url-mana |
+0|url-mana | 73 packages are looking for funding
+0|url-mana |   run `npm fund` for details
+0|url-mana |
+0|url-mana | 7 vulnerabilities (3 high, 4 critical)
+0|url-mana |
+0|url-mana | To address all issues (including breaking changes), run:
+0|url-mana |   npm audit fix --force
+0|url-mana |
+0|url-mana | Run `npm audit` for details.
+0|url-mana | Starting with DATABASE_URL: postgres://neondb_owner:*****@localhost:5432/neondb
+0|url-mana | Starting the server with Node.js directly
+0|url-mana | No compiled JavaScript found. Let's compile TypeScript first.
+
+0|url-management  | up to date, audited 558 packages in 770ms
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Compiling TypeScript...
+0|url-management  | error TS2688: Cannot find type definition file for 'vite/client'.
+0|url-management  |   The file is in the program because:
+0|url-management  |     Entry point of type library 'vite/client' specified in compilerOptions
+0|url-management  | Starting with tsx directly
+0|url-management  | /var/www/UrlCampaignTracker/direct-start.sh: line 44: ./node_modules/.bin/tsx: No such file or directory
+0|url-management  | No compiled JavaScript found. Let's compile TypeScript first.
+0|url-management  | changed 1 package, and audited 558 packages in 780ms
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Compiling TypeScript...
+0|url-management  | error TS2688: Cannot find type definition file for 'vite/client'.
+0|url-management  |   The file is in the program because:
+0|url-management  |     Entry point of type library 'vite/client' specified in compilerOptions
+0|url-management  | Starting with tsx directly
+0|url-management  | /var/www/UrlCampaignTracker/direct-start.sh: line 44: ./node_modules/.bin/tsx: No such file or directory
+0|url-management  | No compiled JavaScript found. Let's compile TypeScript first.
+0|url-management  | up to date, audited 558 packages in 799ms
+0|url-management  | 73 packages are looking for funding
+0|url-management  |   run `npm fund` for details
+0|url-management  | 7 vulnerabilities (3 high, 4 critical)
+0|url-management  | To address all issues (including breaking changes), run:
+0|url-management  |   npm audit fix --force
+0|url-management  | Run `npm audit` for details.
+0|url-management  | Compiling TypeScript...
+^C

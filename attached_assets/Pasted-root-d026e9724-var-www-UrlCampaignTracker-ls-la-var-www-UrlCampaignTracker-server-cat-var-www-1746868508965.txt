@@ -1,0 +1,317 @@
+root@d026e9724:/var/www/UrlCampaignTracker# ls -la /var/www/UrlCampaignTracker/server/
+cat /var/www/UrlCampaignTracker/server/index.ts
+total 976
+drwxr-xr-x  6 root root   4096 May 10 08:51 .
+drwxr-xr-x 17 root root   4096 May 10 09:11 ..
+-rw-r--r--  1 root root  18192 May 10 08:47 access-control.ts
+drwxr-xr-x  2 root root   4096 May 10 08:47 auth
+-rw-r--r--  1 root root  16359 May 10 08:47 campaign-click-routes.ts
+-rw-r--r--  1 root root   4956 May 10 08:47 click-protection.ts
+-rw-r--r--  1 root root    749 May 10 08:55 db.ts
+-rw-r--r--  1 root root   2839 May 10 08:47 fix-url-click-logs.ts
+-rw-r--r--  1 root root   2171 May 10 08:47 fix-url-values.ts
+-rw-r--r--  1 root root  54106 May 10 08:47 gmail-reader.ts
+-rw-r--r--  1 root root   9130 May 10 08:47 gmail-service.ts
+-rw-r--r--  1 root root   7777 May 10 08:47 high-performance-redirects.ts
+-rw-r--r--  1 root root  17063 May 10 08:47 high-spend-diagnosis.ts
+-rw-r--r--  1 root root   8154 May 10 08:47 index.ts
+-rw-r--r--  1 root root   2199 May 10 08:47 init-trafficstar.ts
+-rw-r--r--  1 root root    566 May 10 08:47 logger.ts
+drwxr-xr-x  2 root root   4096 May 10 08:47 migrations
+-rw-r--r--  1 root root   1085 May 10 08:47 migration.ts
+drwxr-xr-x  3 root root   4096 May 10 08:51 public
+-rw-r--r--  1 root root  14510 May 10 08:47 redirect-logs-manager.ts
+-rw-r--r--  1 root root   5582 May 10 08:47 redirect-logs-routes.ts
+-rw-r--r--  1 root root 225469 May 10 08:47 routes.ts
+-rw-r--r--  1 root root   4834 May 10 08:47 scheduled-budget-updater.ts
+-rw-r--r--  1 root root  12559 May 10 08:47 server-monitor.ts
+-rw-r--r--  1 root root   2057 May 10 08:47 spent-value.ts
+-rw-r--r--  1 root root 113262 May 10 08:47 storage.ts
+-rw-r--r--  1 root root   8875 May 10 08:47 test-click-generator.ts
+-rw-r--r--  1 root root   9047 May 10 08:47 test-high-spend-flow.ts
+-rw-r--r--  1 root root   6980 May 10 08:47 test-reports-api.ts
+-rw-r--r--  1 root root    273 May 10 08:47 test-trafficstar-routes.ts
+-rw-r--r--  1 root root   2656 May 10 08:47 test-url-budget-logger.ts
+-rw-r--r--  1 root root   2972 May 10 08:47 test-url-budget.ts
+-rw-r--r--  1 root root  85397 May 10 08:47 traffic-generator-new.ts
+-rw-r--r--  1 root root  66288 May 10 08:47 traffic-generator.ts
+-rw-r--r--  1 root root   6411 May 10 08:47 trafficstar-api-docs.ts
+-rw-r--r--  1 root root  18637 May 10 08:47 trafficstar-api-tester.ts
+-rw-r--r--  1 root root  22643 May 10 08:47 trafficstar-service.ts
+-rw-r--r--  1 root root   9368 May 10 08:47 trafficstar-spent-helper.ts
+-rw-r--r--  1 root root  16473 May 10 08:47 url-budget-logger.ts
+-rw-r--r--  1 root root  10718 May 10 08:47 url-budget-manager.ts
+-rw-r--r--  1 root root   8200 May 10 08:47 url-budget-test-api.ts
+-rw-r--r--  1 root root  16840 May 10 08:47 url-click-logs-manager.ts
+-rw-r--r--  1 root root   9438 May 10 08:47 url-click-routes.ts
+drwxr-xr-x  2 root root   4096 May 10 08:47 utils
+-rw-r--r--  1 root root   2254 May 10 08:47 vite.ts
+-rw-r--r--  1 root root  35079 May 10 08:47 youtube-api-service.ts
+-rw-r--r--  1 root root  13402 May 10 08:47 youtube-api-service-updated.ts
+import express, { type Request, Response, NextFunction } from "express";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import { gmailReader } from "./gmail-reader";
+import { storage } from "./storage";
+import { initializeTrafficStar } from "./init-trafficstar";
+import { trafficStarService } from "./trafficstar-service";
+import { requireAuth } from "./auth/middleware";
+import { registerAuthRoutes } from "./auth/routes";
+import { initializeTrafficGeneratorScheduler } from "./traffic-generator-new";
+import { youtubeApiService } from "./youtube-api-service";
+import { initKeyManager } from "./auth/key-manager";
+import { initAccessCodeManager } from "./auth/access-code-manager";
+import { handleAccessRoutes, isValidTemporaryLoginPath, isSessionValid } from "./access-control";
+import { processScheduledBudgetUpdates } from "./scheduled-budget-updater";
+import * as spdy from 'spdy';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const app = express();
+
+// Enable compression for all responses
+app.use(compression());
+
+// High-performance JSON parsing with limits to prevent DoS attacks
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+// Parse cookies for authentication
+app.use(cookieParser());
+
+// Add performance and caching headers for redirect URLs
+app.use((req, res, next) => {
+  // Set cache for campaign URLs
+  if (req.path.startsWith('/c/') || req.path.startsWith('/r/')) {
+    res.setHeader('X-Server-ID', 'high-perf-redirector-1');
+    res.setHeader('Cache-Control', 'public, max-age=0');
+  }
+  next();
+});
+
+// Apply access control to all routes
+app.use(handleAccessRoutes);
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
+  });
+
+  next();
+});
+
+(async () => {
+  // Register authentication routes first
+  registerAuthRoutes(app);
+
+  // Apply authentication middleware to protect API routes
+  app.use('/api', (req, res, next) => {
+    // Skip auth for login/status routes and redirect routes
+    if (req.path === '/auth/login' ||
+        req.path === '/auth/verify' ||
+        req.path === '/auth/status' ||
+        req.path.startsWith('/campaigns/') && (req.method === 'GET' || req.method === 'OPTIONS') ||
+        req.path.startsWith('/youtube-url-records') ||
+        req.path.startsWith('/gmail-reader/') ||
+        req.path.startsWith('/system/')) {
+      return next();
+    }
+
+    // Apply authentication
+    requireAuth(req, res, next);
+  });
+
+  const server = await registerRoutes(app);
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+    throw err;
+  });
+
+  // Create a custom 404 middleware for any route not matched by the API
+  app.use("*", (req, res, next) => {
+    // If we've already set headers from API routes, continue
+    if (res.headersSent) {
+      return next();
+    }
+
+    // Handle access control first - if the path is not /access/* or a valid temp login path
+    // and the request doesn't have a valid session, return 404
+    const path = req.path;
+    const sessionId = req.cookies.session_id;
+    const apiKey = req.cookies.apiKey;
+
+    if (path !== '/access' && !path.startsWith('/access/') && !isValidTemporaryLoginPath(path) &&
+        (!sessionId || !apiKey || !isSessionValid(sessionId))) {
+      return res.status(404).send('Page not found');
+    }
+
+    // Otherwise, continue to Vite middleware
+    next();
+  });
+
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
+  const port = 5000;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  }, async () => {
+    log(`serving on port ${port}`);
+
+    // Auto-configure and start Gmail reader with provided credentials
+    try {
+      // Initialize API key manager to load key from database
+      await initKeyManager();
+      log('API key manager initialized successfully');
+
+      // Initialize access code manager to load special access code from database
+      await initAccessCodeManager();
+      log('Access code manager initialized successfully');
+
+      // Check if there are campaigns but DON'T override defaultCampaignId
+      // This prevents setting first campaign as default which could change user settings
+      const campaigns = await storage.getCampaigns();
+
+      // Configure Gmail reader with the credentials
+      const gmailConfig = {
+        user: 'compaignwalabhai@gmail.com',
+        password: 'hciuemplthdkwfho',
+        host: 'imap.gmail.com',
+        port: 993,
+        tls: true,
+        tlsOptions: { rejectUnauthorized: false },
+        whitelistSenders: ['help@donot-reply.in']
+        // DO NOT set defaultCampaignId here - use existing config value instead
+      };
+
+      // Update Gmail reader configuration
+      gmailReader.updateConfig(gmailConfig);
+
+      // Try to verify the credentials
+      try {
+        const verifyResult = await gmailReader.verifyCredentials();
+        if (verifyResult.success) {
+          log(`Gmail credentials verified successfully, starting reader...`, 'gmail-reader');
+          gmailReader.start();
+          log(`Gmail reader started successfully and monitoring emails from help@donot-reply.in`, 'gmail-reader');
+        } else {
+          log(`Gmail verification failed: ${verifyResult.message}`, 'gmail-reader');
+        }
+      } catch (verifyError) {
+        log(`Error verifying Gmail credentials: ${verifyError}`, 'gmail-reader');
+      }
+
+      // Initialize TrafficStar with API key from environment variable
+      try {
+        await initializeTrafficStar();
+        log('TrafficStar API initialized successfully');
+
+        // Remove test code - fix has been verified
+
+        // Initialize Traffic Generator scheduler
+        initializeTrafficGeneratorScheduler();
+        log('Traffic Generator scheduler initialized successfully');
+
+        // Set up a scheduler for budget updates - check every minute
+        setInterval(() => {
+          processScheduledBudgetUpdates().catch(error => {
+            log(`Error processing scheduled budget updates: ${error}`, 'budget-updater');
+          });
+        }, 60 * 1000); // Run every minute
+        log('Budget update scheduler initialized successfully');
+
+        // Initialize YouTube API service if key is present
+        if (youtubeApiService.isConfigured()) {
+          youtubeApiService.scheduleChecks();
+          log('YouTube API service initialized successfully');
+        } else {
+          log('YouTube API service not initialized - API key not configured');
+        }
+
+        // Traffic Sender service has been removed
+      } catch (trafficstarError) {
+        log(`Error initializing TrafficStar API: ${trafficstarError}`);
+      }
+    } catch (error) {
+      log(`Error auto-configuring integrations: ${error}`, 'startup');
+    }
+  });
+})();
+root@d026e9724:/var/www/UrlCampaignTracker# cat /var/www/UrlCampaignTracker/server/db.ts
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from "@shared/schema";
+
+// Check for DATABASE_URL
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
+}
+
+// Create PostgreSQL pool with direct connection
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: false // Disable SSL for local PostgreSQL
+});
+
+// Export the drizzle instance
+export const db = drizzle(pool, { schema });
+
+// Test connection
+pool.query('SELECT NOW()')
+  .then(result => console.log('✅ Database connected successfully:', result.rows[0].now))
+  .catch(err => console.error('❌ Database connection error:', err));
+root@d026e9724:/var/www/UrlCampaignTracker# cat /var/www/UrlCampaignTracker/start.sh
+#!/bin/bash
+# Set environment variables
+export DATABASE_URL="postgres://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export API_SECRET_KEY="TraffiCS10928"
+export YOUTUBE_API_KEY="AIzaSyBB2nPAhc87jhkGXDe02jgn2eyV0qr-9YA"
+export PORT="5000"
+export HOST="0.0.0.0"
+cd /var/www/UrlCampaignTracker
+# Install needed packages
+npm install express pg cors
+echo "Starting URL Campaign Tracker with CommonJS server..."
+node server.cjs
+root@d026e9724:/var/www/UrlCampaignTracker#

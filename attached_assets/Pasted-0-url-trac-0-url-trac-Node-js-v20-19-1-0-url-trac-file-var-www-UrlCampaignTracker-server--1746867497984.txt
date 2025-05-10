@@ -1,0 +1,174 @@
+0|url-trac |
+0|url-trac | Node.js v20.19.1
+0|url-trac | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-trac | const express = require('express');
+0|url-trac |                 ^
+0|url-trac |
+0|url-trac | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-trac | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-trac |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-trac |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-trac |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-trac |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-trac |
+0|url-trac | Node.js v20.19.1
+
+/root/.pm2/logs/url-tracker-out.log last 15 lines:
+0|url-trac | ../dist/public/assets/index-D14NWlOJ.js   1,336.53 kB │ gzip: 370.54 kB
+0|url-trac | ✓ built in 4.39s
+0|url-trac | Copying dist to server/public...
+0|url-trac | Starting URL Campaign Tracker...
+0|url-trac | Building the client...
+0|url-trac |
+0|url-trac | > rest-express@1.0.0 build
+0|url-trac | > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+0|url-trac |
+0|url-trac | vite v5.4.14 building for production...
+0|url-trac | transforming...
+0|url-trac | Starting URL Campaign Tracker with simple Node.js server...
+0|url-trac | Starting URL Campaign Tracker with simple Node.js server...
+0|url-trac | Starting URL Campaign Tracker with simple Node.js server...
+0|url-trac | Starting URL Campaign Tracker with simple Node.js server...
+
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1
+0|url-tracker  | Starting URL Campaign Tracker with simple Node.js server...
+0|url-tracker  | file:///var/www/UrlCampaignTracker/server.js:1
+0|url-tracker  | const express = require('express');
+0|url-tracker  |                 ^
+0|url-tracker  | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|url-tracker  | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/UrlCampaignTracker/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|url-tracker  |     at file:///var/www/UrlCampaignTracker/server.js:1:17
+0|url-tracker  |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-tracker  |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|url-tracker  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|url-tracker  | Node.js v20.19.1

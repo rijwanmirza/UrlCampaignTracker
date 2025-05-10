@@ -1,0 +1,55 @@
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all URL click records (0 records)
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all URL click logs (0 records)
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all campaign click records (0 records)
+0|url-tracker  | ℹ️ SYSTEM RESET: No url_budget_logs table found or nothing to delete
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all YouTube URL records (0 records)
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all URLs (0 records)
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all original URL records (0 records)
+0|url-tracker  | ✅ SYSTEM RESET: Deleted all TrafficStar campaigns (0 records)
+0|url-tracker  | Error during full system cleanup: error: update or delete on table "campaigns" violates foreign key constraint "gmail_campaign_assignments_campaign_id_fkey" on table "gmail_campaign_assignments"
+0|url-tracker  |     at /var/www/UrlCampaignTracker/node_modules/pg-pool/index.js:45:11
+0|url-tracker  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|url-tracker  |     at async DatabaseStorage.fullSystemCleanup (/var/www/UrlCampaignTracker/server/storage.ts:1996:7)
+0|url-tracker  |     at async <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:2744:24) {
+0|url-tracker  |   length: 378,
+0|url-tracker  |   severity: 'ERROR',
+0|url-tracker  |   code: '23503',
+0|url-tracker  |   detail: 'Key (id)=(1) is still referenced from table "gmail_campaign_assignments".',
+0|url-tracker  |   hint: undefined,
+0|url-tracker  |   position: undefined,
+0|url-tracker  |   internalPosition: undefined,
+0|url-tracker  |   internalQuery: undefined,
+0|url-tracker  |   where: undefined,
+0|url-tracker  |   schema: 'public',
+0|url-tracker  |   table: 'gmail_campaign_assignments',
+0|url-tracker  |   column: undefined,
+0|url-tracker  |   dataType: undefined,
+0|url-tracker  |   constraint: 'gmail_campaign_assignments_campaign_id_fkey',
+0|url-tracker  |   file: 'ri_triggers.c',
+0|url-tracker  |   line: '2621',
+0|url-tracker  |   routine: 'ri_ReportViolation'
+0|url-tracker  | }
+0|url-tracker  | Error performing full system cleanup: error: update or delete on table "campaigns" violates foreign key constraint "gmail_campaign_assignments_campaign_id_fkey" on table "gmail_campaign_assignments"
+0|url-tracker  |     at /var/www/UrlCampaignTracker/node_modules/pg-pool/index.js:45:11
+0|url-tracker  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|url-tracker  |     at async DatabaseStorage.fullSystemCleanup (/var/www/UrlCampaignTracker/server/storage.ts:1996:7)
+0|url-tracker  |     at async <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:2744:24) {
+0|url-tracker  |   length: 378,
+0|url-tracker  |   severity: 'ERROR',
+0|url-tracker  |   code: '23503',
+0|url-tracker  |   detail: 'Key (id)=(1) is still referenced from table "gmail_campaign_assignments".',
+0|url-tracker  |   hint: undefined,
+0|url-tracker  |   position: undefined,
+0|url-tracker  |   internalPosition: undefined,
+0|url-tracker  |   internalQuery: undefined,
+0|url-tracker  |   where: undefined,
+0|url-tracker  |   schema: 'public',
+0|url-tracker  |   table: 'gmail_campaign_assignments',
+0|url-tracker  |   column: undefined,
+0|url-tracker  |   dataType: undefined,
+0|url-tracker  |   constraint: 'gmail_campaign_assignments_campaign_id_fkey',
+0|url-tracker  |   file: 'ri_triggers.c',
+0|url-tracker  |   line: '2621',
+0|url-tracker  |   routine: 'ri_ReportViolation'
+0|url-tracker  | }
+0|url-tracker  | 10:58:43 AM [express] POST /api/system/full-cleanup 500 in 15ms :: {"message":"Failed to perform full…

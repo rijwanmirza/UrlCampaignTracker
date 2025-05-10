@@ -1,0 +1,122 @@
+root@d026e9724:/var/www/UrlCampaignTracker# ^C
+root@d026e9724:/var/www/UrlCampaignTracker# # Install tsx and other required dependencies
+cd /var/www/UrlCampaignTracker
+npm install -g tsx
+npm install tsx
+npm install drizzle-orm @neondatabase/serverless ws
+
+# Fix the db.ts file
+cat > /var/www/UrlCampaignTracker/server/db.ts << 'EOF'
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
+import * as schema from "@shared/schema";
+
+neonConfig.webSocketConstructor = ws;
+
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
+}
+
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+export const db = drizzle(pool, { schema });
+EOF
+
+added 5 packages in 683ms
+
+2 packages are looking for funding
+  run `npm fund` for details
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 80 packages, and audited 638 packages in 940ms
+
+82 packages are looking for funding
+  run `npm fund` for details
+
+13 vulnerabilities (6 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 82 packages, and audited 640 packages in 2s
+
+82 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (7 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+root@d026e9724:/var/www/UrlCampaignTracker# # Create an improved startup script
+cat > /var/www/UrlCampaignTracker/start.sh << 'EOF'
+#!/bin/bash
+
+# Set environment variables
+export DATABASE_URL="postgres://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb"
+export API_SECRET_KEY="TraffiCS10928"
+export YOUTUBE_API_KEY="AIzaSyBB2nPAhc87jhkGXDe02jgn2eyV0qr-9YA"
+export TRAFFICSTAR_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8"
+export SESSION_SECRET="2DcFsEodeYl7m0bq35CxJiW/hZI/J4dZhv9xrKiH186cZUKQ4tQEQLwDesAuMDbDZwoFG/5pyP/43tbnRIpwoQ=="
+export PGHOST="localhost"
+export PGPORT="5432"
+export PGUSER="neondb_owner"
+export PGPASSWORD="npg_U8evoXZz0WOB"
+export PGDATABASE="neondb"
+export NODE_ENV="production"
+export PORT="5000"
+export HOST="0.0.0.0"
+export CORS_ORIGIN="*"
+export GMAIL_USER="compaignwalabhai@gmail.com"
+export GMAIL_PASSWORD="hciuemplthdkwfho"
+
+cd /var/www/UrlCampaignTracker
+
+# Install necessary packages
+npm install @neondatabase/serverless drizzle-orm ws tsx
+
+# Log the database URL before starting (with password masked)
+echo "Starting with DATABASE_URL: $(echo $DATABASE_URL | sed 's/:[^:]*@/:\*\*\*\*\*@/')"
+
+# Try to start directly with node instead of npm run dev
+echo "Starting the server with Node.js directly"
+NODE_ENV=production node_modules/.bin/tsx server/index.ts
+EOF
+
+chmod +x /var/www/UrlCampaignTracker/start.sh
+root@d026e9724:/var/www/UrlCampaignTracker# # Stop any existing instances
+pm2 delete url-management
+
+# Start with the direct script
+cd /var/www/UrlCampaignTracker
+pm2 start ./direct-start.sh --name url-management
+
+# Check logs
+pm2 logs url-management --lines 50
+[PM2] Applying action deleteProcessId on app [url-management](ids: [ 0 ])
+[PM2] [url-management](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2][ERROR] Script not found: /var/www/UrlCampaignTracker/direct-start.sh
+[TAILING] Tailing last 50 lines for [url-management] process (change the value with --lines option)
+^C
+root@d026e9724:/var/www/UrlCampaignTracker# ^C
+root@d026e9724:/var/www/UrlCampaignTracker#

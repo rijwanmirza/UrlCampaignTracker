@@ -1,0 +1,37 @@
+# Start with CommonJS approach
+cd /var/www/UrlCampaignTracker
+pm2 start ./start.cjs --name url-tracker
+
+# Check logs
+pm2 logs url-tracker
+[PM2] Applying action deleteProcessId on app [all](ids: [ 0 ])
+[PM2] [url-tracker](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Starting /var/www/UrlCampaignTracker/start.cjs in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name           │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ url-tracker    │ default     │ 1.0.0   │ fork    │ 30668    │ 0s     │ 0    │ online    │ 0%       │ 17.3mb   │ root     │ disabled │
+└────┴────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[TAILING] Tailing last 15 lines for [url-tracker] process (change the value with --lines option)
+/root/.pm2/logs/url-tracker-out.log last 15 lines:
+/root/.pm2/logs/url-tracker-error.log last 15 lines:
+0|url-trac | /var/www/UrlCampaignTracker/start.cjs:3
+0|url-trac | # Set environment variables
+0|url-trac | ^
+0|url-trac |
+0|url-trac | SyntaxError: Invalid or unexpected token
+0|url-trac |     at wrapSafe (node:internal/modules/cjs/loader:1472:18)
+0|url-trac |     at Module._compile (node:internal/modules/cjs/loader:1501:20)
+0|url-trac |     at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+0|url-trac |     at Module.load (node:internal/modules/cjs/loader:1275:32)
+0|url-trac |     at Module._load (node:internal/modules/cjs/loader:1096:12)
+0|url-trac |     at cjsLoader (node:internal/modules/esm/translators:298:15)
+0|url-trac |     at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:240:7)
+0|url-trac |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|url-trac |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|url-trac |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+
