@@ -23,7 +23,6 @@ import {
   TimeRangeFilter
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, isNull, asc, desc, sql, inArray, ne, ilike, or, gte, lte } from "drizzle-orm";
 import { redirectLogsManager } from "./redirect-logs-manager";
 import { urlClickLogsManager } from "./url-click-logs-manager";
 
@@ -217,12 +216,15 @@ export class DatabaseStorage implements IStorage {
   async getCampaigns(): Promise<CampaignWithUrls[]> {
     // Use a safer approach to handle missing columns
     try {
-      // First try to fetch all columns
-      const campaignsResult = await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
+      // First try to fetch all columns using standard PostgreSQL
+      const campaignsResult = await pool.query(`
+        SELECT * FROM campaigns 
+        ORDER BY created_at DESC
+      `);
       
       const campaignsWithUrls: CampaignWithUrls[] = [];
       
-      for (const campaign of campaignsResult) {
+      for (const campaign of campaignsResult.rows) {
         const urls = await this.getUrls(campaign.id);
         campaignsWithUrls.push({
           ...campaign,
@@ -236,21 +238,24 @@ export class DatabaseStorage implements IStorage {
       if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
         console.log('⚠️ Falling back to base columns for campaigns query as schema migration is pending');
         
-        // Explicitly select only the columns we know exist in the original schema
-        const campaignsResult = await db.select({
-          id: campaigns.id,
-          name: campaigns.name,
-          redirectMethod: campaigns.redirectMethod,
-          customPath: campaigns.customPath,
-          multiplier: campaigns.multiplier,
-          pricePerThousand: campaigns.pricePerThousand,
-          createdAt: campaigns.createdAt,
-          updatedAt: campaigns.updatedAt
-        }).from(campaigns).orderBy(desc(campaigns.createdAt));
+        // Explicitly select only the columns we know exist in the original schema using standard PostgreSQL
+        const campaignsResult = await pool.query(`
+          SELECT 
+            id, 
+            name, 
+            redirect_method as "redirectMethod", 
+            custom_path as "customPath", 
+            multiplier, 
+            price_per_thousand as "pricePerThousand", 
+            created_at as "createdAt", 
+            updated_at as "updatedAt"
+          FROM campaigns
+          ORDER BY created_at DESC
+        `);
         
         const campaignsWithUrls: CampaignWithUrls[] = [];
         
-        for (const campaign of campaignsResult) {
+        for (const campaign of campaignsResult.rows) {
           const urls = await this.getUrls(campaign.id);
           // Add default values for new fields
           campaignsWithUrls.push({
@@ -295,8 +300,13 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
-      // Cache miss - fetch from database
-      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+      // Cache miss - fetch from database using standard PostgreSQL
+      const campaignResult = await pool.query(`
+        SELECT * FROM campaigns
+        WHERE id = $1
+      `, [id]);
+      
+      const campaign = campaignResult.rows[0];
       if (!campaign) return undefined;
       
       // Add to cache for future requests
@@ -315,17 +325,22 @@ export class DatabaseStorage implements IStorage {
       if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
         console.log('⚠️ Falling back to base columns for campaign query as schema migration is pending');
         
-        // Explicitly select only the columns we know exist in the original schema
-        const [campaign] = await db.select({
-          id: campaigns.id,
-          name: campaigns.name,
-          redirectMethod: campaigns.redirectMethod,
-          customPath: campaigns.customPath,
-          multiplier: campaigns.multiplier,
-          pricePerThousand: campaigns.pricePerThousand,
-          createdAt: campaigns.createdAt,
-          updatedAt: campaigns.updatedAt
-        }).from(campaigns).where(eq(campaigns.id, id));
+        // Explicitly select only the columns we know exist in the original schema using standard PostgreSQL
+        const campaignResult = await pool.query(`
+          SELECT 
+            id, 
+            name, 
+            redirect_method as "redirectMethod", 
+            custom_path as "customPath", 
+            multiplier, 
+            price_per_thousand as "pricePerThousand", 
+            created_at as "createdAt", 
+            updated_at as "updatedAt"
+          FROM campaigns
+          WHERE id = $1
+        `, [id]);
+        
+        const campaign = campaignResult.rows[0];
         
         if (!campaign) return undefined;
         
@@ -360,8 +375,13 @@ export class DatabaseStorage implements IStorage {
     // Always do a fresh database lookup
     
     try {
-      // Direct database lookup to ensure fresh data
-      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.customPath, customPath));
+      // Direct database lookup to ensure fresh data using standard PostgreSQL
+      const campaignResult = await pool.query(`
+        SELECT * FROM campaigns
+        WHERE custom_path = $1
+      `, [customPath]);
+      
+      const campaign = campaignResult.rows[0];
       if (!campaign) return undefined;
       
       // Get fresh URLs for this campaign
@@ -377,17 +397,22 @@ export class DatabaseStorage implements IStorage {
       if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
         console.log('⚠️ Falling back to base columns for custom path query as schema migration is pending');
         
-        // Explicitly select only the columns we know exist in the original schema
-        const [campaign] = await db.select({
-          id: campaigns.id,
-          name: campaigns.name,
-          redirectMethod: campaigns.redirectMethod,
-          customPath: campaigns.customPath,
-          multiplier: campaigns.multiplier,
-          pricePerThousand: campaigns.pricePerThousand,
-          createdAt: campaigns.createdAt,
-          updatedAt: campaigns.updatedAt
-        }).from(campaigns).where(eq(campaigns.customPath, customPath));
+        // Explicitly select only the columns we know exist in the original schema using standard PostgreSQL
+        const campaignResult = await pool.query(`
+          SELECT 
+            id, 
+            name, 
+            redirect_method as "redirectMethod", 
+            custom_path as "customPath", 
+            multiplier, 
+            price_per_thousand as "pricePerThousand", 
+            created_at as "createdAt", 
+            updated_at as "updatedAt"
+          FROM campaigns
+          WHERE custom_path = $1
+        `, [customPath]);
+        
+        const campaign = campaignResult.rows[0];
         
         if (!campaign) return undefined;
         
@@ -438,16 +463,42 @@ export class DatabaseStorage implements IStorage {
       updatedAt: now
     };
     
-    const [campaign] = await db
-      .insert(campaigns)
-      .values(campaignData)
-      .returning();
+    // Insert using standard PostgreSQL
+    const campaignResult = await pool.query(`
+      INSERT INTO campaigns (
+        name, 
+        redirect_method, 
+        custom_path, 
+        multiplier, 
+        price_per_thousand, 
+        created_at, 
+        updated_at
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `, [
+      campaignData.name,
+      campaignData.redirectMethod,
+      campaignData.customPath,
+      campaignData.multiplier,
+      campaignData.pricePerThousand,
+      campaignData.createdAt,
+      campaignData.updatedAt
+    ]);
+    
+    const campaign = campaignResult.rows[0];
     
     return campaign;
   }
 
   async updateCampaign(id: number, updateCampaign: UpdateCampaign): Promise<Campaign | undefined> {
-    const [existing] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    // Check if campaign exists using standard PostgreSQL
+    const existingResult = await pool.query(`
+      SELECT * FROM campaigns
+      WHERE id = $1
+    `, [id]);
+    
+    const existing = existingResult.rows[0];
     if (!existing) return undefined;
     
     // Prepare data for update, converting multiplier to string if needed
@@ -702,20 +753,20 @@ export class DatabaseStorage implements IStorage {
       console.log(`⏰ Cache stale - refreshing URLs for campaign ID: ${campaignId}`);
     }
     
-    const urlsResult = await db
-      .select()
-      .from(urls)
-      .where(
-        and(
-          eq(urls.campaignId, campaignId),
-          ne(urls.status, 'deleted'),
-          ne(urls.status, 'rejected')
-        )
-      )
-      .orderBy(desc(urls.createdAt));
+    // Fetch using standard PostgreSQL
+    const urlsResult = await pool.query(`
+      SELECT * FROM urls
+      WHERE 
+        campaign_id = $1 AND
+        status != 'deleted' AND
+        status != 'rejected'
+      ORDER BY created_at DESC
+    `, [campaignId]);
+    
+    const urls = urlsResult.rows;
     
     // Add isActive status based on click limit and status
-    return urlsResult.map(url => {
+    return urls.map(url => {
       // Check if URL should be marked as completed
       const needsStatusUpdate = url.clicks >= url.clickLimit && url.status !== 'completed';
       
@@ -1720,8 +1771,13 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`🔄 BIDIRECTIONAL SYNC: Updating Original URL Record for "${urlName}" with status "${status}"`);
       
-      // Find the original URL record with the matching name
-      const [originalRecord] = await db.select().from(originalUrlRecords).where(eq(originalUrlRecords.name, urlName));
+      // Find the original URL record with the matching name using standard PostgreSQL
+      const originalRecordResult = await pool.query(`
+        SELECT * FROM original_url_records
+        WHERE name = $1
+      `, [urlName]);
+      
+      const originalRecord = originalRecordResult.rows[0];
       
       if (!originalRecord) {
         console.log(`⚠️ Could not find Original URL Record for "${urlName}" - skipping status sync`);
@@ -1736,17 +1792,17 @@ export class DatabaseStorage implements IStorage {
         return true;
       }
       
-      // Update the original URL record with the new status
-      const result = await db
-        .update(originalUrlRecords)
-        .set({
-          status,
-          updatedAt: new Date()
-        })
-        .where(eq(originalUrlRecords.id, originalRecord.id))
-        .returning();
-        
-      const success = result && result.length > 0;
+      // Update the original URL record with the new status using standard PostgreSQL
+      const result = await pool.query(`
+        UPDATE original_url_records
+        SET
+          status = $1,
+          updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `, [status, originalRecord.id]);
+      
+      const success = result && result.rowCount > 0;
       
       if (success) {
         console.log(`✅ Successfully updated Original URL Record #${originalRecord.id} status from "${originalRecord.status || 'none'}" to "${status}"`);
@@ -1762,8 +1818,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateUrlStatus(id: number, status: string): Promise<Url | undefined> {
-    // First, get the URL to find its campaign ID and name
-    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    // First, get the URL to find its campaign ID and name using standard PostgreSQL
+    const urlResult = await pool.query(`
+      SELECT * FROM urls
+      WHERE id = $1
+    `, [id]);
+    
+    const url = urlResult.rows[0];
     if (!url) {
       console.log(`⚠️ URL with ID ${id} not found, cannot update status`);
       return undefined;
@@ -1791,48 +1852,52 @@ export class DatabaseStorage implements IStorage {
         // Store the campaign ID before removing it
         const campaignId = url.campaignId;
         
-        // Update the URL: set status to completed and remove from campaign (set campaignId to null)
-        const [result] = await db
-          .update(urls)
-          .set({
-            status,
-            campaignId: null, // Remove from campaign
-            updatedAt: new Date()
-          })
-          .where(eq(urls.id, id))
-          .returning();
+        // Update the URL using standard PostgreSQL: set status to completed and remove from campaign (set campaignId to null)
+        const result = await pool.query(`
+          UPDATE urls 
+          SET 
+            status = $1,
+            campaign_id = NULL,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `, [status, id]);
+        
+        const updatedUrlRow = result.rows[0];
           
-        updatedUrl = result;
+        updatedUrl = updatedUrlRow;
         
         // Invalidate the campaign cache since we've removed a URL
         this.invalidateCampaignCache(campaignId);
         
         console.log(`URL ${id} marked as completed and removed from campaign ${campaignId}`);
       } else {
-        // If there's no campaign ID, just update the status
-        const [result] = await db
-          .update(urls)
-          .set({
-            status,
-            updatedAt: new Date()
-          })
-          .where(eq(urls.id, id))
-          .returning();
-          
-        updatedUrl = result;
+        // If there's no campaign ID, just update the status using standard PostgreSQL
+        const result = await pool.query(`
+          UPDATE urls 
+          SET 
+            status = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `, [status, id]);
+        
+        const updatedUrlRow = result.rows[0];
+        updatedUrl = updatedUrlRow;
       }
     } else {
-      // For non-completed status updates, use the original behavior
-      const [result] = await db
-        .update(urls)
-        .set({
-          status,
-          updatedAt: new Date()
-        })
-        .where(eq(urls.id, id))
-        .returning();
-        
-      updatedUrl = result;
+      // For non-completed status updates, use standard PostgreSQL
+      const result = await pool.query(`
+        UPDATE urls 
+        SET 
+          status = $1,
+          updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `, [status, id]);
+      
+      const updatedUrlRow = result.rows[0];
+      updatedUrl = updatedUrlRow;
       
       // Get the URL to find its campaign ID
       if (url?.campaignId) {

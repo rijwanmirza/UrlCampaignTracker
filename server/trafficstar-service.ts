@@ -6,9 +6,8 @@
  */
 
 import axios from 'axios';
-import { db } from './db';
+import { db, pool } from './db';
 import { campaigns } from '../shared/schema';
-import { eq, sql } from 'drizzle-orm';
 import { getTodayFormatted, getYesterdayFormatted, parseReportSpentValue } from './trafficstar-spent-helper';
 import urlBudgetManager from './url-budget-manager';
 
@@ -540,12 +539,13 @@ class TrafficStarService {
                   const { totalSpent } = await this.getCampaignSpentValue(trafficStarId);
                   
                   // Update campaign in database
-                  await db.update(campaigns)
-                    .set({ 
-                      dailySpent: totalSpent.toString(),
-                      lastSpentCheck: new Date()
-                    })
-                    .where(eq(campaigns.id, campaign.id));
+                  // Use standard PostgreSQL query instead of Drizzle-specific syntax
+                  await pool.query(`
+                    UPDATE campaigns 
+                    SET daily_spent = $1, 
+                        last_spent_check = $2 
+                    WHERE id = $3
+                  `, [totalSpent.toString(), new Date(), campaign.id]);
                     
                   console.log(`Campaign ${campaign.id} spent value updated to: $${totalSpent.toFixed(4)}`);
                 }
@@ -641,7 +641,9 @@ class TrafficStarService {
       console.log(`🔄 Processing all pending URL budget updates immediately...`);
       
       // Get all campaigns with pending updates from the URL budget manager
-      const campaigns = await db.query.campaigns.findMany();
+      // Use standard PostgreSQL query instead of Drizzle-specific syntax
+      const result = await pool.query(`SELECT * FROM campaigns`);
+      const campaigns = result.rows;
       let processedCount = 0;
       
       for (const campaign of campaigns) {

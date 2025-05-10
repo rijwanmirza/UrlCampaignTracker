@@ -1,6 +1,5 @@
-import { db } from './db';
+import { db, pool } from './db';
 import { campaigns, urls } from '@shared/schema';
-import { and, eq, ne, not, isNull } from 'drizzle-orm';
 import { trafficStarService } from './trafficstar-service';
 import urlBudgetLogger from './url-budget-logger';
 
@@ -29,15 +28,24 @@ class HighSpendDiagnosis {
     try {
       console.log(`\n===== DIAGNOSING HIGH SPEND FLOW FOR CAMPAIGN ${campaignId} =====`);
       
-      // 1. Get campaign details
-      const campaign = await db.query.campaigns.findFirst({
-        where: (c, { eq }) => eq(c.id, campaignId),
-        with: {
-          urls: {
-            where: (url, { eq }) => eq(url.status, 'active')
-          }
-        }
-      });
+      // 1. Get campaign details using standard PostgreSQL query
+      const campaignResult = await pool.query(`
+        SELECT c.* 
+        FROM campaigns c
+        WHERE c.id = $1
+      `, [campaignId]);
+      
+      const campaign = campaignResult.rows[0];
+      
+      // Get active URLs for this campaign
+      const urlsResult = await pool.query(`
+        SELECT u.* 
+        FROM urls u
+        WHERE u.campaign_id = $1 AND u.status = 'active'
+      `, [campaignId]);
+      
+      // Add URLs to campaign object
+      campaign.urls = urlsResult.rows;
       
       if (!campaign) {
         console.log(`❌ Campaign ${campaignId} not found`);
@@ -220,9 +228,12 @@ class HighSpendDiagnosis {
     try {
       console.log(`\n===== EMERGENCY RESET FOR CAMPAIGN ${campaignId} (${resetAction}) =====`);
       
-      const campaign = await db.query.campaigns.findFirst({
-        where: (c, { eq }) => eq(c.id, campaignId)
-      });
+      // Use standard PostgreSQL query instead of Drizzle-specific syntax
+      const campaignResult = await pool.query(`
+        SELECT * FROM campaigns WHERE id = $1
+      `, [campaignId]);
+      
+      const campaign = campaignResult.rows[0];
       
       if (!campaign) {
         console.log(`❌ Campaign ${campaignId} not found`);
@@ -248,14 +259,16 @@ class HighSpendDiagnosis {
       
       if (resetAction === 'status' || resetAction === 'full') {
         try {
-          await db.update(campaigns)
-            .set({
-              lastTrafficSenderStatus: 'low_spend',
-              lastTrafficSenderAction: new Date(),
-              highSpendBudgetCalcTime: null,
-              updatedAt: new Date()
-            })
-            .where(eq(campaigns.id, campaignId));
+          // Use standard PostgreSQL query instead of Drizzle-specific syntax
+          await pool.query(`
+            UPDATE campaigns 
+            SET 
+              last_traffic_sender_status = 'low_spend',
+              last_traffic_sender_action = $1,
+              high_spend_budget_calc_time = NULL,
+              updated_at = $2
+            WHERE id = $3
+          `, [new Date(), new Date(), campaignId]);
           
           result.actionsPerformed.push('Reset campaign status to low_spend');
         } catch (error) {
@@ -297,14 +310,23 @@ class HighSpendDiagnosis {
     try {
       console.log(`\n===== URL BUDGET CALCULATION DETAILS FOR CAMPAIGN ${campaignId} =====`);
       
-      const campaign = await db.query.campaigns.findFirst({
-        where: (c, { eq }) => eq(c.id, campaignId),
-        with: {
-          urls: {
-            where: (url, { eq }) => eq(url.status, 'active')
-          }
-        }
-      });
+      // Use standard PostgreSQL query instead of Drizzle-specific syntax
+      const campaignResult = await pool.query(`
+        SELECT * FROM campaigns WHERE id = $1
+      `, [campaignId]);
+      
+      const campaign = campaignResult.rows[0];
+      
+      // Get active URLs for this campaign
+      if (campaign) {
+        const urlsResult = await pool.query(`
+          SELECT * FROM urls
+          WHERE campaign_id = $1 AND status = 'active'
+        `, [campaignId]);
+        
+        // Add URLs to campaign object
+        campaign.urls = urlsResult.rows;
+      }
       
       if (!campaign) {
         console.log(`❌ Campaign ${campaignId} not found`);

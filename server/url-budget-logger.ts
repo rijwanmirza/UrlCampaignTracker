@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { promises as fsPromises } from 'fs';
 import { FileHandle } from 'fs/promises';
-import { db } from './db';
+import { db, pool } from './db';
 import { urls, campaigns } from '@shared/schema';
 import { eq, and, ne, isNull } from 'drizzle-orm';
 
@@ -219,16 +219,15 @@ export class UrlBudgetLogger {
    */
   private async isUrlActiveForCampaign(urlId: number, campaignId: number): Promise<boolean> {
     try {
-      const url = await db.query.urls.findFirst({
-        where: (url, { eq, and }) => 
-          and(
-            eq(url.id, urlId),
-            eq(url.campaignId, campaignId),
-            eq(url.status, 'active')
-          )
-      });
+      // Use standard PostgreSQL query instead of Drizzle-specific syntax
+      const result = await pool.query(`
+        SELECT * FROM urls 
+        WHERE id = $1 
+        AND campaign_id = $2 
+        AND status = 'active'
+      `, [urlId, campaignId]);
       
-      return !!url;
+      return result.rows.length > 0;
     } catch (error) {
       console.error(`❌ Failed to check if URL ${urlId} is active for campaign ${campaignId}: ${error}`);
       return false;
@@ -272,14 +271,15 @@ export class UrlBudgetLogger {
           await fsPromises.writeFile(activeLogPath, '');
           
           // Get all campaigns with TrafficStar integration except the one being cleared
-          const otherCampaigns = await db.query.campaigns.findMany({
-            where: (c, { eq, and, ne, not, isNull }) => 
-              and(
-                ne(c.id, campaignId), // Not the campaign being cleared
-                ne(c.trafficstarCampaignId, ''),
-                not(isNull(c.trafficstarCampaignId))
-              )
-          });
+          // Use standard PostgreSQL query instead of Drizzle-specific syntax
+          const result = await pool.query(`
+            SELECT * FROM campaigns 
+            WHERE id != $1
+            AND trafficstar_campaign_id IS NOT NULL 
+            AND trafficstar_campaign_id != ''
+          `, [campaignId]);
+          
+          const otherCampaigns = result.rows;
           
           // Rebuild the active log from other campaign logs
           for (const campaign of otherCampaigns) {
@@ -356,14 +356,14 @@ export class UrlBudgetLogger {
    */
   public async getAllUrlBudgetLogs(): Promise<Array<{urlId: number, campaignId: number, urlName: string, price: string, dateTime: string}>> {
     try {
-      // Get all campaigns with TrafficStar integration
-      const campaignsWithTrafficStar = await db.query.campaigns.findMany({
-        where: (c, { eq, and, ne, not, isNull }) => 
-          and(
-            ne(c.trafficstarCampaignId, ''),
-            not(isNull(c.trafficstarCampaignId))
-          )
-      });
+      // Get all campaigns with TrafficStar integration using standard PostgreSQL
+      const result = await pool.query(`
+        SELECT * FROM campaigns 
+        WHERE trafficstar_campaign_id IS NOT NULL 
+        AND trafficstar_campaign_id != ''
+      `);
+      
+      const campaignsWithTrafficStar = result.rows;
         
       // Combine logs from all campaigns
       let allLogs: Array<{urlId: number, campaignId: number, urlName: string, price: string, dateTime: string}> = [];
@@ -392,22 +392,16 @@ export class UrlBudgetLogger {
    */
   public async getActiveUrlsForCampaign(campaignId: number): Promise<Array<{id: number, name: string, clickLimit: number, clicks: number, remainingClicks: number}>> {
     try {
-      const activeUrls = await db.query.urls.findMany({
-        where: (url, { eq, and }) => 
-          and(
-            eq(url.campaignId, campaignId),
-            eq(url.status, 'active')
-          ),
-        columns: {
-          id: true,
-          name: true,
-          clickLimit: true,
-          clicks: true,
-        }
-      });
+      // Use standard PostgreSQL query instead of Drizzle-specific syntax
+      const result = await pool.query(`
+        SELECT id, name, click_limit as "clickLimit", clicks
+        FROM urls 
+        WHERE campaign_id = $1 
+        AND status = 'active'
+      `, [campaignId]);
       
       // Calculate remaining clicks and filter out any with 0 remaining
-      return activeUrls
+      return result.rows
         .map(url => ({
           ...url,
           remainingClicks: url.clickLimit - url.clicks
@@ -427,14 +421,18 @@ export class UrlBudgetLogger {
    */
   public async hasCampaignTrafficStarIntegration(campaignId: number): Promise<boolean> {
     try {
-      const campaign = await db.query.campaigns.findFirst({
-        where: (c, { eq }) => eq(c.id, campaignId),
-        columns: { trafficstarCampaignId: true }
-      });
+      // Use standard PostgreSQL query instead of Drizzle-specific syntax
+      const result = await pool.query(`
+        SELECT trafficstar_campaign_id 
+        FROM campaigns 
+        WHERE id = $1
+      `, [campaignId]);
       
+      // Check if we got a result and if trafficstar_campaign_id has a value
+      const campaign = result.rows[0];
       return !!campaign && 
-             !!campaign.trafficstarCampaignId && 
-             campaign.trafficstarCampaignId !== '';
+             !!campaign.trafficstar_campaign_id && 
+             campaign.trafficstar_campaign_id !== '';
     } catch (error) {
       console.error(`❌ Failed to check TrafficStar integration for campaign ${campaignId}: ${error}`);
       return false;

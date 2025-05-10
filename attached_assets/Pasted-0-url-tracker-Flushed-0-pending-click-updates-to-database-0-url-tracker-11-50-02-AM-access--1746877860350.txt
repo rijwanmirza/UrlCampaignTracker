@@ -1,0 +1,61 @@
+0|url-tracker  | Flushed 0 pending click updates to database
+0|url-tracker  | 11:50:02 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:02 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:02 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:02 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:02 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:02 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:02 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:02 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | Flushed 0 pending click updates to database
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:03 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:03 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | Flushed 0 pending click updates to database
+0|url-tracker  | 11:50:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:04 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:04 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | Flushed 0 pending click updates to database
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:05 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:05 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:06 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:06 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:06 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:06 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:06 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:06 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | 11:50:06 AM [access] Access check for path: /public/api/v1/landing/not_integrated
+0|url-tracker  | 11:50:06 AM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+0|url-tracker  | Flushed 0 pending click updates to database

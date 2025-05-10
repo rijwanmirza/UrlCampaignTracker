@@ -1,0 +1,23 @@
+/root/.pm2/logs/url-tracker-error.log last 20 lines:
+0|url-trac |     at isBudgetUpdateTimeMigrationNeeded (/var/www/UrlCampaignTrack                                                                             er/server/migrations/check-migration-needed.ts:16:29)
+0|url-trac |     at <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:32                                                                             61:53)
+0|url-trac | Error checking if TrafficStar fields migration is needed: TypeError                                                                             : query.getSQL is not a function
+0|url-trac |     at PgDatabase.execute (/var/www/UrlCampaignTracker/node_modules                                                                             /src/pg-core/db.ts:154:37)
+0|url-trac |     at isTrafficStarFieldsMigrationNeeded (/var/www/UrlCampaignTrac                                                                             ker/server/migrations/check-migration-needed.ts:44:29)
+0|url-trac |     at <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:32                                                                             62:54)
+0|url-trac | Failed to check migration status: TypeError: query.getSQL is not a                                                                              function
+0|url-trac |     at PgDatabase.execute (/var/www/UrlCampaignTracker/node_modules                                                                             /src/pg-core/db.ts:154:37)
+0|url-trac |     at <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:32                                                                             65:54)
+0|url-trac | Error checking if budget update time migration is needed: TypeError                                                                             : query.getSQL is not a function
+0|url-trac |     at PgDatabase.execute (/var/www/UrlCampaignTracker/node_modules                                                                             /src/pg-core/db.ts:154:37)
+0|url-trac |     at isBudgetUpdateTimeMigrationNeeded (/var/www/UrlCampaignTrack                                                                             er/server/migrations/check-migration-needed.ts:16:29)
+0|url-trac |     at <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:32                                                                             61:53)
+0|url-trac | Error checking if TrafficStar fields migration is needed: TypeError                                                                             : query.getSQL is not a function
+0|url-trac |     at PgDatabase.execute (/var/www/UrlCampaignTracker/node_modules                                                                             /src/pg-core/db.ts:154:37)
+0|url-trac |     at isTrafficStarFieldsMigrationNeeded (/var/www/UrlCampaignTrac                                                                             ker/server/migrations/check-migration-needed.ts:44:29)
+0|url-trac |     at <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:32                                                                             62:54)
+0|url-trac | Failed to check migration status: TypeError: query.getSQL is not a                                                                              function
+0|url-trac |     at PgDatabase.execute (/var/www/UrlCampaignTracker/node_modules                                                                             /src/pg-core/db.ts:154:37)
+0|url-trac |     at <anonymous> (/var/www/UrlCampaignTracker/server/routes.ts:32                                                                             65:54)
+
+/root/.pm2/logs/url-tracker-out.log last 20 lines:
