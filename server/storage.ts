@@ -722,23 +722,41 @@ export class DatabaseStorage implements IStorage {
     if (!campaign) return false;
     
     // Start a transaction to ensure all operations complete together
+    const client = await pool.connect();
+    
     try {
+      await client.query('BEGIN');
+      
       // Mark all URLs in this campaign as deleted (soft delete)
-      await db
-        .update(urls)
-        .set({
-          status: 'deleted',
-          updatedAt: new Date()
-        })
-        .where(eq(urls.campaignId, id));
+      const now = new Date();
+      await client.query(`
+        UPDATE urls 
+        SET status = 'deleted', updated_at = $1
+        WHERE campaign_id = $2
+      `, [now, id]);
       
       // Delete the campaign
-      await db.delete(campaigns).where(eq(campaigns.id, id));
+      await client.query(`
+        DELETE FROM campaigns
+        WHERE id = $1
+      `, [id]);
+      
+      await client.query('COMMIT');
+      
+      // Invalidate cache entries
+      this.campaignCache.delete(id);
+      if (campaign.customPath) {
+        this.customPathCache.delete(campaign.customPath);
+      }
+      this.campaignUrlsCache.delete(id);
       
       return true;
     } catch (error) {
+      await client.query('ROLLBACK');
       console.error('Error deleting campaign:', error);
       return false;
+    } finally {
+      client.release();
     }
   }
 
