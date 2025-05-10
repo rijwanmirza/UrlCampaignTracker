@@ -1,0 +1,78 @@
+root@d026e9724:/var/www/viralplayer.xyz# nano /var/www/viralplayer.xyz/fix-websocket-urls.sh
+root@d026e9724:/var/www/viralplayer.xyz# chmod +x /var/www/viralplayer.xyz/fix-websocket-urls.sh
+root@d026e9724:/var/www/viralplayer.xyz# ./fix-websocket-urls.sh
+Finding files with WebSocket references...
+No files found with WebSocket references.
+Checking for specific WebSocket URL patterns...
+root@d026e9724:/var/www/viralplayer.xyz# ^C
+root@d026e9724:/var/www/viralplayer.xyz# nano /var/www/viralplayer.xyz/ecosystem.config.cjs
+root@d026e9724:/var/www/viralplayer.xyz# # Make sure no other process is running on port 5000
+fuser -k 5000/tcp || echo "No process to kill on port 5000"
+
+# Delete any existing PM2 process
+pm2 delete urlcampaigntracker || echo "No PM2 process to delete"
+
+# Start with the new ecosystem file
+cd /var/www/viralplayer.xyz
+pm2 start ecosystem.config.cjs
+No process to kill on port 5000
+[PM2][ERROR] Process or Namespace urlcampaigntracker not found
+No PM2 process to delete
+[PM2][WARN] Applications urlcampaigntracker not running, starting...
+[PM2] App [urlcampaigntracker] launched (1 instances)
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 43244    │ 0s     │ 0    │ online    │ 0%       │ 18.6mb   │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@d026e9724:/var/www/viralplayer.xyz# nano /etc/nginx/sites-available/viralplayer.xyz
+root@d026e9724:/var/www/viralplayer.xyz# rm /etc/nginx/sites-available/viralplayer.xyz
+root@d026e9724:/var/www/viralplayer.xyz# nano /etc/nginx/sites-available/viralplayer.xyz
+root@d026e9724:/var/www/viralplayer.xyz# nginx -t
+systemctl reload nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@d026e9724:/var/www/viralplayer.xyz# nano /var/www/viralplayer.xyz/inspect-websocket-usage.js
+root@d026e9724:/var/www/viralplayer.xyz# node /var/www/viralplayer.xyz/inspect-websocket-usage.js
+file:///var/www/viralplayer.xyz/inspect-websocket-usage.js:2
+const fs = require('fs');
+           ^
+
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/www/viralplayer.xyz/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/www/viralplayer.xyz/inspect-websocket-usage.js:2:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.1
+root@d026e9724:/var/www/viralplayer.xyz# ^C
+root@d026e9724:/var/www/viralplayer.xyz# nano /var/www/viralplayer.xyz/inspect-websocket-usage.mjs
+root@d026e9724:/var/www/viralplayer.xyz# node /var/www/viralplayer.xyz/inspect-websocket-usage.mjs
+Searching for JavaScript files...
+Found 2 JavaScript files.
+Searching for WebSocket usage...
+
+=== WebSocket Usage Results ===
+No WebSocket usage found.
+root@d026e9724:/var/www/viralplayer.xyz# nano /var/www/viralplayer.xyz/patch-websocket-connections.mjs
+root@d026e9724:/var/www/viralplayer.xyz# node /var/www/viralplayer.xyz/patch-websocket-connections.mjs
+Error: Could not find index.html file!
+root@d026e9724:/var/www/viralplayer.xyz# # Find any JavaScript files that mention WebSocket
+grep -r "new WebSocket" --include="*.js" /var/www/viralplayer.xyz/dist/
+root@d026e9724:/var/www/viralplayer.xyz# nano /var/www/viralplayer.xyz/simple-ws-fix.sh
+root@d026e9724:/var/www/viralplayer.xyz# chmod +x /var/www/viralplayer.xyz/simple-ws-fix.sh
+./simple-ws-fix.sh
+Finding and replacing WebSocket URLs in all JavaScript files...
+Done!
+root@d026e9724:/var/www/viralplayer.xyz# # Make sure PM2 is configured with the right ecosystem file
+cd /var/www/viralplayer.xyz
+pm2 start ecosystem.config.cjs --update-env
+[PM2] Applying action restartProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 43628    │ 0s     │ 1    │ online    │ 0%       │ 18.0mb   │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@d026e9724:/var/www/viralplayer.xyz#

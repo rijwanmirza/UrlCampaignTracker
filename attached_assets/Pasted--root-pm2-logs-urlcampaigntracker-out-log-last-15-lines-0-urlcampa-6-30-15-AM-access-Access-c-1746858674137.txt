@@ -1,0 +1,34 @@
+/root/.pm2/logs/urlcampaigntracker-out.log last 15 lines:
+0|urlcampa | 6:30:15 AM [access] Access check for path: /access/ABCD123
+0|urlcampa | 6:30:15 AM [access] Generated temporary login path: /login_sjm7t00p                                                                             8nf for session: fp8quixpdis
+0|urlcampa | 6:30:15 AM [access] Access granted with secret code, redirecting to                                                                              temporary login path: login_sjm7t00p8nf with session: fp8quixpdis
+0|urlcampa | 6:30:16 AM [access] Access check for path: /login_sjm7t00p8nf
+0|urlcampa | 6:30:16 AM [access] Temporary login path accessed: /login_sjm7t00p8                                                                             nf
+0|urlcampa | 6:30:16 AM [access] Serving login form for temporary path: /login_s                                                                             jm7t00p8nf with session: fp8quixpdis
+0|urlcampa | 6:30:35 AM [access] Access check for path: /api/auth/verify-key
+0|urlcampa | 6:30:35 AM [auth] API key verification failed - invalid key provide                                                                             d
+0|urlcampa | 6:30:35 AM [express] POST /api/auth/verify-key 401 in 4ms :: {"mess                                                                             age":"Invalid API key","authentic…
+0|urlcampa | 6:30:37 AM [access] Access check for path: /api/auth/verify-key
+0|urlcampa | 6:30:37 AM [auth] API key verification failed - invalid key provide                                                                             d
+0|urlcampa | 6:30:37 AM [express] POST /api/auth/verify-key 401 in 5ms :: {"mess                                                                             age":"Invalid API key","authentic…
+0|urlcampa | 6:30:40 AM [access] Access check for path: /api/auth/verify-key
+0|urlcampa | 6:30:40 AM [auth] API key verification failed - invalid key provide                                                                             d
+0|urlcampa | 6:30:40 AM [express] POST /api/auth/verify-key 401 in 5ms :: {"mess                                                                             age":"Invalid API key","authentic…
+
+/root/.pm2/logs/urlcampaigntracker-error.log last 15 lines:
+0|urlcampa |       fingerprint512: 'C8:B0:AD:4A:00:D3:EA:8C:96:C0:FB:93:42:10:40                                                                             :E5:C9:3D:1C:EB:D4:23:7D:C2:25:7E:2A:FD:8A:99:55:D0:F3:ED:E8:8C:76:23:A7:FC:83:F                                                                             2:79:35:5A:A4:26:40:81:47:9A:51:13:62:2A:BA:9E:A2:37:00:6B:FD:B3:05',
+0|urlcampa |       ext_key_usage: [Array],
+0|urlcampa |       serialNumber: '05765B242CDD9D640A46116669C90F86AF3F',
+0|urlcampa |       raw: <Buffer 30 82 05 11 30 82 03 f9 a0 03 02 01 02 02 12 05                                                                              76 5b 24 2c dd 9d 64 0a 46 11 66 69 c9 0f 86 af 3f 30 0d 06 09 2a 86 48 86 f7 0d                                                                              01 01 0b 05 00 30 33 ... 1251 more bytes>,
+0|urlcampa |       issuerCertificate: [Object]
+0|urlcampa |     }
+0|urlcampa |   },
+0|urlcampa |   [Symbol(kMessage)]: "Hostname/IP does not match certificate's alt                                                                             names: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:                                                                             www.viralplayer.xyz"
+0|urlcampa | }
+0|urlcampa | Error validating API key: Error: Cannot retrieve API key from datab                                                                             ase or environment
+0|urlcampa |     at getApiSecretKey (file:///var/www/viralplayer.xyz/dist/index.                                                                             js:796:11)
+0|urlcampa |     at process.processTicksAndRejections (node:internal/process/tas                                                                             k_queues:95:5)
+0|urlcampa |     at async getCurrentApiKey (file:///var/www/viralplayer.xyz/dist                                                                             /index.js:851:20)
+0|urlcampa |     at async validateApiKey (file:///var/www/viralplayer.xyz/dist/i                                                                             ndex.js:890:24)
+0|urlcampa |     at async file:///var/www/viralplayer.xyz/dist/index.js:14413:23
+

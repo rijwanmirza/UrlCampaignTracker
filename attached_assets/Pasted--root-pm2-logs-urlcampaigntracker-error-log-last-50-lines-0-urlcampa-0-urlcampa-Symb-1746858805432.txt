@@ -1,0 +1,52 @@
+/root/.pm2/logs/urlcampaigntracker-error.log last 50 lines:
+0|urlcampa |   },
+0|urlcampa |   [Symbol(kType)]: 'error',
+0|urlcampa |   [Symbol(kError)]: Error [ERR_TLS_CERT_ALTNAME_INVALID]: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz
+0|urlcampa |       at Object.checkServerIdentity (node:tls:316:12)
+0|urlcampa |       at TLSSocket.onConnectSecure (node:_tls_wrap:1687:27)
+0|urlcampa |       at TLSSocket.emit (node:events:524:28)
+0|urlcampa |       at TLSSocket._finishInit (node:_tls_wrap:1076:8)
+0|urlcampa |       at ssl.onhandshakedone (node:_tls_wrap:862:12) {
+0|urlcampa |     code: 'ERR_TLS_CERT_ALTNAME_INVALID',
+0|urlcampa |     reason: "Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz",
+0|urlcampa |     host: 'localhost',
+0|urlcampa |     cert: {
+0|urlcampa |       subject: [Object: null prototype],
+0|urlcampa |       issuer: [Object: null prototype],
+0|urlcampa |       subjectaltname: 'DNS:viralplayer.xyz, DNS:www.viralplayer.xyz',
+0|urlcampa |       infoAccess: [Object: null prototype],
+0|urlcampa |       ca: false,
+0|urlcampa |       modulus: 'B563350E93DE3A5B51C18648F5908E30BFF435EDE448215960667BBF98D1AC575AE270EB9527D05C57024260E4B29AA92157427C82A9C5DF0867883BED1714F3DC6C2A32AB18ED8084AAD0141C1EF06DE9E02F44F72F603E96E85A9A5084DB099F0332468924C8D5A6526D2D50AAA99445EE221FDF5DDD347CC084B7ECA0CE270260F09161D5AED63A1FD910B3FCC6C9BC49DDA31C22E7F03EDC9577052D25ECA96E76563631508CF9877F57FAA0C8AEBEF331307B85EECD0893A6861A8EBCDF08F2387A30606CD3C9BB7F343A0C3A0782D93CCA3A44628120E82740125B3E15B7C9DBB083B901BCEF43F15FD431B16C1802C7EE01AD5E2FE2872FA63104C343',
+0|urlcampa |       bits: 2048,
+0|urlcampa |       exponent: '0x10001',
+0|urlcampa |       pubkey: <Buffer 30 82 01 22 30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00 03 82 01 0f 00 30 82 01 0a 02 82 01 01 00 b5 63 35 0e 93 de 3a 5b 51 c1 86 48 f5 90 8e 30 bf ... 244 more bytes>,
+0|urlcampa |       valid_from: 'May 10 05:23:45 2025 GMT',
+0|urlcampa |       valid_to: 'Aug  8 05:23:44 2025 GMT',
+0|urlcampa |       fingerprint: '27:EF:07:DA:37:00:20:11:73:FD:B0:4E:98:4F:2D:10:97:D0:E0:A4',
+0|urlcampa |       fingerprint256: '21:88:6C:55:0A:93:A7:3A:79:D3:81:A1:A5:D9:10:31:0C:C6:32:85:0E:77:46:C3:2E:7F:98:01:60:CD:11:4A',
+0|urlcampa |       fingerprint512: 'C8:B0:AD:4A:00:D3:EA:8C:96:C0:FB:93:42:10:40:E5:C9:3D:1C:EB:D4:23:7D:C2:25:7E:2A:FD:8A:99:55:D0:F3:ED:E8:8C:76:23:A7:FC:83:F2:79:35:5A:A4:26:40:81:47:9A:51:13:62:2A:BA:9E:A2:37:00:6B:FD:B3:05',
+0|urlcampa |       ext_key_usage: [Array],
+0|urlcampa |       serialNumber: '05765B242CDD9D640A46116669C90F86AF3F',
+0|urlcampa |       raw: <Buffer 30 82 05 11 30 82 03 f9 a0 03 02 01 02 02 12 05 76 5b 24 2c dd 9d 64 0a 46 11 66 69 c9 0f 86 af 3f 30 0d 06 09 2a 86 48 86 f7 0d 01 01 0b 05 00 30 33 ... 1251 more bytes>,
+0|urlcampa |       issuerCertificate: [Object]
+0|urlcampa |     }
+0|urlcampa |   },
+0|urlcampa |   [Symbol(kMessage)]: "Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:viralplayer.xyz, DNS:www.viralplayer.xyz"
+0|urlcampa | }
+0|urlcampa | Error validating API key: Error: Cannot retrieve API key from database or environment
+0|urlcampa |     at getApiSecretKey (file:///var/www/viralplayer.xyz/dist/index.js:796:11)
+0|urlcampa |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|urlcampa |     at async getCurrentApiKey (file:///var/www/viralplayer.xyz/dist/index.js:851:20)
+0|urlcampa |     at async validateApiKey (file:///var/www/viralplayer.xyz/dist/index.js:890:24)
+0|urlcampa |     at async file:///var/www/viralplayer.xyz/dist/index.js:14413:23
+0|urlcampa | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|urlcampa | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/viralplayer.xyz/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|urlcampa |     at file:///var/www/viralplayer.xyz/start-with-fixes.js:3:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+0|urlcampa | ReferenceError: require is not defined in ES module scope, you can use import instead
+0|urlcampa | This file is being treated as an ES module because it has a '.js' file extension and '/var/www/viralplayer.xyz/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+0|urlcampa |     at file:///var/www/viralplayer.xyz/start-with-fixes.js:3:1
+0|urlcampa |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+0|urlcampa |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+

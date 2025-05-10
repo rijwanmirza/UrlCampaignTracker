@@ -1,0 +1,151 @@
+root@d026e9724:/var/www/viralplayer.xyz# # Stop any running application
+pm2 stop urlcampaigntracker
+pm2 delete urlcampaigntracker
+
+# Start the application directly to see console output
+DATABASE_URL="postgresql://neondb_owner:npg_U8evoXZz0WOB@localhost:5432/neondb" \
+PGHOST="localhost" \
+PGPORT="5432" \
+PGUSER="neondb_owner" \
+PGPASSWORD="npg_U8evoXZz0WOB" \
+PGDATABASE="neondb" \
+API_SECRET_KEY="TraffiCS10928" \
+NODE_TLS_REJECT_UNAUTHORIZED="0" \
+node dist/index.js
+[PM2] Applying action stopProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ urlcampaigntracker    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Applying action deleteProcessId on app [urlcampaigntracker](ids: [ 0 ])
+[PM2] [urlcampaigntracker](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+🔍 DEBUG: Loaded saved config with autoDeleteMinutes: 2
+🔍 DEBUG: Gmail reader initialized with autoDeleteMinutes: 2
+7:03:03 AM [gmail-reader] Loaded 0 previously processed email IDs
+URL Budget Manager initialized
+TrafficStar API Service initialized
+[youtube-api] INFO: YouTube API Service initialized
+TrafficStar Reports API test routes registered
+Server monitoring initialized - collecting stats every minute
+🔄 Running fix for missing URL click logs...
+(node:42828) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+❌ Error during auto-fix for URL click logs: ErrorEvent {
+  [Symbol(kTarget)]: WebSocket {
+    _events: [Object: null prototype] {
+      error: [Function],
+      message: [Function],
+      close: [Function],
+      open: [Function]
+    },
+    _eventsCount: 4,
+    _maxListeners: undefined,
+    _binaryType: 'arraybuffer',
+    _closeCode: 1006,
+    _closeFrameReceived: false,
+    _closeFrameSent: false,
+    _closeMessage: <Buffer >,
+    _closeTimer: null,
+    _errorEmitted: true,
+    _extensions: {},
+    _paused: false,
+    _protocol: '',
+    _readyState: 3,
+    _receiver: null,
+    _sender: null,
+    _socket: null,
+    _bufferedAmount: 0,
+    _isServer: false,
+    _redirects: 0,
+    _autoPong: true,
+    _url: 'wss://localhost/v2',
+    _req: ClientRequest {
+      _events: [Object: null prototype],
+      _eventsCount: 4,
+      _maxListeners: undefined,
+      outputData: [],
+      outputSize: 0,
+      writable: true,
+      destroyed: true,
+      _last: true,
+      chunkedEncoding: false,
+      shouldKeepAlive: true,
+      maxRequestsOnConnectionReached: false,
+      _defaultKeepAlive: true,
+      useChunkedEncodingByDefault: false,
+      sendDate: false,
+      _removedConnection: false,
+      _removedContLen: false,
+      _removedTE: false,
+      strictContentLength: false,
+      _contentLength: 0,
+      _hasBody: true,
+      _trailer: '',
+      finished: true,
+      _headerSent: true,
+      _closed: true,
+      socket: [TLSSocket],
+      _header: 'GET /v2 HTTP/1.1\r\n' +
+        'Sec-WebSocket-Version: 13\r\n' +
+        'Sec-WebSocket-Key: DkF1g92OOGHrnWUBLczCjA==\r\n' +
+        'Connection: Upgrade\r\n' +
+        'Upgrade: websocket\r\n' +
+        'Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n' +
+        'Host: localhost\r\n' +
+        '\r\n',
+      _keepAliveTimeout: 0,
+      _onPendingData: [Function: nop],
+      agent: undefined,
+      socketPath: undefined,
+      method: 'GET',
+      maxHeaderSize: undefined,
+      insecureHTTPParser: undefined,
+      joinDuplicateHeaders: undefined,
+      path: '/v2',
+      _ended: true,
+      res: [IncomingMessage],
+      aborted: true,
+      timeoutCb: null,
+      upgradeOrConnect: false,
+      parser: null,
+      maxHeadersCount: null,
+      reusedSocket: false,
+      host: 'localhost',
+      protocol: 'https:',
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(kNeedDrain)]: false,
+      [Symbol(corked)]: 0,
+      [Symbol(kOutHeaders)]: [Object: null prototype],
+      [Symbol(errored)]: null,
+      [Symbol(kHighWaterMark)]: 16384,
+      [Symbol(kRejectNonStandardBodyWrites)]: false,
+      [Symbol(kUniqueHeaders)]: null,
+      [Symbol(kAborted)]: true,
+      [Symbol(kError)]: undefined
+    },
+    [Symbol(shapeMode)]: false,
+    [Symbol(kCapture)]: false
+  },
+  [Symbol(kType)]: 'error',
+  [Symbol(kError)]: Error: Unexpected server response: 502
+      at ClientRequest.<anonymous> (/var/www/viralplayer.xyz/node_modules/ws/lib/websocket.js:913:7)
+      at ClientRequest.emit (node:events:524:28)
+      at HTTPParser.parserOnIncomingClient (node:_http_client:702:27)
+      at HTTPParser.parserOnHeadersComplete (node:_http_common:118:17)
+      at TLSSocket.socketOnData (node:_http_client:544:22)
+      at TLSSocket.emit (node:events:524:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23),
+  [Symbol(kMessage)]: 'Unexpected server response: 502'
+}
+7:03:03 AM [express] serving on port 5000
+
