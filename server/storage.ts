@@ -8,21 +8,16 @@ import {
   UpdateUrl, 
   CampaignWithUrls,
   UrlWithActiveStatus,
-  campaigns,
-  urls,
   OriginalUrlRecord,
   InsertOriginalUrlRecord,
   UpdateOriginalUrlRecord,
-  originalUrlRecords,
   CampaignClickRecord,
   InsertCampaignClickRecord,
-  campaignClickRecords,
   UrlClickRecord,
   InsertUrlClickRecord,
-  urlClickRecords,
   TimeRangeFilter
 } from "@shared/schema";
-import { db, pool } from "./db";
+import { pool } from "./db";
 import { redirectLogsManager } from "./redirect-logs-manager";
 import { urlClickLogsManager } from "./url-click-logs-manager";
 
@@ -691,18 +686,39 @@ export class DatabaseStorage implements IStorage {
       updateData.lastTrafficstarSync = new Date();
     }
     
-    const [updated] = await db
-      .update(campaigns)
-      .set(updateData)
-      .where(eq(campaigns.id, id))
-      .returning();
+    // Build SET clause dynamically for UPDATE query
+    const keys = Object.keys(updateData);
+    const setClause = keys.map((key, i) => {
+      // Convert camelCase to snake_case for database column names
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      return `${snakeKey} = $${i + 1}`;
+    }).join(', ');
     
-    return updated;
+    // Values for parameterized query
+    const values = Object.values(updateData);
+    
+    // Add the id parameter
+    values.push(id);
+    
+    const query = `
+      UPDATE campaigns 
+      SET ${setClause}
+      WHERE id = $${values.length}
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, values);
+    return result.rows[0];
   }
   
   async deleteCampaign(id: number): Promise<boolean> {
-    // First check if the campaign exists
-    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    // First check if the campaign exists using standard PostgreSQL
+    const result = await pool.query(`
+      SELECT * FROM campaigns
+      WHERE id = $1
+    `, [id]);
+    
+    const campaign = result.rows[0];
     if (!campaign) return false;
     
     // Start a transaction to ensure all operations complete together
@@ -926,12 +942,15 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // IMPORTANT: Check if a URL with this name already exists
+    // IMPORTANT: Check if a URL with this name already exists 
     // This should apply globally to prevent all duplicate names, not just within the campaign
-    const existingUrls = await db
-      .select()
-      .from(urls)
-      .where(eq(urls.name, insertUrl.name));
+    // Using standard PostgreSQL query
+    const existingUrlsResult = await pool.query(`
+      SELECT * FROM urls
+      WHERE name = $1
+    `, [insertUrl.name]);
+    
+    const existingUrls = existingUrlsResult.rows;
     
     // If we found any URL with the same name
     if (existingUrls.length > 0) {
@@ -962,16 +981,13 @@ export class DatabaseStorage implements IStorage {
         let maxNumber = 1;
         const nameBase = insertUrl.name;
         
-        // Get all URLs with this base name to find the highest suffix
-        const allDuplicateUrls = await db
-          .select()
-          .from(urls)
-          .where(
-            or(
-              eq(urls.name, nameBase),
-              ilike(urls.name, `${nameBase} #%`)
-            )
-          );
+        // Get all URLs with this base name to find the highest suffix using standard PostgreSQL
+        const allDuplicateUrlsResult = await pool.query(`
+          SELECT * FROM urls
+          WHERE name = $1 OR name ILIKE $2
+        `, [nameBase, `${nameBase} #%`]);
+        
+        const allDuplicateUrls = allDuplicateUrlsResult.rows;
         
         console.log(`  - Found ${allDuplicateUrls.length} potential duplicates`);
         
@@ -1000,19 +1016,26 @@ export class DatabaseStorage implements IStorage {
         const newName = `${nameBase} #${newNumber}`;
         console.log(`  - Creating with numbered suffix: "${newName}"`);
         
-        // Create a new URL with the numbered name and rejected status
-        const [numberedUrl] = await db
-          .insert(urls)
-          .values({
-            ...insertUrl,
-            name: newName, // Use the name with the number suffix
-            originalClickLimit,
-            clicks: 0,
-            status: 'rejected', // Mark as rejected
-            createdAt: now,
-            updatedAt: now
-          })
-          .returning();
+        // Create a new URL with the numbered name and rejected status using standard PostgreSQL
+        const numberedUrlResult = await pool.query(`
+          INSERT INTO urls
+          (name, target_url, campaign_id, click_limit, original_click_limit, clicks, status, created_at, updated_at,
+           pending_budget_update, budget_calculated)
+          VALUES ($1, $2, $3, $4, $5, 0, 'rejected', $6, $7, $8, $9)
+          RETURNING *
+        `, [
+          newName, // Use the name with the number suffix
+          insertUrl.targetUrl,
+          insertUrl.campaignId,
+          insertUrl.clickLimit,
+          originalClickLimit,
+          now,
+          now,
+          insertUrl.pendingBudgetUpdate || false,
+          insertUrl.budgetCalculated || false
+        ]);
+        
+        const numberedUrl = numberedUrlResult.rows[0];
           
         return numberedUrl;
       }
@@ -1020,7 +1043,13 @@ export class DatabaseStorage implements IStorage {
     
     // Ensure these values don't match if we have a valid multiplier applied
     if (insertUrl.campaignId) {
-      const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, insertUrl.campaignId));
+      // Using standard PostgreSQL query to get campaign
+      const campaignResult = await pool.query(`
+        SELECT * FROM campaigns
+        WHERE id = $1
+      `, [insertUrl.campaignId]);
+      
+      const campaign = campaignResult.rows[0];
       if (campaign) {
         // Convert multiplier to number if it's a string
         const multiplierValue = typeof campaign.multiplier === 'string'
@@ -1039,18 +1068,26 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // No duplicates found, proceed with normal URL creation
-    const [url] = await db
-      .insert(urls)
-      .values({
-        ...insertUrl,
-        originalClickLimit: safeOriginalClickLimit, // Explicitly use the safe original value
-        clicks: 0,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now
-      })
-      .returning();
+    // No duplicates found, proceed with normal URL creation using standard PostgreSQL
+    const urlResult = await pool.query(`
+      INSERT INTO urls
+      (name, target_url, campaign_id, click_limit, original_click_limit, clicks, status, created_at, updated_at,
+       pending_budget_update, budget_calculated)
+      VALUES ($1, $2, $3, $4, $5, 0, 'active', $6, $7, $8, $9)
+      RETURNING *
+    `, [
+      insertUrl.name,
+      insertUrl.targetUrl,
+      insertUrl.campaignId,
+      insertUrl.clickLimit,
+      safeOriginalClickLimit, // Explicitly use the safe original value
+      now,
+      now,
+      insertUrl.pendingBudgetUpdate || false,
+      insertUrl.budgetCalculated || false
+    ]);
+    
+    const url = urlResult.rows[0];
     
     // Invalidate the campaign cache when adding a new URL
     if (url.campaignId) {
@@ -1061,7 +1098,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUrl(id: number, updateUrl: UpdateUrl): Promise<Url | undefined> {
-    const [existingUrl] = await db.select().from(urls).where(eq(urls.id, id));
+    // Using standard PostgreSQL to get existing URL
+    const existingUrlResult = await pool.query(`
+      SELECT * FROM urls
+      WHERE id = $1
+    `, [id]);
+    
+    const existingUrl = existingUrlResult.rows[0];
     if (!existingUrl) return undefined;
     
     // Check if the URL has completed all clicks
@@ -1143,26 +1186,95 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    const [updatedUrl] = await db
-      .update(urls)
-      .set({
-        ...updateUrl,
-        updatedAt: new Date()
-      })
-      .where(eq(urls.id, id))
-      .returning();
+    // Using standard PostgreSQL to update the URL
+    // First get all the fields we want to update
+    const updateFields = [];
+    const updateValues = [];
+    let paramIndex = 1;
     
-    // Invalidate the campaign cache when updating a URL
-    if (existingUrl.campaignId) {
-      this.invalidateCampaignCache(existingUrl.campaignId);
+    // Add all the fields from updateUrl that are not undefined
+    if (updateUrl.name !== undefined) {
+      updateFields.push(`name = $${paramIndex}`);
+      updateValues.push(updateUrl.name);
+      paramIndex++;
     }
     
-    return updatedUrl;
+    if (updateUrl.targetUrl !== undefined) {
+      updateFields.push(`target_url = $${paramIndex}`);
+      updateValues.push(updateUrl.targetUrl);
+      paramIndex++;
+    }
+    
+    if (updateUrl.clickLimit !== undefined) {
+      updateFields.push(`click_limit = $${paramIndex}`);
+      updateValues.push(updateUrl.clickLimit);
+      paramIndex++;
+    }
+    
+    if (updateUrl.originalClickLimit !== undefined) {
+      updateFields.push(`original_click_limit = $${paramIndex}`);
+      updateValues.push(updateUrl.originalClickLimit);
+      paramIndex++;
+    }
+    
+    if (updateUrl.status !== undefined) {
+      updateFields.push(`status = $${paramIndex}`);
+      updateValues.push(updateUrl.status);
+      paramIndex++;
+    }
+    
+    if (updateUrl.pendingBudgetUpdate !== undefined) {
+      updateFields.push(`pending_budget_update = $${paramIndex}`);
+      updateValues.push(updateUrl.pendingBudgetUpdate);
+      paramIndex++;
+    }
+    
+    if (updateUrl.budgetCalculated !== undefined) {
+      updateFields.push(`budget_calculated = $${paramIndex}`);
+      updateValues.push(updateUrl.budgetCalculated);
+      paramIndex++;
+    }
+    
+    // Always update the updatedAt field
+    updateFields.push(`updated_at = $${paramIndex}`);
+    updateValues.push(new Date());
+    paramIndex++;
+    
+    // Add the ID parameter as the last parameter
+    updateValues.push(id);
+    
+    // Execute the query if we have fields to update
+    if (updateFields.length > 0) {
+      const updatedUrlResult = await pool.query(`
+        UPDATE urls
+        SET ${updateFields.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING *
+      `, updateValues);
+      
+      const updatedUrl = updatedUrlResult.rows[0];
+    
+      // Invalidate the campaign cache when updating a URL
+      if (existingUrl.campaignId) {
+        this.invalidateCampaignCache(existingUrl.campaignId);
+      }
+      
+      return updatedUrl;
+    }
+    
+    // Return the existing URL if no fields to update
+    return existingUrl;
   }
   
   // Helper method to get campaign multiplier
   private async getCampaignMultiplier(campaignId: number): Promise<number> {
-    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId));
+    // Using standard PostgreSQL to get campaign
+    const campaignResult = await pool.query(`
+      SELECT * FROM campaigns 
+      WHERE id = $1
+    `, [campaignId]);
+    
+    const campaign = campaignResult.rows[0];
     if (!campaign) return 1;
     
     // Convert multiplier to number if it's a string
@@ -1174,7 +1286,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUrl(id: number): Promise<boolean> {
-    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    // Using standard PostgreSQL to get the URL
+    const urlResult = await pool.query(`
+      SELECT * FROM urls 
+      WHERE id = $1
+    `, [id]);
+    
+    const url = urlResult.rows[0];
     if (!url) return false;
     
     console.log(`🗑️ Soft deleting URL ID #${id} "${url.name}"`);
@@ -1187,18 +1305,16 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
-    // Soft delete - just update status to 'deleted'
-    await db
-      .update(urls)
-      .set({ 
-        status: 'deleted',
-        updatedAt: new Date() 
-      })
-      .where(eq(urls.id, id));
+    // Soft delete - just update status to 'deleted' using standard PostgreSQL
+    await pool.query(`
+      UPDATE urls
+      SET status = 'deleted', updated_at = $1
+      WHERE id = $2
+    `, [new Date(), id]);
     
     // Invalidate the campaign cache
-    if (url.campaignId) {
-      this.invalidateCampaignCache(url.campaignId);
+    if (url.campaign_id) {
+      this.invalidateCampaignCache(url.campaign_id);
     }
     
     console.log(`✅ URL ID #${id} "${url.name}" successfully soft-deleted (status=deleted)`);
@@ -1408,7 +1524,13 @@ export class DatabaseStorage implements IStorage {
     
     // Cache miss - need to fetch from database (slower path)
     try {
-      const [url] = await db.select().from(urls).where(eq(urls.id, id));
+      // Use standard PostgreSQL query
+      const urlResult = await pool.query(`
+        SELECT * FROM urls
+        WHERE id = $1
+      `, [id]);
+      
+      const url = urlResult.rows[0];
       if (!url) return undefined;
       
       // Initialize click tracking for this URL
@@ -1418,7 +1540,7 @@ export class DatabaseStorage implements IStorage {
       
       // Create updated URL with new click count
       const newClicks = url.clicks + 1;
-      const isCompleted = newClicks >= url.clickLimit;
+      const isCompleted = newClicks >= url.click_limit;
       const newStatus = isCompleted ? 'completed' : url.status;
       
       // CRITICAL FIX: Sync status change to original record when URL is completed
@@ -1433,6 +1555,7 @@ export class DatabaseStorage implements IStorage {
           });
       }
       
+      // Create updated URL object with new click count and status
       const updatedUrl = {
         ...url,
         clicks: newClicks,
@@ -1446,21 +1569,28 @@ export class DatabaseStorage implements IStorage {
       });
       
       // Invalidate campaign cache
-      if (url.campaignId) {
-        this.invalidateCampaignCache(url.campaignId);
+      if (url.campaign_id) {
+        this.invalidateCampaignCache(url.campaign_id);
       }
       
       // Perform immediate database update for first encounter
-      // but still batch subsequent updates
-      const [dbUpdatedUrl] = await db
-        .update(urls)
-        .set({ 
-          clicks: newClicks,
-          status: isCompleted ? 'completed' : url.status,
-          updatedAt: new Date() 
-        })
-        .where(eq(urls.id, id))
-        .returning();
+      // but still batch subsequent updates using standard PostgreSQL
+      const updatedUrlResult = await pool.query(`
+        UPDATE urls
+        SET 
+          clicks = $1,
+          status = $2,
+          updated_at = $3
+        WHERE id = $4
+        RETURNING *
+      `, [
+        newClicks,
+        isCompleted ? 'completed' : url.status,
+        new Date(),
+        id
+      ]);
+      
+      const dbUpdatedUrl = updatedUrlResult.rows[0];
       
       // Reset pending count since we just updated
       this.pendingClickUpdates.set(id, 0);
@@ -1479,47 +1609,52 @@ export class DatabaseStorage implements IStorage {
   private async batchUpdateUrlClicks(id: number, pendingCount: number, isCompleted: boolean): Promise<void> {
     try {
       if (isCompleted) {
-        // First get the URL to determine if it belongs to a campaign
-        const [url] = await db.select().from(urls).where(eq(urls.id, id));
-        if (url?.campaignId) {
+        // First get the URL to determine if it belongs to a campaign using standard PostgreSQL
+        const urlResult = await pool.query(`
+          SELECT * FROM urls
+          WHERE id = $1
+        `, [id]);
+        
+        const url = urlResult.rows[0];
+        
+        if (url?.campaign_id) {
           // Store the campaign ID before removing it
-          const campaignId = url.campaignId;
+          const campaignId = url.campaign_id;
           
           // If URL is completed and belongs to a campaign, update and remove from campaign
-          await db
-            .update(urls)
-            .set({ 
-              clicks: sql`${urls.clicks} + ${pendingCount}`,
-              status: 'completed',
-              campaignId: null, // Remove from campaign
-              updatedAt: new Date() 
-            })
-            .where(eq(urls.id, id));
+          await pool.query(`
+            UPDATE urls
+            SET 
+              clicks = clicks + $1,
+              status = 'completed',
+              campaign_id = NULL, -- Remove from campaign
+              updated_at = $2
+            WHERE id = $3
+          `, [pendingCount, new Date(), id]);
           
           // Invalidate campaign cache since we've removed a URL
           this.invalidateCampaignCache(campaignId);
           console.log(`URL ${id} reached click limit and was removed from campaign ${campaignId}`);
         } else {
           // URL is completed but doesn't belong to a campaign, just update status
-          await db
-            .update(urls)
-            .set({ 
-              clicks: sql`${urls.clicks} + ${pendingCount}`,
-              status: 'completed',
-              updatedAt: new Date() 
-            })
-            .where(eq(urls.id, id));
+          await pool.query(`
+            UPDATE urls
+            SET 
+              clicks = clicks + $1,
+              status = 'completed',
+              updated_at = $2
+            WHERE id = $3
+          `, [pendingCount, new Date(), id]);
         }
       } else {
         // Standard update for non-completed URLs
-        await db
-          .update(urls)
-          .set({ 
-            clicks: sql`${urls.clicks} + ${pendingCount}`,
-            status: sql`${urls.status}`,
-            updatedAt: new Date() 
-          })
-          .where(eq(urls.id, id));
+        await pool.query(`
+          UPDATE urls
+          SET 
+            clicks = clicks + $1,
+            updated_at = $2
+          WHERE id = $3
+        `, [pendingCount, new Date(), id]);
       }
       
       // Reset pending count
@@ -1551,8 +1686,13 @@ export class DatabaseStorage implements IStorage {
           
           try {
             if (isCompleted) {
-              // First get the URL to check if we need to sync with original record
-              const [urlInfo] = await db.select().from(urls).where(eq(urls.id, id));
+              // First get the URL to check if we need to sync with original record using standard PostgreSQL
+              const urlInfoResult = await pool.query(`
+                SELECT * FROM urls
+                WHERE id = $1
+              `, [id]);
+              
+              const urlInfo = urlInfoResult.rows[0];
               const needsStatusSync = urlInfo && urlInfo.status !== 'completed';
               
               // If URL is completed, use our updateUrlStatus method which handles
@@ -1560,13 +1700,13 @@ export class DatabaseStorage implements IStorage {
               await this.updateUrlStatus(id, 'completed');
               
               // Also update the click count (updateUrlStatus only updates status and campaignId)
-              await db
-                .update(urls)
-                .set({
-                  clicks: sql`${urls.clicks} + ${pendingCount}`,
-                  updatedAt: new Date()
-                })
-                .where(eq(urls.id, id));
+              await pool.query(`
+                UPDATE urls
+                SET 
+                  clicks = clicks + $1,
+                  updated_at = $2
+                WHERE id = $3
+              `, [pendingCount, new Date(), id]);
                 
               // CRITICAL FIX: Sync status to original record
               if (needsStatusSync && urlInfo?.name) {
@@ -1578,26 +1718,26 @@ export class DatabaseStorage implements IStorage {
                 }
               }
             } else {
-              // Standard update for non-completed URLs
-              await db
-                .update(urls)
-                .set({
-                  clicks: sql`${urls.clicks} + ${pendingCount}`,
-                  status: sql`${urls.status}`,
-                  updatedAt: new Date()
-                })
-                .where(eq(urls.id, id));
+              // Standard update for non-completed URLs using standard PostgreSQL
+              await pool.query(`
+                UPDATE urls
+                SET 
+                  clicks = clicks + $1,
+                  updated_at = $2
+                WHERE id = $3
+              `, [pendingCount, new Date(), id]);
             }
             
             // Reset the pending count
             this.pendingClickUpdates.set(id, 0);
             
             // Get the latest version from DB to keep cache in sync
-            const [updatedUrl] = await db
-              .select()
-              .from(urls)
-              .where(eq(urls.id, id));
+            const updatedUrlResult = await pool.query(`
+              SELECT * FROM urls
+              WHERE id = $1
+            `, [id]);
               
+            const updatedUrl = updatedUrlResult.rows[0];
             if (updatedUrl) {
               // Update cache with fresh data
               this.urlCache.set(id, {
@@ -1606,8 +1746,8 @@ export class DatabaseStorage implements IStorage {
               });
               
               // Invalidate campaign cache
-              if (updatedUrl.campaignId) {
-                this.invalidateCampaignCache(updatedUrl.campaignId);
+              if (updatedUrl.campaign_id) {
+                this.invalidateCampaignCache(updatedUrl.campaign_id);
               }
             }
           } catch (error) {
@@ -1736,18 +1876,16 @@ export class DatabaseStorage implements IStorage {
     // Clear direct URL cache entry
     this.urlCache.delete(urlId);
     
-    // Find the URL's campaign ID from the database if possible
-    db.select({
-      id: urls.id,
-      campaignId: urls.campaignId
-    })
-    .from(urls)
-    .where(eq(urls.id, urlId))
-    .then(results => {
-      if (results.length > 0 && results[0].campaignId) {
+    // Find the URL's campaign ID from the database if possible using standard PostgreSQL
+    pool.query(`
+      SELECT id, campaign_id FROM urls
+      WHERE id = $1
+    `, [urlId])
+    .then(result => {
+      if (result.rows.length > 0 && result.rows[0].campaign_id) {
         // Also invalidate the campaign cache
-        console.log(`🧹 URL #${urlId} belongs to campaign #${results[0].campaignId} - invalidating campaign cache`);
-        this.invalidateCampaignCache(results[0].campaignId);
+        console.log(`🧹 URL #${urlId} belongs to campaign #${result.rows[0].campaign_id} - invalidating campaign cache`);
+        this.invalidateCampaignCache(result.rows[0].campaign_id);
       }
     })
     .catch(err => {
@@ -1802,7 +1940,7 @@ export class DatabaseStorage implements IStorage {
         RETURNING *
       `, [status, originalRecord.id]);
       
-      const success = result && result.rowCount > 0;
+      const success = result && result.rowCount && result.rowCount > 0;
       
       if (success) {
         console.log(`✅ Successfully updated Original URL Record #${originalRecord.id} status from "${originalRecord.status || 'none'}" to "${status}"`);
@@ -1848,9 +1986,9 @@ export class DatabaseStorage implements IStorage {
     
     // When a URL is completed, we need to remove it from the campaign
     if (status === 'completed') {
-      if (url?.campaignId) {
+      if (url?.campaign_id) {
         // Store the campaign ID before removing it
-        const campaignId = url.campaignId;
+        const campaignId = url.campaign_id;
         
         // Update the URL using standard PostgreSQL: set status to completed and remove from campaign (set campaignId to null)
         const result = await pool.query(`
@@ -1900,8 +2038,8 @@ export class DatabaseStorage implements IStorage {
       updatedUrl = updatedUrlRow;
       
       // Get the URL to find its campaign ID
-      if (url?.campaignId) {
-        this.invalidateCampaignCache(url.campaignId);
+      if (url?.campaign_id) {
+        this.invalidateCampaignCache(url.campaign_id);
       }
     }
     
@@ -1930,14 +2068,14 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Count original URL records
-      const originalRecordsResult = await db.select({ count: sql`count(*)` }).from(originalUrlRecords);
-      const originalRecordsCount = Number(originalRecordsResult[0]?.count || 0);
+      const originalRecordsResult = await pool.query(`SELECT COUNT(*) FROM original_url_records`);
+      const originalRecordsCount = Number(originalRecordsResult.rows[0]?.count || 0);
       
       // Count YouTube URL records (if exists)
       let youtubeUrlRecordsCount = 0;
       try {
-        const youtubeRecordsResult = await db.execute(sql`SELECT COUNT(*) FROM youtube_url_records`);
-        youtubeUrlRecordsCount = Number(youtubeRecordsResult.rows?.[0]?.count || 0);
+        const youtubeRecordsResult = await pool.query(`SELECT COUNT(*) FROM youtube_url_records`);
+        youtubeUrlRecordsCount = Number(youtubeRecordsResult.rows[0]?.count || 0);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No youtube_url_records table found or unable to count records`);
       }
@@ -1945,8 +2083,8 @@ export class DatabaseStorage implements IStorage {
       // Count TrafficStar campaigns (if exists)
       let trafficstarCampaignsCount = 0;
       try {
-        const trafficstarResult = await db.execute(sql`SELECT COUNT(*) FROM trafficstar_campaigns`);
-        trafficstarCampaignsCount = Number(trafficstarResult.rows?.[0]?.count || 0);
+        const trafficstarResult = await pool.query(`SELECT COUNT(*) FROM trafficstar_campaigns`);
+        trafficstarCampaignsCount = Number(trafficstarResult.rows[0]?.count || 0);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No trafficstar_campaigns table found or unable to count records`);
       }
@@ -1954,8 +2092,8 @@ export class DatabaseStorage implements IStorage {
       // Count URL budget logs (if exists)
       let urlBudgetLogsCount = 0;
       try {
-        const urlBudgetLogsResult = await db.execute(sql`SELECT COUNT(*) FROM url_budget_logs`);
-        urlBudgetLogsCount = Number(urlBudgetLogsResult.rows?.[0]?.count || 0);
+        const urlBudgetLogsResult = await pool.query(`SELECT COUNT(*) FROM url_budget_logs`);
+        urlBudgetLogsCount = Number(urlBudgetLogsResult.rows[0]?.count || 0);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_budget_logs table found or unable to count records`);
       }
@@ -1963,8 +2101,8 @@ export class DatabaseStorage implements IStorage {
       // Count URL click records
       let urlClickRecordsCount = 0;
       try {
-        const urlClickRecordsResult = await db.execute(sql`SELECT COUNT(*) FROM url_click_records`);
-        urlClickRecordsCount = Number(urlClickRecordsResult.rows?.[0]?.count || 0);
+        const urlClickRecordsResult = await pool.query(`SELECT COUNT(*) FROM url_click_records`);
+        urlClickRecordsCount = Number(urlClickRecordsResult.rows[0]?.count || 0);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_click_records table found or unable to count records`);
       }
@@ -1972,8 +2110,8 @@ export class DatabaseStorage implements IStorage {
       // Count campaign click records
       let campaignClickRecordsCount = 0;
       try {
-        const campaignClickRecordsResult = await db.execute(sql`SELECT COUNT(*) FROM campaign_click_records`);
-        campaignClickRecordsCount = Number(campaignClickRecordsResult.rows?.[0]?.count || 0);
+        const campaignClickRecordsResult = await pool.query(`SELECT COUNT(*) FROM campaign_click_records`);
+        campaignClickRecordsCount = Number(campaignClickRecordsResult.rows[0]?.count || 0);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No campaign_click_records table found or unable to count records`);
       }
@@ -1981,8 +2119,8 @@ export class DatabaseStorage implements IStorage {
       // Count URL click logs
       let urlClickLogsCount = 0;
       try {
-        const urlClickLogsResult = await db.execute(sql`SELECT COUNT(*) FROM url_click_logs`);
-        urlClickLogsCount = Number(urlClickLogsResult.rows?.[0]?.count || 0);
+        const urlClickLogsResult = await pool.query(`SELECT COUNT(*) FROM url_click_logs`);
+        urlClickLogsCount = Number(urlClickLogsResult.rows[0]?.count || 0);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_click_logs table found or unable to count records`);
       }
@@ -2003,7 +2141,7 @@ export class DatabaseStorage implements IStorage {
       
       // 1. First delete child records linked to URLs
       try {
-        await db.execute(sql`DELETE FROM url_click_records`);
+        await pool.query(`DELETE FROM url_click_records`);
         console.log(`✅ SYSTEM RESET: Deleted all URL click records (${urlClickRecordsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_click_records table found or nothing to delete`);
@@ -2011,7 +2149,7 @@ export class DatabaseStorage implements IStorage {
       
       // 1b. Delete URL click logs (file-based logs with FK references)
       try {
-        await db.execute(sql`DELETE FROM url_click_logs`);
+        await pool.query(`DELETE FROM url_click_logs`);
         console.log(`✅ SYSTEM RESET: Deleted all URL click logs (${urlClickLogsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_click_logs table found or nothing to delete: ${error.message}`);
@@ -2019,7 +2157,7 @@ export class DatabaseStorage implements IStorage {
       
       // 2. Delete campaign click records
       try {
-        await db.execute(sql`DELETE FROM campaign_click_records`);
+        await pool.query(`DELETE FROM campaign_click_records`);
         console.log(`✅ SYSTEM RESET: Deleted all campaign click records (${campaignClickRecordsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No campaign_click_records table found or nothing to delete`);
@@ -2027,7 +2165,7 @@ export class DatabaseStorage implements IStorage {
       
       // 3. Delete URL budget logs
       try {
-        await db.execute(sql`DELETE FROM url_budget_logs`);
+        await pool.query(`DELETE FROM url_budget_logs`);
         console.log(`✅ SYSTEM RESET: Deleted all URL budget logs (${urlBudgetLogsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No url_budget_logs table found or nothing to delete`);
@@ -2035,23 +2173,23 @@ export class DatabaseStorage implements IStorage {
       
       // 4. Delete YouTube URL records
       try {
-        await db.execute(sql`DELETE FROM youtube_url_records`);
+        await pool.query(`DELETE FROM youtube_url_records`);
         console.log(`✅ SYSTEM RESET: Deleted all YouTube URL records (${youtubeUrlRecordsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No youtube_url_records table found or nothing to delete`);
       }
       
       // 5. Delete all URLs (to handle foreign key constraints)
-      await db.delete(urls);
+      await pool.query(`DELETE FROM urls`);
       console.log(`✅ SYSTEM RESET: Deleted all URLs (${totalUrls} records)`);
       
       // 6. Delete all original URL records
-      await db.delete(originalUrlRecords);
+      await pool.query(`DELETE FROM original_url_records`);
       console.log(`✅ SYSTEM RESET: Deleted all original URL records (${originalRecordsCount} records)`);
       
       // 7. Delete TrafficStar campaigns
       try {
-        await db.execute(sql`DELETE FROM trafficstar_campaigns`);
+        await pool.query(`DELETE FROM trafficstar_campaigns`);
         console.log(`✅ SYSTEM RESET: Deleted all TrafficStar campaigns (${trafficstarCampaignsCount} records)`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No trafficstar_campaigns table found or nothing to delete`);
@@ -2059,19 +2197,19 @@ export class DatabaseStorage implements IStorage {
       
       // First delete gmail_campaign_assignments to resolve foreign key constraints
       try {
-        await db.execute(sql`DELETE FROM gmail_campaign_assignments`);
+        await pool.query(`DELETE FROM gmail_campaign_assignments`);
         console.log(`✅ SYSTEM RESET: Deleted all Gmail campaign assignments`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No gmail_campaign_assignments table found or nothing to delete`);
       }
       
       // 8. Delete all campaigns
-      await db.delete(campaigns);
+      await pool.query(`DELETE FROM campaigns`);
       console.log(`✅ SYSTEM RESET: Deleted all campaigns (${allCampaigns.length} records)`);
       
       // 9. Also delete protection settings if they exist
       try {
-        await db.execute(sql`DELETE FROM protection_settings`);
+        await pool.query(`DELETE FROM protection_settings`);
         console.log(`✅ SYSTEM RESET: Deleted all protection settings`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No protection_settings table found or nothing to delete`);
@@ -2079,7 +2217,7 @@ export class DatabaseStorage implements IStorage {
       
       // 10. Delete pending budget updates if they exist
       try {
-        await db.execute(sql`DELETE FROM pending_url_budget_updates`);
+        await pool.query(`DELETE FROM pending_url_budget_updates`);
         console.log(`✅ SYSTEM RESET: Deleted all pending URL budget updates`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No pending_url_budget_updates table found or nothing to delete`);
@@ -2087,7 +2225,7 @@ export class DatabaseStorage implements IStorage {
       
       // 11. Delete sessions table data if it exists
       try {
-        await db.execute(sql`DELETE FROM sessions`);
+        await pool.query(`DELETE FROM sessions`);
         console.log(`✅ SYSTEM RESET: Deleted all session data`);
       } catch (error) {
         console.log(`ℹ️ SYSTEM RESET: No sessions table found or nothing to delete`);
@@ -2110,20 +2248,20 @@ export class DatabaseStorage implements IStorage {
       console.log(`🔄 SYSTEM RESET: Resetting all database sequences to start from 1...`);
       try {
         // Reset URLs sequence
-        await db.execute(sql`ALTER SEQUENCE urls_id_seq RESTART WITH 1`);
+        await pool.query(`ALTER SEQUENCE urls_id_seq RESTART WITH 1`);
         console.log(`✅ SYSTEM RESET: Reset URLs sequence to start from ID 1`);
         
         // Reset campaigns sequence  
-        await db.execute(sql`ALTER SEQUENCE campaigns_id_seq RESTART WITH 1`);
+        await pool.query(`ALTER SEQUENCE campaigns_id_seq RESTART WITH 1`);
         console.log(`✅ SYSTEM RESET: Reset campaigns sequence to start from ID 1`);
         
         // Reset original URL records sequence
-        await db.execute(sql`ALTER SEQUENCE original_url_records_id_seq RESTART WITH 1`);
+        await pool.query(`ALTER SEQUENCE original_url_records_id_seq RESTART WITH 1`);
         console.log(`✅ SYSTEM RESET: Reset original URL records sequence to start from ID 1`);
         
         // Reset YouTube URL records sequence
         try {
-          await db.execute(sql`ALTER SEQUENCE youtube_url_records_id_seq RESTART WITH 1`);
+          await pool.query(`ALTER SEQUENCE youtube_url_records_id_seq RESTART WITH 1`);
           console.log(`✅ SYSTEM RESET: Reset YouTube URL records sequence to start from ID 1`);
         } catch (error) {
           console.log(`ℹ️ SYSTEM RESET: No YouTube URL records sequence found to reset`);
@@ -2131,7 +2269,7 @@ export class DatabaseStorage implements IStorage {
         
         // Reset TrafficStar campaigns sequence
         try {
-          await db.execute(sql`ALTER SEQUENCE trafficstar_campaigns_id_seq RESTART WITH 1`);
+          await pool.query(`ALTER SEQUENCE trafficstar_campaigns_id_seq RESTART WITH 1`);
           console.log(`✅ SYSTEM RESET: Reset TrafficStar campaigns sequence to start from ID 1`);
         } catch (error) {
           console.log(`ℹ️ SYSTEM RESET: No TrafficStar campaigns sequence found to reset`);
@@ -2139,7 +2277,7 @@ export class DatabaseStorage implements IStorage {
         
         // Reset URL click records sequence
         try {
-          await db.execute(sql`ALTER SEQUENCE url_click_records_id_seq RESTART WITH 1`);
+          await pool.query(`ALTER SEQUENCE url_click_records_id_seq RESTART WITH 1`);
           console.log(`✅ SYSTEM RESET: Reset URL click records sequence to start from ID 1`);
         } catch (error) {
           console.log(`ℹ️ SYSTEM RESET: No URL click records sequence found to reset`);
@@ -2147,7 +2285,7 @@ export class DatabaseStorage implements IStorage {
         
         // Reset campaign click records sequence
         try {
-          await db.execute(sql`ALTER SEQUENCE campaign_click_records_id_seq RESTART WITH 1`);
+          await pool.query(`ALTER SEQUENCE campaign_click_records_id_seq RESTART WITH 1`);
           console.log(`✅ SYSTEM RESET: Reset campaign click records sequence to start from ID 1`);
         } catch (error) {
           console.log(`ℹ️ SYSTEM RESET: No campaign click records sequence found to reset`);
