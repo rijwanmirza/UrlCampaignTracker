@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { urlClickLogsManager, timeRangeFilterSchema } from "./url-click-logs-manager";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
-import { urls } from "@shared/schema";
+import { pool } from "./db";
 
 /**
  * Register URL click routes with the Express app
@@ -54,8 +52,9 @@ export function registerUrlClickRoutes(app: any) {
         });
       }
       
-      // Get all URLs
-      const allUrls = await db.query.urls.findMany();
+      // Get all URLs using standard PostgreSQL
+      const urlsResult = await pool.query('SELECT * FROM urls');
+      const allUrls = urlsResult.rows;
       
       // Fetch analytics for each URL
       const urlBreakdown = [];
