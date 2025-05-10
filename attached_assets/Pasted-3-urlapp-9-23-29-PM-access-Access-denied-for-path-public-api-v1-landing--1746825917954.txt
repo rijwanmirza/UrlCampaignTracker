@@ -1,0 +1,833 @@
+3|urlapp   | 9:23:29 PM [access] Access denied for path: /public/api/v1/landing/                                                                             not_integrated - no valid session or API key
+3|urlapp   | 9:23:29 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:29 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+3|urlapp   | 9:23:29 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:29 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+3|urlapp   | 9:23:30 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:30 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+3|urlapp   | 9:23:30 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:30 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+3|urlapp   | 9:23:30 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:30 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+3|urlapp   | 9:23:30 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:30 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+3|urlapp   | 9:23:30 PM [access] Access check for path: /public/api/v1/info/land                                                                             ing
+3|urlapp   | 9:23:30 PM [access] Access denied for path: /public/api/v1/info/lan                                                                             ding - no valid session or API key
+
+3|urlapp  | 9:23:41 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:41 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:41 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:41 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:42 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:42 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:42 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:42 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:42 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:42 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:42 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:42 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:42 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:42 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:43 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:43 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:43 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:43 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:43 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:43 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:43 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:43 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:44 PM [access] Access check for path: /public/api/v1/landing/no                                                                             t_integrated
+3|urlapp  | 9:23:44 PM [access] Access denied for path: /public/api/v1/landing/n                                                                             ot_integrated - no valid session or API key
+3|urlapp  | 9:23:44 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:44 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:44 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:44 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:44 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:44 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:44 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:44 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:45 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:45 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:45 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:45 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:45 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:45 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:45 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:45 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:45 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:45 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:46 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:46 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:46 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:46 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:46 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:46 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:46 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:46 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:47 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:47 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:47 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:47 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:47 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:47 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:47 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:47 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:47 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:47 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:48 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:48 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:48 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:48 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:48 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:48 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:48 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:23:48 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:23:49 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:49 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:23:49 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:49 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:23:49 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:49 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:23:49 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:49 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:23:50 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:50 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:23:50 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:50 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:23:50 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:23:50 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:02 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:02 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:02 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:02 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:02 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:02 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:03 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:03 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:03 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:03 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:03 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:03 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:03 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:03 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:04 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:04 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:04 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:04 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:04 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:04 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:04 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:04 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:04 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:04 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:05 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:05 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:05 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:05 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:05 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:05 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:05 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:05 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:06 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:06 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:06 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:06 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:06 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:06 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:06 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:06 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:06 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:06 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:07 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:07 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:07 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:07 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:07 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:07 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:07 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:07 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:08 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:08 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:08 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:08 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:08 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:08 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:08 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:08 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:08 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:08 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:09 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:09 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:09 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:09 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:09 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:09 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:09 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:09 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:10 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:10 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:10 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:10 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:10 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:10 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:11 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:11 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:11 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:11 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:11 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:11 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:11 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:11 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:22 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:22 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:22 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:22 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:22 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:22 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:23 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:23 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:23 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:23 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:23 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:23 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:23 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:23 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:23 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:23 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:24 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:24 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:24 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:24 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | OS module CPU info: {
+3|urlapp  |   "cpus": [
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 2968,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 10090,
+3|urlapp  |         "nice": 420,
+3|urlapp  |         "sys": 9820,
+3|urlapp  |         "idle": 5973840,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 2884,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 51470,
+3|urlapp  |         "nice": 8760,
+3|urlapp  |         "sys": 49710,
+3|urlapp  |         "idle": 5831650,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 2977,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 6880,
+3|urlapp  |         "nice": 610,
+3|urlapp  |         "sys": 14330,
+3|urlapp  |         "idle": 5973540,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 2992,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 3120,
+3|urlapp  |         "nice": 170,
+3|urlapp  |         "sys": 7630,
+3|urlapp  |         "idle": 5991420,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 2994,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 9830,
+3|urlapp  |         "nice": 730,
+3|urlapp  |         "sys": 12340,
+3|urlapp  |         "idle": 5970210,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 5080,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 42290,
+3|urlapp  |         "nice": 9880,
+3|urlapp  |         "sys": 44790,
+3|urlapp  |         "idle": 5835380,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 3148,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 8040,
+3|urlapp  |         "nice": 550,
+3|urlapp  |         "sys": 15970,
+3|urlapp  |         "idle": 5970590,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 3315,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 2890,
+3|urlapp  |         "nice": 110,
+3|urlapp  |         "sys": 7870,
+3|urlapp  |         "idle": 5990620,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 4620,
+3|urlapp  |         "nice": 70,
+3|urlapp  |         "sys": 7130,
+3|urlapp  |         "idle": 5990140,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 23360,
+3|urlapp  |         "nice": 3750,
+3|urlapp  |         "sys": 28340,
+3|urlapp  |         "idle": 5921480,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 2944,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 1680,
+3|urlapp  |         "nice": 160,
+3|urlapp  |         "sys": 8030,
+3|urlapp  |         "idle": 5989200,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 1150,
+3|urlapp  |         "nice": 20,
+3|urlapp  |         "sys": 4960,
+3|urlapp  |         "idle": 5999030,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 2070,
+3|urlapp  |         "nice": 40,
+3|urlapp  |         "sys": 4390,
+3|urlapp  |         "idle": 5997130,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 27300,
+3|urlapp  |         "nice": 3140,
+3|urlapp  |         "sys": 17910,
+3|urlapp  |         "idle": 5932910,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 1960,
+3|urlapp  |         "nice": 200,
+3|urlapp  |         "sys": 7080,
+3|urlapp  |         "idle": 5993090,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "model": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |       "speed": 400,
+3|urlapp  |       "times": {
+3|urlapp  |         "user": 1110,
+3|urlapp  |         "nice": 50,
+3|urlapp  |         "sys": 4520,
+3|urlapp  |         "idle": 5999440,
+3|urlapp  |         "irq": 0
+3|urlapp  |       }
+3|urlapp  |     }
+3|urlapp  |   ],
+3|urlapp  |   "cpuCount": 16,
+3|urlapp  |   "arch": "x64",
+3|urlapp  |   "platform": "linux",
+3|urlapp  |   "osType": "Linux",
+3|urlapp  |   "totalMemory": 66490068992,
+3|urlapp  |   "freeMemory": 64978206720
+3|urlapp  | }
+3|urlapp  | Using OS module CPU info: {
+3|urlapp  |   "manufacturer": "AMD",
+3|urlapp  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |   "speed": 2.914,
+3|urlapp  |   "cores": 16,
+3|urlapp  |   "physicalCores": 8
+3|urlapp  | }
+3|urlapp  | Load average data: {
+3|urlapp  |   "avgLoad": 0.01,
+3|urlapp  |   "currentLoad": 0.23911953888564028,
+3|urlapp  |   "currentLoadUser": 0.06473978782056636,
+3|urlapp  |   "currentLoadSystem": 0.13156795589340908,
+3|urlapp  |   "currentLoadNice": 0.042811795171664856,
+3|urlapp  |   "currentLoadIdle": 99.76088046111437,
+3|urlapp  |   "currentLoadIrq": 0,
+3|urlapp  |   "currentLoadSteal": 0,
+3|urlapp  |   "currentLoadGuest": 0,
+3|urlapp  |   "rawCurrentLoad": 2290,
+3|urlapp  |   "rawCurrentLoadUser": 620,
+3|urlapp  |   "rawCurrentLoadSystem": 1260,
+3|urlapp  |   "rawCurrentLoadNice": 410,
+3|urlapp  |   "rawCurrentLoadIdle": 955390,
+3|urlapp  |   "rawCurrentLoadIrq": 0,
+3|urlapp  |   "rawCurrentLoadSteal": 0,
+3|urlapp  |   "rawCurrentLoadGuest": 0,
+3|urlapp  |   "cpus": [
+3|urlapp  |     {
+3|urlapp  |       "load": 0.11699816145746281,
+3|urlapp  |       "loadUser": 0.033428046130703666,
+3|urlapp  |       "loadSystem": 0.06685609226140733,
+3|urlapp  |       "loadNice": 0.016714023065351833,
+3|urlapp  |       "loadIdle": 99.88300183854254,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 70,
+3|urlapp  |       "rawLoadUser": 20,
+3|urlapp  |       "rawLoadSystem": 40,
+3|urlapp  |       "rawLoadNice": 10,
+3|urlapp  |       "rawLoadIdle": 59760,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 1.6028344862493673,
+3|urlapp  |       "loadUser": 0.45554243293403074,
+3|urlapp  |       "loadSystem": 0.8098532141049435,
+3|urlapp  |       "loadNice": 0.33743883921039314,
+3|urlapp  |       "loadIdle": 98.39716551375062,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 950,
+3|urlapp  |       "rawLoadUser": 270,
+3|urlapp  |       "rawLoadSystem": 480,
+3|urlapp  |       "rawLoadNice": 200,
+3|urlapp  |       "rawLoadIdle": 58320,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.2504591751544498,
+3|urlapp  |       "loadUser": 0.08348639171814994,
+3|urlapp  |       "loadSystem": 0.1502755050926699,
+3|urlapp  |       "loadNice": 0.01669727834362999,
+3|urlapp  |       "loadIdle": 99.74954082484555,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 150,
+3|urlapp  |       "rawLoadUser": 50,
+3|urlapp  |       "rawLoadSystem": 90,
+3|urlapp  |       "rawLoadNice": 10,
+3|urlapp  |       "rawLoadIdle": 59740,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.08336112037345782,
+3|urlapp  |       "loadUser": 0.03334444814938312,
+3|urlapp  |       "loadSystem": 0.03334444814938312,
+3|urlapp  |       "loadNice": 0.01667222407469156,
+3|urlapp  |       "loadIdle": 99.91663887962655,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 50,
+3|urlapp  |       "rawLoadUser": 20,
+3|urlapp  |       "rawLoadSystem": 20,
+3|urlapp  |       "rawLoadNice": 10,
+3|urlapp  |       "rawLoadIdle": 59930,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.16739203213927017,
+3|urlapp  |       "loadUser": 0.05021760964178105,
+3|urlapp  |       "loadSystem": 0.08369601606963509,
+3|urlapp  |       "loadNice": 0.03347840642785404,
+3|urlapp  |       "loadIdle": 99.83260796786072,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 100,
+3|urlapp  |       "rawLoadUser": 30,
+3|urlapp  |       "rawLoadSystem": 50,
+3|urlapp  |       "rawLoadNice": 20,
+3|urlapp  |       "rawLoadIdle": 59640,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 1.1643604454944314,
+3|urlapp  |       "loadUser": 0.23624704691191362,
+3|urlapp  |       "loadSystem": 0.6749915626054674,
+3|urlapp  |       "loadNice": 0.2531218359770503,
+3|urlapp  |       "loadIdle": 98.83563955450558,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 690,
+3|urlapp  |       "rawLoadUser": 140,
+3|urlapp  |       "rawLoadSystem": 400,
+3|urlapp  |       "rawLoadNice": 150,
+3|urlapp  |       "rawLoadIdle": 58570,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.1668613382279326,
+3|urlapp  |       "loadUser": 0.06674453529117304,
+3|urlapp  |       "loadSystem": 0.0834306691139663,
+3|urlapp  |       "loadNice": 0.01668613382279326,
+3|urlapp  |       "loadIdle": 99.83313866177207,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 100,
+3|urlapp  |       "rawLoadUser": 40,
+3|urlapp  |       "rawLoadSystem": 50,
+3|urlapp  |       "rawLoadNice": 10,
+3|urlapp  |       "rawLoadIdle": 59830,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.0500417014178482,
+3|urlapp  |       "loadUser": 0.03336113427856547,
+3|urlapp  |       "loadSystem": 0.016680567139282735,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.94995829858215,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 30,
+3|urlapp  |       "rawLoadUser": 20,
+3|urlapp  |       "rawLoadSystem": 10,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59920,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.016677785190126748,
+3|urlapp  |       "loadUser": 0,
+3|urlapp  |       "loadSystem": 0.016677785190126748,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.98332221480987,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 10,
+3|urlapp  |       "rawLoadUser": 0,
+3|urlapp  |       "rawLoadSystem": 10,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59950,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.033355570380253496,
+3|urlapp  |       "loadUser": 0.016677785190126748,
+3|urlapp  |       "loadSystem": 0.016677785190126748,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.96664442961975,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 20,
+3|urlapp  |       "rawLoadUser": 10,
+3|urlapp  |       "rawLoadSystem": 10,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59940,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.01667222407469156,
+3|urlapp  |       "loadUser": 0.01667222407469156,
+3|urlapp  |       "loadSystem": 0,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.98332777592532,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 10,
+3|urlapp  |       "rawLoadUser": 10,
+3|urlapp  |       "rawLoadSystem": 0,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59970,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.01666944490748458,
+3|urlapp  |       "loadUser": 0,
+3|urlapp  |       "loadSystem": 0.01666944490748458,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.98333055509252,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 10,
+3|urlapp  |       "rawLoadUser": 0,
+3|urlapp  |       "rawLoadSystem": 10,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59980,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.01667222407469156,
+3|urlapp  |       "loadUser": 0.01667222407469156,
+3|urlapp  |       "loadSystem": 0,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.98332777592532,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 10,
+3|urlapp  |       "rawLoadUser": 10,
+3|urlapp  |       "rawLoadSystem": 0,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59970,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.13333333333333333,
+3|urlapp  |       "loadUser": 0,
+3|urlapp  |       "loadSystem": 0.13333333333333333,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.86666666666667,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 80,
+3|urlapp  |       "rawLoadUser": 0,
+3|urlapp  |       "rawLoadSystem": 80,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59920,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0.01666944490748458,
+3|urlapp  |       "loadUser": 0,
+3|urlapp  |       "loadSystem": 0.01666944490748458,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 99.98333055509252,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 10,
+3|urlapp  |       "rawLoadUser": 0,
+3|urlapp  |       "rawLoadSystem": 10,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59980,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     },
+3|urlapp  |     {
+3|urlapp  |       "load": 0,
+3|urlapp  |       "loadUser": 0,
+3|urlapp  |       "loadSystem": 0,
+3|urlapp  |       "loadNice": 0,
+3|urlapp  |       "loadIdle": 100,
+3|urlapp  |       "loadIrq": 0,
+3|urlapp  |       "rawLoad": 0,
+3|urlapp  |       "rawLoadUser": 0,
+3|urlapp  |       "rawLoadSystem": 0,
+3|urlapp  |       "rawLoadNice": 0,
+3|urlapp  |       "rawLoadIdle": 59970,
+3|urlapp  |       "rawLoadIrq": 0,
+3|urlapp  |       "rawLoadSteal": 0,
+3|urlapp  |       "rawLoadGuest": 0
+3|urlapp  |     }
+3|urlapp  |   ]
+3|urlapp  | }
+3|urlapp  | OS load averages: linux [ 0.01, 0.08, 0.12 ]
+3|urlapp  | ========== SYSTEM LOAD CALCULATION ==========
+3|urlapp  | Raw OS load averages: [0.01,0.08,0.12]
+3|urlapp  | Using 1-minute load average: 0.01
+3|urlapp  | CPU Info raw length: 16
+3|urlapp  | Number of CPUs detected: 16
+3|urlapp  | SI current load data: {"avgLoad":0.01,"currentLoad":0.23911953888564028,"currentLoadUser":0.06473978782056636,"currentLoadSystem":0.13156795589340908,"currentLoadNice":0.042811795171664856,"currentLoadIdle":99.76088046111437,"currentLoadIrq":0,"currentLoadSteal":0,"currentLoadGuest":0,"rawCurrentLoad":2290,"rawCurrentLoadUser":620,"rawCurrentLoadSystem":1260,"rawCurrentLoadNice":410,"rawCurrentLoadIdle":955390,"rawCurrentLoadIrq":0,"rawCurrentLoadSteal":0,"rawCurrentLoadGuest":0,"cpus":[{"load":0.11699816145746281,"loadUser":0.033428046130703666,"loadSystem":0.06685609226140733,"loadNice":0.016714023065351833,"loadIdle":99.88300183854254,"loadIrq":0,"rawLoad":70,"rawLoadUser":20,"rawLoadSystem":40,"rawLoadNice":10,"rawLoadIdle":59760,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":1.6028344862493673,"loadUser":0.45554243293403074,"loadSystem":0.8098532141049435,"loadNice":0.33743883921039314,"loadIdle":98.39716551375062,"loadIrq":0,"rawLoad":950,"rawLoadUser":270,"rawLoadSystem":480,"rawLoadNice":200,"rawLoadIdle":58320,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.2504591751544498,"loadUser":0.08348639171814994,"loadSystem":0.1502755050926699,"loadNice":0.01669727834362999,"loadIdle":99.74954082484555,"loadIrq":0,"rawLoad":150,"rawLoadUser":50,"rawLoadSystem":90,"rawLoadNice":10,"rawLoadIdle":59740,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.08336112037345782,"loadUser":0.03334444814938312,"loadSystem":0.03334444814938312,"loadNice":0.01667222407469156,"loadIdle":99.91663887962655,"loadIrq":0,"rawLoad":50,"rawLoadUser":20,"rawLoadSystem":20,"rawLoadNice":10,"rawLoadIdle":59930,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.16739203213927017,"loadUser":0.05021760964178105,"loadSystem":0.08369601606963509,"loadNice":0.03347840642785404,"loadIdle":99.83260796786072,"loadIrq":0,"rawLoad":100,"rawLoadUser":30,"rawLoadSystem":50,"rawLoadNice":20,"rawLoadIdle":59640,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":1.1643604454944314,"loadUser":0.23624704691191362,"loadSystem":0.6749915626054674,"loadNice":0.2531218359770503,"loadIdle":98.83563955450558,"loadIrq":0,"rawLoad":690,"rawLoadUser":140,"rawLoadSystem":400,"rawLoadNice":150,"rawLoadIdle":58570,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.1668613382279326,"loadUser":0.06674453529117304,"loadSystem":0.0834306691139663,"loadNice":0.01668613382279326,"loadIdle":99.83313866177207,"loadIrq":0,"rawLoad":100,"rawLoadUser":40,"rawLoadSystem":50,"rawLoadNice":10,"rawLoadIdle":59830,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.0500417014178482,"loadUser":0.03336113427856547,"loadSystem":0.016680567139282735,"loadNice":0,"loadIdle":99.94995829858215,"loadIrq":0,"rawLoad":30,"rawLoadUser":20,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59920,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.016677785190126748,"loadUser":0,"loadSystem":0.016677785190126748,"loadNice":0,"loadIdle":99.98332221480987,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59950,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.033355570380253496,"loadUser":0.016677785190126748,"loadSystem":0.016677785190126748,"loadNice":0,"loadIdle":99.96664442961975,"loadIrq":0,"rawLoad":20,"rawLoadUser":10,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59940,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01667222407469156,"loadUser":0.01667222407469156,"loadSystem":0,"loadNice":0,"loadIdle":99.98332777592532,"loadIrq":0,"rawLoad":10,"rawLoadUser":10,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59970,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01666944490748458,"loadUser":0,"loadSystem":0.01666944490748458,"loadNice":0,"loadIdle":99.98333055509252,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59980,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01667222407469156,"loadUser":0.01667222407469156,"loadSystem":0,"loadNice":0,"loadIdle":99.98332777592532,"loadIrq":0,"rawLoad":10,"rawLoadUser":10,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59970,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.13333333333333333,"loadUser":0,"loadSystem":0.13333333333333333,"loadNice":0,"loadIdle":99.86666666666667,"loadIrq":0,"rawLoad":80,"rawLoadUser":0,"rawLoadSystem":80,"rawLoadNice":0,"rawLoadIdle":59920,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0.01666944490748458,"loadUser":0,"loadSystem":0.01666944490748458,"loadNice":0,"loadIdle":99.98333055509252,"loadIrq":0,"rawLoad":10,"rawLoadUser":0,"rawLoadSystem":10,"rawLoadNice":0,"rawLoadIdle":59980,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0},{"load":0,"loadUser":0,"loadSystem":0,"loadNice":0,"loadIdle":100,"loadIrq":0,"rawLoad":0,"rawLoadUser":0,"rawLoadSystem":0,"rawLoadNice":0,"rawLoadIdle":59970,"rawLoadIrq":0,"rawLoadSteal":0,"rawLoadGuest":0}]}
+3|urlapp  | Initial calculated load value: 0.0625
+3|urlapp  | Applied minimum scaling factor for visibility: 1
+3|urlapp  | Final system load calculation (before fallbacks): 1
+3|urlapp  | FINAL SYSTEM LOAD VALUE TO DISPLAY: 1
+3|urlapp  | ===========================================
+3|urlapp  | Final CPU details being set: {
+3|urlapp  |   "manufacturer": "AMD",
+3|urlapp  |   "brand": "AMD Ryzen 7 PRO 8700GE w/ Radeon 780M Graphics",
+3|urlapp  |   "speed": 2.914,
+3|urlapp  |   "cores": 16,
+3|urlapp  |   "physicalCores": 8
+3|urlapp  | }
+3|urlapp  | OS information: {
+3|urlapp  |   "platform": "linux",
+3|urlapp  |   "distro": "Ubuntu",
+3|urlapp  |   "release": "24.04.2 LTS",
+3|urlapp  |   "codename": "noble",
+3|urlapp  |   "kernel": "6.11.0-17-generic",
+3|urlapp  |   "arch": "x64",
+3|urlapp  |   "hostname": "d026e9724",
+3|urlapp  |   "fqdn": "d026e9724.fastvps-server.com",
+3|urlapp  |   "codepage": "UTF-8",
+3|urlapp  |   "logofile": "ubuntu",
+3|urlapp  |   "serial": "ce7e3a89a48b499db8bbaaaabd9a4546",
+3|urlapp  |   "build": "",
+3|urlapp  |   "servicepack": "",
+3|urlapp  |   "uefi": true
+3|urlapp  | }
+3|urlapp  | 9:24:24 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:24 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:24 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:24 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:24 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:24 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:25 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:25 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:25 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:25 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:25 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:25 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:25 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:25 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:26 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:26 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:26 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:26 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:26 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:26 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:26 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:26 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:26 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:26 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:27 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:27 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:27 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:27 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:27 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:27 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:27 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:27 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:27 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:27 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:28 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:28 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:28 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:28 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:28 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:28 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:28 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:28 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:29 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:29 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:29 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:29 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:29 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:29 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:30 PM [access] Access check for path: /api/auth/logout
+3|urlapp  | 9:24:30 PM [auth] Clearing session on logout: emr3pdvdgel
+3|urlapp  | 9:24:30 PM [express] POST /api/auth/logout 200 in 1ms :: {"message":"Logout successful"}
+3|urlapp  | 9:24:30 PM [access] Access check for path: /login
+3|urlapp  | 9:24:30 PM [access] No valid session for login page
+3|urlapp  | 9:24:30 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:30 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:30 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:30 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:30 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:30 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:30 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:30 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:31 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:31 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:31 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:31 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:31 PM [access] Access check for path: /public/api/v1/info/landing
+3|urlapp  | 9:24:31 PM [access] Access denied for path: /public/api/v1/info/landing - no valid session or API key
+3|urlapp  | 9:24:38 PM [access] Access check for path: /access/ABCD123
+3|urlapp  | 9:24:38 PM [access] Generated temporary login path: /login_fr57ex98ueu for session: xflyliedeug
+3|urlapp  | 9:24:38 PM [access] Access granted with secret code, redirecting to temporary login path: login_fr57ex98ueu with session: xflyliedeug
+3|urlapp  | 9:24:38 PM [access] Access check for path: /login_fr57ex98ueu
+3|urlapp  | 9:24:38 PM [access] Temporary login path accessed: /login_fr57ex98ueu
+3|urlapp  | 9:24:38 PM [access] Serving login form for temporary path: /login_fr57ex98ueu with session: xflyliedeug
+3|urlapp  | 9:24:38 PM [access] Access check for path: /login_fr57ex98ueu
+3|urlapp  | 9:24:38 PM [access] Temporary login path accessed: /login_fr57ex98ueu
+3|urlapp  | 9:24:38 PM [access] Serving login form for temporary path: /login_fr57ex98ueu with session: xflyliedeug
+3|urlapp  | 9:24:42 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:42 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:42 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:42 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:42 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:42 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:42 PM [access] Access check for path: /public/api/v1/landing/not_integrated
+3|urlapp  | 9:24:42 PM [access] Access denied for path: /public/api/v1/landing/not_integrated - no valid session or API key
+3|urlapp  | 9:24:42 PM [access] Access check for path: /api/auth/verify-key
+3|urlapp  | Error getting API key: ErrorEvent {
+3|urlapp  |   [Symbol(kTarget)]: WebSocket {
+3|urlapp  |     _events: [Object: null prototype] {
+3|urlapp  |       error: [Function],
+3|urlapp  |       message: [Function],
+3|urlapp  |       close: [Function],
+3|urlapp  |       open: [Function]
+3|urlapp  |     },
+3|urlapp  |     _eventsCount: 4,
+3|urlapp  |     _maxListeners: undefined,
+3|urlapp  |     _binaryType: 'arraybuffer',
+3|urlapp  |     _closeCode: 1006,
+3|urlapp  |     _closeFrameReceived: false,
+3|urlapp  |     _closeFrameSent: false,
+3|urlapp  |     _closeMessage: <Buffer >,
+3|urlapp  |     _closeTimer: null,
+3|urlapp  |     _errorEmitted: true,
+3|urlapp  |     _extensions: {},
+3|urlapp  |     _paused: false,
+3|urlapp  |     _protocol: '',
+3|urlapp  |     _readyState: 3,
+3|urlapp  |     _receiver: null,
+3|urlapp  |     _sender: null,
+3|urlapp  |     _socket: null,
+3|urlapp  |     _bufferedAmount: 0,
+3|urlapp  |     _isServer: false,
+3|urlapp  |     _redirects: 0,
+3|urlapp  |     _autoPong: true,
+3|urlapp  |     _url: 'wss://localhost/v2',
+3|urlapp  |     _req: null,
+3|urlapp  |     [Symbol(shapeMode)]: false,
+3|urlapp  |     [Symbol(kCapture)]: false
+3|urlapp  |   },
+3|urlapp  |   [Symbol(kType)]: 'error',
+3|urlapp  |   [Symbol(kError)]: Error: connect ECONNREFUSED 127.0.0.1:443
+3|urlapp  |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+3|urlapp  |     errno: -111,
+3|urlapp  |     code: 'ECONNREFUSED',
+3|urlapp  |     syscall: 'connect',
+3|urlapp  |     address: '127.0.0.1',
+3|urlapp  |     port: 443
+3|urlapp  |   },
+3|urlapp  |   [Symbol(kMessage)]: 'connect ECONNREFUSED 127.0.0.1:443'

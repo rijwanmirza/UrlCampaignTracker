@@ -1,0 +1,100 @@
+0|urlapp   | DATABASE_URL is set: yes
+0|urlapp   | PORT: 3000
+0|urlapp   | HOST: 0.0.0.0
+0|urlapp   | Environment variables set:
+0|urlapp   | DATABASE_URL is set: yes
+0|urlapp   | PORT: 3000
+0|urlapp   | HOST: 0.0.0.0
+0|urlapp   | Environment variables set:
+0|urlapp   | DATABASE_URL is set: yes
+0|urlapp   | PORT: 3000
+0|urlapp   | HOST: 0.0.0.0
+0|urlapp   | Environment variables set:
+0|urlapp   | DATABASE_URL is set: yes
+0|urlapp   | PORT: 3000
+0|urlapp   | HOST: 0.0.0.0
+
+0|urlapp  | node:internal/errors:496
+0|urlapp  |     ErrorCaptureStackTrace(err);
+0|urlapp  |     ^
+0|urlapp  | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|urlapp  |     at new NodeError (node:internal/errors:405:5)
+0|urlapp  |     at validateString (node:internal/validators:162:11)
+0|urlapp  |     at Object.resolve (node:path:1097:7)
+0|urlapp  |     at vite.config.ts (file:///var/www/urlapp/dist/index.js:681:22)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/vite.ts (file:///var/www/urlapp/dist/index.js:768:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/auth/middleware.ts (file:///var/www/urlapp/dist/index.js:907:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at file:///var/www/urlapp/dist/index.js:8075:7 {
+0|urlapp  |   code: 'ERR_INVALID_ARG_TYPE'
+0|urlapp  | }
+0|urlapp  | Node.js v18.19.1
+0|urlapp  | Environment variables set:
+0|urlapp  | DATABASE_URL is set: yes
+0|urlapp  | PORT: 3000
+0|urlapp  | HOST: 0.0.0.0
+0|urlapp  | node:internal/errors:496
+0|urlapp  |     ErrorCaptureStackTrace(err);
+0|urlapp  |     ^
+0|urlapp  | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|urlapp  |     at new NodeError (node:internal/errors:405:5)
+0|urlapp  |     at validateString (node:internal/validators:162:11)
+0|urlapp  |     at Object.resolve (node:path:1097:7)
+0|urlapp  |     at vite.config.ts (file:///var/www/urlapp/dist/index.js:681:22)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/vite.ts (file:///var/www/urlapp/dist/index.js:768:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/auth/middleware.ts (file:///var/www/urlapp/dist/index.js:907:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at file:///var/www/urlapp/dist/index.js:8075:7 {
+0|urlapp  |   code: 'ERR_INVALID_ARG_TYPE'
+0|urlapp  | }
+0|urlapp  | Node.js v18.19.1
+0|urlapp  | Environment variables set:
+0|urlapp  | DATABASE_URL is set: yes
+0|urlapp  | PORT: 3000
+0|urlapp  | HOST: 0.0.0.0
+0|urlapp  | node:internal/errors:496
+0|urlapp  |     ErrorCaptureStackTrace(err);
+0|urlapp  |     ^
+0|urlapp  | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|urlapp  |     at new NodeError (node:internal/errors:405:5)
+0|urlapp  |     at validateString (node:internal/validators:162:11)
+0|urlapp  |     at Object.resolve (node:path:1097:7)
+0|urlapp  |     at vite.config.ts (file:///var/www/urlapp/dist/index.js:681:22)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/vite.ts (file:///var/www/urlapp/dist/index.js:768:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/auth/middleware.ts (file:///var/www/urlapp/dist/index.js:907:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at file:///var/www/urlapp/dist/index.js:8075:7 {
+0|urlapp  |   code: 'ERR_INVALID_ARG_TYPE'
+0|urlapp  | }
+0|urlapp  | Node.js v18.19.1
+0|urlapp  | Environment variables set:
+0|urlapp  | DATABASE_URL is set: yes
+0|urlapp  | PORT: 3000
+0|urlapp  | HOST: 0.0.0.0
+0|urlapp  | node:internal/errors:496
+0|urlapp  |     ErrorCaptureStackTrace(err);
+0|urlapp  |     ^
+0|urlapp  | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|urlapp  |     at new NodeError (node:internal/errors:405:5)
+0|urlapp  |     at validateString (node:internal/validators:162:11)
+0|urlapp  |     at Object.resolve (node:path:1097:7)
+0|urlapp  |     at vite.config.ts (file:///var/www/urlapp/dist/index.js:681:22)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/vite.ts (file:///var/www/urlapp/dist/index.js:768:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at server/auth/middleware.ts (file:///var/www/urlapp/dist/index.js:907:11)
+0|urlapp  |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+0|urlapp  |     at file:///var/www/urlapp/dist/index.js:8075:7 {
+0|urlapp  |   code: 'ERR_INVALID_ARG_TYPE'
+0|urlapp  | }
+0|urlapp  | Node.js v18.19.1
+0|urlapp  | Environment variables set:
+0|urlapp  | DATABASE_URL is set: yes
+0|urlapp  | PORT: 3000
+0|urlapp  | HOST: 0.0.0.0

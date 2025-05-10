@@ -1,0 +1,321 @@
+Pending kernel upgrade!
+Running kernel version:
+  6.11.0-17-generic
+Diagnostics:
+  The currently running kernel version is not the expected kernel version
+6.11.0-25-generic.
+
+Restarting the system to load the new kernel will not be handled automatically,
+so you should consider rebooting.
+
+The processor microcode seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ /etc/needrestart/restart.d/dbus.service
+ systemctl restart systemd-logind.service
+
+No containers need to be restarted.
+
+User sessions running outdated binaries:
+ root @ session #59: sshd[5023]
+ root @ user manager service: systemd[5028]
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+
+added 134 packages in 2s
+
+13 packages are looking for funding
+  run `npm fund` for details
+root@d026e9724:~# # Start PostgreSQL service
+systemctl start postgresql
+systemctl enable postgresql
+
+# Create database and user
+sudo -u postgres psql -c "CREATE DATABASE urlapp;"
+sudo -u postgres psql -c "CREATE USER urlapp WITH PASSWORD 'uiic487487';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE urlapp TO urlapp;"
+Synchronizing state of postgresql.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable postgresql
+CREATE DATABASE
+CREATE ROLE
+GRANT
+root@d026e9724:~# mkdir -p /var/www/urlapp
+cd /var/www/urlapp
+root@d026e9724:/var/www/urlapp# git clone https://github.com/rijwanmirza/UrlCampaignTracker.git .
+Cloning into '.'...
+remote: Enumerating objects: 8079, done.
+remote: Counting objects: 100% (1062/1062), done.
+remote: Compressing objects: 100% (386/386), done.
+remote: Total 8079 (delta 706), reused 996 (delta 664), pack-reused 7017 (from 1)
+Receiving objects: 100% (8079/8079), 104.58 MiB | 45.07 MiB/s, done.
+Resolving deltas: 100% (5684/5684), done.
+root@d026e9724:/var/www/urlapp# npm install
+npm WARN deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+npm WARN deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+
+added 637 packages, and audited 638 packages in 5s
+
+81 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (7 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+root@d026e9724:/var/www/urlapp# # Create .env file
+cat > .env << EOL
+# Database connection
+DATABASE_URL=postgresql://urlapp:uiic487487@localhost:5432/urlapp
+PGDATABASE=urlapp
+PGUSER=urlapp
+PGPASSWORD=uiic487487
+PGHOST=localhost
+PGPORT=5432
+
+# API keys - CRITICAL for functionality
+TRAFFICSTAR_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjOGJmY2YyZi1lZjJlLTQwZGYtYTg4ZC1kYjQ3NmI4MTFiOGMifQ.eyJpYXQiOjE3NDA5MTI1MTUsImp0aSI6ImNjNWQ2MWVkLTg5NjEtNDA4YS1iYmRhLTNhOTdkYWYwYWM4NCIsImlzcyI6Imh0dHBzOi8vaWQudHJhZmZpY3N0YXJzLmNvbS9yZWFsbXMvdHJhZmZpY3N0YXJzIiwiYXVkIjoiaHR0cHM6Ly9pZC50cmFmZmljc3RhcnMuY29tL3JlYWxtcy90cmFmZmljc3RhcnMiLCJzdWIiOiJmN2RlZTQyMy0zYzY3LTQxYjItODE4My1lZTdmZjBmMTUwOGIiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoiY29yZS1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiYTgyNTM5MmYtZjQ1OS00Yjg5LTkzNmEtZDcyNDcwODVlMDczIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSIsInNpZCI6ImE4MjUzOTJmLWY0NTktNGI4OS05MzZhLWQ3MjQ3MDg1ZTA3MyJ9.Zw6cuWlQCZcbqHX3jF1VIl6rpyWjN58zW8_s9al0Yl8
+API_SECRET_KEY=TraffiCS10928
+YOUTUBE_API_KEY=AIzaSyBB2nPAhc87jhkGXDe02jgn2eyV0qr-9YA
+
+# Application mode
+EOLE_ENV=production
+root@d026e9724:/var/www/urlapp# # Build the application
+npm run build
+
+# Initialize the database (if you have a migration script)
+# npm run db:migrate
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 3573 modules transformed.
+../dist/public/index.html                     2.02 kB │ gzip:   0.86 kB
+../dist/public/assets/index-Dfa5Xv9c.css     67.48 kB │ gzip:  11.73 kB
+../dist/public/assets/index-D0AL69SA.js   1,336.06 kB │ gzip: 369.74 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.03s
+
+  dist/index.js  621.1kb
+
+⚡ Done in 11ms
+root@d026e9724:/var/www/urlapp# # Create Nginx configuration
+cat > /etc/nginx/sites-available/urlapp << 'EOL'
+server {
+    listen 80;
+    server_name viralplayer.xyz www.viralplayer.xyz;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOL
+
+# Create symbolic link
+ln -s /etc/nginx/sites-available/urlapp /etc/nginx/sites-enabled/
+
+# Test and restart Nginx
+systemctl restart nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@d026e9724:/var/www/urlapp# # Configure firewall (if enabled)
+ufw allow 80/tcp
+ufw allow 443/tcp
+Command 'ufw' not found, but can be installed with:
+apt install ufw
+Command 'ufw' not found, but can be installed with:
+apt install ufw
+root@d026e9724:/var/www/urlapp# apt install ufw
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  linux-headers-6.8.0-54 linux-headers-6.8.0-54-generic
+  linux-image-6.8.0-54-generic linux-modules-6.8.0-54-generic
+  linux-modules-extra-6.8.0-54-generic
+Use 'apt autoremove' to remove them.
+The following NEW packages will be installed:
+  ufw
+0 upgraded, 1 newly installed, 0 to remove and 3 not upgraded.
+Need to get 169 kB of archives.
+After this operation, 869 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu noble/main amd64 ufw all 0.36.2-6 [169 kB]
+Fetched 169 kB in 0s (1,102 kB/s)
+Preconfiguring packages ...
+Selecting previously unselected package ufw.
+(Reading database ... 135885 files and directories currently installed.)
+Preparing to unpack .../archives/ufw_0.36.2-6_all.deb ...
+Unpacking ufw (0.36.2-6) ...
+Setting up ufw (0.36.2-6) ...
+
+Creating config file /etc/ufw/before.rules with new version
+
+Creating config file /etc/ufw/before6.rules with new version
+
+Creating config file /etc/ufw/after.rules with new version
+
+Creating config file /etc/ufw/after6.rules with new version
+Created symlink /etc/systemd/system/multi-user.target.wants/ufw.service → /usr/lib/systemd/system/ufw.service.
+Processing triggers for rsyslog (8.2312.0-3ubuntu9.1) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+Scanning processes...
+Scanning candidates...
+Scanning processor microcode...
+Scanning linux images...
+
+Pending kernel upgrade!
+Running kernel version:
+  6.11.0-17-generic
+Diagnostics:
+  The currently running kernel version is not the expected kernel version
+6.11.0-25-generic.
+
+Restarting the system to load the new kernel will not be handled automatically,
+so you should consider rebooting.
+
+The processor microcode seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ /etc/needrestart/restart.d/dbus.service
+ systemctl restart systemd-logind.service
+
+No containers need to be restarted.
+
+User sessions running outdated binaries:
+ root @ session #59: sshd[5023]
+ root @ user manager service: systemd[5028]
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+root@d026e9724:/var/www/urlapp# # Configure firewall (if enabled)
+ufw allow 80/tcp
+ufw allow 443/tcp
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated (v6)
+root@d026e9724:/var/www/urlapp# # Start the application with PM2
+cd /var/www/urlapp
+pm2 start dist/index.js --name urlapp
+
+# Save PM2 configuration
+pm2 save
+
+# Set PM2 to start on boot
+pm2 startup
+
+                        -------------
+
+__/\\\\\\\\\\\\\____/\\\\____________/\\\\____/\\\\\\\\\_____
+ _\/\\\/////////\\\_\/\\\\\\________/\\\\\\__/\\\///////\\\___
+  _\/\\\_______\/\\\_\/\\\//\\\____/\\\//\\\_\///______\//\\\__
+   _\/\\\\\\\\\\\\\/__\/\\\\///\\\/\\\/_\/\\\___________/\\\/___
+    _\/\\\/////////____\/\\\__\///\\\/___\/\\\________/\\\//_____
+     _\/\\\_____________\/\\\____\///_____\/\\\_____/\\\//________
+      _\/\\\_____________\/\\\_____________\/\\\___/\\\/___________
+       _\/\\\_____________\/\\\_____________\/\\\__/\\\\\\\\\\\\\\\_
+        _\///______________\///______________\///__\///////////////__
+
+
+                          Runtime Edition
+
+        PM2 is a Production Process Manager for Node.js applications
+                     with a built-in Load Balancer.
+
+                Start and Daemonize any application:
+                $ pm2 start app.js
+
+                Load Balance 4 instances of api.js:
+                $ pm2 start api.js -i 4
+
+                Monitor in production:
+                $ pm2 monitor
+
+                Make pm2 auto-boot at server restart:
+                $ pm2 startup
+
+                To go further checkout:
+                http://pm2.io/
+
+
+                        -------------
+
+[PM2] Spawning PM2 daemon with pm2_home=/root/.pm2
+[PM2] PM2 Successfully daemonized
+[PM2] Starting /var/www/urlapp/dist/index.js in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ urlapp             │ fork     │ 0    │ online    │ 0%       │ 33.8mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+[PM2] Init System found: systemd
+Platform systemd
+Template
+[Unit]
+Description=PM2 process manager
+Documentation=https://pm2.keymetrics.io/
+After=network.target
+
+[Service]
+Type=forking
+User=root
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+Environment=PM2_HOME=/root/.pm2
+PIDFile=/root/.pm2/pm2.pid
+Restart=on-failure
+
+ExecStart=/usr/local/lib/node_modules/pm2/bin/pm2 resurrect
+ExecReload=/usr/local/lib/node_modules/pm2/bin/pm2 reload all
+ExecStop=/usr/local/lib/node_modules/pm2/bin/pm2 kill
+
+[Install]
+WantedBy=multi-user.target
+
+Target path
+/etc/systemd/system/pm2-root.service
+Command list
+[ 'systemctl enable pm2-root' ]
+[PM2] Writing init configuration in /etc/systemd/system/pm2-root.service
+[PM2] Making script booting at startup...
+[PM2] [-] Executing: systemctl enable pm2-root...
+Created symlink /etc/systemd/system/multi-user.target.wants/pm2-root.service → /etc/systemd/system/pm2-root.service.
+[PM2] [v] Command successfully executed.
++---------------------------------------+
+[PM2] Freeze a process list on reboot via:
+$ pm2 save
+
+[PM2] Remove init script via:
+$ pm2 unstartup systemd
+root@d026e9724:/var/www/urlapp# # Test if the application is running locally
+curl http://localhost:3000
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server
+root@d026e9724:/var/www/urlapp#

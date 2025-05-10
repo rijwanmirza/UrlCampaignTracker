@@ -1,0 +1,48 @@
+root@d026e9724:/var/www/urlapp# ./final-fix.sh
+🔄 Fixing the application to run properly on port 3000...
+🔄 Checking PM2 status and stopping any running instances...
+[PM2] Applying action stopProcessId on app [all](ids: [ 0 ])
+[PM2] [urlapp](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ urlapp             │ fork     │ 0    │ stopped   │ 0%       │ 0b       │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Applying action deleteProcessId on app [all](ids: [ 0 ])
+[PM2] [urlapp](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+🔄 Creating an environment variables loader file...
+🔄 Installing dotenv package...
+
+added 1 package, and audited 639 packages in 792ms
+
+82 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (7 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+🔄 Ensuring .env file has the correct variables...
+🔄 Checking if we need to modify index.js to bind to 0.0.0.0...
+🔄 Starting application with PM2...
+
+  error: unknown option `--env-file'
+
+🔄 Checking if application is running...
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+🔄 Checking if port 3000 is being used...
+🔄 Testing local connection...
+Still not responding on localhost:3000
+🔄 Restarting Nginx...
+✅ All fixes applied. The application should now be accessible.
+root@d026e9724:/var/www/urlapp#

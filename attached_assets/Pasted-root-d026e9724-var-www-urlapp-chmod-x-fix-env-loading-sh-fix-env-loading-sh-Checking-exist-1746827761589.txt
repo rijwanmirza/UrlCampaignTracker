@@ -1,0 +1,120 @@
+root@d026e9724:/var/www/urlapp# chmod +x fix-env-loading.sh
+./fix-env-loading.sh
+🔍 Checking existing DATABASE_URL in .env...
+DATABASE_URL=postgresql://urlapp:uiic487487@localhost:5432/urlapp
+🔄 Installing pm2-env to load environment variables...
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+
+added 21 packages in 2s
+
+5 packages are looking for funding
+  run `npm fund` for details
+🔄 Ensuring database connection is properly loaded...
+🔄 Installing dotenv for the test script...
+
+changed 5 packages, and audited 639 packages in 1s
+
+82 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (7 moderate, 3 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+🔄 Testing database connection...
+file:///var/www/urlapp/test-db.js:1
+require('dotenv').config();
+^
+
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/www/urlapp/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/www/urlapp/test-db.js:1:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.1
+🔄 Restarting application with environment variables...
+[PM2] Applying action stopProcessId on app [urlapp](ids: [ 3, 4, 5 ])
+[PM2] [urlapp](3) ✓
+[PM2] [urlapp](4) ✓
+[PM2] [urlapp](5) ✓
+┌────┬──────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name             │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 3  │ urlapp           │ default     │ N/A     │ fork    │ 0        │ 0      │ 68   │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ urlapp           │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 5  │ urlapp           │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+└────┴──────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+Module
+┌────┬──────────────────────────────┬───────────────┬──────────┬──────────┬──────┬──────────┬──────────┬──────────┐
+│ id │ module                       │ version       │ pid      │ status   │ ↺    │ cpu      │ mem      │ user     │
+├────┼──────────────────────────────┼───────────────┼──────────┼──────────┼──────┼──────────┼──────────┼──────────┤
+│ 1  │ pm2-logrotate                │ 2.7.0         │ 22531    │ online   │ 2    │ 0%       │ 63.6mb   │ root     │
+└────┴──────────────────────────────┴───────────────┴──────────┴──────────┴──────┴──────────┴──────────┴──────────┘
+[PM2][ERROR] File ecosystem.config.js malformated
+ReferenceError: module is not defined
+    at file:///var/www/urlapp/ecosystem.config.js:1:1
+    at ModuleJobSync.runSync (node:internal/modules/esm/module_job:387:35)
+    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:323:47)
+    at loadESMFromCJS (node:internal/modules/cjs/loader:1371:24)
+    at Module._compile (node:internal/modules/cjs/loader:1511:5)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1572:16)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+🔄 Checking if application is running...
+❌ Application is not running. Checking logs...
+[TAILING] Tailing last 20 lines for [urlapp] process (change the value with --lines option)
+/root/.pm2/logs/urlapp-out.log last 20 lines:
+3|urlapp   |
+3|urlapp   | > rest-express@1.0.0 start
+3|urlapp   | > NODE_ENV=production node dist/index.js
+3|urlapp   |
+3|urlapp   |
+3|urlapp   | > rest-express@1.0.0 start
+3|urlapp   | > NODE_ENV=production node dist/index.js
+3|urlapp   |
+3|urlapp   |
+3|urlapp   | > rest-express@1.0.0 start
+3|urlapp   | > NODE_ENV=production node dist/index.js
+3|urlapp   |
+3|urlapp   |
+3|urlapp   | > rest-express@1.0.0 start
+3|urlapp   | > NODE_ENV=production node dist/index.js
+3|urlapp   |
+3|urlapp   |
+3|urlapp   | > rest-express@1.0.0 start
+3|urlapp   | > NODE_ENV=production node dist/index.js
+3|urlapp   |
+
+/root/.pm2/logs/urlapp-error.log last 20 lines:
+3|urlapp   |     at server/db.ts (file:///var/www/urlapp/dist/index.js:646:13)
+3|urlapp   |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+3|urlapp   |     at file:///var/www/urlapp/dist/index.js:4916:1
+3|urlapp   |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+3|urlapp   |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+3|urlapp   |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+3|urlapp   |
+3|urlapp   | Node.js v20.19.1
+3|urlapp   | Error: DATABASE_URL must be set. Did you forget to provision a database?
+3|urlapp   |     at server/db.ts (file:///var/www/urlapp/dist/index.js:646:13)
+3|urlapp   |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+3|urlapp   |     at file:///var/www/urlapp/dist/index.js:4916:1
+3|urlapp   |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+3|urlapp   |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+3|urlapp   | Error: DATABASE_URL must be set. Did you forget to provision a database?
+3|urlapp   |     at server/db.ts (file:///var/www/urlapp/dist/index.js:646:13)
+3|urlapp   |     at __init (file:///var/www/urlapp/dist/index.js:4:56)
+3|urlapp   |     at file:///var/www/urlapp/dist/index.js:4916:1
+3|urlapp   |     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+3|urlapp   |     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+
+^C

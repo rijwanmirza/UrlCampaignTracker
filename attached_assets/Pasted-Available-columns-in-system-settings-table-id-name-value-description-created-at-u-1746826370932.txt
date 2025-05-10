@@ -1,0 +1,105 @@
+Available columns in system_settings table: [ 'id', 'name', 'value', 'description', 'created_at', 'updated_at' ]
+API key already exists. Updating...
+✅ API key added/updated successfully!
+🔄 Fixing sessions table...
+Checking for sessions table...
+Sessions table does not exist. Creating...
+✅ Sessions table created successfully!
+🔄 Adding test data if needed...
+Checking campaigns table structure...
+Campaign columns: [
+  'id',
+  'name',
+  'redirect_method',
+  'custom_path',
+  'multiplier',
+  'price_per_thousand',
+  'trafficstar_campaign_id',
+  'auto_manage_trafficstar',
+  'budget_update_time',
+  'pending_budget_update',
+  'last_trafficstar_sync',
+  'daily_spent',
+  'daily_spent_date',
+  'last_spent_check',
+  'traffic_generator_enabled',
+  'post_pause_check_minutes',
+  'high_spend_wait_minutes',
+  'traffic_sender_enabled',
+  'last_traffic_sender_action',
+  'last_traffic_sender_status',
+  'last_budget_update_time',
+  'high_spend_budget_calc_time',
+  'youtube_api_enabled',
+  'youtube_api_interval_minutes',
+  'youtube_api_last_check',
+  'youtube_check_country_restriction',
+  'youtube_check_private',
+  'youtube_check_deleted',
+  'youtube_check_age_restricted',
+  'youtube_check_made_for_kids',
+  'youtube_check_duration',
+  'youtube_max_duration_minutes',
+  'created_at',
+  'updated_at'
+]
+Checking urls table structure...
+URL columns: [
+  'id',
+  'campaign_id',
+  'name',
+  'target_url',
+  'click_limit',
+  'original_click_limit',
+  'clicks',
+  'status',
+  'pending_budget_update',
+  'budget_calculated',
+  'created_at',
+  'updated_at'
+]
+Adding test campaign...
+Executing campaign insert:
+        INSERT INTO campaigns (
+          name,
+          status,
+          redirectMethod,
+          clickPrice,
+          budget,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          'Test Campaign',
+          'active',
+          'redirect',
+          0.05,
+          100.0,
+          NOW(),
+          NOW()
+        ) RETURNING id
+
+❌ Error processing test data: error: column "status" of relation "campaigns" does not exist
+    at /var/www/urlapp/node_modules/pg/lib/client.js:535:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async addTestData (file:///var/www/urlapp/add-test-data.mjs:70:30) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '61',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+^C
+root@d026e9724:/var/www/urlapp#
